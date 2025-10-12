@@ -21,7 +21,9 @@
     "format:fix": {
       "dependsOn": ["^topo"]
     },
-    "check-types": {},
+    "check-types": {
+      "dependsOn": ["^build"]
+    },
     "test": {
       "dependsOn": ["^build"]
     },

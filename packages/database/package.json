@@ -11,7 +11,7 @@
     "db:migrate:dev": "bash ./scripts/migrate-dev.sh",
     "db:migrate:prod": "pnpm with-env prisma migrate deploy",
     "db:studio": "pnpm with-env prisma studio --port 5556",
-    "check-types": "tsc --noEmit",
+    "check-types": "pnpm db:generate && tsc --noEmit",
     "lint": "biome lint index.ts",
     "lint:fix": "biome lint --write index.ts",
     "format": "biome format index.ts",
