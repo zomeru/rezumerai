@@ -1,0 +1,51 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run watch-compile\" \"npm run watch-dev\"",
+    "watch-compile": "pnpm with-env swc . -w --out-dir dist --ignore node_modules,dist",
+    "watch-dev": "pnpm with-env nodemon --watch src --watch index.ts -e ts --exec \"node -r tsconfig-paths/register dist/index.js\"",
+    "build": "pnpm with-env swc . --out-dir dist --ignore node_modules,dist",
+    "start": "pnpm with-env node -r tsconfig-paths/register dist/index.js",
+    "check-types": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "lint": "biome check src index.ts",
+    "lint:fix": "biome check --write src index.ts",
+    "format": "biome format src index.ts",
+    "format:fix": "biome format --write src index.ts",
+    "clean": "rm -rf dist .turbo node_modules",
+    "with-env": "dotenv -e ../../.env.local --"
+  },
+  "dependencies": {
+    "@rezumerai/database": "workspace:*",
+    "@rezumerai/utils": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/types": "workspace:*",
+    "@rezumerai/vitest-config": "workspace:*",
+    "@swc/cli": "^0.7.8",
+    "@swc/core": "^1.13.5",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.7.1",
+    "concurrently": "^9.2.1",
+    "dotenv-cli": "^10.0.0",
+    "nodemon": "^3.1.10",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  }
+}

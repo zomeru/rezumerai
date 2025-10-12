@@ -1,0 +1,28 @@
+# Run comprehensive checks before push
+echo "🚀 Running pre-push checks..."
+
+# Lint all code (check only, don't fix)
+echo "📝 Linting all code..."
+pnpm lint
+
+# Format check all code (check only, don't fix)  
+echo "🎨 Checking code formatting..."
+pnpm format
+
+# Type check all code
+echo "🔧 Type checking all code..."
+pnpm check-types
+
+# Run all tests
+echo "🧪 Running all tests..."
+pnpm test
+
+# Build everything to ensure it works
+echo "🏗️ Building all packages..."
+pnpm build
+
+# Run security audit
+echo "🔒 Running security audit..."
+pnpm security:audit
+
+echo "✅ Pre-push checks passed! Safe to push."

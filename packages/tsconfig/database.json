@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Prisma Database",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "lib": ["esnext"],
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false
+  },
+  "exclude": ["node_modules"]
+}

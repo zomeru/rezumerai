@@ -1,0 +1,13 @@
+{
+  "name": "@rezumerai/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@rezumerai/types",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "clean": "rm -rf node_modules .turbo dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rezumerai/tsconfig": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  }
+}

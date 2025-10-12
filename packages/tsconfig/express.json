@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "ExpressJS Server",
+  "extends": "./base.json",
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "module": "ESNext",
+      "moduleResolution": "Node16"
+    }
+  },
+  "compilerOptions": {
+    "outDir": "./dist",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "paths": {
+      "@/*": [".src/*"]
+    },
+    "baseUrl": "./src"
+  }
+}

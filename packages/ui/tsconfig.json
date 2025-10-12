@@ -1,8 +1,5 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "extends": "@rezumerai/tsconfig/ui.json",
+  "include": ["**/*.ts", "**/*.tsx", "tailwind.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
 }

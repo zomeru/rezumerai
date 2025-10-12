@@ -1,0 +1,58 @@
+{
+  "name": "@rezumerai/vitest-config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**",
+    "src/**"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./base": {
+      "types": "./dist/base.d.ts",
+      "import": "./dist/base.mjs",
+      "require": "./dist/base.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.mjs",
+      "require": "./dist/node.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "clean": "rm -rf node_modules .turbo dist"
+  },
+  "dependencies": {
+    "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@types/node": "^22.15.3",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  }
+}

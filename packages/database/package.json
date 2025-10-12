@@ -1,0 +1,40 @@
+{
+  "name": "@rezumerai/database",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"pnpm db:push\" \"pnpm db:generate\" \"pnpm watch\"",
+    "build": "pnpm db:generate && pnpm with-env tsup",
+    "watch": "pnpm db:generate && pnpm with-env tsup --watch",
+    "db:generate": "pnpm with-env prisma generate",
+    "db:generate:prod": "prisma generate",
+    "db:push": "pnpm with-env prisma db push",
+    "db:migrate:dev": "bash ./scripts/migrate-dev.sh",
+    "db:migrate:prod": "pnpm with-env prisma migrate deploy",
+    "db:studio": "pnpm with-env prisma studio --port 5556",
+    "check-types": "tsc --noEmit",
+    "lint": "biome lint index.ts",
+    "lint:fix": "biome lint --write index.ts",
+    "format": "biome format index.ts",
+    "format:fix": "biome format --write index.ts",
+    "clean": "rm -rf node_modules .turbo dist",
+    "with-env": "dotenv -e ../../.env.local --"
+  },
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.17.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@types/node": "^24.7.1",
+    "concurrently": "^9.2.1",
+    "dotenv-cli": "^10.0.0",
+    "prisma": "^6.17.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  }
+}

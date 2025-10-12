@@ -1,28 +1,54 @@
 {
   "name": "web",
-  "version": "0.1.0",
-  "type": "module",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "dev": "pnpm with-env next dev --turbopack",
+    "build": "pnpm with-env next build --turbopack",
+    "start": "pnpm with-env next start",
+    "check-types": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "analyze": "ANALYZE=true pnpm build",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "format": "biome format src",
+    "format:fix": "biome format --write src",
+    "clean": "rm -rf .next node_modules .turbo",
+    "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
-    "next": "^15.5.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@rezumerai/database": "workspace:*",
+    "@rezumerai/ui": "workspace:*",
+    "@rezumerai/utils": "workspace:*",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.15.3",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1",
-    "eslint": "^9.34.0",
-    "typescript": "5.9.2"
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/types": "workspace:*",
+    "@rezumerai/vitest-config": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.4",
+    "@next/bundle-analyzer": "^15.5.4",
+    "autoprefixer": "^10.4.21",
+    "dotenv-cli": "^10.0.0",
+    "jsdom": "^27.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "ts-node": "^10.9.2",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
   }
 }

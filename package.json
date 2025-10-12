@@ -2,19 +2,58 @@
   "name": "rezumerai",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "changeset": "changeset",
+    "publish:packages": "changeset publish",
+    "version:packages": "turbo build && changeset version",
+    "add-shadcn-component": "turbo run add-shadcn-component -- --",
+    "build": "turbo build",
+    "build:production": "NODE_ENV=production turbo build",
+    "dev": "turbo dev",
+    "dev:db": "docker-compose up -d db redis",
+    "format": "turbo format --continue --",
+    "format:fix": "turbo format:fix --continue --",
+    "lint": "turbo lint --continue --",
+    "lint:fix": "turbo lint:fix --continue --",
+    "lint-staged": "lint-staged",
+    "check-types": "turbo check-types --continue --",
+    "test": "turbo test --continue --",
+    "test:watch": "turbo test:watch --continue --",
+    "test:ui": "turbo test:ui --continue --",
+    "clean": "turbo clean",
+    "clean:all": "turbo clean && rm -rf node_modules .turbo && pnpm install",
+    "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
+    "db:studio": "cd packages/database && pnpm db:studio",
+    "db:reset": "cd packages/database && pnpm with-env prisma migrate reset --force",
+    "outdated": "pnpm outdated -r",
+    "update": "pnpm update -r --latest",
+    "security:audit": "pnpm audit --prod",
+    "security:check": "pnpm dlx audit-ci --config .audit-ci.json",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
+    "@biomejs/biome": "2.2.5",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
+    "husky": "^9.1.7",
+    "lint-staged": "16.2.4",
+    "postcss": "^8.5.6",
     "turbo": "^2.5.8",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@9.0.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": ">=0.25.0"
+    }
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,json,md}": [
+      "pnpm format:fix",
+      "pnpm lint:fix"
+    ]
+  },
+  "packageManager": "pnpm@10.18.2",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   }
 }

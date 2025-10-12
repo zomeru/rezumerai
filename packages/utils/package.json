@@ -1,0 +1,52 @@
+{
+  "name": "@rezumerai/utils",
+  "version": "1.0.0",
+  "main": "./dist/styles.js",
+  "module": "./dist/styles.mjs",
+  "types": "./dist/styles.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/styles.d.ts",
+      "import": "./dist/styles.mjs",
+      "require": "./dist/styles.js"
+    },
+    "./styles": {
+      "types": "./dist/styles.d.ts",
+      "import": "./dist/styles.mjs",
+      "require": "./dist/styles.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "clean": "rm -rf node_modules .turbo dist"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/vitest-config": "workspace:*",
+    "@types/node": "^24.7.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
+  }
+}

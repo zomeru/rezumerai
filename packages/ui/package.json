@@ -1,26 +1,66 @@
 {
-  "name": "@repo/ui",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@rezumerai/ui",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**",
+    "src/**",
+    "postcss.config.ts",
+    "tailwind.config.ts"
+  ],
   "exports": {
-    "./*": "./src/*.tsx"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./globals.css": "./src/styles/global.css",
+    "./postcss.config": "./postcss.config.ts",
+    "./tailwind.config": "./tailwind.config.ts",
+    "./components/*": "./src/*.tsx"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "generate:component": "turbo gen react-component",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "lint": "biome check ./src",
+    "lint:fix": "biome check --write ./src",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "clean": "rm -rf node_modules .turbo dist"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@biomejs/biome": "2.2.5",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/vitest-config": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^22.15.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
-    "eslint": "^9.34.0",
-    "typescript": "5.9.2"
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "jsdom": "^27.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@rezumerai/utils": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,0 +1,12 @@
+# Dockerignore
+node_modules
+.next
+.turbo
+dist
+build
+*.log
+.env*.local
+.git
+README.md
+Dockerfile*
+.gitignore
