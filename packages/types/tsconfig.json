@@ -1,13 +1,17 @@
 {
-  "extends": "@rezumerai/tsconfig/types.json",
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.*", "**/*.spec.*"],
   "compilerOptions": {
-    "noEmit": false,
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
     "outDir": "dist",
     "rootDir": "src",
-    "module": "commonjs",
-    "target": "esnext",
-    "moduleResolution": "node"
-  }
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

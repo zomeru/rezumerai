@@ -19,7 +19,7 @@
     "test": "turbo test --continue --",
     "test:watch": "turbo test:watch --continue --",
     "test:ui": "turbo test:ui --continue --",
-    "clean": "turbo clean",
+    "clean": "turbo clean && rm -rf node_modules .turbo",
     "clean:all": "turbo clean && rm -rf node_modules .turbo && pnpm install",
     "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
     "db:studio": "cd packages/database && pnpm db:studio",

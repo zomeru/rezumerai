@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@rezumerai/utils/styles";
+import { cn } from "@rezumerai/utils";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

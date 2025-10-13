@@ -1,5 +1,5 @@
 {
   "extends": "@rezumerai/tsconfig/utils.json",
   "include": ["**/*.ts", "vitest.config.mts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

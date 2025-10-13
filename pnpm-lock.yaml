@@ -242,6 +242,9 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
@@ -303,6 +306,9 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config

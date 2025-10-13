@@ -1,22 +1,17 @@
 {
   "name": "@rezumerai/utils",
   "version": "1.0.0",
-  "main": "./dist/styles.js",
-  "module": "./dist/styles.mjs",
-  "types": "./dist/styles.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist/**"
   ],
   "exports": {
     ".": {
-      "types": "./dist/styles.d.ts",
-      "import": "./dist/styles.mjs",
-      "require": "./dist/styles.js"
-    },
-    "./styles": {
-      "types": "./dist/styles.d.ts",
-      "import": "./dist/styles.mjs",
-      "require": "./dist/styles.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -39,6 +34,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
     "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/types": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@types/node": "^24.7.1",
     "tsup": "^8.5.0",

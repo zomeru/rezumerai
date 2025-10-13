@@ -13,10 +13,14 @@
       "*.json",
       "tsconfig.json",
       ".turbo",
-      "dist",
-      "build",
-      "out",
-      ".next"
+      "dist/**",
+      "**/dist/**",
+      "build/**",
+      "**/build/**",
+      "out/**",
+      "**/out/**",
+      ".next/**",
+      "**/.next/**"
     ]
   },
   "formatter": {
