@@ -23,12 +23,17 @@
     "@rezumerai/types": "workspace:*",
     "@rezumerai/ui": "workspace:*",
     "@rezumerai/utils": "workspace:*",
+    "@tanstack/react-query": "^5.90.2",
+    "@ts-rest/core": "3.53.0-rc.1",
+    "@ts-rest/react-query": "3.53.0-rc.1",
     "next": "15.5.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
+    "@next/bundle-analyzer": "^15.5.4",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
@@ -37,7 +42,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.0.4",
-    "@next/bundle-analyzer": "^15.5.4",
     "autoprefixer": "^10.4.21",
     "dotenv-cli": "^10.0.0",
     "jsdom": "^27.0.0",

@@ -23,9 +23,12 @@
     "@rezumerai/database": "workspace:*",
     "@rezumerai/types": "workspace:*",
     "@rezumerai/utils": "workspace:*",
+    "@ts-rest/core": "3.53.0-rc.1",
+    "@ts-rest/express": "3.53.0-rc.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",

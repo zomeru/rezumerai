@@ -1,22 +1,23 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithProviders } from "../test/utils";
 import Home from "./page";
 
 describe("Home Page", () => {
   it("renders the welcome text", () => {
-    render(<Home />);
+    renderWithProviders(<Home />);
 
     expect(screen.getByText("Welcome to rezumerai")).toBeInTheDocument();
   });
 
   it("renders the get started button", () => {
-    render(<Home />);
+    renderWithProviders(<Home />);
 
     expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
   });
 
   it("renders a div container", () => {
-    const { container } = render(<Home />);
+    const { container } = renderWithProviders(<Home />);
 
     expect(container.firstChild).toBeInstanceOf(HTMLDivElement);
     expect(container.firstChild).toHaveClass("p-8");

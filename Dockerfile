@@ -31,7 +31,7 @@ COPY --from=builder /app/apps/server/dist ./server/
 COPY --from=builder /app/apps/server/package.json ./
 COPY --from=builder /app/node_modules ./node_modules/
 
-EXPOSE 3001
+EXPOSE 8080
 CMD ["node", "server/index.js"]
 
 # Production web image  
