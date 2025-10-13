@@ -43,13 +43,13 @@
     "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {
+    "@rezumerai/types": "workspace:*",
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
     "@rezumerai/tsconfig": "workspace:*",
-    "@rezumerai/types": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@types/node": "^24.7.1",
     "tsup": "^8.5.0",

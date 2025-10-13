@@ -19,8 +19,8 @@
     "paths": {
       "@rezumerai/ui": ["./packages/ui/src"],
       "@rezumerai/ui/*": ["./packages/ui/src/*"],
-      "@rezumerai/types": ["./packages/types/src"],
-      "@rezumerai/types/*": ["./packages/types/src/*"],
+      "@rezumerai/types": ["./packages/types/dist"],
+      "@rezumerai/types/*": ["./packages/types/dist/*"],
       "@rezumerai/utils": ["./packages/utils/src"],
       "@rezumerai/utils/*": ["./packages/utils/src/*"],
       "@rezumerai/utils/styles": ["./packages/utils/src/styles"],

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@rezumerai/database": "workspace:*",
+    "@rezumerai/types": "workspace:*",
     "@rezumerai/utils": "workspace:*",
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -29,7 +30,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
     "@rezumerai/tsconfig": "workspace:*",
-    "@rezumerai/types": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@swc/cli": "^0.7.8",
     "@swc/core": "^1.13.5",

@@ -35,10 +35,15 @@
     "format:fix": "biome format --write ./src",
     "clean": "rm -rf node_modules .turbo dist"
   },
+  "dependencies": {
+    "@rezumerai/types": "workspace:*",
+    "@rezumerai/utils": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
     "@rezumerai/tsconfig": "workspace:*",
-    "@rezumerai/types": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -54,11 +59,6 @@
     "tsup": "^8.5.0",
     "typescript": "5.9.2",
     "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "@rezumerai/utils": "workspace:*",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
   },
   "packageManager": "pnpm@10.18.2",
   "engines": {

@@ -44,6 +44,9 @@ importers:
       '@rezumerai/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@rezumerai/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -63,9 +66,6 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
-      '@rezumerai/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../../packages/vitest-config
@@ -111,6 +111,9 @@ importers:
       '@rezumerai/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@rezumerai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -136,9 +139,6 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
-      '@rezumerai/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../../packages/vitest-config
@@ -226,6 +226,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../types
       '@rezumerai/utils':
         specifier: workspace:*
         version: link:../utils
@@ -242,9 +245,6 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@rezumerai/types':
-        specifier: workspace:*
-        version: link:../types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
@@ -293,6 +293,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@rezumerai/types':
+        specifier: workspace:*
+        version: link:../types
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -306,9 +309,6 @@ importers:
       '@rezumerai/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@rezumerai/types':
-        specifier: workspace:*
-        version: link:../types
       '@rezumerai/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
@@ -4880,7 +4880,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.7.1)(@vitest/ui@3.2.4)(jsdom@27.0.0(postcss@8.5.6))
+      vitest: 3.2.4(@types/node@22.15.3)(@vitest/ui@3.2.4)(jsdom@27.0.0(postcss@8.5.6))
     optional: true
 
   '@vitest/utils@3.2.4':

@@ -19,7 +19,7 @@ jobs:
       postgres:
         image: postgres:18
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.TEST_POSTGRES_PASSWORD }}
           POSTGRES_DB: test_db
         options: >-
           --health-cmd pg_isready
@@ -30,7 +30,7 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      DATABASE_URL: postgresql://postgres:${{ secrets.TEST_POSTGRES_PASSWORD }}@localhost:5432/test_db
 
     steps:
       - name: Checkout repo

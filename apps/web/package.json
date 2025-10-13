@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@rezumerai/database": "workspace:*",
+    "@rezumerai/types": "workspace:*",
     "@rezumerai/ui": "workspace:*",
     "@rezumerai/utils": "workspace:*",
     "next": "15.5.4",
@@ -29,7 +30,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.5",
     "@rezumerai/tsconfig": "workspace:*",
-    "@rezumerai/types": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
