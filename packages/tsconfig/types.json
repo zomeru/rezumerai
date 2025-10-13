@@ -3,6 +3,17 @@
   "display": "Shared Types",
   "extends": "./base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/ui": ["../ui/src"],
+      "@rezumerai/ui/*": ["../ui/src/*"],
+      "@rezumerai/utils": ["../utils/src"],
+      "@rezumerai/utils/*": ["../utils/src/*"],
+      "@rezumerai/database": ["../database"],
+      "@rezumerai/database/*": ["../database/*"],
+      "@rezumerai/vitest-config": ["../vitest-config/src"],
+      "@rezumerai/vitest-config/*": ["../vitest-config/src/*"]
+    },
     "outDir": "./dist",
     "declaration": true,
     "emitDecoratorMetadata": true,

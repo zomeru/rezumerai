@@ -1,3 +1,5 @@
+import { formatDate } from "@rezumerai/utils/date";
+import { capitalize } from "@rezumerai/utils/string";
 import cors from "cors";
 import express from "express";
 import morgan from "morgan";
@@ -18,7 +20,13 @@ function createServer() {
   const port = process.env.PORT || 3001;
 
   app.get("/", (_, res) => {
-    res.send("Hello from Express!");
+    const message = capitalize("hello from express!");
+    const timestamp = formatDate(new Date(), { dateStyle: "short", timeStyle: "short" });
+    res.json({
+      message,
+      timestamp,
+      server: "RezumerAI API",
+    });
   });
 
   app.listen(port, () => {

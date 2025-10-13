@@ -1,3 +1,14 @@
+// {
+//   "extends": "@rezumerai/tsconfig/types.json",
+//   "compilerOptions": {
+//     "composite": true,
+//     "outDir": "./dist",
+//     "rootDir": "./src"
+//   },
+//   "include": ["src/**/*.ts"],
+//   "exclude": ["node_modules", "dist", "**/*.test.*"]
+// }
+
 {
   "compilerOptions": {
     "target": "ES2020",

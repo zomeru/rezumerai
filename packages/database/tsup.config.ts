@@ -1,9 +1,9 @@
 import { defineConfig } from "tsup";
 
-export default defineConfig((options) => ({
+export default defineConfig(() => ({
   entry: ["index.ts"],
   format: ["cjs", "esm"],
-  dts: !options.watch, // Disable DTS generation in watch mode to prevent infinite loops
+  dts: false, // Disable DTS generation due to Prisma client compatibility issues
   splitting: false,
   sourcemap: true,
   clean: true,

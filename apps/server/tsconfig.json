@@ -1,15 +1,22 @@
 {
   "extends": "@rezumerai/tsconfig/express.json",
-  "include": ["src", "index.ts"],
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/types": ["../../packages/types/src"],
+      "@rezumerai/types/*": ["../../packages/types/src/*"],
+      "@rezumerai/utils": ["../../packages/utils/src"],
+      "@rezumerai/utils/*": ["../../packages/utils/src/*"],
+      "@rezumerai/database": ["../../packages/database"],
+      "@rezumerai/database/*": ["../../packages/database/*"]
+    },
     "module": "CommonJS",
     "target": "ES2022",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "noEmit": false,
-    "declaration": false,
-    "declarationMap": false,
     "verbatimModuleSyntax": false
-  }
+  },
+  "include": ["src/**/*.ts", "index.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.*"]
 }

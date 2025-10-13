@@ -9,9 +9,13 @@ export const createReactConfig = (dirname: string) =>
         environment: "jsdom",
         setupFiles: ["./src/test/setup.ts"],
         css: true,
+        globals: true,
       },
       esbuild: {
         jsxInject: "import React from 'react'",
+      },
+      define: {
+        global: "globalThis",
       },
     }),
   );

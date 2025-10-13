@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom";
+import React from "react";
 import { vi } from "vitest";
+
+// Make React available globally for JSX
+globalThis.React = React;
 
 // Mock Next.js router
 vi.mock("next/navigation", () => ({

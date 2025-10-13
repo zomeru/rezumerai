@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "es6"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/ui": ["./packages/ui/src"],
+      "@rezumerai/ui/*": ["./packages/ui/src/*"],
+      "@rezumerai/types": ["./packages/types/src"],
+      "@rezumerai/types/*": ["./packages/types/src/*"],
+      "@rezumerai/utils": ["./packages/utils/src"],
+      "@rezumerai/utils/*": ["./packages/utils/src/*"],
+      "@rezumerai/utils/styles": ["./packages/utils/src/styles"],
+      "@rezumerai/database": ["./packages/database"],
+      "@rezumerai/database/*": ["./packages/database/*"],
+      "@rezumerai/tsconfig": ["./packages/tsconfig"],
+      "@rezumerai/tsconfig/*": ["./packages/tsconfig/*"],
+      "@rezumerai/vitest-config": ["./packages/vitest-config/src"],
+      "@rezumerai/vitest-config/*": ["./packages/vitest-config/src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

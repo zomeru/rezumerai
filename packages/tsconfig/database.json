@@ -11,7 +11,18 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/types": ["../types/src"],
+      "@rezumerai/types/*": ["../types/src/*"],
+      "@rezumerai/utils": ["../utils/src"],
+      "@rezumerai/utils/*": ["../utils/src/*"],
+      "@rezumerai/ui": ["../ui/src"],
+      "@rezumerai/ui/*": ["../ui/src/*"],
+      "@rezumerai/vitest-config": ["../vitest-config/src"],
+      "@rezumerai/vitest-config/*": ["../vitest-config/src/*"]
+    }
   },
   "exclude": ["node_modules"]
 }

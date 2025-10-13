@@ -1,9 +1,19 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: {
+    index: "src/index.ts",
+    styles: "src/styles.ts",
+    string: "src/string.ts",
+    date: "src/date.ts",
+    // Add more utilities here as you create them
+    // Example: "validation": "src/validation.ts",
+    // Example: "api": "src/api.ts",
+  },
   format: ["cjs", "esm"],
-  dts: true,
+  dts: {
+    resolve: true,
+  },
   splitting: false,
   sourcemap: true,
   clean: true,

@@ -1,12 +1,31 @@
 {
   "extends": "@rezumerai/tsconfig/next.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@rezumerai/ui": ["../../packages/ui/src"],
+      "@rezumerai/ui/*": ["../../packages/ui/src/*"],
+      "@rezumerai/types": ["../../packages/types/src"],
+      "@rezumerai/types/*": ["../../packages/types/src/*"],
+      "@rezumerai/utils": ["../../packages/utils/src"],
+      "@rezumerai/utils/*": ["../../packages/utils/src/*"],
+      "@rezumerai/database": ["../../packages/database"],
+      "@rezumerai/database/*": ["../../packages/database/*"]
+    },
     "plugins": [
       {
         "name": "next"
       }
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "tailwind.config.ts", "vitest.config.nts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/types/**/*.ts",
+    "tailwind.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "**/*.test.*"]
 }

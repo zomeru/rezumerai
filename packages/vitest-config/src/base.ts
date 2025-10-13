@@ -5,6 +5,7 @@ export const createBaseConfig = (dirname: string) => ({
   test: {
     globals: true,
     coverage: {
+      provider: "v8" as const,
       reporter: ["text", "json", "html"],
       exclude: [
         "node_modules/",

@@ -6,12 +6,29 @@
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,
   "tailwindCSS.experimental.classRegex": [
-    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ["cva\\\\(([^)]*)\\\\)", "[\\\"'`]([^\\\"'`]*).*?[\\\"'`]"],
+    ["cx\\\\(([^)]*)\\\\)", "(?:'|\\\"|`)([^']*)(?:'|\\\"|`)"]
   ],
+
+  // TypeScript Configuration for Monorepo
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.preferences.autoImportFileExcludePatterns": ["next/router.d.ts", "next/dist/client/router.d.ts"],
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "typescript.suggest.includeCompletionsForImportStatements": true,
+  "typescript.preferences.useLabelDetailsInCompletionEntries": true,
+  "typescript.suggest.completeFunctionCalls": true,
+  "typescript.workspaceSymbols.scope": "allOpenProjects",
+
+  // Enable TypeScript references in monorepo
+  "typescript.references.enabled": true,
+  "typescript.implementation.enabled": true,
+
+  // Better auto-import resolution for workspace packages
+  "typescript.suggest.autoImports": true,
+  "typescript.suggest.paths": true,
+  "typescript.preferences.resolveStyleAndWatchPreference": "usePollWatching",
 
   // Testing
   "vitest.enable": true,
@@ -27,7 +44,17 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/.turbo": true,
-    "**/coverage": true
+    "**/coverage": true,
+    "**/.tsbuildinfo": true
+  },
+
+  // File watcher exclusions for better performance
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.turbo/**": true,
+    "**/coverage/**": true,
+    "**/.tsbuildinfo": true
   },
 
   // Formatters by language
@@ -42,5 +69,17 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+
+  // IntelliSense optimizations
+  "editor.suggest.showWords": false,
+  "editor.suggest.localityBonus": true,
+  "editor.suggest.shareSuggestSelections": true,
+  "editor.wordBasedSuggestions": "off",
+  "editor.quickSuggestionsDelay": 0,
+
+  // Breadcrumbs for better navigation
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.showFiles": true,
+  "breadcrumbs.showModules": true
 }
