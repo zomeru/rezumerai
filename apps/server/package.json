@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "pnpm run build && concurrently \"npm run watch-compile\" \"npm run watch-dev\"",
-    "watch-compile": "pnpm with-env swc . -w --out-dir dist --ignore node_modules,dist",
+    "watch-compile": "pnpm with-env swc src index.ts -w --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec.*,vitest.config.ts,**/test/**",
     "watch-dev": "pnpm with-env nodemon --watch dist --ext js --exec \"node -r tsconfig-paths/register dist/index.js\"",
-    "build": "pnpm with-env swc . --out-dir dist --ignore node_modules,dist",
+    "build": "pnpm with-env swc src index.ts --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec*,vitest.config.ts,**/test/**",
     "start": "node -r tsconfig-paths/register dist/index.js",
     "check-types": "tsc --noEmit",
     "test": "vitest --run",
