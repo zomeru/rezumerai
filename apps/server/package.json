@@ -7,7 +7,7 @@
     "watch-compile": "pnpm with-env swc . -w --out-dir dist --ignore node_modules,dist",
     "watch-dev": "pnpm with-env nodemon --watch dist --ext js --exec \"node -r tsconfig-paths/register dist/index.js\"",
     "build": "pnpm with-env swc . --out-dir dist --ignore node_modules,dist",
-    "start": "pnpm with-env node -r tsconfig-paths/register dist/index.js",
+    "start": "node -r tsconfig-paths/register dist/index.js",
     "check-types": "tsc --noEmit",
     "test": "vitest --run",
     "test:watch": "vitest --watch",

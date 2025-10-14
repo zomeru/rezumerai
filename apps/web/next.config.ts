@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  transpilePackages: ["@rezumerai/ui"],
+  output: "standalone",
 };
 
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
