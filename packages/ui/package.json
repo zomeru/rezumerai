@@ -58,7 +58,7 @@
     "tailwindcss": "^4.1.14",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
-    "typescript": "5.9.2",
+    "typescript": "5.9.3",
     "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@10.18.2",
