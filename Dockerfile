@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for production builds
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 
 # Install pnpm
 RUN npm install -g pnpm@10.18.2
@@ -20,7 +20,7 @@ COPY . .
 RUN pnpm build
 
 # Production server image
-FROM node:22-alpine AS server
+FROM node:24-alpine AS server
 WORKDIR /app
 
 # Install pnpm
@@ -35,7 +35,7 @@ EXPOSE 8080
 CMD ["node", "server/index.js"]
 
 # Production web image  
-FROM node:22-alpine AS web
+FROM node:24-alpine AS web
 WORKDIR /app
 
 # Copy built Next.js app
