@@ -48,3 +48,22 @@ export function isToday(date: Date | string): boolean {
     dateObj.getFullYear() === today.getFullYear()
   );
 }
+
+/**
+ * Formats a date string (YYYY-MM) to "Mon YYYY" format (e.g., "Jan 2020")
+ * Returns an empty string if the input is invalid.
+ * @param date - The date string in "YYYY-MM" format.
+ * @returns Formatted date string or empty string.
+ */
+export function formatShortDate(date: string): string {
+  if (!date) return "";
+
+  const [year, month] = date.split("-");
+
+  const yearNum = Number(year);
+  const monthNum = Number(month);
+
+  if (Number.isNaN(yearNum) || Number.isNaN(monthNum)) return "";
+
+  return new Date(yearNum, monthNum - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
