@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database
-  db:
+  database:
     image: postgres:18-alpine
     env_file:
       - .env.local
@@ -14,48 +14,52 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zomeru} -d ${POSTGRES_DB:-rezumerdb}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
   # Redis (optional, for caching/sessions)
-  redis:
-    image: redis:7-alpine
-    env_file:
-      - .env.local
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+  # redis:
+  #   image: redis:7-alpine
+  #   env_file:
+  #     - .env.local
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
 
   web:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
+    restart: unless-stopped
     env_file:
       - .env.local
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      server:
+        condition: service_started
     environment:
       NODE_ENV: production
     networks:
       - app_network
 
-  api:
+  server:
     build:
       context: .
       dockerfile: ./apps/server/Dockerfile
+    restart: always
     env_file:
       - .env.local
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      database:
+        condition: service_healthy
     environment:
       NODE_ENV: production
     networks:
