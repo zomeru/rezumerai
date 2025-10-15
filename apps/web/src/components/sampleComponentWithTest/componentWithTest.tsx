@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { ClientDate } from "../client-date";
 import { UserFetcher } from "../user-fetcher";
 
-export default function Home() {
+export default function SampleComponentWithTest() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
 
