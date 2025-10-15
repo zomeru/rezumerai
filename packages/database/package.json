@@ -1,6 +1,17 @@
 {
   "name": "@rezumerai/database",
   "version": "1.0.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
     "dev": "concurrently \"pnpm db:push\" \"pnpm db:generate\" \"pnpm watch\"",
     "build": "pnpm db:generate && pnpm with-env tsup",
