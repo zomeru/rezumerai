@@ -1,13 +1,9 @@
 # Run comprehensive checks before push
 echo "🚀 Running pre-push checks..."
 
-# Lint all code (check only, don't fix)
-echo "📝 Linting all code..."
-pnpm lint
-
-# Format check all code (check only, don't fix)  
-echo "🎨 Checking code formatting..."
-pnpm format
+# Run formatter, linter and import sorting on all code
+echo "🎨 Running formatter, linter and import sorting"
+pnpm check
 
 # Type check all code
 echo "🔧 Type checking all code..."
