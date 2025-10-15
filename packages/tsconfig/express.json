@@ -15,7 +15,11 @@
     "experimentalDecorators": true,
     "module": "ESNext",
     "paths": {
-      "@/*": [".src/*"]
+      "@/*": [".src/*"],
+      "@rezumerai/types": ["../types/src"],
+      "@rezumerai/types/*": ["../types/src/*"],
+      "@rezumerai/utils": ["../utils/src"],
+      "@rezumerai/utils/*": ["../utils/src/*"]
     },
     "baseUrl": "./src"
   }

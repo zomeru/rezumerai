@@ -23,7 +23,21 @@
     "tailwindcss-server": {
       "command": "npx",
       "args": ["-y", "tailwindcss-mcp-server"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${input:context7}"
+      }
     }
   },
-  "inputs": []
+  "inputs": [
+    {
+      "id": "context7",
+      "type": "promptString",
+      "password": true,
+      "description": "Enter you Context7 API key"
+    }
+  ]
 }
