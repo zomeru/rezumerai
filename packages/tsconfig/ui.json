@@ -10,11 +10,7 @@
       "@rezumerai/types/*": ["../types/src/*"],
       "@rezumerai/utils": ["../utils/src"],
       "@rezumerai/utils/*": ["../utils/src/*"],
-      "@rezumerai/utils/styles": ["../utils/src/styles"],
-      "@rezumerai/database": ["../database"],
-      "@rezumerai/database/*": ["../database/*"],
-      "@rezumerai/vitest-config": ["../vitest-config/src"],
-      "@rezumerai/vitest-config/*": ["../vitest-config/src/*"]
+      "@rezumerai/utils/styles": ["../utils/src/styles"]
     },
     "allowJs": true,
     "skipLibCheck": true,

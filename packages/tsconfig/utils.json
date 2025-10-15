@@ -8,10 +8,6 @@
       "@/*": ["./*"],
       "@rezumerai/types": ["../types/src"],
       "@rezumerai/types/*": ["../types/src/*"],
-      "@rezumerai/ui": ["../ui/src"],
-      "@rezumerai/ui/*": ["../ui/src/*"],
-      "@rezumerai/database": ["../database"],
-      "@rezumerai/database/*": ["../database/*"],
       "@rezumerai/vitest-config": ["../vitest-config/src"],
       "@rezumerai/vitest-config/*": ["../vitest-config/src/*"]
     },
