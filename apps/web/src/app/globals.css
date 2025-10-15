@@ -1,1 +1,38 @@
 @import "@rezumerai/ui/globals.css";
+
+@theme {
+  /* Backgrounds */
+  --color-background-100: oklch(0.98 0 0);
+  --color-background-200: oklch(0.96 0.01 250);
+  --color-surface-100: oklch(0.99 0 0);
+  --color-surface-200: oklch(0.95 0.01 250);
+
+  /* Primary – Vibrant Blue */
+  --color-primary-100: oklch(0.93 0.04 250);
+  --color-primary-200: oklch(0.86 0.08 250);
+  --color-primary-300: oklch(0.75 0.13 250);
+  --color-primary-400: oklch(0.67 0.16 250);
+  --color-primary-500: oklch(0.58 0.17 250); /* #2563EB */
+  --color-primary-600: oklch(0.48 0.15 250);
+  --color-primary-700: oklch(0.4 0.13 250);
+
+  /* Secondary – Sky Blue */
+  --color-secondary-100: oklch(0.95 0.04 230);
+  --color-secondary-200: oklch(0.89 0.08 230);
+  --color-secondary-300: oklch(0.8 0.12 230);
+  --color-secondary-400: oklch(0.7 0.15 230);
+  --color-secondary-500: oklch(0.61 0.16 230); /* #0EA5E9 */
+  --color-secondary-600: oklch(0.5 0.14 230);
+
+  /* Accent – Elegant Violet */
+  --color-accent-100: oklch(0.94 0.06 300);
+  --color-accent-200: oklch(0.85 0.11 300);
+  --color-accent-300: oklch(0.75 0.16 300);
+  --color-accent-400: oklch(0.65 0.19 300);
+  --color-accent-500: oklch(0.56 0.21 300); /* #9333EA */
+  --color-accent-600: oklch(0.45 0.18 300);
+}
+
+button {
+  cursor: pointer;
+}

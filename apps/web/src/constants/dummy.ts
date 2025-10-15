@@ -210,7 +210,18 @@ export const dummyResumeData = [
     public: true,
     professional_summary:
       "Dedicated Backend Developer with 7+ years of experience building secure, high-performance APIs and microservices using Node.js, Python, and PostgreSQL. Passionate about scalability, automation, and clean architecture.",
-    skills: ["Node.js", "Python", "PostgreSQL", "MongoDB", "Docker", "Kubernetes", "CI/CD", "Redis", "GraphQL", "AWS"],
+    skills: [
+      "Node.js",
+      "Python",
+      "PostgreSQL",
+      "MongoDB",
+      "Docker",
+      "Kubernetes",
+      "CI/CD",
+      "Redis",
+      "GraphQL",
+      "AWS",
+    ],
     experience: [
       {
         company: "DataNest Solutions",

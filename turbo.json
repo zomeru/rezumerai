@@ -9,16 +9,7 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "lint": {
-      "dependsOn": ["^topo"]
-    },
-    "lint:fix": {
-      "dependsOn": ["^topo"]
-    },
-    "format": {
-      "dependsOn": ["^topo"]
-    },
-    "format:fix": {
+    "check": {
       "dependsOn": ["^topo"]
     },
     "check-types": {

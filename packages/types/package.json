@@ -19,10 +19,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "check-types": "tsc --noEmit",
-    "lint": "biome lint ./src",
-    "lint:fix": "biome lint --write ./src",
-    "format": "biome format ./src",
-    "format:fix": "biome format --write ./src",
+    "check": "biome check --write src",
     "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {

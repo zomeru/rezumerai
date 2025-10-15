@@ -4,14 +4,17 @@ import type { TemplateProps } from "./types";
 
 const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white text-gray-800 leading-relaxed">
+    <div className="mx-auto max-w-4xl bg-white p-8 text-gray-800 leading-relaxed">
       {/* Header */}
-      <header className="text-center mb-8 pb-6 border-b-2" style={{ borderColor: accentColor }}>
-        <h1 className="text-3xl font-bold mb-2" style={{ color: accentColor }}>
+      <header
+        className="mb-8 border-b-2 pb-6 text-center"
+        style={{ borderColor: accentColor }}
+      >
+        <h1 className="mb-2 font-bold text-3xl" style={{ color: accentColor }}>
           {data.personal_info?.full_name || "Your Name"}
         </h1>
 
-        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
+        <div className="flex flex-wrap justify-center gap-4 text-gray-600 text-sm">
           {data.personal_info?.email && (
             <div className="flex items-center gap-1">
               <Mail className="size-4" />
@@ -48,37 +51,55 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Professional Summary */}
       {data.professional_summary && (
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-3" style={{ color: accentColor }}>
+          <h2
+            className="mb-3 font-semibold text-xl"
+            style={{ color: accentColor }}
+          >
             PROFESSIONAL SUMMARY
           </h2>
-          <p className="text-gray-700 leading-relaxed">{data.professional_summary}</p>
+          <p className="text-gray-700 leading-relaxed">
+            {data.professional_summary}
+          </p>
         </section>
       )}
 
       {/* Experience */}
       {data.experience && data.experience.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-4" style={{ color: accentColor }}>
+          <h2
+            className="mb-4 font-semibold text-xl"
+            style={{ color: accentColor }}
+          >
             PROFESSIONAL EXPERIENCE
           </h2>
 
           <div className="space-y-4">
             {data.experience.map((exp) => (
-              <div key={exp.company} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
-                <div className="flex justify-between items-start mb-2">
+              <div
+                key={exp.company}
+                className="border-l-3 pl-4"
+                style={{ borderColor: accentColor }}
+              >
+                <div className="mb-2 flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                    <p className="text-gray-700 font-medium">{exp.company}</p>
+                    <h3 className="font-semibold text-gray-900">
+                      {exp.position}
+                    </h3>
+                    <p className="font-medium text-gray-700">{exp.company}</p>
                   </div>
-                  <div className="text-right text-sm text-gray-600">
+                  <div className="text-right text-gray-600 text-sm">
                     <p>
                       {formatShortDate(exp.start_date)} -{" "}
-                      {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
+                      {exp.is_current
+                        ? "Present"
+                        : formatShortDate(exp.end_date ?? "")}
                     </p>
                   </div>
                 </div>
                 {exp.description && (
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">{exp.description}</div>
+                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+                    {exp.description}
+                  </div>
                 )}
               </div>
             ))}
@@ -89,15 +110,21 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Projects */}
       {data.project && data.project.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-4" style={{ color: accentColor }}>
+          <h2
+            className="mb-4 font-semibold text-xl"
+            style={{ color: accentColor }}
+          >
             PROJECTS
           </h2>
 
-          <ul className="space-y-3 ">
+          <ul className="space-y-3">
             {data.project.map((proj) => (
-              <div key={proj.description} className="flex justify-between items-start border-l-3 border-gray-300 pl-6">
+              <div
+                key={proj.description}
+                className="flex items-start justify-between border-gray-300 border-l-3 pl-6"
+              >
                 <div>
-                  <li className="font-semibold text-gray-800 ">{proj.name}</li>
+                  <li className="font-semibold text-gray-800">{proj.name}</li>
                   <p className="text-gray-600">{proj.description}</p>
                 </div>
               </div>
@@ -109,21 +136,29 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Education */}
       {data.education && data.education.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-4" style={{ color: accentColor }}>
+          <h2
+            className="mb-4 font-semibold text-xl"
+            style={{ color: accentColor }}
+          >
             EDUCATION
           </h2>
 
           <div className="space-y-3">
             {data.education.map((edu) => (
-              <div key={edu.institution} className="flex justify-between items-start">
+              <div
+                key={edu.institution}
+                className="flex items-start justify-between"
+              >
                 <div>
                   <h3 className="font-semibold text-gray-900">
                     {edu.degree} {edu.field && `in ${edu.field}`}
                   </h3>
                   <p className="text-gray-700">{edu.institution}</p>
-                  {edu.gpa && <p className="text-sm text-gray-600">GPA: {edu.gpa}</p>}
+                  {edu.gpa && (
+                    <p className="text-gray-600 text-sm">GPA: {edu.gpa}</p>
+                  )}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-gray-600 text-sm">
                   <p>{formatShortDate(edu.graduation_date)}</p>
                 </div>
               </div>
@@ -135,11 +170,14 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Skills */}
       {data.skills && data.skills.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-4" style={{ color: accentColor }}>
+          <h2
+            className="mb-4 font-semibold text-xl"
+            style={{ color: accentColor }}
+          >
             CORE SKILLS
           </h2>
 
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-wrap gap-4">
             {data.skills.map((skill) => (
               <div key={skill} className="text-gray-700">
                 • {skill}

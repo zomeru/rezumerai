@@ -13,9 +13,16 @@ export default function SampleComponentWithTest() {
   const [newUserEmail, setNewUserEmail] = useState("");
 
   // Use ts-rest queries
-  const { data: healthData, isLoading: healthLoading } = api.getHealth.useQuery(["health"]);
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = api.getUsers.useQuery(["users"]);
-  const { data: projectsData, isLoading: projectsLoading } = api.getProjects.useQuery(["projects"]);
+  const { data: healthData, isLoading: healthLoading } = api.getHealth.useQuery(
+    ["health"],
+  );
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    refetch: refetchUsers,
+  } = api.getUsers.useQuery(["users"]);
+  const { data: projectsData, isLoading: projectsLoading } =
+    api.getProjects.useQuery(["projects"]);
 
   // Use ts-rest mutations
   const createUserMutation = api.createUser.useMutation({
@@ -39,20 +46,24 @@ export default function SampleComponentWithTest() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{capitalize("welcome to rezumerai")}</h1>
+    <div className="mx-auto max-w-4xl p-8">
+      <h1 className="mb-6 font-bold text-3xl">
+        {capitalize("welcome to rezumerai")}
+      </h1>
       <p className="mb-6 text-gray-600">
         <ClientDate prefix="Today is: " options={{ dateStyle: "full" }} />
       </p>
 
       {/* Health Check */}
-      <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">Server Health</h2>
+      <div className="mb-8 rounded-lg bg-gray-50 p-4">
+        <h2 className="mb-2 font-semibold text-xl">Server Health</h2>
         {healthLoading ? (
           <p>Loading...</p>
         ) : (
           <div>
-            <p>Status: {healthData?.body.success ? "✅ Healthy" : "❌ Unhealthy"}</p>
+            <p>
+              Status: {healthData?.body.success ? "✅ Healthy" : "❌ Unhealthy"}
+            </p>
             {healthData?.body.data && (
               <div className="mt-2">
                 <p>Message: {healthData.body.data.message}</p>
@@ -65,17 +76,17 @@ export default function SampleComponentWithTest() {
       </div>
 
       {/* Users Section */}
-      <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Users</h2>
+      <div className="mb-8 rounded-lg bg-blue-50 p-4">
+        <h2 className="mb-4 font-semibold text-xl">Users</h2>
         {usersLoading ? (
           <p>Loading users...</p>
         ) : (
           <div>
-            <div className="grid gap-2 mb-4">
+            <div className="mb-4 grid gap-2">
               {usersData?.body.data?.map((user: UserType) => (
-                <div key={user.id} className="p-2 bg-white rounded border">
+                <div key={user.id} className="rounded border bg-white p-2">
                   <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-gray-600 text-sm">{user.email}</p>
                 </div>
               ))}
             </div>
@@ -88,7 +99,7 @@ export default function SampleComponentWithTest() {
                 placeholder="Name"
                 value={newUserName}
                 onChange={(e) => setNewUserName(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full rounded border p-2"
                 required
               />
               <input
@@ -96,10 +107,14 @@ export default function SampleComponentWithTest() {
                 placeholder="Email"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full rounded border p-2"
                 required
               />
-              <Button appName="RezumerAI" type="submit" disabled={createUserMutation.isPending}>
+              <Button
+                appName="RezumerAI"
+                type="submit"
+                disabled={createUserMutation.isPending}
+              >
                 {createUserMutation.isPending ? "Creating..." : "Create User"}
               </Button>
             </form>
@@ -111,17 +126,19 @@ export default function SampleComponentWithTest() {
       <UserFetcher className="mb-8" />
 
       {/* Projects Section */}
-      <div className="mb-8 p-4 bg-green-50 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Projects</h2>
+      <div className="mb-8 rounded-lg bg-green-50 p-4">
+        <h2 className="mb-4 font-semibold text-xl">Projects</h2>
         {projectsLoading ? (
           <p>Loading projects...</p>
         ) : (
           <div className="grid gap-2">
             {projectsData?.body.data?.map((project) => (
-              <div key={project.id} className="p-3 bg-white rounded border">
+              <div key={project.id} className="rounded border bg-white p-3">
                 <h3 className="font-medium">{project.title}</h3>
-                <p className="text-sm text-gray-600">{project.description}</p>
-                <p className="text-xs text-gray-500">User ID: {project.userId}</p>
+                <p className="text-gray-600 text-sm">{project.description}</p>
+                <p className="text-gray-500 text-xs">
+                  User ID: {project.userId}
+                </p>
               </div>
             ))}
           </div>

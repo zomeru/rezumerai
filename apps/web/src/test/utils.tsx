@@ -23,7 +23,9 @@ interface TestProvidersProps {
 function TestProviders({ children }: TestProvidersProps) {
   const queryClient = createTestQueryClient();
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 }
 
 // Custom render function that includes providers

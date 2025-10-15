@@ -3,32 +3,15 @@
   "vcs": {
     "enabled": false,
     "clientKind": "git",
-    "useIgnoreFile": false
+    "useIgnoreFile": true
   },
   "files": {
     "ignoreUnknown": false,
-    "experimentalScannerIgnores": [
-      "node_modules/*",
-      "*.config.*",
-      "*.json",
-      "tsconfig.json",
-      ".turbo",
-      "dist/**",
-      "**/dist/**",
-      "build/**",
-      "**/build/**",
-      "out/**",
-      "**/out/**",
-      ".next/**",
-      "**/.next/**"
-    ]
+    "experimentalScannerIgnores": [".next", ".turbo", "dist", "node_modules"]
   },
   "formatter": {
     "enabled": true,
-    "formatWithErrors": false,
-    "indentStyle": "space",
-    "lineEnding": "lf",
-    "lineWidth": 120
+    "indentStyle": "space"
   },
   "linter": {
     "enabled": true,
@@ -48,6 +31,15 @@
       },
       "suspicious": {
         "noUnknownAtRules": "off"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "on",
+          "fix": "safe",
+          "options": {
+            "functions": ["clsx", "cva", "cn"]
+          }
+        }
       }
     }
   },

@@ -1,8 +1,30 @@
-export default function BannerWithTag({ tag }: { tag: string }) {
+import { cn } from "@rezumerai/utils/styles";
+
+export default function BannerWithTag({
+  tag,
+  bannerStyle,
+  textStyle,
+}: {
+  tag: string;
+  bannerStyle?: string;
+  textStyle?: string;
+}) {
   return (
-    <div className="w-full py-2.5 font-medium text-sm text-green-800 text-center bg-linear-to-r from-[#ABFF7E] to-[#FDFEFF]">
+    <div
+      className={cn(
+        "w-full bg-linear-to-r from-[#ABFF7E] to-[#FDFEFF] py-2.5 text-center font-medium text-green-800 text-sm",
+        bannerStyle,
+      )}
+    >
       <p>
-        <span className="px-3 py-1 rounded-lg text-white bg-green-600 mr-2">New</span>
+        <span
+          className={cn(
+            "mr-2 rounded-lg bg-green-600 px-3 py-1 text-white",
+            textStyle,
+          )}
+        >
+          New
+        </span>
         {tag}
       </p>
     </div>

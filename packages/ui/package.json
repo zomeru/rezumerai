@@ -30,10 +30,7 @@
     "test": "vitest --run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "lint": "biome check ./src",
-    "lint:fix": "biome check --write ./src",
-    "format": "biome format ./src",
-    "format:fix": "biome format --write ./src",
+    "check": "biome check --write src global.css",
     "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {

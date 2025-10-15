@@ -4,6 +4,7 @@
     "source.fixAll.biome": "explicit"
   },
   "editor.defaultFormatter": "biomejs.biome",
+  "biome.configurationPath": "./biome.json",
   "editor.formatOnSave": true,
   "tailwindCSS.experimental.classRegex": [
     ["cva\\\\(([^)]*)\\\\)", "[\\\"'`]([^\\\"'`]*).*?[\\\"'`]"],
@@ -13,26 +14,19 @@
   // TypeScript Configuration for Monorepo
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.preferences.autoImportFileExcludePatterns": ["next/router.d.ts", "next/dist/client/router.d.ts"],
+  "typescript.preferences.autoImportFileExcludePatterns": [
+    "next/router.d.ts",
+    "next/dist/client/router.d.ts"
+  ],
   "typescript.preferences.includePackageJsonAutoImports": "on",
   "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
   "typescript.suggest.includeCompletionsForImportStatements": true,
-  "typescript.preferences.useLabelDetailsInCompletionEntries": true,
   "typescript.suggest.completeFunctionCalls": true,
   "typescript.workspaceSymbols.scope": "allOpenProjects",
-
-  // Enable TypeScript references in monorepo
-  "typescript.references.enabled": true,
-  "typescript.implementation.enabled": true,
 
   // Better auto-import resolution for workspace packages
   "typescript.suggest.autoImports": true,
   "typescript.suggest.paths": true,
-  "typescript.preferences.resolveStyleAndWatchPreference": "usePollWatching",
-
-  // Testing
-  "vitest.enable": true,
-  "vitest.commandLine": "pnpm exec vitest",
 
   // File associations
   "files.associations": {
@@ -55,20 +49,6 @@
     "**/.turbo/**": true,
     "**/coverage/**": true,
     "**/.tsbuildinfo": true
-  },
-
-  // Formatters by language
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
   },
 
   // IntelliSense optimizations

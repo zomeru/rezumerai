@@ -10,13 +10,10 @@
     "build:production": "NODE_ENV=production turbo build",
     "dev": "turbo dev",
     "dev:db": "docker-compose up -d db redis",
-    "format": "turbo format --continue --",
-    "format:fix": "turbo format:fix --continue --",
-    "lint": "turbo lint --continue --",
-    "lint:fix": "turbo lint:fix --continue --",
+    "check": "turbo check --continue --",
     "lint-staged": "lint-staged",
     "check-types": "turbo check-types --continue --",
-    "code:check": "pnpm format && pnpm lint && pnpm check-types",
+    "code:check": "pnpm check && pnpm check-types",
     "test": "turbo test --continue --",
     "test:watch": "turbo test:watch --continue --",
     "test:ui": "turbo test:ui --continue --",
@@ -48,9 +45,8 @@
     }
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,md}": [
-      "pnpm format:fix",
-      "pnpm lint:fix"
+    "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
+      "pnpm check"
     ]
   },
   "packageManager": "pnpm@10.18.2",

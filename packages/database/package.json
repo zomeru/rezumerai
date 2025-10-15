@@ -23,10 +23,7 @@
     "db:migrate:prod": "pnpm with-env prisma migrate deploy",
     "db:studio": "pnpm with-env prisma studio --port 5556",
     "check-types": "pnpm db:generate && tsc --noEmit",
-    "lint": "biome lint index.ts",
-    "lint:fix": "biome lint --write index.ts",
-    "format": "biome format index.ts",
-    "format:fix": "biome format --write index.ts",
+    "check": "biome check --write index.ts prisma",
     "clean": "rm -rf node_modules .turbo dist",
     "with-env": "dotenv -e ../../.env.local --"
   },

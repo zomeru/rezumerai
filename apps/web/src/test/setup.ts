@@ -83,8 +83,18 @@ vi.mock("../lib/api", () => ({
           body: {
             success: true,
             data: [
-              { id: "1", title: "Resume Builder", description: "Build amazing resumes", userId: "1" },
-              { id: "2", title: "Portfolio Site", description: "Personal portfolio website", userId: "2" },
+              {
+                id: "1",
+                title: "Resume Builder",
+                description: "Build amazing resumes",
+                userId: "1",
+              },
+              {
+                id: "2",
+                title: "Portfolio Site",
+                description: "Personal portfolio website",
+                userId: "2",
+              },
             ],
           },
         },
