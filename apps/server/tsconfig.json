@@ -18,5 +18,5 @@
     "verbatimModuleSyntax": false
   },
   "include": ["src/**/*.ts", "index.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.*"]
+  "exclude": ["node_modules", "dist", "**/*.test.*", "vitest.config.ts"]
 }

@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  transpilePackages: ["@rezumerai/ui"],
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
 };
 
 const withBundleAnalyzer = require("@next/bundle-analyzer")({

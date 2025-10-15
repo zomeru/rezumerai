@@ -4,22 +4,10 @@
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "check-types": "tsc --noEmit",
-    "lint": "biome lint ./src",
-    "lint:fix": "biome lint --write ./src",
-    "format": "biome format ./src",
-    "format:fix": "biome format --write ./src",
-    "clean": "rm -rf node_modules .turbo dist"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@rezumerai/tsconfig": "workspace:*"
-  },
+  "module": "./dist/index.mjs",
+  "files": [
+    "dist/**"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -27,12 +15,26 @@
       "require": "./dist/index.js"
     }
   },
-  "packageManager": "pnpm@10.18.2",
-  "engines": {
-    "node": ">=22"
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format ./src",
+    "format:fix": "biome format --write ./src",
+    "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {
     "@ts-rest/core": "3.53.0-rc.1",
     "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@rezumerai/tsconfig": "workspace:*",
+    "tsup": "8.5.0"
+  },
+  "packageManager": "pnpm@10.18.2",
+  "engines": {
+    "node": ">=22"
   }
 }
