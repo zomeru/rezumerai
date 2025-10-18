@@ -42,7 +42,16 @@
   "pnpm": {
     "overrides": {
       "esbuild": ">=0.25.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "@swc/core",
+      "@tailwindcss/oxide",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
@@ -51,6 +60,6 @@
   },
   "packageManager": "pnpm@10.18.3",
   "engines": {
-    "node": ">=22"
+    "node": "22.20.0"
   }
 }

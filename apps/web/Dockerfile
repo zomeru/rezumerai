@@ -1,5 +1,5 @@
 # ---- Base ----
-FROM node:22-slim AS base
+FROM node:22.20.0-slim AS base
 RUN apt-get update && apt-get install -y \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
@@ -37,7 +37,7 @@ COPY --from=builder /app/out/full/ .
 RUN pnpm dlx turbo@^2.5.8 build --filter=web
 
 # ---- Runner ----
-FROM node:22-slim AS runner
+FROM node:22.20.0-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
