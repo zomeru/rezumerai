@@ -9,7 +9,7 @@ RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and pnpm. It
 - `packages/types`, `packages/utils`, `packages/ui`, `packages/vitest-config`, `packages/tsconfig`: Shared types, utilities, UI components, and configs
 
 ### Key Patterns & Structure
-- **pnpm workspaces**: All dependency management and scripts use pnpm (v10.18.2+). Never use npm or yarn.
+- **pnpm workspaces**: All dependency management and scripts use pnpm (v10.18.3+). Never use npm or yarn.
 - **TypeScript everywhere**: Types are centralized in `packages/types` and shared across all apps/packages.
 - **Prisma**: Database schema and migrations in `packages/database/prisma/schema.prisma`. Use scripts in `packages/database/scripts/` for migrations.
 - **Testing**: Vitest is used everywhere. Test setup files are in `src/test` or alongside components. Shared config in `packages/vitest-config`.
@@ -23,7 +23,7 @@ RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and pnpm. It
 ## Developer Workflows
 - **Install dependencies:**
   ```sh
-  corepack enable && corepack prepare pnpm@10.18.2 --activate
+  corepack enable && corepack prepare pnpm@10.18.3 --activate
   pnpm install
   ```
 - **Run all apps in dev mode:**

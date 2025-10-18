@@ -3,7 +3,7 @@ FROM node:22-slim AS base
 RUN apt-get update && apt-get install -y \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.18.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.18.3 --activate
 WORKDIR /app
 
 # ---- Prune ----
