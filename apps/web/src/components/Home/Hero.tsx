@@ -1,8 +1,30 @@
 "use client";
 
+import { faker } from "@faker-js/faker";
+import Image from "next/image";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import Logo from "../Logo";
+
+const stars = Array(5)
+  .fill(0)
+  .map(() => uuidv4());
+
+const menuItems = [
+  { label: "Home", href: "#", id: uuidv4() },
+  { label: "Features", href: "#features", id: uuidv4() },
+  { label: "Testimonials", href: "#testimonials", id: uuidv4() },
+  { label: "GitHub", href: "#github", id: uuidv4() },
+];
+
+const usersWithAvatars = Array(5)
+  .fill(0)
+  .map(() => ({
+    id: uuidv4(),
+    name: faker.person.firstName(),
+    avatar: faker.image.avatar(),
+  }));
 
 const logos = [
   "instagram.svg",
@@ -14,9 +36,6 @@ const logos = [
   const baseUrl = "https://saasly.prebuiltui.com/assets/companies-logo/";
   return { url: `${baseUrl}${url}`, id: uuidv4() };
 });
-const stars = Array(5)
-  .fill(0)
-  .map(() => uuidv4());
 
 export default function Hero() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,37 +45,29 @@ export default function Hero() {
     <div>
       {/* Navbar */}
       <nav className="z-50 flex w-full items-center justify-between px-6 py-4 text-sm md:px-16 lg:px-24 xl:px-40">
-        <Link href="#">
-          <h1 className="font-bold text-2xl text-primary-600">Rezumer AI</h1>
-        </Link>
+        <Logo />
 
         <div className="hidden items-center gap-8 text-slate-800 transition duration-500 md:flex">
-          <Link href="#" className="transition hover:text-primary-600">
-            Home
-          </Link>
-          <Link href="#features" className="transition hover:text-primary-600">
-            Features
-          </Link>
-          <Link
-            href="#testimonials"
-            className="transition hover:text-primary-600"
-          >
-            Testimonials
-          </Link>
-          <Link href="#cta" className="transition hover:text-primary-600">
-            Contact
-          </Link>
+          {menuItems.map(({ label, href, id }) => (
+            <Link
+              key={id}
+              href={href}
+              className="transition hover:text-primary-600"
+            >
+              {label}
+            </Link>
+          ))}
         </div>
 
         <div className="flex gap-2">
           <Link
-            href=""
+            href="/signup"
             className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
           >
             Get started
           </Link>
           <Link
-            href=""
+            href="/signin"
             className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
           >
             Login
@@ -87,18 +98,16 @@ export default function Hero() {
       <div
         className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-black/40 text-black text-lg backdrop-blur transition-transform duration-300 md:hidden ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <Link href="#" className="text-white">
-          Home
-        </Link>
-        <Link href="#" className="text-white">
-          Features
-        </Link>
-        <Link href="#" className="text-white">
-          Testimonials
-        </Link>
-        <Link href="#" className="text-white">
-          Contact
-        </Link>
+        {menuItems.map(({ label, href, id }) => (
+          <Link
+            key={id}
+            href={href}
+            className="text-2xl text-white"
+            onClick={() => setMenuOpen(false)}
+          >
+            {label}
+          </Link>
+        ))}
         <button
           type="button"
           onClick={() => setMenuOpen(false)}
@@ -115,31 +124,19 @@ export default function Hero() {
         {/* Avatars + Stars */}
         <div className="mt-24 flex items-center">
           <div className="-space-x-3 flex pr-3">
-            <img
-              src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200"
-              alt="user3"
-              className="hover:-translate-y-0.5 z-[1] size-8 rounded-full border-2 border-white object-cover transition"
-            />
-            <img
-              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200"
-              alt="user1"
-              className="hover:-translate-y-0.5 z-2 size-8 rounded-full border-2 border-white object-cover transition"
-            />
-            <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200"
-              alt="user2"
-              className="hover:-translate-y-0.5 z-[3] size-8 rounded-full border-2 border-white object-cover transition"
-            />
-            <img
-              src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200"
-              alt="user3"
-              className="hover:-translate-y-0.5 z-[4] size-8 rounded-full border-2 border-white object-cover transition"
-            />
-            <img
-              src="https://randomuser.me/api/portraits/men/75.jpg"
-              alt="user5"
-              className="hover:-translate-y-0.5 z-[5] size-8 rounded-full border-2 border-white transition"
-            />
+            {usersWithAvatars.map(({ id, name, avatar }) => {
+              return (
+                <div className="relative" key={id}>
+                  <Image
+                    src={avatar}
+                    alt={name}
+                    className="hover:-translate-y-0.5 z-[1] size-8 rounded-full border-2 border-white object-cover transition"
+                    width={200}
+                    height={200}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           <div>
@@ -184,7 +181,7 @@ export default function Hero() {
         {/* CTA Buttons */}
         <div className="flex items-center gap-4">
           <Link
-            href="/"
+            href="/signup"
             className="m-1 flex h-12 items-center rounded-full bg-primary-500 px-9 text-white ring-1 ring-primary-400 ring-offset-2 transition-colors hover:bg-primary-600"
           >
             Get started
@@ -238,12 +235,15 @@ export default function Hero() {
           id={logoContainerId}
         >
           {logos.map(({ url, id }) => (
-            <img
-              key={id}
-              src={url}
-              alt="logo"
-              className="h-6 w-auto max-w-xs"
-            />
+            <div className="relative h-6 w-auto max-w-xs" key={id}>
+              <Image
+                src={url}
+                alt="Company logo"
+                className="h-6 w-auto object-contain opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
+                width={100}
+                height={24}
+              />
+            </div>
           ))}
         </div>
       </div>

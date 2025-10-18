@@ -1,39 +1,38 @@
+import { faker } from "@faker-js/faker";
 import { Badge, SectionTitle } from "@rezumerai/ui/components";
+import Image from "next/image";
+import { v4 as uuidv4 } from "uuid";
 
-const cardsData = [
-  {
-    image:
-      "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200",
-    name: "Briar Martin",
-    handle: "@neilstellar",
-    date: "April 20, 2025",
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200",
-    name: "Avery Johnson",
-    handle: "@averywrites",
-    date: "May 10, 2025",
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&auto=format&fit=crop&q=60",
-    name: "Jordan Lee",
-    handle: "@jordantalks",
-    date: "June 5, 2025",
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=60",
-    name: "Avery Johnson",
-    handle: "@averywrites",
-    date: "May 10, 2025",
-  },
-];
+type CardData = {
+  image: string;
+  name: string;
+  handle: string;
+  feedback: string;
+  date: string;
+  id: string;
+}[];
 
-const keyGen = () => {
-  return Date.now() + Math.random().toString(36).substring(2, 15);
-};
+const topCardsData = Array(8)
+  .fill(null)
+  .map(() => ({
+    image: faker.image.avatar(),
+    name: faker.person.firstName(),
+    handle: faker.internet.displayName(),
+    feedback: faker.lorem.sentence(),
+    date: faker.date.past().toDateString(),
+    id: uuidv4(),
+  }));
+
+const bottomCardsData = Array(8)
+  .fill(null)
+  .map(() => ({
+    image: faker.image.avatar(),
+    name: faker.person.firstName(),
+    handle: faker.internet.displayName(),
+    feedback: faker.lorem.sentence(),
+    date: faker.date.past().toDateString(),
+    id: uuidv4(),
+  }));
 
 export default function Testimonial() {
   return (
@@ -52,8 +51,15 @@ export default function Testimonial() {
                 animation-direction: reverse;
             }
         `}</style>
-      <div className="flex scroll-mt-12 flex-col items-center">
-        <Badge title="Simple Process" />
+      <div
+        className="flex scroll-mt-12 flex-col items-center"
+        id="testimonials"
+      >
+        <Badge
+          title="Simple Process"
+          style="text-primary-600"
+          svgStyle="fill-primary-600"
+        />
         <SectionTitle
           title="Testimonials"
           description="See what our users are saying about us"
@@ -61,8 +67,8 @@ export default function Testimonial() {
         <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-gradient-to-r from-white to-transparent"></div>
           <div className="marquee-inner flex min-w-[200%] transform-gpu pt-10 pb-5">
-            {[...cardsData, ...cardsData].map((card) => (
-              <CreateCard key={card.handle + keyGen()} card={card} />
+            {topCardsData.map((card) => (
+              <CreateCard key={card.id} card={card} />
             ))}
           </div>
           <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-gradient-to-l from-white to-transparent md:w-40"></div>
@@ -71,8 +77,8 @@ export default function Testimonial() {
         <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-gradient-to-r from-white to-transparent"></div>
           <div className="marquee-inner marquee-reverse flex min-w-[200%] transform-gpu pt-10 pb-5">
-            {[...cardsData, ...cardsData].map((card) => (
-              <CreateCard key={card.handle + keyGen()} card={card} />
+            {bottomCardsData.map((card) => (
+              <CreateCard key={card.id} card={card} />
             ))}
           </div>
           <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-gradient-to-l from-white to-transparent md:w-40"></div>
@@ -82,10 +88,19 @@ export default function Testimonial() {
   );
 }
 
-const CreateCard = ({ card }: { card: (typeof cardsData)[number] }) => (
+const CreateCard = ({ card }: { card: CardData[number] }) => (
   <div className="mx-4 w-72 shrink-0 rounded-lg p-4 shadow transition-all duration-200 hover:shadow-lg">
     <div className="flex gap-2">
-      <img className="size-11 rounded-full" src={card.image} alt="User" />
+      {/* <img className="size-11 rounded-full" src={card.image} alt="User" /> */}
+      <div className="relative size-11">
+        <Image
+          src={card.image}
+          alt="User"
+          className="rounded-full object-cover"
+          width={40}
+          height={40}
+        />
+      </div>
       <div className="flex flex-col">
         <div className="flex items-center gap-1">
           <p>{card.name}</p>
@@ -109,9 +124,7 @@ const CreateCard = ({ card }: { card: (typeof cardsData)[number] }) => (
         <span className="text-slate-500 text-xs">{card.handle}</span>
       </div>
     </div>
-    <p className="py-4 text-gray-800 text-sm">
-      Radiant made undercutting all of our competitors an absolute breeze.
-    </p>
+    <p className="py-4 text-gray-800 text-sm">{card.feedback}</p>
     <div className="flex items-center justify-between text-slate-500 text-xs">
       <div className="flex items-center gap-1">
         <span>Posted on</span>

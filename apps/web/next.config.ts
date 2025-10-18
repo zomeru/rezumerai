@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@rezumerai/ui"],
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
+  images: {
+    domains: [
+      "images.unsplash.com",
+      "avatars.githubusercontent.com",
+      "cdn.jsdelivr.net",
+    ],
+  },
 };
 
 const withBundleAnalyzer = require("@next/bundle-analyzer")({

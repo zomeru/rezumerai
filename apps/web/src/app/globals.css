@@ -33,6 +33,10 @@
   --color-accent-600: oklch(0.45 0.18 300);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 button {
   cursor: pointer;
 }
