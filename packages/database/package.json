@@ -30,7 +30,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "engines": {
-    "node": "22.20.0"
+    "node": "22.x"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1"
