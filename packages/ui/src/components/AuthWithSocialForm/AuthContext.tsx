@@ -8,7 +8,7 @@ import {
   useReducer,
 } from "react";
 
-interface AuthState {
+export interface AuthState {
   email: string;
   password: string;
   confirmPassword: string;

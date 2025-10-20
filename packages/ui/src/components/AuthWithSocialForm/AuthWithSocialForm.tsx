@@ -1,10 +1,10 @@
 "use client";
 
 import { useId } from "react";
-import { AuthProvider, useAuthSocialForm } from "./AuthContext";
+import { AuthProvider, type AuthState, useAuthSocialForm } from "./AuthContext";
 
 interface BaseAuthFormProps {
-  onSubmit: <T>(data: T, e: React.FormEvent) => Promise<void>;
+  onSubmit: (state: AuthState, e: React.FormEvent) => Promise<void>;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
