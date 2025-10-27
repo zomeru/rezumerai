@@ -29,10 +29,7 @@ export function UserFetcher({ className }: UserFetcherProps) {
       <h2 className="mb-4 font-semibold text-xl">Fetch Individual User</h2>
       <div className="space-y-4">
         <div>
-          <label
-            htmlFor={userIdInputId}
-            className="mb-1 block font-medium text-sm"
-          >
+          <label htmlFor={userIdInputId} className="mb-1 block font-medium text-sm">
             User ID:
           </label>
           <div className="flex gap-2">
@@ -56,16 +53,12 @@ export function UserFetcher({ className }: UserFetcherProps) {
           </div>
         ) : userError || (userData && !userData.body.success) ? (
           <div className="rounded border border-red-300 bg-red-100 p-3">
-            <p className="text-red-700">
-              Error: {userData?.body.error || "User not found"}
-            </p>
+            <p className="text-red-700">Error: {userData?.body.error || "User not found"}</p>
           </div>
         ) : userData?.body.success && userData.body.data ? (
           <UserCard user={userData.body.data} />
         ) : (
-          <p className="text-gray-500">
-            Enter a user ID and click "Fetch User" to see details
-          </p>
+          <p className="text-gray-500">Enter a user ID and click "Fetch User" to see details</p>
         )}
       </div>
     </div>

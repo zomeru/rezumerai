@@ -8,13 +8,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   appName: string;
 }
 
-export const Button = ({
-  children,
-  className,
-  appName,
-  onClick,
-  ...props
-}: ButtonProps) => {
+export const Button = ({ children, className, appName, onClick, ...props }: ButtonProps) => {
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     alert(`Hello from your ${appName} app!`);
     onClick?.(e); // preserve user-defined onClick if provided

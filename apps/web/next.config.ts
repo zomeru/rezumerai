@@ -1,5 +1,5 @@
+import path from "node:path";
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -7,10 +7,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
   images: {
-    domains: [
-      "images.unsplash.com",
-      "avatars.githubusercontent.com",
-      "cdn.jsdelivr.net",
+    remotePatterns: [
+      new URL("https://images.unsplash.com/**"),
+      new URL("https://avatars.githubusercontent.com/**"),
+      new URL("https://cdn.jsdelivr.net/**"),
+      new URL("https://avatars.githubusercontent.com/u/19688908?v=4"),
     ],
   },
 };

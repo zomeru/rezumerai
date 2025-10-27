@@ -9,11 +9,7 @@ interface EditResumeModalProps {
   onClose: () => void;
 }
 
-export default function EditResumeModal({
-  title: initialTitle,
-  onSubmit,
-  onClose,
-}: EditResumeModalProps) {
+export default function EditResumeModal({ title: initialTitle, onSubmit, onClose }: EditResumeModalProps) {
   const [title, setTitle] = useState(initialTitle);
 
   useEffect(() => {
@@ -26,13 +22,7 @@ export default function EditResumeModal({
   };
 
   return (
-    <BaseModal
-      isOpen={true}
-      title="Edit Resume Title"
-      onClose={onClose}
-      onSubmit={handleSubmit}
-      submitLabel="Update"
-    >
+    <BaseModal isOpen={true} title="Edit Resume Title" onClose={onClose} onSubmit={handleSubmit} submitLabel="Update">
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}

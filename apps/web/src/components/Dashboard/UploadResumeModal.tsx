@@ -9,10 +9,7 @@ interface UploadResumeModalProps {
   onClose: () => void;
 }
 
-export default function UploadResumeModal({
-  onSubmit,
-  onClose,
-}: UploadResumeModalProps) {
+export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps) {
   const inputId = useId();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);

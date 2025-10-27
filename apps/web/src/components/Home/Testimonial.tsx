@@ -51,19 +51,9 @@ export default function Testimonial() {
                 animation-direction: reverse;
             }
         `}</style>
-      <div
-        className="flex scroll-mt-12 flex-col items-center"
-        id="testimonials"
-      >
-        <Badge
-          title="Simple Process"
-          style="text-primary-600"
-          svgStyle="fill-primary-600"
-        />
-        <SectionTitle
-          title="Testimonials"
-          description="See what our users are saying about us"
-        />
+      <div className="flex scroll-mt-12 flex-col items-center" id="testimonials">
+        <Badge title="Simple Process" style="text-primary-600" svgStyle="fill-primary-600" />
+        <SectionTitle title="Testimonials" description="See what our users are saying about us" />
         <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-gradient-to-r from-white to-transparent"></div>
           <div className="marquee-inner flex min-w-[200%] transform-gpu pt-10 pb-5">
@@ -93,13 +83,7 @@ const CreateCard = ({ card }: { card: CardData[number] }) => (
     <div className="flex gap-2">
       {/* <img className="size-11 rounded-full" src={card.image} alt="User" /> */}
       <div className="relative size-11">
-        <Image
-          src={card.image}
-          alt="User"
-          className="rounded-full object-cover"
-          width={40}
-          height={40}
-        />
+        <Image src={card.image} alt="User" className="rounded-full object-cover" width={40} height={40} />
       </div>
       <div className="flex flex-col">
         <div className="flex items-center gap-1">
@@ -128,19 +112,8 @@ const CreateCard = ({ card }: { card: CardData[number] }) => (
     <div className="flex items-center justify-between text-slate-500 text-xs">
       <div className="flex items-center gap-1">
         <span>Posted on</span>
-        <a
-          href="https://x.com"
-          target="_blank"
-          className="hover:text-sky-500"
-          rel="noopener"
-        >
-          <svg
-            width="11"
-            height="10"
-            viewBox="0 0 11 10"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+        <a href="https://x.com" target="_blank" className="hover:text-sky-500" rel="noopener">
+          <svg width="11" height="10" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg">
             <title>Icon representing the social media platform X</title>
             <path
               d="m.027 0 4.247 5.516L0 10h.962l3.742-3.926L7.727 10H11L6.514 4.174 10.492 0H9.53L6.084 3.616 3.3 0zM1.44.688h1.504l6.64 8.624H8.082z"

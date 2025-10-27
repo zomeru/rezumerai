@@ -9,8 +9,8 @@ export default function Footer() {
           <Logo />
         </div>
         <p className="max-w-xl text-center font-normal text-sm leading-relaxed">
-          Empowering job seekers worldwide with cutting-edge AI resume tools.
-          Turn your experience into a standout resume.
+          Empowering job seekers worldwide with cutting-edge AI resume tools. Turn your experience into a standout
+          resume.
         </p>
       </div>
       <div className="border-slate-200 border-t">
