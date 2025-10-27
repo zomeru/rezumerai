@@ -11,7 +11,8 @@
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space"
+    "indentStyle": "space",
+    "lineWidth": 120
   },
   "linter": {
     "enabled": true,
@@ -24,7 +25,7 @@
       "correctness": {
         "useExhaustiveDependencies": "off",
         "noUnusedImports": "warn",
-        "noUnusedVariables": "warn",
+        "noUnusedVariables": "error",
         "useUniqueElementIds": "warn"
       },
       "style": {
