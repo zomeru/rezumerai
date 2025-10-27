@@ -13,9 +13,7 @@ describe("SampleComponentWithTest Page", () => {
   it("renders the get started button", () => {
     renderWithProviders(<SampleComponentWithTest />);
 
-    expect(
-      screen.getByRole("button", { name: /get started/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
   });
 
   it("renders a div container", () => {

@@ -17,14 +17,7 @@ export default function BannerWithTag({
       )}
     >
       <p>
-        <span
-          className={cn(
-            "mr-2 rounded-lg bg-green-600 px-3 py-1 text-white",
-            textStyle,
-          )}
-        >
-          New
-        </span>
+        <span className={cn("mr-2 rounded-lg bg-green-600 px-3 py-1 text-white", textStyle)}>New</span>
         {tag}
       </p>
     </div>

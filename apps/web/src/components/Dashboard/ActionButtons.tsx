@@ -7,10 +7,7 @@ interface ActionButtonsProps {
   onUploadClick: () => void;
 }
 
-export default function ActionButtons({
-  onCreateClick,
-  onUploadClick,
-}: ActionButtonsProps) {
+export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps) {
   return (
     <div className="flex gap-4">
       <button
@@ -20,9 +17,7 @@ export default function ActionButtons({
         aria-label="Create a new resume"
       >
         <PlusIcon className="size-11 rounded-full bg-linear-to-r from-primary-300 to-primary-500 p-2.5 text-white transition-all duration-300" />
-        <p className="text-sm transition-all duration-300 group-hover:text-primary-600">
-          Create Resume
-        </p>
+        <p className="text-sm transition-all duration-300 group-hover:text-primary-600">Create Resume</p>
       </button>
 
       <button
@@ -32,9 +27,7 @@ export default function ActionButtons({
         aria-label="Upload a resume"
       >
         <UploadCloudIcon className="size-11 rounded-full bg-linear-to-r from-accent-300 to-accent-500 p-2.5 text-white transition-all duration-300" />
-        <p className="text-sm transition-all duration-300 group-hover:text-accent-600">
-          Upload Resume
-        </p>
+        <p className="text-sm transition-all duration-300 group-hover:text-accent-600">Upload Resume</p>
       </button>
     </div>
   );

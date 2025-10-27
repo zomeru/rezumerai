@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  type ChangeEvent,
-  createContext,
-  type ReactNode,
-  useContext,
-  useReducer,
-} from "react";
+import { type ChangeEvent, createContext, type ReactNode, useContext, useReducer } from "react";
 
 export interface AuthState {
   email: string;
@@ -58,18 +52,14 @@ const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const setEmail = (e: ChangeEvent<HTMLInputElement>) =>
-    dispatch({ type: "SET_EMAIL", payload: e.target.value });
-  const setPassword = (e: ChangeEvent<HTMLInputElement>) =>
-    dispatch({ type: "SET_PASSWORD", payload: e.target.value });
+  const setEmail = (e: ChangeEvent<HTMLInputElement>) => dispatch({ type: "SET_EMAIL", payload: e.target.value });
+  const setPassword = (e: ChangeEvent<HTMLInputElement>) => dispatch({ type: "SET_PASSWORD", payload: e.target.value });
   const setConfirmPassword = (e: ChangeEvent<HTMLInputElement>) =>
     dispatch({ type: "SET_CONFIRM_PASSWORD", payload: e.target.value });
   const reset = () => dispatch({ type: "RESET" });
 
   return (
-    <AuthContext.Provider
-      value={{ state, setEmail, setPassword, setConfirmPassword, reset }}
-    >
+    <AuthContext.Provider value={{ state, setEmail, setPassword, setConfirmPassword, reset }}>
       {children}
     </AuthContext.Provider>
   );

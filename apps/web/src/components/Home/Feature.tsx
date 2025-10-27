@@ -3,11 +3,7 @@ import { Badge, SectionTitle } from "@rezumerai/ui/components";
 export default function Feature() {
   return (
     <div className="flex scroll-mt-12 flex-col items-center" id="features">
-      <Badge
-        title="Simple Process"
-        style="text-primary-600"
-        svgStyle="fill-primary-600"
-      />
+      <Badge title="Simple Process" style="text-primary-600" svgStyle="fill-primary-600" />
       <SectionTitle
         title="Build your resume"
         description="Our streamlined process helps you create a professional resume in minutes with intelligent AI-powered tools and features."
@@ -16,13 +12,7 @@ export default function Feature() {
       <div className="mt-20 flex flex-wrap items-center justify-center gap-6 px-4 md:px-0">
         <div className="flex max-w-sm flex-col items-center justify-center gap-6 rounded-xl border border-primary-200 p-6 text-center">
           <div className="aspect-square rounded-full bg-primary-100 p-6">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 28 28"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <title>Icon representing smart personalization</title>
               <path
                 d="M14 18.667V24.5m4.668-8.167V24.5m4.664-12.833V24.5m2.333-21L15.578 13.587a.584.584 0 0 1-.826 0l-3.84-3.84a.583.583 0 0 0-.825 0L2.332 17.5M4.668 21v3.5m4.664-8.167V24.5"
@@ -34,24 +24,15 @@ export default function Feature() {
             </svg>
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold text-base text-slate-700">
-              Smart Personalization
-            </h3>
+            <h3 className="font-semibold text-base text-slate-700">Smart Personalization</h3>
             <p className="text-slate-600 text-sm">
-              Highlight your strengths with AI-driven recommendations for your
-              role and industry.
+              Highlight your strengths with AI-driven recommendations for your role and industry.
             </p>
           </div>
         </div>
         <div className="flex max-w-sm flex-col items-center justify-center gap-6 rounded-xl border border-secondary-200 p-6 text-center">
           <div className="aspect-square rounded-full bg-secondary-100 p-6">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 28 28"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <title>Icon representing ATS-optimized output</title>
               <path
                 d="M14 11.667A2.333 2.333 0 0 0 11.667 14c0 1.19-.117 2.929-.304 4.667m4.972-3.36c0 2.776 0 7.443-1.167 10.36m5.004-1.144c.14-.7.502-2.683.583-3.523M2.332 14a11.667 11.667 0 0 1 21-7m-21 11.667h.01m23.092 0c.233-2.333.152-6.246 0-7"
@@ -70,24 +51,15 @@ export default function Feature() {
             </svg>
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold text-base text-slate-700">
-              ATS-Optimized Output
-            </h3>
+            <h3 className="font-semibold text-base text-slate-700">ATS-Optimized Output</h3>
             <p className="text-slate-600 text-sm">
-              Generate recruiter-ready resumes that pass Applicant Tracking
-              Systems with ease.
+              Generate recruiter-ready resumes that pass Applicant Tracking Systems with ease.
             </p>
           </div>
         </div>
         <div className="flex max-w-sm flex-col items-center justify-center gap-6 rounded-xl border border-accent-200 p-6 text-center">
           <div className="aspect-square rounded-full bg-accent-100 p-6">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 28 28"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <title>Icon representing instant formatting and export</title>
               <path
                 d="M4.668 25.666h16.333a2.333 2.333 0 0 0 2.334-2.333V8.166L17.5 2.333H7a2.333 2.333 0 0 0-2.333 2.333v4.667"
@@ -106,12 +78,9 @@ export default function Feature() {
             </svg>
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold text-base text-slate-700">
-              Instant Formatting & Export
-            </h3>
+            <h3 className="font-semibold text-base text-slate-700">Instant Formatting & Export</h3>
             <p className="text-slate-600 text-sm">
-              Polish your resume with beautiful templates and export to PDF or
-              Word in one click.
+              Polish your resume with beautiful templates and export to PDF or Word in one click.
             </p>
           </div>
         </div>

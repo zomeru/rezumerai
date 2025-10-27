@@ -8,10 +8,7 @@ interface CreateResumeModalProps {
   onClose: () => void;
 }
 
-export default function CreateResumeModal({
-  onSubmit,
-  onClose,
-}: CreateResumeModalProps) {
+export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps) {
   const [title, setTitle] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {

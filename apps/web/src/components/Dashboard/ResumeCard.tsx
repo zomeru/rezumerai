@@ -12,15 +12,8 @@ interface ResumeCardProps {
   onDelete: () => void;
 }
 
-export default function ResumeCard({
-  resume,
-  color,
-  onOpen,
-  onEdit,
-  onDelete,
-}: ResumeCardProps) {
-  const formatDate = (date: string | Date) =>
-    new Date(date).toLocaleDateString();
+export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: ResumeCardProps) {
+  const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
 
   return (
     <>
@@ -37,22 +30,13 @@ export default function ResumeCard({
         onKeyDown={onKeyDown}
         tabIndex={0}
       >
-        <FilePenLineIcon
-          className="size-7 transition-all group-hover:scale-105"
-          style={{ color }}
-        />
+        <FilePenLineIcon className="size-7 transition-all group-hover:scale-105" style={{ color }} />
 
-        <p
-          className="px-2 text-center text-sm transition-all group-hover:scale-105"
-          style={{ color }}
-        >
+        <p className="px-2 text-center text-sm transition-all group-hover:scale-105" style={{ color }}>
           {resume.title}
         </p>
 
-        <p
-          className="absolute bottom-1 px-2 text-center text-[11px]"
-          style={{ color: `${color}90` }}
-        >
+        <p className="absolute bottom-1 px-2 text-center text-[11px]" style={{ color: `${color}90` }}>
           Updated on {formatDate(resume.updatedAt)}
         </p>
 
