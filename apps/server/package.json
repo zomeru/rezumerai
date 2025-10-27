@@ -28,7 +28,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.0",
+    "@biomejs/biome": "2.3.1",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@swc/cli": "^0.7.8",
