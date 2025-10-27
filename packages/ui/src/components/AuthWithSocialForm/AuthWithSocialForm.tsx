@@ -45,18 +45,8 @@ function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }) {
 }
 
 function AuthWithSocialForm(props: AuthWithSocialFormProps) {
-  const {
-    type,
-    onSubmit,
-    appName = "Rezumer",
-    googleAuth,
-    appleAuth,
-    onSuccess,
-    onError,
-    onFinally,
-  } = props;
-  const resetPasswordLink =
-    type === "signin" ? props.resetPasswordLink : undefined;
+  const { type, onSubmit, appName = "Rezumer", googleAuth, appleAuth, onSuccess, onError, onFinally } = props;
+  const resetPasswordLink = type === "signin" ? props.resetPasswordLink : undefined;
 
   const isSignIn = type === "signin";
   const emailId = useId();
@@ -70,10 +60,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
       reset();
       onSuccess?.();
     } catch (error) {
-      console.error(
-        "[AuthWithSocialForm] Error during form submission:",
-        error,
-      );
+      console.error("[AuthWithSocialForm] Error during form submission:", error);
       if (error instanceof Error) {
         onError?.(error);
       } else {
@@ -116,10 +103,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
         )}
         {isSignIn && (
           <div className="py-4 text-right">
-            <a
-              className="cursor-pointer text-primary-500 underline"
-              href={resetPasswordLink}
-            >
+            <a className="cursor-pointer text-primary-500 underline" href={resetPasswordLink}>
               Forgot Password
             </a>
           </div>
@@ -133,10 +117,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
       </form>
       <p className="mt-4 text-center">
         {isSignIn ? `New to ${appName}?` : "Already have an account?"}{" "}
-        <a
-          href={isSignIn ? "/signup" : "/signin"}
-          className="text-primary-500 underline"
-        >
+        <a href={isSignIn ? "/signup" : "/signin"} className="text-primary-500 underline">
           {isSignIn ? "Create an account" : "Sign In"}
         </a>
       </p>
@@ -172,9 +153,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
   );
 }
 
-export default function AuthWithSocialFormWrapper(
-  props: AuthWithSocialFormProps,
-) {
+export default function AuthWithSocialFormWrapper(props: AuthWithSocialFormProps) {
   return (
     <AuthProvider>
       <AuthWithSocialForm {...props} />

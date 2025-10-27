@@ -2,10 +2,7 @@
  * Date formatting and manipulation utilities
  */
 
-export function formatDate(
-  date: Date | string,
-  options?: Intl.DateTimeFormatOptions,
-): string {
+export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat("en-US", options).format(dateObj);
 }

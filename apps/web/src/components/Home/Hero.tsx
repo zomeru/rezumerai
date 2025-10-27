@@ -26,13 +26,7 @@ const usersWithAvatars = Array(5)
     avatar: faker.image.avatar(),
   }));
 
-const logos = [
-  "instagram.svg",
-  "framer.svg",
-  "microsoft.svg",
-  "huawei.svg",
-  "walmart.svg",
-].map((url) => {
+const logos = ["instagram.svg", "framer.svg", "microsoft.svg", "huawei.svg", "walmart.svg"].map((url) => {
   const baseUrl = "https://saasly.prebuiltui.com/assets/companies-logo/";
   return { url: `${baseUrl}${url}`, id: uuidv4() };
 });
@@ -49,11 +43,7 @@ export default function Hero() {
 
         <div className="hidden items-center gap-8 text-slate-800 transition duration-500 md:flex">
           {menuItems.map(({ label, href, id }) => (
-            <Link
-              key={id}
-              href={href}
-              className="transition hover:text-primary-600"
-            >
+            <Link key={id} href={href} className="transition hover:text-primary-600">
               {label}
             </Link>
           ))}
@@ -74,11 +64,7 @@ export default function Hero() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          className="transition active:scale-90 md:hidden"
-        >
+        <button type="button" onClick={() => setMenuOpen(true)} className="transition active:scale-90 md:hidden">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="26"
@@ -99,12 +85,7 @@ export default function Hero() {
         className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-black/40 text-black text-lg backdrop-blur transition-transform duration-300 md:hidden ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {menuItems.map(({ label, href, id }) => (
-          <Link
-            key={id}
-            href={href}
-            className="text-2xl text-white"
-            onClick={() => setMenuOpen(false)}
-          >
+          <Link key={id} href={href} className="text-2xl text-white" onClick={() => setMenuOpen(false)}>
             {label}
           </Link>
         ))}
@@ -174,8 +155,7 @@ export default function Hero() {
         </h1>
 
         <p className="my-7 max-w-md text-center text-base">
-          Create, edit, and download stunning professional resumes — powered by
-          AI precision.
+          Create, edit, and download stunning professional resumes — powered by AI precision.
         </p>
 
         {/* CTA Buttons */}
@@ -226,9 +206,7 @@ export default function Hero() {
           </button>
         </div>
 
-        <p className="mt-14 py-6 text-slate-600">
-          Trusting by leading brands, including
-        </p>
+        <p className="mt-14 py-6 text-slate-600">Trusting by leading brands, including</p>
 
         <div
           className="mx-auto flex w-full max-w-3xl flex-wrap justify-between gap-6 py-4 max-sm:justify-center"
