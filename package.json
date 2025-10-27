@@ -41,13 +41,13 @@
   },
   "pnpm": {
     "overrides": {
-      "esbuild": ">=0.25.0"
+      "esbuild": ">=0.25.0",
+      "vite": "7.1.11"
     },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
       "@swc/core",
-      "@tailwindcss/oxide",
       "esbuild",
       "prisma",
       "sharp"
@@ -58,7 +58,7 @@
       "pnpm check"
     ]
   },
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@10.19.0",
   "engines": {
     "node": "22.x"
   }

@@ -6,13 +6,8 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
     <div className="mx-auto max-w-4xl bg-white text-gray-800">
       {/* Header */}
-      <header
-        className="p-8 text-white"
-        style={{ backgroundColor: accentColor }}
-      >
-        <h1 className="mb-3 font-light text-4xl">
-          {data.personal_info?.full_name || "Your Name"}
-        </h1>
+      <header className="p-8 text-white" style={{ backgroundColor: accentColor }}>
+        <h1 className="mb-3 font-light text-4xl">{data.personal_info?.full_name || "Your Name"}</h1>
 
         <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           {data.personal_info?.email && (
@@ -34,11 +29,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             </div>
           )}
           {data.personal_info?.linkedin && (
-            <a
-              target="_blank"
-              href={data.personal_info?.linkedin}
-              className="flex items-center gap-2"
-            >
+            <a target="_blank" href={data.personal_info?.linkedin} className="flex items-center gap-2">
               <Linkedin className="size-4" />
               <span className="break-all text-xs">
                 {data.personal_info.linkedin.split("https://www.")[1]
@@ -48,11 +39,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             </a>
           )}
           {data.personal_info?.website && (
-            <a
-              target="_blank"
-              href={data.personal_info?.website}
-              className="flex items-center gap-2"
-            >
+            <a target="_blank" href={data.personal_info?.website} className="flex items-center gap-2">
               <Globe className="size-4" />
               <span className="break-all text-xs">
                 {data.personal_info.website.split("https://")[1]
@@ -68,9 +55,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
         {/* Professional Summary */}
         {data.professional_summary && (
           <section className="mb-8">
-            <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">
-              Professional Summary
-            </h2>
+            <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">Professional Summary</h2>
             <p className="text-gray-700">{data.professional_summary}</p>
           </section>
         )}
@@ -78,36 +63,25 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
         {/* Experience */}
         {data.experience && data.experience.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-6 border-gray-200 border-b pb-2 font-light text-2xl">
-              Experience
-            </h2>
+            <h2 className="mb-6 border-gray-200 border-b pb-2 font-light text-2xl">Experience</h2>
 
             <div className="space-y-6">
               {data.experience.map((exp) => (
-                <div
-                  key={exp.description}
-                  className="relative border-gray-200 border-l pl-6"
-                >
+                <div key={exp.description} className="relative border-gray-200 border-l pl-6">
                   <div className="mb-2 flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-xl">
-                        {exp.position}
-                      </h3>
+                      <h3 className="font-medium text-gray-900 text-xl">{exp.position}</h3>
                       <p className="font-medium" style={{ color: accentColor }}>
                         {exp.company}
                       </p>
                     </div>
                     <div className="rounded bg-gray-100 px-3 py-1 text-gray-500 text-sm">
                       {formatShortDate(exp.start_date)} -{" "}
-                      {exp.is_current
-                        ? "Present"
-                        : formatShortDate(exp.end_date ?? "")}
+                      {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
                     </div>
                   </div>
                   {exp.description && (
-                    <div className="mt-3 whitespace-pre-line text-gray-700 leading-relaxed">
-                      {exp.description}
-                    </div>
+                    <div className="mt-3 whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
                   )}
                 </div>
               ))}
@@ -118,9 +92,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
         {/* Projects */}
         {data.project && data.project.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">
-              Projects
-            </h2>
+            <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">Projects</h2>
 
             <div className="space-y-6">
               {data.project.map((p) => (
@@ -131,16 +103,10 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-lg">
-                        {p.name}
-                      </h3>
+                      <h3 className="font-medium text-gray-900 text-lg">{p.name}</h3>
                     </div>
                   </div>
-                  {p.description && (
-                    <div className="mt-3 text-gray-700 text-sm leading-relaxed">
-                      {p.description}
-                    </div>
-                  )}
+                  {p.description && <div className="mt-3 text-gray-700 text-sm leading-relaxed">{p.description}</div>}
                 </div>
               ))}
             </div>
@@ -151,9 +117,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Education */}
           {data.education && data.education.length > 0 && (
             <section>
-              <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">
-                Education
-              </h2>
+              <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">Education</h2>
 
               <div className="space-y-4">
                 {data.education.map((edu) => (
@@ -175,9 +139,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Skills */}
           {data.skills && data.skills.length > 0 && (
             <section>
-              <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">
-                Skills
-              </h2>
+              <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">Skills</h2>
 
               <div className="flex flex-wrap gap-2">
                 {data.skills.map((skill) => (

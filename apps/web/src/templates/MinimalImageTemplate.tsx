@@ -8,8 +8,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
       <div className="grid grid-cols-3">
         <div className="col-span-1 py-10">
           {/* Image */}
-          {data.personal_info?.image &&
-          typeof data.personal_info.image === "string" ? (
+          {data.personal_info?.image && typeof data.personal_info.image === "string" ? (
             <div className="mb-6">
               <img
                 src={data.personal_info.image}
@@ -18,8 +17,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                 style={{ background: `${accentColor}70` }}
               />
             </div>
-          ) : data.personal_info?.image &&
-            typeof data.personal_info.image === "object" ? (
+          ) : data.personal_info?.image && typeof data.personal_info.image === "object" ? (
             <div className="mb-6">
               <img
                 // src={URL.createObjectURL(data.personal_info.image)}
@@ -45,9 +43,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
         <aside className="col-span-1 border-zinc-400 border-r p-6 pt-0">
           {/* Contact */}
           <section className="mb-8">
-            <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">
-              CONTACT
-            </h2>
+            <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">CONTACT</h2>
             <div className="space-y-2 text-sm">
               {data.personal_info?.phone && (
                 <div className="flex items-center gap-2">
@@ -73,17 +69,13 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Education */}
           {data.education && data.education.length > 0 && (
             <section className="mb-8">
-              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">
-                EDUCATION
-              </h2>
+              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">EDUCATION</h2>
               <div className="space-y-4 text-sm">
                 {data.education.map((edu) => (
                   <div key={edu.institution}>
                     <p className="font-semibold uppercase">{edu.degree}</p>
                     <p className="text-zinc-600">{edu.institution}</p>
-                    <p className="text-xs text-zinc-500">
-                      {formatShortDate(edu.graduation_date)}
-                    </p>
+                    <p className="text-xs text-zinc-500">{formatShortDate(edu.graduation_date)}</p>
                   </div>
                 ))}
               </div>
@@ -93,9 +85,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Skills */}
           {data.skills && data.skills.length > 0 && (
             <section>
-              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">
-                SKILLS
-              </h2>
+              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">SKILLS</h2>
               <ul className="space-y-1 text-sm">
                 {data.skills.map((skill) => (
                   <li key={skill}>{skill}</li>
@@ -110,39 +100,27 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Summary */}
           {data.professional_summary && (
             <section className="mb-8">
-              <h2
-                className="mb-3 font-semibold text-sm tracking-widest"
-                style={{ color: accentColor }}
-              >
+              <h2 className="mb-3 font-semibold text-sm tracking-widest" style={{ color: accentColor }}>
                 SUMMARY
               </h2>
-              <p className="text-zinc-700 leading-relaxed">
-                {data.professional_summary}
-              </p>
+              <p className="text-zinc-700 leading-relaxed">{data.professional_summary}</p>
             </section>
           )}
 
           {/* Experience */}
           {data.experience && data.experience.length > 0 && (
             <section>
-              <h2
-                className="mb-4 font-semibold text-sm tracking-widest"
-                style={{ color: accentColor }}
-              >
+              <h2 className="mb-4 font-semibold text-sm tracking-widest" style={{ color: accentColor }}>
                 EXPERIENCE
               </h2>
               <div className="mb-8 space-y-6">
                 {data.experience.map((exp) => (
                   <div key={exp.company}>
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-zinc-900">
-                        {exp.position}
-                      </h3>
+                      <h3 className="font-semibold text-zinc-900">{exp.position}</h3>
                       <span className="text-xs text-zinc-500">
                         {formatShortDate(exp.start_date)} -{" "}
-                        {exp.is_current
-                          ? "Present"
-                          : formatShortDate(exp.end_date ?? "")}
+                        {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
                       </span>
                     </div>
                     <p className="mb-2 text-sm" style={{ color: accentColor }}>
@@ -164,18 +142,13 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Projects */}
           {data.project && data.project.length > 0 && (
             <section>
-              <h2
-                className="font-semibold text-sm uppercase tracking-widest"
-                style={{ color: accentColor }}
-              >
+              <h2 className="font-semibold text-sm uppercase tracking-widest" style={{ color: accentColor }}>
                 PROJECTS
               </h2>
               <div className="space-y-4">
                 {data.project.map((project) => (
                   <div key={project.name}>
-                    <h3 className="mt-3 font-medium text-md text-zinc-800">
-                      {project.name}
-                    </h3>
+                    <h3 className="mt-3 font-medium text-md text-zinc-800">{project.name}</h3>
                     <p className="mb-1 text-sm" style={{ color: accentColor }}>
                       {project.type}
                     </p>
