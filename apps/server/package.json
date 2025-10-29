@@ -34,7 +34,7 @@
     "@swc/cli": "^0.7.8",
     "@swc/core": "^1.13.5",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
+    "@types/express": "^5.0.5",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.9.1",
     "concurrently": "^9.2.1",
