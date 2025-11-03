@@ -10,6 +10,7 @@
     "test": "vitest --run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true pnpm build",
     "check": "biome check --write src",
     "clean": "rm -rf .next node_modules .turbo",
@@ -43,13 +44,14 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/coverage-v8": "^4.0.6",
     "dotenv-cli": "^10.0.0",
     "jsdom": "^27.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.6"
   },
   "packageManager": "pnpm@10.19.0",
   "engines": {

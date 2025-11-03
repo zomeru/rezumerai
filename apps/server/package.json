@@ -12,6 +12,7 @@
     "test": "vitest --run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "check": "biome check --write src",
     "clean": "rm -rf dist .turbo node_modules",
     "with-env": "dotenv -e ../../.env.local --"
@@ -37,12 +38,13 @@
     "@types/express": "^5.0.5",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.9.1",
+    "@vitest/coverage-v8": "^4.0.6",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^10.0.0",
     "nodemon": "^3.1.10",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.6"
   },
   "packageManager": "pnpm@10.19.0",
   "engines": {

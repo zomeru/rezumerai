@@ -17,6 +17,7 @@
     "test": "turbo test --continue --",
     "test:watch": "turbo test:watch --continue --",
     "test:ui": "turbo test:ui --continue --",
+    "test:coverage": "turbo test:coverage --continue --",
     "clean": "turbo clean && rm -rf node_modules .turbo",
     "clean:install": "turbo clean && rm -rf node_modules .turbo && pnpm install && turbo run build --filter=./packages/*",
     "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
@@ -37,7 +38,7 @@
     "postcss": "^8.5.6",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.6"
   },
   "pnpm": {
     "overrides": {
