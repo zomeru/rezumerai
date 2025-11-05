@@ -15,11 +15,13 @@ concurrency:
 
 jobs:
   setup:
-    name: Setup
+    name: Setup Workspace
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        node-version: ['22.x']
+        node-version: ["22.x"]
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -29,7 +31,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -46,140 +48,95 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-  check:
-    name: Format & Lint (Biome)
+      - name: Cache workspace (node_modules + turbo)
+        id: workspace-cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            .turbo
+          key: ${{ runner.os }}-workspace-${{ github.sha }}
+
+  build-check:
+    name: Format, Lint, Type Check, and Build
     runs-on: ubuntu-latest
     needs: setup
-    strategy:
-      matrix:
-        node-version: ['22.x']
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.TEST_POSTGRES_PASSWORD }}
+          POSTGRES_DB: test_db
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://postgres:${{ secrets.TEST_POSTGRES_PASSWORD }}@localhost:5432/test_db
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
           cache: 'pnpm'
 
-      - name: Restore pnpm store
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            .turbo
+          key: ${{ runner.os }}-workspace-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-
+
+      - name: Setup database
+        run: pnpm db:setup
+
+      - name: Cache Next.js build
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            ${{ github.workspace }}/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s?(x)') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Biome check
-        run: pnpm turbo run check
-
-  type-check:
-    name: Type Check
-    runs-on: ubuntu-latest
-    needs: setup
-    strategy:
-      matrix:
-        node-version: ['22.x']
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm turbo run build
+      - name: Check format, lint, and imports
+        run: pnpm run check
 
       - name: Type check
-        run: pnpm turbo run check-types
+        run: pnpm run check-types
 
-  db-setup:
-    name: Setup Database
-    runs-on: ubuntu-latest
-    needs: setup
-    strategy:
-      matrix:
-        node-version: ['22.x']
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: ${{ secrets.TEST_POSTGRES_PASSWORD }}
-          POSTGRES_DB: test_db
-          POSTGRES_HOST_AUTH_METHOD: trust
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    env:
-      DATABASE_URL: postgresql://postgres:${{ secrets.TEST_POSTGRES_PASSWORD }}@localhost:5432/test_db
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Build all apps
+        run: pnpm run build
+
+      - name: Save build cache
+        uses: actions/cache/save@v4
         with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup database
-        run: pnpm db:setup
+          path: |
+            .turbo
+            apps/web/.next/cache
+          key: ${{ runner.os }}-build-${{ github.sha }}
 
   test:
-    name: Test
+    name: Run Tests
     runs-on: ubuntu-latest
-    needs: [setup, db-setup]
-    strategy:
-      matrix:
-        node-version: ['22.x']
+    needs: build-check
+
     services:
       postgres:
         image: postgres:18
@@ -194,109 +151,45 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
     env:
       DATABASE_URL: postgresql://postgres:${{ secrets.TEST_POSTGRES_PASSWORD }}@localhost:5432/test_db
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
           cache: 'pnpm'
 
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Cache Next.js build
-        uses: actions/cache@v4
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ github.workspace }}/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+            node_modules
+            .turbo
+          key: ${{ runner.os }}-workspace-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-workspace-
 
-      - name: Cache Turbo
-        uses: actions/cache@v4
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
         with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          path: |
+            .turbo
+            apps/web/.next/cache
+          key: ${{ runner.os }}-build-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+            ${{ runner.os }}-build-
 
       - name: Setup database
         run: pnpm db:setup
 
-      - name: Build packages
-        run: pnpm turbo run build
-
       - name: Run tests
-        run: pnpm turbo run test
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [check, type-check, test]
-    strategy:
-      matrix:
-        node-version: ['22.x']
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
-
-      - name: Cache Turbo
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run build
-        run: pnpm turbo run build
+        run: pnpm run test
