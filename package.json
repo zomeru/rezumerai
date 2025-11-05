@@ -17,6 +17,7 @@
     "test": "turbo test --continue --",
     "test:watch": "turbo test:watch --continue --",
     "test:ui": "turbo test:ui --continue --",
+    "test:coverage": "turbo test:coverage --continue --",
     "clean": "turbo clean && rm -rf node_modules .turbo",
     "clean:install": "turbo clean && rm -rf node_modules .turbo && pnpm install && turbo run build --filter=./packages/*",
     "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
@@ -29,7 +30,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.1",
+    "@biomejs/biome": "2.3.3",
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.7",
     "husky": "^9.1.7",
