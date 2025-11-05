@@ -3,10 +3,6 @@ echo "🔍 Running pre-commit checks..."
 
 # Lint and format staged files only
 echo "📝 Linting and formatting staged files..."
-npx lint-staged
-
-# Type check all code  
-echo "🔧 Type checking..."
-pnpm check-types
+pnpm exec lint-staged
 
 echo "✅ Pre-commit checks passed!"

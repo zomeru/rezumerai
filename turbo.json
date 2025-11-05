@@ -2,21 +2,14 @@
   "$schema": "https://turborepo.com/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
-    "topo": {
-      "dependsOn": ["^topo"]
-    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "check": {
-      "dependsOn": ["^topo"]
-    },
-    "check-types": {
-      "dependsOn": ["^build"]
-    },
+    "check": {},
+    "check-types": {},
     "test": {
-      "dependsOn": ["^build"]
+      "cache": true
     },
     "test:watch": {
       "cache": false,
@@ -27,15 +20,13 @@
       "persistent": true
     },
     "test:coverage": {
-      "dependsOn": ["^build"]
+      "cache": true
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "add-shadcn-component": {
-      "dependsOn": ["^topo"]
-    },
+    "add-shadcn-component": {},
     "clean": {
       "cache": false
     }
