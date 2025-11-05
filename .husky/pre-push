@@ -1,24 +1,70 @@
-# Run comprehensive checks before push
-echo "🚀 Running pre-push checks..."
+set -euo pipefail
 
-# Run formatter, linter and import sorting on all code
-echo "🎨 Running formatter, linter and import sorting"
-pnpm check
+# --------------------------
+# CONFIGURATION
+# --------------------------
+CONFIG_FILE="${GIT_DIR:-.git}/hooks/prepush.config"
 
-# Type check all code
-echo "🔧 Type checking all code..."
-pnpm check-types
+# Default configuration
+SCM_BASE_BRANCH="main"
+CACHE_DIR="${GIT_DIR:-.git}/turbo-scm-cache"
+CACHE_TTL_SECONDS=$((3600))
 
-# Run all tests
-echo "🧪 Running all tests..."
-pnpm test
+# Load config if exists
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
+fi
 
-# Build everything to ensure it works
-echo "🏗️ Building all packages..."
-pnpm build
+echo "🚀 Pre-push checks"
 
-# Run security audit
+# Ensure essential commands exist
+command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm not found in PATH"; exit 1; }
+command -v turbo >/dev/null 2>&1 || { echo "❌ turbo not found in PATH"; exit 1; }
+
+# Determine current branch
+git fetch origin "$SCM_BASE_BRANCH" --quiet || true
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+echo "Current branch: $CURRENT_BRANCH"
+
+# Exit early if nothing changed
+if git diff --quiet "origin/$SCM_BASE_BRANCH...HEAD"; then
+  echo "✨ No changes since origin/$SCM_BASE_BRANCH. Skipping checks."
+  exit 0
+fi
+
+# --------------------------
+# SCM CACHE MANAGEMENT
+# --------------------------
+mkdir -p "$CACHE_DIR"
+CACHE_FILE="$CACHE_DIR/lastrun"
+CURRENT_TIME=$(date +%s)
+echo "$CURRENT_TIME" > "$CACHE_FILE"
+echo "💾 SCM cache updated"
+
+# --------------------------
+# CONCURRENCY
+# --------------------------
+CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+CONC=$(( CORES / 2 ))
+[ "$CONC" -lt 1 ] && CONC=1
+
+# --------------------------
+# RUN ALL CHECKS
+# --------------------------
+TURBO_FLAGS="--concurrency=$CONC --cache=local:rw,remote:r"
+
+echo "📝 Running lint/format/type checks..."
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run check --affected $TURBO_FLAGS
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run check-types --affected $TURBO_FLAGS
+
+echo "🧪 Running tests..."
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run test --affected $TURBO_FLAGS
+
+echo "🏗️ Running builds..."
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run build --affected --cache=local:rw,remote:r
+
 echo "🔒 Running security audit..."
 pnpm security:audit
 
-echo "✅ Pre-push checks passed! Safe to push."
+echo "✅ All pre-push checks passed."
+exit 0
