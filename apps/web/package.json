@@ -21,7 +21,7 @@
     "@rezumerai/types": "workspace:*",
     "@rezumerai/ui": "workspace:*",
     "@rezumerai/utils": "workspace:*",
-    "@tanstack/react-query": "^5.90.5",
+    "@tanstack/react-query": "^5.90.6",
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/react-query": "3.53.0-rc.1",
     "lucide-react": "^0.552.0",
