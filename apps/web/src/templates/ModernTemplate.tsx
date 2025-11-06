@@ -67,20 +67,20 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
 
             <div className="space-y-6">
               {data.experience.map((exp) => (
-                <div key={exp.description} className="relative border-gray-200 border-l pl-6">
+                <div key={exp?.description} className="relative border-gray-200 border-l pl-6">
                   <div className="mb-2 flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-xl">{exp.position}</h3>
+                      <h3 className="font-medium text-gray-900 text-xl">{exp?.position}</h3>
                       <p className="font-medium" style={{ color: accentColor }}>
-                        {exp.company}
+                        {exp?.company}
                       </p>
                     </div>
                     <div className="rounded bg-gray-100 px-3 py-1 text-gray-500 text-sm">
-                      {formatShortDate(exp.start_date)} -{" "}
-                      {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
+                      {formatShortDate(exp?.start_date ?? "")} -{" "}
+                      {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
                     </div>
                   </div>
-                  {exp.description && (
+                  {exp?.description && (
                     <div className="mt-3 whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
                   )}
                 </div>
@@ -97,16 +97,16 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             <div className="space-y-6">
               {data.project.map((p) => (
                 <div
-                  key={p.description}
+                  key={p?.description}
                   className="relative border-gray-200 border-l pl-6"
                   style={{ borderLeftColor: accentColor }}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-lg">{p.name}</h3>
+                      <h3 className="font-medium text-gray-900 text-lg">{p?.name}</h3>
                     </div>
                   </div>
-                  {p.description && <div className="mt-3 text-gray-700 text-sm leading-relaxed">{p.description}</div>}
+                  {p?.description && <div className="mt-3 text-gray-700 text-sm leading-relaxed">{p.description}</div>}
                 </div>
               ))}
             </div>
@@ -121,14 +121,14 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
 
               <div className="space-y-4">
                 {data.education.map((edu) => (
-                  <div key={edu.institution}>
+                  <div key={edu?.institution}>
                     <h3 className="font-semibold text-gray-900">
-                      {edu.degree} {edu.field && `in ${edu.field}`}
+                      {edu?.degree} {edu?.field && `in ${edu?.field}`}
                     </h3>
-                    <p style={{ color: accentColor }}>{edu.institution}</p>
+                    <p style={{ color: accentColor }}>{edu?.institution}</p>
                     <div className="flex items-center justify-between text-gray-600 text-sm">
-                      <span>{formatShortDate(edu.graduation_date)}</span>
-                      {edu.gpa && <span>GPA: {edu.gpa}</span>}
+                      <span>{formatShortDate(edu?.graduation_date ?? "")}</span>
+                      {edu?.gpa && <span>GPA: {edu?.gpa}</span>}
                     </div>
                   </div>
                 ))}

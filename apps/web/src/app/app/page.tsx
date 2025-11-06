@@ -133,9 +133,9 @@ export default function Dashboard() {
               key={resume._id}
               resume={resume}
               color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-              onOpen={() => handleOpenResume(resume._id)}
-              onEdit={() => handleOpenEditModal(resume._id, resume.title)}
-              onDelete={() => handleDeleteResume(resume._id)}
+              onOpen={() => handleOpenResume(resume._id ?? "")}
+              onEdit={() => handleOpenEditModal(resume._id ?? "", resume.title ?? "")}
+              onDelete={() => handleDeleteResume(resume._id ?? "")}
             />
           ))}
         </div>

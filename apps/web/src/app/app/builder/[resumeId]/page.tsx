@@ -1,5 +1,4 @@
 // biome-ignore-all lint: Current file is under heavy development
-// @ts-nocheck
 
 "use client";
 
@@ -18,8 +17,9 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PersonalInfoForm } from "@/components";
+import { PersonalInfoForm, ResumePreview } from "@/components";
 import { dummyResumeData, type ResumeData } from "@/constants/dummy";
+import type { TemplateType } from "@/templates";
 
 const sections = [
   { id: "personal", name: "Personal Information", icon: User },
@@ -43,6 +43,15 @@ export default function ResumeBuilder() {
     const resume = dummyResumeData.find((r) => r._id === resumeId) || null;
     setResumeData(resume);
     // document.title = resume ? `${resume.title} - Rezumer AI` : "Rezumer AI";
+  };
+
+  const updateResumeData = (data: ResumeData["personal_info"]) => {
+    setResumeData((prev) => {
+      return {
+        ...prev,
+        personal_info: data,
+      };
+    });
   };
 
   useEffect(() => {
@@ -110,9 +119,9 @@ export default function ResumeBuilder() {
                 {activeSection?.id === "personal" && (
                   <PersonalInfoForm
                     data={resumeData?.personal_info}
-                    onChange={(data) => setResumeData((prev) => ({ ...prev, personal_info: data }))}
+                    onChangeAction={updateResumeData}
                     removeBackground={removeBackground}
-                    setRemoveBackground={setRemoveBackground}
+                    setRemoveBackgroundAction={setRemoveBackground}
                   />
                 )}
               </div>
@@ -120,7 +129,18 @@ export default function ResumeBuilder() {
           </div>
 
           {/* Right Panel - Preview */}
-          <div></div>
+          <div className="lg:col-span-7 max-lg:mt-6">
+            <div className="">{/* buttons */}</div>
+
+            {/* resume preview */}
+            {resumeData && (
+              <ResumePreview
+                data={resumeData}
+                accentColor={resumeData.accent_color ?? ""}
+                template={resumeData?.template as TemplateType}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

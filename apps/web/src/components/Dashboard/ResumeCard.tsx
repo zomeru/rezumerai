@@ -37,7 +37,7 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: 
         </p>
 
         <p className="absolute bottom-1 px-2 text-center text-[11px]" style={{ color: `${color}90` }}>
-          Updated on {formatDate(resume.updatedAt)}
+          Updated on {formatDate(resume?.updatedAt ?? "")}
         </p>
 
         {/* Action buttons */}
