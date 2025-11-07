@@ -64,21 +64,21 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <div className="space-y-4">
             {data.experience.map((exp) => (
-              <div key={exp.company} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
+              <div key={exp?.company} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
                 <div className="mb-2 flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                    <p className="font-medium text-gray-700">{exp.company}</p>
+                    <h3 className="font-semibold text-gray-900">{exp?.position}</h3>
+                    <p className="font-medium text-gray-700">{exp?.company}</p>
                   </div>
                   <div className="text-right text-gray-600 text-sm">
                     <p>
-                      {formatShortDate(exp.start_date)} -{" "}
-                      {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
+                      {formatShortDate(exp?.start_date ?? "")} -{" "}
+                      {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
                     </p>
                   </div>
                 </div>
-                {exp.description && (
-                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
+                {exp?.description && (
+                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp?.description}</div>
                 )}
               </div>
             ))}
@@ -95,10 +95,10 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <ul className="space-y-3">
             {data.project.map((proj) => (
-              <div key={proj.description} className="flex items-start justify-between border-gray-300 border-l-3 pl-6">
+              <div key={proj?.description} className="flex items-start justify-between border-gray-300 border-l-3 pl-6">
                 <div>
-                  <li className="font-semibold text-gray-800">{proj.name}</li>
-                  <p className="text-gray-600">{proj.description}</p>
+                  <li className="font-semibold text-gray-800">{proj?.name}</li>
+                  <p className="text-gray-600">{proj?.description}</p>
                 </div>
               </div>
             ))}
@@ -115,16 +115,16 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <div className="space-y-3">
             {data.education.map((edu) => (
-              <div key={edu.institution} className="flex items-start justify-between">
+              <div key={edu?.institution} className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {edu.degree} {edu.field && `in ${edu.field}`}
+                    {edu?.degree} {edu?.field && `in ${edu?.field}`}
                   </h3>
-                  <p className="text-gray-700">{edu.institution}</p>
-                  {edu.gpa && <p className="text-gray-600 text-sm">GPA: {edu.gpa}</p>}
+                  <p className="text-gray-700">{edu?.institution}</p>
+                  {edu?.gpa && <p className="text-gray-600 text-sm">GPA: {edu?.gpa}</p>}
                 </div>
                 <div className="text-gray-600 text-sm">
-                  <p>{formatShortDate(edu.graduation_date)}</p>
+                  <p>{formatShortDate(edu?.graduation_date ?? "")}</p>
                 </div>
               </div>
             ))}
