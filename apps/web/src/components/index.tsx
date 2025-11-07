@@ -1,3 +1,4 @@
 export { default as Logo } from "./Logo";
 export { default as Navbar } from "./Navbar";
 export { default as PersonalInfoForm } from "./PersonalInfoForm";
+export { default as ResumePreview } from "./ResumePreview";
