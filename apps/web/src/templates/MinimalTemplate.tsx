@@ -33,17 +33,17 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <div className="space-y-6">
             {data.experience.map((exp) => (
-              <div key={exp.company}>
+              <div key={exp?.company}>
                 <div className="mb-1 flex items-baseline justify-between">
-                  <h3 className="font-medium text-lg">{exp.position}</h3>
+                  <h3 className="font-medium text-lg">{exp?.position}</h3>
                   <span className="text-gray-500 text-sm">
-                    {formatShortDate(exp.start_date)} -{" "}
-                    {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
+                    {formatShortDate(exp?.start_date ?? "")} -{" "}
+                    {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
                   </span>
                 </div>
-                <p className="mb-2 text-gray-600">{exp.company}</p>
-                {exp.description && (
-                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
+                <p className="mb-2 text-gray-600">{exp?.company}</p>
+                {exp?.description && (
+                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp?.description}</div>
                 )}
               </div>
             ))}
@@ -60,9 +60,9 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <div className="space-y-4">
             {data.project.map((proj) => (
-              <div key={proj.description} className="flex flex-col items-baseline justify-between gap-2">
-                <h3 className="font-medium text-lg">{proj.name}</h3>
-                <p className="text-gray-600">{proj.description}</p>
+              <div key={proj?.description} className="flex flex-col items-baseline justify-between gap-2">
+                <h3 className="font-medium text-lg">{proj?.name}</h3>
+                <p className="text-gray-600">{proj?.description}</p>
               </div>
             ))}
           </div>
@@ -78,15 +78,15 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
 
           <div className="space-y-4">
             {data.education.map((edu) => (
-              <div key={edu.institution} className="flex items-baseline justify-between">
+              <div key={edu?.institution} className="flex items-baseline justify-between">
                 <div>
                   <h3 className="font-medium">
-                    {edu.degree} {edu.field && `in ${edu.field}`}
+                    {edu?.degree} {edu?.field && `in ${edu?.field}`}
                   </h3>
-                  <p className="text-gray-600">{edu.institution}</p>
-                  {edu.gpa && <p className="text-gray-500 text-sm">GPA: {edu.gpa}</p>}
+                  <p className="text-gray-600">{edu?.institution}</p>
+                  {edu?.gpa && <p className="text-gray-500 text-sm">GPA: {edu?.gpa}</p>}
                 </div>
-                <span className="text-gray-500 text-sm">{formatShortDate(edu.graduation_date)}</span>
+                <span className="text-gray-500 text-sm">{formatShortDate(edu?.graduation_date ?? "")}</span>
               </div>
             ))}
           </div>

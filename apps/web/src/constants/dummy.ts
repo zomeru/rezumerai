@@ -272,4 +272,8 @@ export const dummyResumeData = [
   },
 ];
 
-export type ResumeData = (typeof dummyResumeData)[0];
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
+
+export type ResumeData = DeepPartial<(typeof dummyResumeData)[0]>;

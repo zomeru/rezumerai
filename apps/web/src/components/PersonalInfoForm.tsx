@@ -1,28 +1,50 @@
-// biome-ignore-all lint: Current file is under heavy development
-// @ts-asdasdnocheck
+"use client";
 
-import { User } from "lucide-react";
+import { BriefcaseBusiness, Globe, Linkedin, Mail, MapPin, Phone, User } from "lucide-react";
 import Image from "next/image";
+import { useRef } from "react";
 import type { ResumeData } from "@/constants/dummy";
 
 type PersonalInfoFormProps = {
   data: ResumeData["personal_info"];
-  onChange: (data: ResumeData["personal_info"]) => void;
+  onChangeAction: (data: ResumeData["personal_info"]) => void;
   removeBackground: boolean;
-  setRemoveBackground: (value: boolean | ((prev: boolean) => boolean)) => void;
+  setRemoveBackgroundAction: (value: boolean | ((prev: boolean) => boolean)) => void;
 };
+
+const FIELDS: {
+  key: keyof NonNullable<ResumeData["personal_info"]>;
+  label: string;
+  icon: typeof User;
+  type: string;
+  required: boolean;
+}[] = [
+  { key: "full_name", label: "Full Name", icon: User, type: "text", required: true },
+  { key: "email", label: "Email", icon: Mail, type: "email", required: true },
+  { key: "phone", label: "Phone", icon: Phone, type: "tel", required: true },
+  { key: "location", label: "Location", icon: MapPin, type: "text", required: true },
+  { key: "profession", label: "Profession", icon: BriefcaseBusiness, type: "text", required: true },
+  { key: "linkedin", label: "LinkedIn", icon: Linkedin, type: "url", required: true },
+  { key: "website", label: "Personal Website", icon: Globe, type: "url", required: false },
+];
 
 export default function PersonalInfoForm({
   data,
-  onChange,
+  onChangeAction,
   removeBackground,
-  setRemoveBackground,
+  setRemoveBackgroundAction,
 }: PersonalInfoFormProps) {
-  const handleImageChange = (field: keyof ResumeData["personal_info"], value: string) => {
-    onChange({
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (field: keyof NonNullable<ResumeData["personal_info"]>, value: string) => {
+    onChangeAction({
       ...data,
       [field]: value,
     });
+  };
+
+  const handleClickUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -32,20 +54,27 @@ export default function PersonalInfoForm({
       <div className="flex items-center gap-2">
         <label htmlFor="">
           {data?.image ? (
-            <Image
-              src={data.image}
-              alt="Profile image"
-              className="mt-5 h-16 w-16 rounded-full object-cover ring ring-slate-300 hover:opacity-80"
-              width={64}
-              height={64}
-            />
+            <button onClick={handleClickUpload} type="button">
+              <Image
+                src={data.image}
+                alt="Profile image"
+                className="mt-5 h-16 w-16 rounded-full object-cover ring ring-slate-300 hover:opacity-80"
+                width={64}
+                height={64}
+              />
+            </button>
           ) : (
-            <div className="inline-flex items-center gap-2 mt-5 text-slate-600 hover:text-slate-700 cursor-pointer">
+            <button
+              className="mt-5 inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-700"
+              onClick={handleClickUpload}
+              type="button"
+            >
               <User className="size-10 rounded-full border p-2.5" />
               Upload Profile Image
-            </div>
+            </button>
           )}
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/jpeg, image/png"
             className="hidden"
@@ -57,19 +86,40 @@ export default function PersonalInfoForm({
         {data?.image && (
           <div className="flex flex-col gap-1 pl-4 text-sm">
             <p>Remove Background</p>
-            <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
+            <label className="relative inline-flex cursor-pointer items-center gap-3 text-gray-900">
               <input
                 type="checkbox"
-                className="sr-only peer"
+                className="peer sr-only"
                 checked={removeBackground}
-                onChange={() => setRemoveBackground((prev) => !prev)}
+                onChange={() => setRemoveBackgroundAction((prev) => !prev)}
               />
-              <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-primary-600 transition-colors duration-200"></div>
-              <span className="dot absolute left-1 top-1 w-3 h-3 bh-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
+              <div className="peer h-5 w-9 rounded-full bg-slate-300 transition-colors duration-200 peer-checked:bg-primary-600"></div>
+              <span className="dot absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
             </label>
           </div>
         )}
       </div>
+
+      {FIELDS.map(({ icon: Icon, key, label, type, required }) => {
+        return (
+          <div key={key} className="mt-5 space-y-1">
+            <label htmlFor={key} className="flex items-center gap-2 font-medium text-gray-600 text-sm">
+              <Icon className="size-4" />
+              {label}
+              {required && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              id={key}
+              type={type}
+              value={data?.[key] || ""}
+              required={required}
+              onChange={(e) => handleImageChange(key, e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
+              placeholder={`Enter your ${label.toLowerCase()}`}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

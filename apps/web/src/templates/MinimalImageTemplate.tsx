@@ -72,10 +72,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
               <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">EDUCATION</h2>
               <div className="space-y-4 text-sm">
                 {data.education.map((edu) => (
-                  <div key={edu.institution}>
-                    <p className="font-semibold uppercase">{edu.degree}</p>
-                    <p className="text-zinc-600">{edu.institution}</p>
-                    <p className="text-xs text-zinc-500">{formatShortDate(edu.graduation_date)}</p>
+                  <div key={edu?.institution}>
+                    <p className="font-semibold uppercase">{edu?.degree}</p>
+                    <p className="text-zinc-600">{edu?.institution}</p>
+                    <p className="text-xs text-zinc-500">{formatShortDate(edu?.graduation_date ?? "")}</p>
                   </div>
                 ))}
               </div>
@@ -115,20 +115,20 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
               </h2>
               <div className="mb-8 space-y-6">
                 {data.experience.map((exp) => (
-                  <div key={exp.company}>
+                  <div key={exp?.company}>
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-zinc-900">{exp.position}</h3>
+                      <h3 className="font-semibold text-zinc-900">{exp?.position}</h3>
                       <span className="text-xs text-zinc-500">
-                        {formatShortDate(exp.start_date)} -{" "}
-                        {exp.is_current ? "Present" : formatShortDate(exp.end_date ?? "")}
+                        {formatShortDate(exp?.start_date ?? "")} -{" "}
+                        {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
                       </span>
                     </div>
                     <p className="mb-2 text-sm" style={{ color: accentColor }}>
-                      {exp.company}
+                      {exp?.company}
                     </p>
-                    {exp.description && (
+                    {exp?.description && (
                       <ul className="list-inside list-disc space-y-1 text-sm text-zinc-700 leading-relaxed">
-                        {exp.description.split("\n").map((line) => (
+                        {exp?.description.split("\n").map((line) => (
                           <li key={line}>{line}</li>
                         ))}
                       </ul>
@@ -140,21 +140,21 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           )}
 
           {/* Projects */}
-          {data.project && data.project.length > 0 && (
+          {data.project && data.project?.length > 0 && (
             <section>
               <h2 className="font-semibold text-sm uppercase tracking-widest" style={{ color: accentColor }}>
                 PROJECTS
               </h2>
               <div className="space-y-4">
-                {data.project.map((project) => (
-                  <div key={project.name}>
-                    <h3 className="mt-3 font-medium text-md text-zinc-800">{project.name}</h3>
+                {data.project?.map((project) => (
+                  <div key={project?.name}>
+                    <h3 className="mt-3 font-medium text-md text-zinc-800">{project?.name}</h3>
                     <p className="mb-1 text-sm" style={{ color: accentColor }}>
-                      {project.type}
+                      {project?.type}
                     </p>
-                    {project.description && (
+                    {project?.description && (
                       <ul className="list-inside list-disc space-y-1 text-sm text-zinc-700">
-                        {project.description.split("\n").map((line) => (
+                        {project?.description.split("\n").map((line) => (
                           <li key={line}>{line}</li>
                         ))}
                       </ul>
