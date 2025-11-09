@@ -28,7 +28,7 @@
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.20.0",
   "engines": {
     "node": "22.x"
   },

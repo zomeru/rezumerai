@@ -7,7 +7,7 @@ This guide explains how to set up and run the RezumerAI monorepo both locally an
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v22+ recommended)
-- [pnpm](https://pnpm.io/) (v10.19.0, managed via Corepack)
+- [pnpm](https://pnpm.io/) (v10.20.0, managed via Corepack)
 - [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
 
 ---
@@ -19,7 +19,7 @@ This guide explains how to set up and run the RezumerAI monorepo both locally an
 Enable and pin pnpm using Corepack:
 
 ```sh
-corepack enable && corepack prepare pnpm@10.19.0 --activate
+corepack enable && corepack prepare pnpm@10.20.0 --activate
 ```
 
 Install all dependencies:
