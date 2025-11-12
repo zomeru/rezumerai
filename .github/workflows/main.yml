@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm 10
         uses: pnpm/action-setup@v4
@@ -84,8 +84,13 @@ jobs:
       - name: Setup database
         run: pnpm db:setup
 
-      - name: Runs formatter, linter and import sorting
-        run: pnpm run check
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Run Biome
+        run: biome ci .
 
       - name: Type check
         run: pnpm run check-types
