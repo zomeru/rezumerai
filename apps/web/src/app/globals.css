@@ -8,6 +8,7 @@
   --color-surface-200: oklch(0.95 0.01 250);
 
   /* Primary – Vibrant Blue */
+  --color-primary-50: oklch(0.97 0.02 250);
   --color-primary-100: oklch(0.93 0.04 250);
   --color-primary-200: oklch(0.86 0.08 250);
   --color-primary-300: oklch(0.75 0.13 250);

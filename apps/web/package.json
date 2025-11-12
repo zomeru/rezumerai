@@ -12,8 +12,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true pnpm build",
-    "check": "biome check --write src",
-    "clean": "rm -rf .next node_modules .turbo",
+    "check": "biome check --write .",
+    "clean": "rm -rf .next node_modules .turbo coverage",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {
@@ -53,7 +53,7 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.8"
   },
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.21.0",
   "engines": {
     "node": "22.x"
   }

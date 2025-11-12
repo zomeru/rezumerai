@@ -35,7 +35,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "check-types": "tsc --noEmit",
-    "check": "biome check --write src",
+    "check": "biome check --write .",
     "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {
@@ -48,7 +48,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.21.0",
   "engines": {
     "node": "22.x"
   }
