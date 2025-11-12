@@ -31,8 +31,8 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "check": "biome check --write src global.css",
-    "clean": "rm -rf node_modules .turbo dist"
+    "check": "biome check --write .",
+    "clean": "rm -rf node_modules .turbo dist coverage"
   },
   "dependencies": {
     "@rezumerai/types": "workspace:*",

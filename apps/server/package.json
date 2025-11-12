@@ -13,8 +13,8 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "check": "biome check --write src",
-    "clean": "rm -rf dist .turbo node_modules",
+    "check": "biome check --write .",
+    "clean": "rm -rf dist .turbo node_modules coverage",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {

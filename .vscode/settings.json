@@ -14,10 +14,7 @@
   // TypeScript Configuration for Monorepo
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.preferences.autoImportFileExcludePatterns": [
-    "next/router.d.ts",
-    "next/dist/client/router.d.ts"
-  ],
+  "typescript.preferences.autoImportFileExcludePatterns": ["next/router.d.ts", "next/dist/client/router.d.ts"],
   "typescript.preferences.includePackageJsonAutoImports": "on",
   "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
   "typescript.suggest.includeCompletionsForImportStatements": true,
