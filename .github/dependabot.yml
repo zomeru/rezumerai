@@ -11,8 +11,7 @@ updates:
     directory: "/"
     # Check the npm registry for updates every day (weekdays)
     schedule:
-      interval: "cron"
-      cronjob: "0 0,12 * * *"
+      interval: "daily"
     allow:
       - dependency-type: "all"
     open-pull-requests-limit: 15
