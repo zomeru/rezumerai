@@ -26,7 +26,7 @@
         "useExhaustiveDependencies": "off",
         "noUnusedImports": "warn",
         "noUnusedVariables": "error",
-        "useUniqueElementIds": "warn"
+        "useUniqueElementIds": "off"
       },
       "style": {
         "noParameterAssign": "off"
@@ -53,6 +53,15 @@
   "css": {
     "parser": {
       "tailwindDirectives": true
+    },
+    "formatter": {
+      "lineWidth": 120,
+      "enabled": true,
+      "indentStyle": "space",
+      "quoteStyle": "double"
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "assist": {

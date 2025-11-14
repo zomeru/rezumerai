@@ -1,16 +1,41 @@
 "use client";
 
 import { useId } from "react";
+import type { NextImageProps } from "../types/image";
 import { AuthProvider, type AuthState, useAuthSocialForm } from "./AuthContext";
 
-interface BaseAuthFormProps {
+type BaseAuthFormProps =
+  // Social auth exists → NextImage REQUIRED
+  | ({
+      googleAuth: () => void;
+      appleAuth?: () => void;
+    } & RequiredImageProps)
+  | ({
+      googleAuth?: () => void;
+      appleAuth: () => void;
+    } & RequiredImageProps)
+  // No social auth → NextImage OPTIONAL
+  | ({
+      googleAuth?: undefined;
+      appleAuth?: undefined;
+    } & OptionalImageProps);
+
+interface RequiredImageProps {
+  NextImage: React.ComponentType<NextImageProps>;
   onSubmit: (state: AuthState, e: React.FormEvent) => Promise<void>;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
   appName?: string;
-  googleAuth?: () => void;
-  appleAuth?: () => void;
+}
+
+interface OptionalImageProps {
+  NextImage?: React.ComponentType<NextImageProps>;
+  onSubmit: (state: AuthState, e: React.FormEvent) => Promise<void>;
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+  onFinally?: () => void;
+  appName?: string;
 }
 
 type AuthWithSocialFormProps =
@@ -45,7 +70,17 @@ function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }) {
 }
 
 function AuthWithSocialForm(props: AuthWithSocialFormProps) {
-  const { type, onSubmit, appName = "Rezumer", googleAuth, appleAuth, onSuccess, onError, onFinally } = props;
+  const {
+    type,
+    onSubmit,
+    appName = "Rezumer",
+    googleAuth,
+    appleAuth,
+    onSuccess,
+    onError,
+    onFinally,
+    NextImage,
+  } = props;
   const resetPasswordLink = type === "signin" ? props.resetPasswordLink : undefined;
 
   const isSignIn = type === "signin";
@@ -127,10 +162,11 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
           onClick={handleAppleAuth}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-black py-2.5 text-white"
         >
-          <img
-            className="h-4 w-4"
+          <NextImage
             src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/appleLogo.png"
             alt="appleLogo"
+            width={20}
+            height={20}
           />
           Continue with Apple
         </button>
@@ -141,10 +177,11 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
           onClick={handleGoogleAuth}
           className="my-3 flex w-full items-center justify-center gap-2 rounded-full border border-gray-500/30 bg-white py-2.5 text-gray-800"
         >
-          <img
-            className="h-4 w-4"
+          <NextImage
             src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleFavicon.png"
             alt="googleFavicon"
+            width={20}
+            height={20}
           />
           Continue with Google
         </button>

@@ -3,7 +3,7 @@ import Logo from "../Logo";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gradient-to-b from-primary-100/40 to-white text-gray-800">
+    <footer className="w-full bg-linear-to-b from-primary-100/40 to-white text-gray-800">
       <div className="mx-auto flex max-w-7xl flex-col items-center px-6 py-16">
         <div className="mb-6 flex items-center space-x-3">
           <Logo />

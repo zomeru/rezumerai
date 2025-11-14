@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       new URL("https://avatars.githubusercontent.com/**"),
       new URL("https://cdn.jsdelivr.net/**"),
       new URL("https://avatars.githubusercontent.com/u/19688908?v=4"),
+      new URL("https://raw.githubusercontent.com/prebuiltui/**"),
     ],
   },
 };

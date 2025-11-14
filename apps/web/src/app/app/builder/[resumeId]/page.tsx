@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PersonalInfoForm, ResumePreview, TemplateSelector } from "@/components";
+import { ColorPicker, PersonalInfoForm, ResumePreview, TemplateSelector } from "@/components";
 import { dummyResumeData, type ResumeData } from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
@@ -84,10 +84,14 @@ export default function ResumeBuilder() {
 
               {/* Section Navigation */}
               <div className="mb-6 flex items-center justify-between border-gray-300 border-b py-1">
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   <TemplateSelector
                     selectedTemplate={resumeData?.template as TemplateType}
                     onChange={(template) => setResumeData((prev) => ({ ...prev, template }))}
+                  />
+                  <ColorPicker
+                    selectedColor={resumeData?.accent_color}
+                    onChange={(color) => setResumeData((prev) => ({ ...prev, accent_color: color }))}
                   />
                 </div>
                 <div className="flex items-center">

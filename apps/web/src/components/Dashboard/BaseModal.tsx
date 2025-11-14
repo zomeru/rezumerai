@@ -43,12 +43,8 @@ export default function BaseModal({
         onKeyDown={onKeyDown}
         className="relative w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-6 shadow-lg"
       >
-        <h2 id="modal-title" className="font-bold text-lg">
-          {title}
-        </h2>
-
+        <h2 className="font-bold text-lg">{title}</h2>
         {children}
-
         <button
           type="submit"
           disabled={isLoading}

@@ -27,7 +27,7 @@ function RenderTemplate({ template, data, accentColor }: Omit<ResumePreviewProps
 export default function ResumePreview({ data, template, accentColor, className }: ResumePreviewProps) {
   return (
     <div className="w-full bg-gray-100">
-      <div id="resume-preview" className={cn("border border-gray-200 print:border-none print:shadow-none", className)}>
+      <div className={cn("border border-gray-200 print:border-none print:shadow-none", className)}>
         <RenderTemplate template={template} data={data} accentColor={accentColor} />
       </div>
       <style jsx>
