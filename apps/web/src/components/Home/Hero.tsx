@@ -3,7 +3,7 @@
 import { faker } from "@faker-js/faker";
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Logo from "../Logo";
 
@@ -18,22 +18,29 @@ const menuItems = [
   { label: "GitHub", href: "#github", id: uuidv4() },
 ];
 
-const usersWithAvatars = Array(5)
-  .fill(0)
-  .map(() => ({
-    id: uuidv4(),
-    name: faker.person.firstName(),
-    avatar: faker.image.avatar(),
-  }));
-
-const logos = ["instagram.svg", "framer.svg", "microsoft.svg", "huawei.svg", "walmart.svg"].map((url) => {
-  const baseUrl = "https://saasly.prebuiltui.com/assets/companies-logo/";
-  return { url: `${baseUrl}${url}`, id: uuidv4() };
-});
-
 export default function Hero() {
   const [menuOpen, setMenuOpen] = useState(false);
   const logoContainerId = useId();
+
+  const [logos, setLogos] = useState<{ url: string; id: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; avatar: string }[]>([]);
+
+  useEffect(() => {
+    const _logos = ["instagram.svg", "framer.svg", "microsoft.svg", "huawei.svg", "walmart.svg"].map((url) => {
+      const baseUrl = "https://saasly.prebuiltui.com/assets/companies-logo/";
+      return { url: `${baseUrl}${url}`, id: uuidv4() };
+    });
+    const _users = Array(5)
+      .fill(0)
+      .map(() => ({
+        id: uuidv4(),
+        name: faker.person.firstName(),
+        avatar: faker.image.avatar(),
+      }));
+
+    setUsers(_users);
+    setLogos(_logos);
+  }, []);
 
   return (
     <div>
@@ -105,13 +112,13 @@ export default function Hero() {
         {/* Avatars + Stars */}
         <div className="mt-24 flex items-center">
           <div className="-space-x-3 flex pr-3">
-            {usersWithAvatars.map(({ id, name, avatar }) => {
+            {users.map(({ id, name, avatar }) => {
               return (
                 <div className="relative" key={id}>
                   <Image
                     src={avatar}
                     alt={name}
-                    className="hover:-translate-y-0.5 z-[1] size-8 rounded-full border-2 border-white object-cover transition"
+                    className="hover:-translate-y-0.5 z-1 size-8 rounded-full border-2 border-white object-cover transition"
                     width={200}
                     height={200}
                   />
@@ -218,8 +225,8 @@ export default function Hero() {
                 src={url}
                 alt="Company logo"
                 className="h-6 w-auto object-contain opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
-                width={100}
-                height={24}
+                width={0}
+                height={0}
               />
             </div>
           ))}

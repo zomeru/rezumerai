@@ -1,5 +1,6 @@
 import { formatShortDate } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
 import type { TemplateProps } from "./types";
 
 const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
@@ -10,20 +11,24 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Image */}
           {data.personal_info?.image && typeof data.personal_info.image === "string" ? (
             <div className="mb-6">
-              <img
+              <Image
                 src={data.personal_info.image}
                 alt="Profile"
-                className="mx-auto h-32 w-32 rounded-full object-cover"
+                className="mx-auto rounded-full object-cover"
                 style={{ background: `${accentColor}70` }}
+                width={130}
+                height={130}
               />
             </div>
           ) : data.personal_info?.image && typeof data.personal_info.image === "object" ? (
             <div className="mb-6">
-              <img
+              <Image
                 // src={URL.createObjectURL(data.personal_info.image)}
                 src=""
                 alt="Profile"
-                className="mx-auto h-32 w-32 rounded-full object-cover"
+                className="mx-auto rounded-full object-cover"
+                width={130}
+                height={130}
               />
             </div>
           ) : null}
