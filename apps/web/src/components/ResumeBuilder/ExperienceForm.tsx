@@ -1,6 +1,7 @@
 import { Briefcase, Plus, Sparkles, Trash2 } from "lucide-react";
 import type { Experience } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
+import { FormField } from "./Inputs";
 
 interface ExperienceFormProps {
   experience: Experience[];
@@ -77,33 +78,27 @@ export default function ExperienceForm({ experience = [], onChange }: Experience
                   </button>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input
+                  <FormField
                     value={company}
-                    onChange={(e) => updateExperience(index, "company", e.target.value)}
-                    type="text"
-                    placeholder="Company name"
-                    className="rounded-lg px-3 py-2 text-sm"
+                    onValueChange={(value) => updateExperience(index, "company", value)}
+                    placeholder="Company Name"
                   />
-                  <input
+                  <FormField
                     value={position}
-                    onChange={(e) => updateExperience(index, "position", e.target.value)}
-                    type="text"
+                    onValueChange={(value) => updateExperience(index, "position", value)}
                     placeholder="Job Title"
-                    className="rounded-lg px-3 py-2 text-sm"
                   />
-                  <input
+                  <FormField
                     value={startDate}
-                    onChange={(e) => updateExperience(index, "startDate", e.target.value)}
                     type="month"
+                    onValueChange={(value) => updateExperience(index, "startDate", value)}
                     placeholder="Start Date"
-                    className="rounded-lg px-3 py-2 text-sm"
                   />
-                  <input
+                  <FormField
                     value={endDate}
-                    onChange={(e) => updateExperience(index, "endDate", e.target.value)}
                     type="month"
+                    onValueChange={(value) => updateExperience(index, "endDate", value)}
                     placeholder="End Date"
-                    className="rounded-lg px-3 py-2 text-sm"
                     disabled={isCurrent}
                   />
                 </div>

@@ -36,16 +36,16 @@ export default function PersonalInfoForm({
 }: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (field: keyof Resume["personalInfo"], value: string) => {
+  function handleImageChange(field: keyof Resume["personalInfo"], value: string) {
     onChangeAction({
       ...data,
       [field]: value,
     });
-  };
+  }
 
-  const handleClickUpload = () => {
+  function handleClickUpload() {
     fileInputRef.current?.click();
-  };
+  }
 
   return (
     <div>

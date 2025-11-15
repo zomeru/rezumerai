@@ -17,13 +17,14 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ColorPicker,
+  EducationForm,
   ExperienceForm,
   PersonalInfoForm,
   ProfessionalSummaryForm,
   ResumePreview,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import { defaultResume, dummyResumeData, type Experience, type Resume } from "@/constants/dummy";
+import { defaultResume, dummyResumeData, type Education, type Experience, type Resume } from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
 type SectionType = {
@@ -89,6 +90,10 @@ export default function ResumeBuilder() {
     setResumeData((prev) => ({ ...prev, experience }));
   }
 
+  function handleEducationChange(education: Education[]) {
+    setResumeData((prev) => ({ ...prev, education }));
+  }
+
   useEffect(() => {
     loadExistingResume();
   }, []);
@@ -96,17 +101,17 @@ export default function ResumeBuilder() {
   const activeSection = sections[activeSectionIndex];
 
   return (
-    <div>
-      <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="flex flex-1 flex-col">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <Link href="/app" className="hover:slate-700 inline-flex items-center gap-2 text-slate-500 transition-all">
           <ArrowLeftIcon className="size-4" /> Back to Dashboard
         </Link>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 pb-8">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8">
         <div className="grid gap-8 lg:grid-cols-12">
           {/* Left Panel - Form */}
-          <div className="relative overflow-hidden rounded-lg lg:col-span-5">
+          <div className="relative rounded-lg lg:col-span-5">
             <div className="rounded-lg border border-gray-200 bg-white p-6 pt-1 shadow-sm">
               {/* Progress bar using activeSectionIndex */}
               <hr className="absolute top-0 right-0 left-0 border-2 border-gray-200" />
@@ -170,6 +175,9 @@ export default function ResumeBuilder() {
                 )}
                 {activeSection?.id === "experience" && (
                   <ExperienceForm experience={resumeData.experience} onChange={handleExperienceChange} />
+                )}
+                {activeSection?.id === "education" && (
+                  <EducationForm education={resumeData.education} onChange={handleEducationChange} />
                 )}
               </div>
             </div>
