@@ -1,11 +1,11 @@
 import { Sparkles } from "lucide-react";
 
-interface ProfessionalSummaryProps {
+interface ProfessionalSummaryFormProps {
   summary?: string;
   onChange: (summary: string) => void;
 }
 
-export default function ProfessionalSummary({ summary = "", onChange }: ProfessionalSummaryProps) {
+export default function ProfessionalSummaryForm({ summary = "", onChange }: ProfessionalSummaryFormProps) {
   function onTextareaChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     onChange(e.target.value);
   }

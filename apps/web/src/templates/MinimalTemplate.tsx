@@ -6,21 +6,21 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">
       {/* Header */}
       <header className="mb-10">
-        <h1 className="mb-4 font-thin text-4xl tracking-wide">{data.personal_info?.full_name || "Your Name"}</h1>
+        <h1 className="mb-4 font-thin text-4xl tracking-wide">{data.personalInfo?.fullName || "Your Name"}</h1>
 
         <div className="flex flex-wrap gap-6 text-gray-600 text-sm">
-          {data.personal_info?.email && <span>{data.personal_info.email}</span>}
-          {data.personal_info?.phone && <span>{data.personal_info.phone}</span>}
-          {data.personal_info?.location && <span>{data.personal_info.location}</span>}
-          {data.personal_info?.linkedin && <span className="break-all">{data.personal_info.linkedin}</span>}
-          {data.personal_info?.website && <span className="break-all">{data.personal_info.website}</span>}
+          {data.personalInfo?.email && <span>{data.personalInfo.email}</span>}
+          {data.personalInfo?.phone && <span>{data.personalInfo.phone}</span>}
+          {data.personalInfo?.location && <span>{data.personalInfo.location}</span>}
+          {data.personalInfo?.linkedin && <span className="break-all">{data.personalInfo.linkedin}</span>}
+          {data.personalInfo?.website && <span className="break-all">{data.personalInfo.website}</span>}
         </div>
       </header>
 
       {/* Professional Summary */}
-      {data.professional_summary && (
+      {data.professionalSummary && (
         <section className="mb-10">
-          <p className="text-gray-700">{data.professional_summary}</p>
+          <p className="text-gray-700">{data.professionalSummary}</p>
         </section>
       )}
 
@@ -38,7 +38,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                   <h3 className="font-medium text-lg">{exp?.position}</h3>
                   <span className="text-gray-500 text-sm">
                     {formatShortDate(exp?.start_date ?? "")} -{" "}
-                    {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
+                    {exp?.isCurrent ? "Present" : formatShortDate(exp?.end_date ?? "")}
                   </span>
                 </div>
                 <p className="mb-2 text-gray-600">{exp?.company}</p>
@@ -86,7 +86,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                   <p className="text-gray-600">{edu?.institution}</p>
                   {edu?.gpa && <p className="text-gray-500 text-sm">GPA: {edu?.gpa}</p>}
                 </div>
-                <span className="text-gray-500 text-sm">{formatShortDate(edu?.graduation_date ?? "")}</span>
+                <span className="text-gray-500 text-sm">{formatShortDate(edu?.graduationDate ?? "")}</span>
               </div>
             ))}
           </div>

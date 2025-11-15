@@ -8,50 +8,50 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Header */}
       <header className="mb-8 border-b-2 pb-6 text-center" style={{ borderColor: accentColor }}>
         <h1 className="mb-2 font-bold text-3xl" style={{ color: accentColor }}>
-          {data.personal_info?.full_name || "Your Name"}
+          {data.personalInfo?.fullName || "Your Name"}
         </h1>
 
         <div className="flex flex-wrap justify-center gap-4 text-gray-600 text-sm">
-          {data.personal_info?.email && (
+          {data.personalInfo?.email && (
             <div className="flex items-center gap-1">
               <Mail className="size-4" />
-              <span>{data.personal_info.email}</span>
+              <span>{data.personalInfo.email}</span>
             </div>
           )}
-          {data.personal_info?.phone && (
+          {data.personalInfo?.phone && (
             <div className="flex items-center gap-1">
               <Phone className="size-4" />
-              <span>{data.personal_info.phone}</span>
+              <span>{data.personalInfo.phone}</span>
             </div>
           )}
-          {data.personal_info?.location && (
+          {data.personalInfo?.location && (
             <div className="flex items-center gap-1">
               <MapPin className="size-4" />
-              <span>{data.personal_info.location}</span>
+              <span>{data.personalInfo.location}</span>
             </div>
           )}
-          {data.personal_info?.linkedin && (
+          {data.personalInfo?.linkedin && (
             <div className="flex items-center gap-1">
               <Linkedin className="size-4" />
-              <span className="break-all">{data.personal_info.linkedin}</span>
+              <span className="break-all">{data.personalInfo.linkedin}</span>
             </div>
           )}
-          {data.personal_info?.website && (
+          {data.personalInfo?.website && (
             <div className="flex items-center gap-1">
               <Globe className="size-4" />
-              <span className="break-all">{data.personal_info.website}</span>
+              <span className="break-all">{data.personalInfo.website}</span>
             </div>
           )}
         </div>
       </header>
 
       {/* Professional Summary */}
-      {data.professional_summary && (
+      {data.professionalSummary && (
         <section className="mb-6">
           <h2 className="mb-3 font-semibold text-xl" style={{ color: accentColor }}>
             PROFESSIONAL SUMMARY
           </h2>
-          <p className="text-gray-700 leading-relaxed">{data.professional_summary}</p>
+          <p className="text-gray-700 leading-relaxed">{data.professionalSummary}</p>
         </section>
       )}
 
@@ -73,7 +73,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
                   <div className="text-right text-gray-600 text-sm">
                     <p>
                       {formatShortDate(exp?.start_date ?? "")} -{" "}
-                      {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
+                      {exp?.isCurrent ? "Present" : formatShortDate(exp?.end_date ?? "")}
                     </p>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
                   {edu?.gpa && <p className="text-gray-600 text-sm">GPA: {edu?.gpa}</p>}
                 </div>
                 <div className="text-gray-600 text-sm">
-                  <p>{formatShortDate(edu?.graduation_date ?? "")}</p>
+                  <p>{formatShortDate(edu?.graduationDate ?? "")}</p>
                 </div>
               </div>
             ))}

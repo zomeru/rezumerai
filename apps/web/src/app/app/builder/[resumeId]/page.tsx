@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import {
   ColorPicker,
   PersonalInfoForm,
-  ProfessionalSummary,
+  ProfessionalSummaryForm,
   ResumePreview,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
@@ -55,11 +55,11 @@ export default function ResumeBuilder() {
     // document.title = resume ? `${resume.title} - Rezumer AI` : "Rezumer AI";
   }
 
-  function updateResumeData(data: ResumeData["personal_info"]) {
+  function updateResumeData(data: ResumeData["personalInfo"]) {
     setResumeData((prev) => {
       return {
         ...prev,
-        personal_info: data,
+        personalInfo: data,
       };
     });
   }
@@ -100,8 +100,8 @@ export default function ResumeBuilder() {
                     onChange={(template) => setResumeData((prev) => ({ ...prev, template }))}
                   />
                   <ColorPicker
-                    selectedColor={resumeData?.accent_color}
-                    onChange={(color) => setResumeData((prev) => ({ ...prev, accent_color: color }))}
+                    selectedColor={resumeData?.accentColor}
+                    onChange={(color) => setResumeData((prev) => ({ ...prev, accentColor: color }))}
                   />
                 </div>
                 <div className="flex items-center">
@@ -137,17 +137,16 @@ export default function ResumeBuilder() {
               <div className="space-y-6">
                 {activeSection?.id === "personal" && (
                   <PersonalInfoForm
-                    data={resumeData?.personal_info}
+                    data={resumeData?.personalInfo}
                     onChangeAction={updateResumeData}
                     removeBackground={removeBackground}
                     setRemoveBackgroundAction={setRemoveBackground}
                   />
                 )}
                 {activeSection?.id === "summary" && (
-                  <ProfessionalSummary
-                    summary={resumeData?.professional_summary}
-                    onChange={(summary) => setResumeData((prev) => ({ ...prev, professional_summary: summary }))}
-                    // setResumeData={}
+                  <ProfessionalSummaryForm
+                    summary={resumeData?.professionalSummary}
+                    onChange={(summary) => setResumeData((prev) => ({ ...prev, professionalSummary: summary }))}
                   />
                 )}
               </div>
@@ -162,7 +161,7 @@ export default function ResumeBuilder() {
             {resumeData && (
               <ResumePreview
                 data={resumeData}
-                accentColor={resumeData.accent_color ?? ""}
+                accentColor={resumeData.accentColor ?? ""}
                 template={resumeData?.template as TemplateType}
               />
             )}

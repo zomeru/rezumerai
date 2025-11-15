@@ -7,44 +7,44 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
     <div className="mx-auto max-w-4xl bg-white text-gray-800">
       {/* Header */}
       <header className="p-8 text-white" style={{ backgroundColor: accentColor }}>
-        <h1 className="mb-3 font-light text-4xl">{data.personal_info?.full_name || "Your Name"}</h1>
+        <h1 className="mb-3 font-light text-4xl">{data.personalInfo?.fullName || "Your Name"}</h1>
 
         <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          {data.personal_info?.email && (
+          {data.personalInfo?.email && (
             <div className="flex items-center gap-2">
               <Mail className="size-4" />
-              <span>{data.personal_info.email}</span>
+              <span>{data.personalInfo.email}</span>
             </div>
           )}
-          {data.personal_info?.phone && (
+          {data.personalInfo?.phone && (
             <div className="flex items-center gap-2">
               <Phone className="size-4" />
-              <span>{data.personal_info.phone}</span>
+              <span>{data.personalInfo.phone}</span>
             </div>
           )}
-          {data.personal_info?.location && (
+          {data.personalInfo?.location && (
             <div className="flex items-center gap-2">
               <MapPin className="size-4" />
-              <span>{data.personal_info.location}</span>
+              <span>{data.personalInfo.location}</span>
             </div>
           )}
-          {data.personal_info?.linkedin && (
-            <a target="_blank" href={data.personal_info?.linkedin} className="flex items-center gap-2">
+          {data.personalInfo?.linkedin && (
+            <a target="_blank" href={data.personalInfo?.linkedin} className="flex items-center gap-2">
               <Linkedin className="size-4" />
               <span className="break-all text-xs">
-                {data.personal_info.linkedin.split("https://www.")[1]
-                  ? data.personal_info.linkedin.split("https://www.")[1]
-                  : data.personal_info.linkedin}
+                {data.personalInfo.linkedin.split("https://www.")[1]
+                  ? data.personalInfo.linkedin.split("https://www.")[1]
+                  : data.personalInfo.linkedin}
               </span>
             </a>
           )}
-          {data.personal_info?.website && (
-            <a target="_blank" href={data.personal_info?.website} className="flex items-center gap-2">
+          {data.personalInfo?.website && (
+            <a target="_blank" href={data.personalInfo?.website} className="flex items-center gap-2">
               <Globe className="size-4" />
               <span className="break-all text-xs">
-                {data.personal_info.website.split("https://")[1]
-                  ? data.personal_info.website.split("https://")[1]
-                  : data.personal_info.website}
+                {data.personalInfo.website.split("https://")[1]
+                  ? data.personalInfo.website.split("https://")[1]
+                  : data.personalInfo.website}
               </span>
             </a>
           )}
@@ -53,10 +53,10 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
 
       <div className="p-8">
         {/* Professional Summary */}
-        {data.professional_summary && (
+        {data.professionalSummary && (
           <section className="mb-8">
             <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-2xl">Professional Summary</h2>
-            <p className="text-gray-700">{data.professional_summary}</p>
+            <p className="text-gray-700">{data.professionalSummary}</p>
           </section>
         )}
 
@@ -77,7 +77,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                     </div>
                     <div className="rounded bg-gray-100 px-3 py-1 text-gray-500 text-sm">
                       {formatShortDate(exp?.start_date ?? "")} -{" "}
-                      {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
+                      {exp?.isCurrent ? "Present" : formatShortDate(exp?.end_date ?? "")}
                     </div>
                   </div>
                   {exp?.description && (
@@ -127,7 +127,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                     </h3>
                     <p style={{ color: accentColor }}>{edu?.institution}</p>
                     <div className="flex items-center justify-between text-gray-600 text-sm">
-                      <span>{formatShortDate(edu?.graduation_date ?? "")}</span>
+                      <span>{formatShortDate(edu?.graduationDate ?? "")}</span>
                       {edu?.gpa && <span>GPA: {edu?.gpa}</span>}
                     </div>
                   </div>

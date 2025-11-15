@@ -6,20 +6,20 @@ import { useRef } from "react";
 import type { ResumeData } from "@/constants/dummy";
 
 type PersonalInfoFormProps = {
-  data: ResumeData["personal_info"];
-  onChangeAction: (data: ResumeData["personal_info"]) => void;
+  data: ResumeData["personalInfo"];
+  onChangeAction: (data: ResumeData["personalInfo"]) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean | ((prev: boolean) => boolean)) => void;
 };
 
 const FIELDS: {
-  key: keyof NonNullable<ResumeData["personal_info"]>;
+  key: keyof NonNullable<ResumeData["personalInfo"]>;
   label: string;
   icon: typeof User;
   type: string;
   required: boolean;
 }[] = [
-  { key: "full_name", label: "Full Name", icon: User, type: "text", required: true },
+  { key: "fullName", label: "Full Name", icon: User, type: "text", required: true },
   { key: "email", label: "Email", icon: Mail, type: "email", required: true },
   { key: "phone", label: "Phone", icon: Phone, type: "tel", required: true },
   { key: "location", label: "Location", icon: MapPin, type: "text", required: true },
@@ -36,7 +36,7 @@ export default function PersonalInfoForm({
 }: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (field: keyof NonNullable<ResumeData["personal_info"]>, value: string) => {
+  const handleImageChange = (field: keyof NonNullable<ResumeData["personalInfo"]>, value: string) => {
     onChangeAction({
       ...data,
       [field]: value,
