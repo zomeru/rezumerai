@@ -16,10 +16,10 @@ export default function EditResumeModal({ title: initialTitle, onSubmit, onClose
     setTitle(initialTitle);
   }, [initialTitle]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit(title);
-  };
+  }
 
   return (
     <BaseModal isOpen={true} title="Edit Resume Title" onClose={onClose} onSubmit={handleSubmit} submitLabel="Update">

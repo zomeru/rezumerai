@@ -88,7 +88,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
 
   const { state, setEmail, reset } = useAuthSocialForm();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       await onSubmit(state, e);
@@ -104,15 +104,15 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
     } finally {
       onFinally?.();
     }
-  };
+  }
 
-  const handleGoogleAuth = () => {
+  function handleGoogleAuth() {
     googleAuth?.();
-  };
+  }
 
-  const handleAppleAuth = () => {
+  function handleAppleAuth() {
     appleAuth?.();
-  };
+  }
 
   return (
     <div className="mx-4 max-w-96 rounded-xl bg-white p-4 text-left text-gray-500 text-sm shadow-[0px_0px_10px_0px] shadow-black/10 md:p-6">

@@ -11,16 +11,16 @@ interface CreateResumeModalProps {
 export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps) {
   const [title, setTitle] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit(title);
     setTitle("");
-  };
+  }
 
-  const handleClose = () => {
+  function handleClose() {
     setTitle("");
     onClose();
-  };
+  }
 
   return (
     <BaseModal

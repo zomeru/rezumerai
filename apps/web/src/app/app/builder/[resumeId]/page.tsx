@@ -39,20 +39,20 @@ export default function ResumeBuilder() {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
-  const loadExistingResume = async () => {
+  async function loadExistingResume() {
     const resume = dummyResumeData.find((r) => r._id === resumeId) || null;
     setResumeData(resume);
     // document.title = resume ? `${resume.title} - Rezumer AI` : "Rezumer AI";
-  };
+  }
 
-  const updateResumeData = (data: ResumeData["personal_info"]) => {
+  function updateResumeData(data: ResumeData["personal_info"]) {
     setResumeData((prev) => {
       return {
         ...prev,
         personal_info: data,
       };
     });
-  };
+  }
 
   useEffect(() => {
     loadExistingResume();
