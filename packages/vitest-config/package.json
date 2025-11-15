@@ -39,7 +39,7 @@
     "clean": "rm -rf node_modules .turbo dist"
   },
   "dependencies": {
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.9"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.5",
