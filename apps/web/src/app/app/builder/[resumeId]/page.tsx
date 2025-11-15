@@ -1,5 +1,3 @@
-// biome-ignore-all lint: Current file is under heavy development
-
 "use client";
 
 import { cn } from "@rezumerai/utils/styles";
@@ -17,7 +15,13 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ColorPicker, PersonalInfoForm, ProfessionalSummary, ResumePreview, TemplateSelector } from "@/components";
+import {
+  ColorPicker,
+  PersonalInfoForm,
+  ProfessionalSummary,
+  ResumePreview,
+  TemplateSelector,
+} from "@/components/ResumeBuilder";
 import { dummyResumeData, type ResumeData } from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
@@ -151,7 +155,7 @@ export default function ResumeBuilder() {
           </div>
 
           {/* Right Panel - Preview */}
-          <div className="lg:col-span-7 max-lg:mt-6">
+          <div className="max-lg:mt-6 lg:col-span-7">
             <div className="">{/* buttons */}</div>
 
             {/* resume preview */}
