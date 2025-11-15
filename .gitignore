@@ -52,3 +52,5 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 .serena
+.vscode/launch.json
+.vscode/tasks.json
