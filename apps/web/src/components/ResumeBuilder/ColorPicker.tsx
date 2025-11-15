@@ -24,13 +24,20 @@ interface ColorPickerProps {
 export default function ColorPicker({ selectedColor, onChange }: ColorPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  function onColorPickerClik() {
+    setIsOpen((prev) => !prev);
+  }
+
+  function onColorChange(value: string) {
+    onChange(value);
+    setIsOpen(false);
+  }
+
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={() => {
-          setIsOpen((prev) => !prev);
-        }}
+        onClick={onColorPickerClik}
         className="flex items-center gap-1 rounded-lg bg-linear-to-br from-accent-50 to-accent-100 px-3 py-2 text-accent-600 text-sm ring-accent-300 hover:ring-transition-all"
       >
         <Palette size={16} /> <span className="max-sm:hidden">Accent</span>
@@ -44,8 +51,7 @@ export default function ColorPicker({ selectedColor, onChange }: ColorPickerProp
                 key={value}
                 className="group relative flex cursor-pointer flex-col"
                 onClick={() => {
-                  onChange(value);
-                  setIsOpen(false);
+                  onColorChange(value);
                 }}
               >
                 <div
