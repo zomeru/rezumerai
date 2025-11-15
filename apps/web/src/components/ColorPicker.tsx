@@ -31,7 +31,7 @@ export default function ColorPicker({ selectedColor, onChange }: ColorPickerProp
         onClick={() => {
           setIsOpen((prev) => !prev);
         }}
-        className="flex items-center gap-1 rounded-lg bg-linear-to-br from-primary-50 to-primary-100 px-3 py-2 text-purple-600 text-sm ring-primary-300 hover:ring-transition-all"
+        className="flex items-center gap-1 rounded-lg bg-linear-to-br from-primary-50 to-primary-100 px-3 py-2 text-secondary-600 text-sm ring-primary-300 hover:ring-transition-all"
       >
         <Palette size={16} /> <span className="max-sm:hidden">Accent</span>
       </button>

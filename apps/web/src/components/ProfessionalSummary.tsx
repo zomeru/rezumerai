@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 
 interface ProfessionalSummaryProps {
-  summary: string;
+  summary?: string;
   onChange: (summary: string) => void;
 }
 
@@ -12,10 +12,10 @@ export default function ProfessionalSummary({ summary = "", onChange }: Professi
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-between">
         <div>
           <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-lg">Professional Summary</h3>
-          <p className="text-gray-500 text-sm">Insert your professional summary here.</p>
+          <p className="text-gray-500 text-sm">Add your professional summary here.</p>
         </div>
         <button
           type="button"

@@ -17,11 +17,17 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ColorPicker, PersonalInfoForm, ResumePreview, TemplateSelector } from "@/components";
+import { ColorPicker, PersonalInfoForm, ProfessionalSummary, ResumePreview, TemplateSelector } from "@/components";
 import { dummyResumeData, type ResumeData } from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
-const sections = [
+type SectionType = {
+  id: "personal" | "summary" | "experience" | "education" | "projects" | "skills";
+  name: string;
+  icon: typeof ArrowLeftIcon;
+};
+
+const sections: SectionType[] = [
   { id: "personal", name: "Personal Information", icon: User },
   { id: "summary", name: "Summary", icon: FileText },
   { id: "experience", name: "Experience", icon: Briefcase },
@@ -131,6 +137,13 @@ export default function ResumeBuilder() {
                     onChangeAction={updateResumeData}
                     removeBackground={removeBackground}
                     setRemoveBackgroundAction={setRemoveBackground}
+                  />
+                )}
+                {activeSection?.id === "summary" && (
+                  <ProfessionalSummary
+                    summary={resumeData?.professional_summary}
+                    onChange={(summary) => setResumeData((prev) => ({ ...prev, professional_summary: summary }))}
+                    // setResumeData={}
                   />
                 )}
               </div>
