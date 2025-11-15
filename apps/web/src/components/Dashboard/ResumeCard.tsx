@@ -1,11 +1,11 @@
 "use client";
 
 import { FilePenLineIcon, PencilIcon, TrashIcon } from "lucide-react";
-import type { ResumeData } from "@/constants/dummy";
+import type { Resume } from "@/constants/dummy";
 import { onKeyDown } from "@/lib/utils";
 
 interface ResumeCardProps {
-  resume: ResumeData;
+  resume: Resume;
   color: string;
   onOpen: () => void;
   onEdit: () => void;
@@ -37,7 +37,7 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: 
         </p>
 
         <p className="absolute bottom-1 px-2 text-center text-[11px]" style={{ color: `${color}90` }}>
-          Updated on {formatDate(resume?.updatedAt ?? "")}
+          Updated on {formatDate(resume.updatedAt)}
         </p>
 
         {/* Action buttons */}

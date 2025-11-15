@@ -3,17 +3,17 @@
 import { BriefcaseBusiness, Globe, Linkedin, Mail, MapPin, Phone, User } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
-import type { ResumeData } from "@/constants/dummy";
+import type { Resume } from "@/constants/dummy";
 
 type PersonalInfoFormProps = {
-  data: ResumeData["personalInfo"];
-  onChangeAction: (data: ResumeData["personalInfo"]) => void;
+  data: Resume["personalInfo"];
+  onChangeAction: (data: Resume["personalInfo"]) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean | ((prev: boolean) => boolean)) => void;
 };
 
 const FIELDS: {
-  key: keyof NonNullable<ResumeData["personalInfo"]>;
+  key: keyof Resume["personalInfo"];
   label: string;
   icon: typeof User;
   type: string;
@@ -36,7 +36,7 @@ export default function PersonalInfoForm({
 }: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (field: keyof NonNullable<ResumeData["personalInfo"]>, value: string) => {
+  const handleImageChange = (field: keyof Resume["personalInfo"], value: string) => {
     onChangeAction({
       ...data,
       [field]: value,
@@ -53,7 +53,7 @@ export default function PersonalInfoForm({
       <p className="text-gray-600 text-sm">Get Started with the personal information</p>
       <div className="flex items-center gap-2">
         <label htmlFor="">
-          {data?.image ? (
+          {data.image ? (
             <button onClick={handleClickUpload} type="button">
               <Image
                 src={data.image}
@@ -83,7 +83,7 @@ export default function PersonalInfoForm({
             }
           />
         </label>
-        {data?.image && (
+        {data.image && (
           <div className="flex flex-col gap-1 pl-4 text-sm">
             <p>Remove Background</p>
             <label className="relative inline-flex cursor-pointer items-center gap-3 text-gray-900">
@@ -111,7 +111,7 @@ export default function PersonalInfoForm({
             <input
               id={key}
               type={type}
-              value={data?.[key] || ""}
+              value={data[key]}
               required={required}
               onChange={(e) => handleImageChange(key, e.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"

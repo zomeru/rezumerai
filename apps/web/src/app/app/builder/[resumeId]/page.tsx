@@ -17,12 +17,13 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ColorPicker,
+  ExperienceForm,
   PersonalInfoForm,
   ProfessionalSummaryForm,
   ResumePreview,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import { dummyResumeData, type ResumeData } from "@/constants/dummy";
+import { defaultResume, dummyResumeData, type Experience, type Resume } from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
 type SectionType = {
@@ -45,23 +46,47 @@ export default function ResumeBuilder() {
     resumeId: string;
   }>();
 
-  const [resumeData, setResumeData] = useState<null | ResumeData>(null);
+  const [resumeData, setResumeData] = useState<Resume>(defaultResume);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
   async function loadExistingResume() {
-    const resume = dummyResumeData.find((r) => r._id === resumeId) || null;
+    const resume = dummyResumeData.find((r) => r._id === resumeId) || defaultResume;
     setResumeData(resume);
     // document.title = resume ? `${resume.title} - Rezumer AI` : "Rezumer AI";
   }
 
-  function updateResumeData(data: ResumeData["personalInfo"]) {
+  function updateResumeData(data: Resume["personalInfo"]) {
     setResumeData((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
       return {
         ...prev,
         personalInfo: data,
       };
     });
+  }
+
+  function handleTemplateChange(template: TemplateType) {
+    setResumeData((prev) => {
+      return { ...prev, template };
+    });
+  }
+
+  function handleColorChange(color: string) {
+    setResumeData((prev) => {
+      return { ...prev, accentColor: color };
+    });
+  }
+
+  function handleSummaryChange(summary: string) {
+    setResumeData((prev) => ({ ...prev, professionalSummary: summary }));
+  }
+
+  function handleExperienceChange(experience: Experience[]) {
+    setResumeData((prev) => ({ ...prev, experience }));
   }
 
   useEffect(() => {
@@ -96,13 +121,10 @@ export default function ResumeBuilder() {
               <div className="mb-6 flex items-center justify-between border-gray-300 border-b py-1">
                 <div className="flex items-center gap-2">
                   <TemplateSelector
-                    selectedTemplate={resumeData?.template as TemplateType}
-                    onChange={(template) => setResumeData((prev) => ({ ...prev, template }))}
+                    selectedTemplate={resumeData.template}
+                    onChange={(template) => handleTemplateChange(template)}
                   />
-                  <ColorPicker
-                    selectedColor={resumeData?.accentColor}
-                    onChange={(color) => setResumeData((prev) => ({ ...prev, accentColor: color }))}
-                  />
+                  <ColorPicker selectedColor={resumeData.accentColor} onChange={(color) => handleColorChange(color)} />
                 </div>
                 <div className="flex items-center">
                   {activeSectionIndex !== 0 && (
@@ -137,17 +159,17 @@ export default function ResumeBuilder() {
               <div className="space-y-6">
                 {activeSection?.id === "personal" && (
                   <PersonalInfoForm
-                    data={resumeData?.personalInfo}
+                    data={resumeData.personalInfo}
                     onChangeAction={updateResumeData}
                     removeBackground={removeBackground}
                     setRemoveBackgroundAction={setRemoveBackground}
                   />
                 )}
                 {activeSection?.id === "summary" && (
-                  <ProfessionalSummaryForm
-                    summary={resumeData?.professionalSummary}
-                    onChange={(summary) => setResumeData((prev) => ({ ...prev, professionalSummary: summary }))}
-                  />
+                  <ProfessionalSummaryForm summary={resumeData.professionalSummary} onChange={handleSummaryChange} />
+                )}
+                {activeSection?.id === "experience" && (
+                  <ExperienceForm experience={resumeData.experience} onChange={handleExperienceChange} />
                 )}
               </div>
             </div>
@@ -159,11 +181,7 @@ export default function ResumeBuilder() {
 
             {/* resume preview */}
             {resumeData && (
-              <ResumePreview
-                data={resumeData}
-                accentColor={resumeData.accentColor ?? ""}
-                template={resumeData?.template as TemplateType}
-              />
+              <ResumePreview data={resumeData} accentColor={resumeData.accentColor} template={resumeData.template} />
             )}
           </div>
         </div>

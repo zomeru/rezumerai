@@ -1,6 +1,8 @@
 // @ts-nocheck
 
-export const dummyResumeData = [
+import type { TemplateType } from "@/templates";
+
+export const dummyResumeData: Resume[] = [
   {
     // ----------------------------------------------------- Resume 1 ------------------------------------------------------
     personalInfo: {
@@ -34,8 +36,8 @@ export const dummyResumeData = [
       {
         company: "Example Technologies.",
         position: "Senior Full Stack Developer",
-        start_date: "2023-06",
-        end_date: "Present",
+        startDate: "2023-06",
+        endDate: "Present",
         description:
           "Architected, developed, and deployed innovative full-stack applications at Example Technologies.\ncreating robust back-end systems and intuitive front- end interfaces to deliver meaningful digital experiences ",
         isCurrent: true,
@@ -44,8 +46,8 @@ export const dummyResumeData = [
       {
         company: "Example Technologies.",
         position: "Full Stack Developer",
-        start_date: "2019-08",
-        end_date: "2023-05",
+        startDate: "2019-08",
+        endDate: "2023-05",
         description:
           "Engineered and deployed scalable full-stack web applications for Example Technologies, translating complex requirements into robust front-end interfaces and efficient back-end services.",
         isCurrent: false,
@@ -133,8 +135,8 @@ export const dummyResumeData = [
       {
         company: "TechSpark Inc.",
         position: "Lead Frontend Engineer",
-        start_date: "2022-02",
-        end_date: "Present",
+        startDate: "2022-02",
+        endDate: "Present",
         description:
           "Leading a team of frontend developers to build accessible and scalable user interfaces. Collaborated with UX teams to implement design systems and improve frontend performance.",
         isCurrent: true,
@@ -143,8 +145,8 @@ export const dummyResumeData = [
       {
         company: "PixelForge Labs",
         position: "Frontend Developer",
-        start_date: "2018-09",
-        end_date: "2022-01",
+        startDate: "2018-09",
+        endDate: "2022-01",
         description:
           "Developed reusable UI components using React and Vue.js. Worked closely with backend teams to integrate REST APIs and optimize SPA performance.",
         isCurrent: false,
@@ -213,8 +215,8 @@ export const dummyResumeData = [
       {
         company: "DataNest Solutions",
         position: "Senior Backend Engineer",
-        start_date: "2021-03",
-        end_date: "Present",
+        startDate: "2021-03",
+        endDate: "Present",
         description:
           "Developed distributed microservices using Node.js and Docker. Implemented API rate limiting, authentication, and background job processing using Redis and Bull.",
         isCurrent: true,
@@ -223,8 +225,8 @@ export const dummyResumeData = [
       {
         company: "CloudCore Systems",
         position: "Backend Developer",
-        start_date: "2016-07",
-        end_date: "2021-02",
+        startDate: "2016-07",
+        endDate: "2021-02",
         description:
           "Maintained and scaled backend systems built on Python and PostgreSQL. Automated deployments with GitLab CI/CD and improved API response time by 35%.",
         isCurrent: false,
@@ -272,8 +274,118 @@ export const dummyResumeData = [
   },
 ];
 
-export type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-};
+export interface PersonalInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  website: string;
+  profession: string;
+  image: string;
+}
 
-export type ResumeData = DeepPartial<(typeof dummyResumeData)[0]>;
+export interface Experience {
+  _id: string;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  isCurrent: boolean;
+}
+
+export interface Education {
+  _id: string;
+  institution: string;
+  degree: string;
+  field: string;
+  graduationDate: string;
+  gpa: string;
+}
+
+export interface Project {
+  _id: string;
+  name: string;
+  type: string;
+  description: string;
+}
+
+export interface Resume {
+  _id: string;
+  userId: string;
+  title: string;
+  public: boolean;
+  professionalSummary: string;
+  template: TemplateType;
+  accentColor: string;
+  updatedAt: string;
+  createdAt: string;
+
+  personalInfo: PersonalInfo;
+
+  skills: string[];
+
+  experience: Array<Experience>;
+
+  education: Array<Education>;
+
+  project: Array<Project>;
+}
+
+export const defaultResume: Resume = {
+  _id: "",
+  userId: "",
+  title: "",
+  public: false,
+  professionalSummary: "",
+  template: "",
+  accentColor: "",
+  updatedAt: "",
+  createdAt: "",
+
+  personalInfo: {
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    website: "",
+    profession: "",
+    image: "",
+  },
+
+  skills: [],
+
+  experience: [
+    {
+      _id: "",
+      company: "",
+      position: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+      isCurrent: false,
+    },
+  ],
+
+  education: [
+    {
+      _id: "",
+      institution: "",
+      degree: "",
+      field: "",
+      graduationDate: "",
+      gpa: "",
+    },
+  ],
+
+  project: [
+    {
+      _id: "",
+      name: "",
+      type: "",
+      description: "",
+    },
+  ],
+};

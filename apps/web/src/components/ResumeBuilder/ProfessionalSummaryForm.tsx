@@ -19,10 +19,10 @@ export default function ProfessionalSummaryForm({ summary = "", onChange }: Prof
         </div>
         <button
           type="button"
-          className="flex items-center gap-2 rounded bg-secondary-100 px-3 py-1 text-secondary-700 text-sm transition-colors hover:bg-secondary-200 disabled:opacity-50"
+          className="flex items-center gap-2 rounded bg-accent-100 px-3 py-1 text-accent-700 text-sm transition-colors hover:bg-accent-200 disabled:opacity-50"
         >
           <Sparkles className="size-4" />
-          AI Enhance
+          Enhance with AI
         </button>
       </div>
 

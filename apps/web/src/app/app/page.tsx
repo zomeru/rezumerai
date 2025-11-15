@@ -9,7 +9,8 @@ import {
   ResumeCard,
   UploadResumeModal,
 } from "@/components/Dashboard";
-import { dummyResumeData, type ResumeData } from "@/constants/dummy";
+import { dummyResumeData, type Resume } from "@/constants/dummy";
+import { generateUuidKey } from "@/lib/utils";
 
 const RESUME_COLORS = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   // State management
-  const [resumes, setResumes] = useState<ResumeData[]>([]);
+  const [resumes, setResumes] = useState<Resume[]>([]);
   const [modalState, setModalState] = useState<ModalState>({ type: null });
   const [editingTitle, setEditingTitle] = useState("");
 
@@ -103,16 +104,20 @@ export default function Dashboard() {
 
         {/* Resume grid */}
         <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap">
-          {resumes.map((resume, index) => (
-            <ResumeCard
-              key={resume._id}
-              resume={resume}
-              color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-              onOpen={() => handleOpenResume(resume._id ?? "")}
-              onEdit={() => handleOpenEditModal(resume._id ?? "", resume.title ?? "")}
-              onDelete={() => handleDeleteResume(resume._id ?? "")}
-            />
-          ))}
+          {resumes.map((resume, index) => {
+            const key = generateUuidKey(resume._id);
+
+            return (
+              <ResumeCard
+                key={key}
+                resume={resume}
+                color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
+                onOpen={() => handleOpenResume(resume._id)}
+                onEdit={() => handleOpenEditModal(resume._id, resume.title)}
+                onDelete={() => handleDeleteResume(resume._id)}
+              />
+            );
+          })}
         </div>
       </div>
 

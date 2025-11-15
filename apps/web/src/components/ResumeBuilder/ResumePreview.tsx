@@ -1,11 +1,11 @@
 "use client";
 
 import { cn } from "@rezumerai/utils/styles";
-import type { ResumeData } from "@/constants/dummy";
+import type { Resume } from "@/constants/dummy";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
 
 interface ResumePreviewProps {
-  data: ResumeData;
+  data: Resume;
   template: TemplateType;
   accentColor: string;
   className?: string;
