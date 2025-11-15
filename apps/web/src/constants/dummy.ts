@@ -1,10 +1,12 @@
 // @ts-nocheck
 
-export const dummyResumeData = [
+import type { TemplateType } from "@/templates";
+
+export const dummyResumeData: Resume[] = [
   {
     // ----------------------------------------------------- Resume 1 ------------------------------------------------------
-    personal_info: {
-      full_name: "Alex Smith",
+    personalInfo: {
+      fullName: "Alex Smith",
       email: "alex@example.com",
       phone: "0 123456789",
       location: "NY, USA",
@@ -17,7 +19,7 @@ export const dummyResumeData = [
     userId: "68c180acdf1775dfd02c6d87",
     title: "Alex's Resume",
     public: true,
-    professional_summary:
+    professionalSummary:
       "Highly analytical Data Analyst with 6 years of experience transforming complex datasets into actionable insights using SQL, Python, and advanced visualization tools. ",
     skills: [
       "JavaScript",
@@ -34,21 +36,21 @@ export const dummyResumeData = [
       {
         company: "Example Technologies.",
         position: "Senior Full Stack Developer",
-        start_date: "2023-06",
-        end_date: "Present",
+        startDate: "2023-06",
+        endDate: "Present",
         description:
           "Architected, developed, and deployed innovative full-stack applications at Example Technologies.\ncreating robust back-end systems and intuitive front- end interfaces to deliver meaningful digital experiences ",
-        is_current: true,
+        isCurrent: true,
         _id: "68d2a31a1c4dd38875bb037f",
       },
       {
         company: "Example Technologies.",
         position: "Full Stack Developer",
-        start_date: "2019-08",
-        end_date: "2023-05",
+        startDate: "2019-08",
+        endDate: "2023-05",
         description:
           "Engineered and deployed scalable full-stack web applications for Example Technologies, translating complex requirements into robust front-end interfaces and efficient back-end services.",
-        is_current: false,
+        isCurrent: false,
         _id: "68d4f7abc8f0d46dc8a8b114",
       },
     ],
@@ -57,7 +59,7 @@ export const dummyResumeData = [
         institution: "Example Institute of Technology",
         degree: "B.TECH",
         field: "CSE",
-        graduation_date: "2023-05",
+        graduationDate: "2023-05",
         gpa: "8.7",
         _id: "68d2a31a1c4dd38875bb0380",
       },
@@ -65,7 +67,7 @@ export const dummyResumeData = [
         institution: "Example Public School",
         degree: "HIGHER SECONDARY",
         field: "PCM",
-        graduation_date: "2019-03",
+        graduationDate: "2019-03",
         gpa: "",
         _id: "68d2a31a1c4dd38875bb0381",
       },
@@ -73,13 +75,13 @@ export const dummyResumeData = [
         institution: "Example Academy",
         degree: "SECONDARY SCHOOL",
         field: "",
-        graduation_date: "2017-03",
+        graduationDate: "2017-03",
         gpa: "",
         _id: "68d2a31a1c4dd38875bb0382",
       },
     ],
     template: "minimal-image",
-    accent_color: "#14B8A6",
+    accentColor: "#14B8A6",
     project: [
       {
         name: "Team Task Management System",
@@ -101,8 +103,8 @@ export const dummyResumeData = [
   },
   {
     // ----------------------------------------------------- Resume 2 ------------------------------------------------------
-    personal_info: {
-      full_name: "Jordan Lee",
+    personalInfo: {
+      fullName: "Jordan Lee",
       email: "jordan.lee@example.com",
       phone: "0 987654321",
       location: "San Francisco, CA, USA",
@@ -115,7 +117,7 @@ export const dummyResumeData = [
     userId: "78d2e0bdcf2886efg03e7e98",
     title: "Jordan's Resume",
     public: true,
-    professional_summary:
+    professionalSummary:
       "Creative and detail-oriented Frontend Engineer with 5+ years of experience crafting responsive, user-centric web applications using React, Vue, and modern CSS frameworks.",
     skills: [
       "HTML5",
@@ -133,21 +135,21 @@ export const dummyResumeData = [
       {
         company: "TechSpark Inc.",
         position: "Lead Frontend Engineer",
-        start_date: "2022-02",
-        end_date: "Present",
+        startDate: "2022-02",
+        endDate: "Present",
         description:
           "Leading a team of frontend developers to build accessible and scalable user interfaces. Collaborated with UX teams to implement design systems and improve frontend performance.",
-        is_current: true,
+        isCurrent: true,
         _id: "78e3b42c2d5ff49286cc1490",
       },
       {
         company: "PixelForge Labs",
         position: "Frontend Developer",
-        start_date: "2018-09",
-        end_date: "2022-01",
+        startDate: "2018-09",
+        endDate: "2022-01",
         description:
           "Developed reusable UI components using React and Vue.js. Worked closely with backend teams to integrate REST APIs and optimize SPA performance.",
-        is_current: false,
+        isCurrent: false,
         _id: "78e3b42c2d5ff49286cc1491",
       },
     ],
@@ -156,7 +158,7 @@ export const dummyResumeData = [
         institution: "University of Digital Arts",
         degree: "B.Sc.",
         field: "Computer Science",
-        graduation_date: "2018-06",
+        graduationDate: "2018-06",
         gpa: "3.8",
         _id: "78e3b42c2d5ff49286cc1492",
       },
@@ -164,13 +166,13 @@ export const dummyResumeData = [
         institution: "Lincoln High School",
         degree: "High School Diploma",
         field: "Science",
-        graduation_date: "2014-05",
+        graduationDate: "2014-05",
         gpa: "",
         _id: "78e3b42c2d5ff49286cc1493",
       },
     ],
     template: "minimal-image",
-    accent_color: "#6366F1",
+    accentColor: "#6366F1",
     project: [
       {
         name: "FitTrack - Fitness Dashboard",
@@ -192,8 +194,8 @@ export const dummyResumeData = [
   },
   {
     // ----------------------------------------------------- Resume 3 ------------------------------------------------------
-    personal_info: {
-      full_name: "Riley Morgan",
+    personalInfo: {
+      fullName: "Riley Morgan",
       email: "riley.morgan@example.com",
       phone: "0 1122334455",
       location: "Austin, TX, USA",
@@ -206,28 +208,28 @@ export const dummyResumeData = [
     userId: "89e3f1cedg3997fgh14f8f09",
     title: "Riley's Resume",
     public: true,
-    professional_summary:
+    professionalSummary:
       "Dedicated Backend Developer with 7+ years of experience building secure, high-performance APIs and microservices using Node.js, Python, and PostgreSQL. Passionate about scalability, automation, and clean architecture.",
     skills: ["Node.js", "Python", "PostgreSQL", "MongoDB", "Docker", "Kubernetes", "CI/CD", "Redis", "GraphQL", "AWS"],
     experience: [
       {
         company: "DataNest Solutions",
         position: "Senior Backend Engineer",
-        start_date: "2021-03",
-        end_date: "Present",
+        startDate: "2021-03",
+        endDate: "Present",
         description:
           "Developed distributed microservices using Node.js and Docker. Implemented API rate limiting, authentication, and background job processing using Redis and Bull.",
-        is_current: true,
+        isCurrent: true,
         _id: "89f4c53d3e6gg59397dd259h",
       },
       {
         company: "CloudCore Systems",
         position: "Backend Developer",
-        start_date: "2016-07",
-        end_date: "2021-02",
+        startDate: "2016-07",
+        endDate: "2021-02",
         description:
           "Maintained and scaled backend systems built on Python and PostgreSQL. Automated deployments with GitLab CI/CD and improved API response time by 35%.",
-        is_current: false,
+        isCurrent: false,
         _id: "89f4c53d3e6gg59397dd259i",
       },
     ],
@@ -236,7 +238,7 @@ export const dummyResumeData = [
         institution: "Texas Institute of Technology",
         degree: "B.E.",
         field: "Information Technology",
-        graduation_date: "2016-05",
+        graduationDate: "2016-05",
         gpa: "3.9",
         _id: "89f4c53d3e6gg59397dd259j",
       },
@@ -244,13 +246,13 @@ export const dummyResumeData = [
         institution: "Central High School",
         degree: "High School Diploma",
         field: "Science",
-        graduation_date: "2012-04",
+        graduationDate: "2012-04",
         gpa: "",
         _id: "89f4c53d3e6gg59397dd259k",
       },
     ],
     template: "minimal-image",
-    accent_color: "#F59E0B",
+    accentColor: "#F59E0B",
     project: [
       {
         name: "Invoicr - Invoice Management System",
@@ -272,8 +274,118 @@ export const dummyResumeData = [
   },
 ];
 
-export type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-};
+export interface PersonalInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  website: string;
+  profession: string;
+  image: string;
+}
 
-export type ResumeData = DeepPartial<(typeof dummyResumeData)[0]>;
+export interface Experience {
+  _id: string;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  isCurrent: boolean;
+}
+
+export interface Education {
+  _id: string;
+  institution: string;
+  degree: string;
+  field: string;
+  graduationDate: string;
+  gpa: string;
+}
+
+export interface Project {
+  _id: string;
+  name: string;
+  type: string;
+  description: string;
+}
+
+export interface Resume {
+  _id: string;
+  userId: string;
+  title: string;
+  public: boolean;
+  professionalSummary: string;
+  template: TemplateType;
+  accentColor: string;
+  updatedAt: string;
+  createdAt: string;
+
+  personalInfo: PersonalInfo;
+
+  skills: string[];
+
+  experience: Array<Experience>;
+
+  education: Array<Education>;
+
+  project: Array<Project>;
+}
+
+export const defaultResume: Resume = {
+  _id: "",
+  userId: "",
+  title: "",
+  public: false,
+  professionalSummary: "",
+  template: "",
+  accentColor: "",
+  updatedAt: "",
+  createdAt: "",
+
+  personalInfo: {
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    website: "",
+    profession: "",
+    image: "",
+  },
+
+  skills: [],
+
+  experience: [
+    {
+      _id: "",
+      company: "",
+      position: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+      isCurrent: false,
+    },
+  ],
+
+  education: [
+    {
+      _id: "",
+      institution: "",
+      degree: "",
+      field: "",
+      graduationDate: "",
+      gpa: "",
+    },
+  ],
+
+  project: [
+    {
+      _id: "",
+      name: "",
+      type: "",
+      description: "",
+    },
+  ],
+};

@@ -9,7 +9,8 @@ import {
   ResumeCard,
   UploadResumeModal,
 } from "@/components/Dashboard";
-import { dummyResumeData, type ResumeData } from "@/constants/dummy";
+import { dummyResumeData, type Resume } from "@/constants/dummy";
+import { generateUuidKey } from "@/lib/utils";
 
 const RESUME_COLORS = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   // State management
-  const [resumes, setResumes] = useState<ResumeData[]>([]);
+  const [resumes, setResumes] = useState<Resume[]>([]);
   const [modalState, setModalState] = useState<ModalState>({ type: null });
   const [editingTitle, setEditingTitle] = useState("");
 
@@ -35,80 +36,55 @@ export default function Dashboard() {
     loadResumes();
   }, []);
 
-  /**
-   * Load all resumes from data source
-   */
-  const loadResumes = async () => {
+  async function loadResumes() {
     try {
       setResumes(dummyResumeData);
     } catch (error) {
       console.error("Failed to load resumes:", error);
     }
-  };
+  }
 
-  /**
-   * Handle resume creation
-   */
-  const handleCreateResume = (title: string) => {
+  function handleCreateResume(title: string) {
     if (!title.trim()) return;
     setModalState({ type: null });
     router.push("/app/builder/123");
-  };
+  }
 
-  /**
-   * Handle resume upload
-   */
-  const handleUploadResume = (title: string, file: File) => {
+  function handleUploadResume(title: string, file: File) {
     if (!title.trim() || !file) return;
     setModalState({ type: null });
     router.push("/app/builder/123");
-  };
+  }
 
-  /**
-   * Handle resume title update
-   */
-  const handleEditTitle = (newTitle: string) => {
+  function handleEditTitle(newTitle: string) {
     if (!newTitle.trim() || !modalState.resumeId) return;
 
     setResumes((prev) =>
       prev.map((resume) => (resume._id === modalState.resumeId ? { ...resume, title: newTitle } : resume)),
     );
     setModalState({ type: null });
-  };
+  }
 
-  /**
-   * Handle resume deletion with confirmation
-   */
-  const handleDeleteResume = (resumeId: string) => {
+  function handleDeleteResume(resumeId: string) {
     const confirmed = window.confirm("Are you sure you want to delete this resume?");
-
     if (confirmed) {
       setResumes((prev) => prev.filter((resume) => resume._id !== resumeId));
     }
-  };
+  }
 
-  /**
-   * Navigate to resume builder
-   */
-  const handleOpenResume = (resumeId: string) => {
+  function handleOpenResume(resumeId: string) {
     router.push(`/app/builder/${resumeId}`);
-  };
+  }
 
-  /**
-   * Open edit modal for a specific resume
-   */
-  const handleOpenEditModal = (resumeId: string, title: string) => {
+  function handleOpenEditModal(resumeId: string, title: string) {
     setEditingTitle(title);
     setModalState({ type: "edit", resumeId });
-  };
+  }
 
-  /**
-   * Close active modal
-   */
-  const handleCloseModal = () => {
+  function handleCloseModal() {
     setModalState({ type: null });
     setEditingTitle("");
-  };
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -128,16 +104,20 @@ export default function Dashboard() {
 
         {/* Resume grid */}
         <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap">
-          {resumes.map((resume, index) => (
-            <ResumeCard
-              key={resume._id}
-              resume={resume}
-              color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-              onOpen={() => handleOpenResume(resume._id ?? "")}
-              onEdit={() => handleOpenEditModal(resume._id ?? "", resume.title ?? "")}
-              onDelete={() => handleDeleteResume(resume._id ?? "")}
-            />
-          ))}
+          {resumes.map((resume, index) => {
+            const key = generateUuidKey(resume._id);
+
+            return (
+              <ResumeCard
+                key={key}
+                resume={resume}
+                color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
+                onOpen={() => handleOpenResume(resume._id)}
+                onEdit={() => handleOpenEditModal(resume._id, resume.title)}
+                onDelete={() => handleDeleteResume(resume._id)}
+              />
+            );
+          })}
         </div>
       </div>
 

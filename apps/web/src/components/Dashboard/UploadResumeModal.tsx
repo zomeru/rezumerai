@@ -14,20 +14,20 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (file) {
       onSubmit(title, file);
       setTitle("");
       setFile(null);
     }
-  };
+  }
 
-  const handleClose = () => {
+  function handleClose() {
     setTitle("");
     setFile(null);
     onClose();
-  };
+  }
 
   return (
     <BaseModal

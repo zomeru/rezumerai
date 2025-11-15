@@ -1,5 +1,6 @@
 import { formatShortDate } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
+import { generateUuidKey } from "@/lib/utils";
 import type { TemplateProps } from "./types";
 
 const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
@@ -8,50 +9,50 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Header */}
       <header className="mb-8 border-b-2 pb-6 text-center" style={{ borderColor: accentColor }}>
         <h1 className="mb-2 font-bold text-3xl" style={{ color: accentColor }}>
-          {data.personal_info?.full_name || "Your Name"}
+          {data.personalInfo.fullName || "Your Name"}
         </h1>
 
         <div className="flex flex-wrap justify-center gap-4 text-gray-600 text-sm">
-          {data.personal_info?.email && (
+          {data.personalInfo.email && (
             <div className="flex items-center gap-1">
               <Mail className="size-4" />
-              <span>{data.personal_info.email}</span>
+              <span>{data.personalInfo.email}</span>
             </div>
           )}
-          {data.personal_info?.phone && (
+          {data.personalInfo.phone && (
             <div className="flex items-center gap-1">
               <Phone className="size-4" />
-              <span>{data.personal_info.phone}</span>
+              <span>{data.personalInfo.phone}</span>
             </div>
           )}
-          {data.personal_info?.location && (
+          {data.personalInfo.location && (
             <div className="flex items-center gap-1">
               <MapPin className="size-4" />
-              <span>{data.personal_info.location}</span>
+              <span>{data.personalInfo.location}</span>
             </div>
           )}
-          {data.personal_info?.linkedin && (
+          {data.personalInfo.linkedin && (
             <div className="flex items-center gap-1">
               <Linkedin className="size-4" />
-              <span className="break-all">{data.personal_info.linkedin}</span>
+              <span className="break-all">{data.personalInfo.linkedin}</span>
             </div>
           )}
-          {data.personal_info?.website && (
+          {data.personalInfo.website && (
             <div className="flex items-center gap-1">
               <Globe className="size-4" />
-              <span className="break-all">{data.personal_info.website}</span>
+              <span className="break-all">{data.personalInfo.website}</span>
             </div>
           )}
         </div>
       </header>
 
       {/* Professional Summary */}
-      {data.professional_summary && (
+      {data.professionalSummary && (
         <section className="mb-6">
           <h2 className="mb-3 font-semibold text-xl" style={{ color: accentColor }}>
             PROFESSIONAL SUMMARY
           </h2>
-          <p className="text-gray-700 leading-relaxed">{data.professional_summary}</p>
+          <p className="text-gray-700 leading-relaxed">{data.professionalSummary}</p>
         </section>
       )}
 
@@ -63,25 +64,27 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-4">
-            {data.experience.map((exp) => (
-              <div key={exp?.company} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
-                <div className="mb-2 flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{exp?.position}</h3>
-                    <p className="font-medium text-gray-700">{exp?.company}</p>
+            {data.experience.map((exp) => {
+              const key = generateUuidKey();
+              return (
+                <div key={key} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
+                  <div className="mb-2 flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{exp.position}</h3>
+                      <p className="font-medium text-gray-700">{exp.company}</p>
+                    </div>
+                    <div className="text-right text-gray-600 text-sm">
+                      <p>
+                        {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right text-gray-600 text-sm">
-                    <p>
-                      {formatShortDate(exp?.start_date ?? "")} -{" "}
-                      {exp?.is_current ? "Present" : formatShortDate(exp?.end_date ?? "")}
-                    </p>
-                  </div>
+                  {exp.description && (
+                    <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
+                  )}
                 </div>
-                {exp?.description && (
-                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp?.description}</div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -94,14 +97,17 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <ul className="space-y-3">
-            {data.project.map((proj) => (
-              <div key={proj?.description} className="flex items-start justify-between border-gray-300 border-l-3 pl-6">
-                <div>
-                  <li className="font-semibold text-gray-800">{proj?.name}</li>
-                  <p className="text-gray-600">{proj?.description}</p>
+            {data.project.map((proj) => {
+              const key = generateUuidKey();
+              return (
+                <div key={key} className="flex items-start justify-between border-gray-300 border-l-3 pl-6">
+                  <div>
+                    <li className="font-semibold text-gray-800">{proj.name}</li>
+                    <p className="text-gray-600">{proj.description}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </ul>
         </section>
       )}
@@ -114,20 +120,23 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-3">
-            {data.education.map((edu) => (
-              <div key={edu?.institution} className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {edu?.degree} {edu?.field && `in ${edu?.field}`}
-                  </h3>
-                  <p className="text-gray-700">{edu?.institution}</p>
-                  {edu?.gpa && <p className="text-gray-600 text-sm">GPA: {edu?.gpa}</p>}
+            {data.education.map((edu) => {
+              const key = generateUuidKey();
+              return (
+                <div key={key} className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {edu.degree} {edu.field && `in ${edu.field}`}
+                    </h3>
+                    <p className="text-gray-700">{edu.institution}</p>
+                    {edu.gpa && <p className="text-gray-600 text-sm">GPA: {edu.gpa}</p>}
+                  </div>
+                  <div className="text-gray-600 text-sm">
+                    <p>{formatShortDate(edu.graduationDate)}</p>
+                  </div>
                 </div>
-                <div className="text-gray-600 text-sm">
-                  <p>{formatShortDate(edu?.graduation_date ?? "")}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -140,11 +149,14 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="flex flex-wrap gap-4">
-            {data.skills.map((skill) => (
-              <div key={skill} className="text-gray-700">
-                • {skill}
-              </div>
-            ))}
+            {data.skills.map((skill) => {
+              const key = generateUuidKey();
+              return (
+                <div key={key} className="text-gray-700">
+                  • {skill}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

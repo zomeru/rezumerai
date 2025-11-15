@@ -36,6 +36,11 @@ const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = [
 export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  function onTemplateChange(template: TemplateType) {
+    onChange(template);
+    setIsOpen(false);
+  }
+
   return (
     <div className="relative">
       <button
@@ -54,8 +59,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
                 type="button"
                 key={id}
                 onClick={() => {
-                  onChange(id);
-                  setIsOpen(false);
+                  onTemplateChange(id);
                 }}
                 className={cn(
                   "relative cursor-pointer rounded-md border p-3 transition-all",

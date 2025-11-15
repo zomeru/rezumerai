@@ -52,11 +52,21 @@ const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const setEmail = (e: ChangeEvent<HTMLInputElement>) => dispatch({ type: "SET_EMAIL", payload: e.target.value });
-  const setPassword = (e: ChangeEvent<HTMLInputElement>) => dispatch({ type: "SET_PASSWORD", payload: e.target.value });
-  const setConfirmPassword = (e: ChangeEvent<HTMLInputElement>) =>
+  function setEmail(e: ChangeEvent<HTMLInputElement>) {
+    dispatch({ type: "SET_EMAIL", payload: e.target.value });
+  }
+
+  function setPassword(e: ChangeEvent<HTMLInputElement>) {
+    dispatch({ type: "SET_PASSWORD", payload: e.target.value });
+  }
+
+  function setConfirmPassword(e: ChangeEvent<HTMLInputElement>) {
     dispatch({ type: "SET_CONFIRM_PASSWORD", payload: e.target.value });
-  const reset = () => dispatch({ type: "RESET" });
+  }
+
+  function reset() {
+    dispatch({ type: "RESET" });
+  }
 
   return (
     <AuthContext.Provider value={{ state, setEmail, setPassword, setConfirmPassword, reset }}>

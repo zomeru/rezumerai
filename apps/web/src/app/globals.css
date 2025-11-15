@@ -24,6 +24,7 @@
   --color-secondary-400: oklch(0.7 0.15 230);
   --color-secondary-500: oklch(0.61 0.16 230); /* #0EA5E9 */
   --color-secondary-600: oklch(0.5 0.14 230);
+  --color-secondary-700: oklch(0.42 0.12 230);
 
   /* Accent – Elegant Violet */
   --color-accent-100: oklch(0.94 0.06 300);
@@ -32,6 +33,7 @@
   --color-accent-400: oklch(0.65 0.19 300);
   --color-accent-500: oklch(0.56 0.21 300); /* #9333EA */
   --color-accent-600: oklch(0.45 0.18 300);
+  --color-accent-700: oklch(0.35 0.18 300);
 }
 
 html {

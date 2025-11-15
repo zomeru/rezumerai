@@ -1,7 +1,7 @@
-import type { ResumeData } from "@/constants/dummy";
+import type { Resume } from "@/constants/dummy";
 
 export interface TemplateProps {
-  data: ResumeData;
+  data: Resume;
   accentColor: string;
 }
 
