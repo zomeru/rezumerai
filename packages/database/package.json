@@ -24,16 +24,17 @@
     "db:studio": "pnpm with-env prisma studio --port 5556",
     "check-types": "pnpm db:generate && tsc --noEmit",
     "check": "biome check --write .",
-    "clean": "rm -rf node_modules .turbo dist",
+    "clean": "rm -rf node_modules .turbo dist generated",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.22.0",
   "engines": {
     "node": "22.x"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.0"
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.6",
@@ -41,7 +42,7 @@
     "@types/node": "^24.10.1",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
-    "prisma": "^6.19.0",
+    "prisma": "^7.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

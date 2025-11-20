@@ -30,7 +30,7 @@
     "@rezumerai/tsconfig": "workspace:*",
     "tsup": "8.5.1"
   },
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.22.0",
   "engines": {
     "node": "22.x"
   }

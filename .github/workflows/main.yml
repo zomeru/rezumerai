@@ -78,11 +78,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
+      - name: Create .env file
+        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env 
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Setup database
         run: pnpm db:setup
+
+      - name: Build packages
+        run: pnpm run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -99,4 +105,4 @@ jobs:
         run: pnpm run test
 
       - name: Run build
-        run: pnpm run build
+        run: pnpm run build --filter={web,server}

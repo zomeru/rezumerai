@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Prisma Database",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
+    "target": "ES2023",
+    "module": "ESNext",
     "lib": ["esnext"],
     "moduleResolution": "node",
     "skipLibCheck": true,
