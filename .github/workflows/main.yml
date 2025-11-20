@@ -79,10 +79,13 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile && pnpm run build --filter=./packages/*
+        run: pnpm install --frozen-lockfile
 
       - name: Setup database
         run: pnpm db:setup
+
+      - name: Build packages
+        run: pnpm run build --filter=./packages/*
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
