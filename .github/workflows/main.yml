@@ -79,7 +79,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile && pnpm run build --filter=./packages/*
 
       - name: Setup database
         run: pnpm db:setup
@@ -99,4 +99,4 @@ jobs:
         run: pnpm run test
 
       - name: Run build
-        run: pnpm run build
+        run: pnpm run build && pnpm run build --filter=./apps/*

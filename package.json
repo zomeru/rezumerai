@@ -19,7 +19,7 @@
     "test:ui": "turbo test:ui --continue --",
     "test:coverage": "turbo test:coverage --continue --",
     "clean": "turbo clean && rm -rf node_modules .turbo",
-    "clean:install": "turbo clean && rm -rf node_modules .turbo && pnpm install && turbo run build --filter=./packages/*",
+    "clean:install": "turbo clean && rm -rf node_modules .turbo && pnpm install --frozen-lockfile && turbo run build --filter=./packages/*",
     "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
     "db:studio": "cd packages/database && pnpm db:studio",
     "db:reset": "cd packages/database && pnpm with-env prisma migrate reset --force",
