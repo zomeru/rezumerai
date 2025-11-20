@@ -85,7 +85,7 @@ jobs:
         run: pnpm db:setup
 
       - name: Build packages
-        run: pnpm run build --filter=./packages/*
+        run: pnpm run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -102,4 +102,4 @@ jobs:
         run: pnpm run test
 
       - name: Run build
-        run: pnpm run build && pnpm run build --filter=./apps/*
+        run: pnpm run build --filter={web,server}
