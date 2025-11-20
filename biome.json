@@ -7,7 +7,15 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!!**/.next", "!!**/.turbo", "!!**/dist", "!!**/node_modules", "!!**/coverage"]
+    "includes": [
+      "**",
+      "!!**/.next",
+      "!!**/.turbo",
+      "!!**/dist",
+      "!!**/node_modules",
+      "!!**/coverage",
+      "!!**/generated/prisma"
+    ]
   },
   "formatter": {
     "enabled": true,

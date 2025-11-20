@@ -10,7 +10,9 @@
     },
     "check": {},
     "check-types": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "env": ["DATABASE_URL"],
+      "inputs": [".env"]
     },
     "test": {
       "cache": true
