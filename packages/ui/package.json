@@ -1,9 +1,6 @@
 {
   "name": "@rezumerai/ui",
   "version": "1.0.0",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist/**",
     "src/**",
@@ -16,11 +13,13 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./components/*": {
+      "types": "./dist/components.d.ts",
+      "import": "./dist/components.mjs",
+      "require": "./dist/components.js"
+    },
     "./globals.css": "./global.css",
-    "./postcss.config": "./postcss.config.mjs",
-    "./components/*": [
-      "./src/**/*.tsx"
-    ]
+    "./postcss.config": "./postcss.config.mjs"
   },
   "scripts": {
     "build": "tsup",
@@ -32,7 +31,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "check": "biome check --write .",
-    "clean": "rm -rf node_modules .turbo dist coverage"
+    "clean": "rimraf node_modules .turbo dist coverage"
   },
   "dependencies": {
     "@rezumerai/types": "workspace:*",
@@ -41,7 +40,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.6",
+    "@biomejs/biome": "2.3.7",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.17",
@@ -60,7 +59,7 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.12"
   },
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.23.0",
   "engines": {
     "node": "22.x"
   }

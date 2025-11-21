@@ -6,9 +6,6 @@ export default defineConfig({
     styles: "src/styles.ts",
     string: "src/string.ts",
     date: "src/date.ts",
-    // Add more utilities here as you create them
-    // Example: "validation": "src/validation.ts",
-    // Example: "api": "src/api.ts",
   },
   format: ["cjs", "esm"],
   dts: {
@@ -18,4 +15,9 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ["clsx", "tailwind-merge"],
+  tsconfig: "./tsconfig.json",
+  outExtension({ format }) {
+    if (format === "esm") return { js: ".mjs" };
+    return { js: ".js" };
+  },
 });

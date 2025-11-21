@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true pnpm build",
     "check": "biome check --write .",
-    "clean": "rm -rf .next node_modules .turbo coverage",
+    "clean": "rimraf .next node_modules .turbo coverage",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {
@@ -32,7 +32,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.6",
+    "@biomejs/biome": "2.3.7",
     "@faker-js/faker": "^10.1.0",
     "@next/bundle-analyzer": "^16.0.3",
     "@rezumerai/tsconfig": "workspace:*",
@@ -53,7 +53,7 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.12"
   },
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.23.0",
   "engines": {
     "node": "22.x"
   }

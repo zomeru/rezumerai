@@ -1,7 +1,6 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  // entry: ["src/index.ts"],
   entry: {
     index: "src/index.tsx",
     components: "src/components/index.tsx",
@@ -14,4 +13,9 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ["react", "react-dom"],
+  tsconfig: "./tsconfig.json",
+  outExtension({ format }) {
+    if (format === "esm") return { js: ".mjs" };
+    return { js: ".js" };
+  },
 });
