@@ -50,7 +50,7 @@
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@types/node": "^24.10.1",
-    "@vitest/coverage-v8": "^4.0.10",
+    "@vitest/coverage-v8": "^4.0.12",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.10"
