@@ -1,9 +1,6 @@
 {
   "name": "@rezumerai/ui",
   "version": "1.0.0",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist/**",
     "src/**",
@@ -16,11 +13,13 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./components/*": {
+      "types": "./dist/components.d.ts",
+      "import": "./dist/components.mjs",
+      "require": "./dist/components.js"
+    },
     "./globals.css": "./global.css",
-    "./postcss.config": "./postcss.config.mjs",
-    "./components/*": [
-      "./src/**/*.tsx"
-    ]
+    "./postcss.config": "./postcss.config.js"
   },
   "scripts": {
     "build": "tsup",

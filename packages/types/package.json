@@ -1,17 +1,13 @@
 {
   "name": "@rezumerai/types",
   "version": "1.0.0",
-  "description": "",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "module": "./dist/index.mjs",
   "files": [
     "dist/**"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
   },

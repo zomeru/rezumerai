@@ -1,7 +1,12 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/base.ts", "src/node.ts", "src/react.ts"],
+  entry: {
+    index: "src/index.ts",
+    base: "src/base.ts",
+    node: "src/node.ts",
+    react: "src/react.ts",
+  },
   format: ["cjs", "esm"],
   dts: {
     resolve: true,
@@ -9,4 +14,8 @@ export default defineConfig({
   clean: true,
   target: "esnext",
   tsconfig: "./tsconfig.json",
+  outExtension({ format }) {
+    if (format === "esm") return { js: ".mjs" };
+    return { js: ".js" };
+  },
 });

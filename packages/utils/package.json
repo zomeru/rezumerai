@@ -1,9 +1,6 @@
 {
   "name": "@rezumerai/utils",
   "version": "1.0.0",
-  "main": "./src/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist/**"
   ],
