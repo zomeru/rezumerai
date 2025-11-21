@@ -19,7 +19,7 @@
       "require": "./dist/components.js"
     },
     "./globals.css": "./global.css",
-    "./postcss.config": "./postcss.config.js"
+    "./postcss.config": "./postcss.config.mjs"
   },
   "scripts": {
     "build": "tsup",
@@ -31,7 +31,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "check": "biome check --write .",
-    "clean": "rm -rf node_modules .turbo dist coverage"
+    "clean": "rimraf node_modules .turbo dist coverage"
   },
   "dependencies": {
     "@rezumerai/types": "workspace:*",

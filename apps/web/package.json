@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true pnpm build",
     "check": "biome check --write .",
-    "clean": "rm -rf .next node_modules .turbo coverage",
+    "clean": "rimraf .next node_modules .turbo coverage",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {

@@ -21,7 +21,7 @@
     "db:studio": "pnpm with-env prisma studio --port 5556",
     "check-types": "pnpm db:generate && tsc --noEmit",
     "check": "biome check --write .",
-    "clean": "rm -rf node_modules .turbo dist generated",
+    "clean": "rimraf node_modules .turbo dist generated",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",
