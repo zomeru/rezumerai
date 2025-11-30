@@ -1,5 +1,5 @@
 # ---- Base ----
-FROM node:22.20.0-slim AS base
+FROM node:24.11.1-slim AS base
 RUN apt-get update && apt-get install -y \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
@@ -10,10 +10,12 @@ WORKDIR /app
 FROM base AS builder
 COPY . .
 # Prune only the 'server' app for a minimal Docker context
-RUN pnpm dlx turbo@^2.5.8 prune server --docker
+RUN pnpm dlx turbo@2.6.1 prune server --docker
 
 # ---- Install & Build ----
 FROM base AS installer
+ENV DATABASE_URL=${DATABASE_URL}
+
 # Copy pruned package manifests
 COPY --from=builder /app/out/json/ .
 
@@ -34,10 +36,10 @@ COPY --from=builder /app/out/full/ .
 # ----------------------------------------------------------
 
 # Build the server app
-RUN pnpm dlx turbo@^2.5.8 build --filter=server
+RUN pnpm dlx turbo@2.6.1 build --filter=server
 
 # ---- Runner ----
-FROM node:22.20.0-slim AS runner
+FROM node:24.11.1-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 

@@ -44,7 +44,7 @@ Start a local PostgreSQL instance (or use Docker):
 
 ```sh
 # Using Docker Compose (recommended for DB/Redis only)
-docker-compose up db redis
+docker compose up db redis
 ```
 
 Run migrations (if using Prisma):
@@ -75,7 +75,7 @@ pnpm --filter=server dev
 
 ```sh
 # Build all images and start all services
-docker-compose up --build
+docker compose up --build
 ```
 
 - Web app: [http://localhost:3000](http://localhost:3000)
@@ -86,7 +86,7 @@ docker-compose up --build
 ### 2. Stopping Services
 
 ```sh
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -96,6 +96,6 @@ docker-compose down
 - `apps/web` – Next.js frontend (has its own Dockerfile)
 - `apps/server` – Express API (has its own Dockerfile)
 - `packages/` – Shared code (database, types, utils, etc.)
-- `docker-compose.yml` – Orchestrates all services
+- `docker compose.yml` – Orchestrates all services
 
 

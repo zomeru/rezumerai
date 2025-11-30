@@ -40,7 +40,7 @@ RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and pnpm. It
   ```
 - **Run with Docker:**
   ```sh
-  docker-compose up --build
+  docker compose up --build
   ```
 - **Testing:**
   ```sh
