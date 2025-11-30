@@ -59,7 +59,7 @@
       "pnpm check"
     ]
   },
-  "packageManager": "pnpm@10.23.0",
+  "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": "22.x"
   }
