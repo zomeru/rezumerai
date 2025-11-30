@@ -9,7 +9,10 @@
     "build": "turbo build",
     "build:production": "NODE_ENV=production turbo build",
     "dev": "turbo dev",
-    "dev:db": "docker-compose up -d db redis",
+    "docker:db": "docker compose up -d database redis",
+    "docker:build": "docker compose up -d --build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
     "check": "turbo check --continue --",
     "lint-staged": "lint-staged",
     "check-types": "turbo check-types --continue --",
@@ -63,6 +66,6 @@
   },
   "packageManager": "pnpm@10.24.0",
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   }
 }
