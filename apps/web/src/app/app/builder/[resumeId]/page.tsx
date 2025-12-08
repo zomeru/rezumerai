@@ -14,17 +14,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useState } from "react";
 import {
   ColorPicker,
   EducationForm,
   ExperienceForm,
   PersonalInfoForm,
   ProfessionalSummaryForm,
+  ProjectForm,
   ResumePreview,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import { defaultResume, dummyResumeData, type Education, type Experience, type Resume } from "@/constants/dummy";
+import {
+  defaultResume,
+  dummyResumeData,
+  type Education,
+  type Experience,
+  type Project,
+  type Resume,
+} from "@/constants/dummy";
 import type { TemplateType } from "@/templates";
 
 type SectionType = {
@@ -94,11 +102,51 @@ export default function ResumeBuilder() {
     setResumeData((prev) => ({ ...prev, education }));
   }
 
+  function handleProjectChange(project: Project[]) {
+    setResumeData((prev) => ({ ...prev, project }));
+  }
+
   useEffect(() => {
     loadExistingResume();
-  }, []);
+  }, [resumeId]);
 
   const activeSection = sections[activeSectionIndex];
+
+  const builderSections = useMemo(() => {
+    const _sections = [
+      {
+        id: "personal",
+        render: () => (
+          <PersonalInfoForm
+            data={resumeData.personalInfo}
+            onChangeAction={updateResumeData}
+            removeBackground={removeBackground}
+            setRemoveBackgroundAction={setRemoveBackground}
+          />
+        ),
+      },
+      {
+        id: "summary",
+        render: () => (
+          <ProfessionalSummaryForm summary={resumeData.professionalSummary} onChange={handleSummaryChange} />
+        ),
+      },
+      {
+        id: "experience",
+        render: () => <ExperienceForm experience={resumeData.experience} onChange={handleExperienceChange} />,
+      },
+      {
+        id: "education",
+        render: () => <EducationForm education={resumeData.education} onChange={handleEducationChange} />,
+      },
+      {
+        id: "projects",
+        render: () => <ProjectForm project={resumeData.project} onChange={handleProjectChange} />,
+      },
+    ] as const;
+
+    return _sections;
+  }, [resumeData, activeSection]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -162,23 +210,11 @@ export default function ResumeBuilder() {
 
               {/* Form Content */}
               <div className="space-y-6">
-                {activeSection?.id === "personal" && (
-                  <PersonalInfoForm
-                    data={resumeData.personalInfo}
-                    onChangeAction={updateResumeData}
-                    removeBackground={removeBackground}
-                    setRemoveBackgroundAction={setRemoveBackground}
-                  />
-                )}
-                {activeSection?.id === "summary" && (
-                  <ProfessionalSummaryForm summary={resumeData.professionalSummary} onChange={handleSummaryChange} />
-                )}
-                {activeSection?.id === "experience" && (
-                  <ExperienceForm experience={resumeData.experience} onChange={handleExperienceChange} />
-                )}
-                {activeSection?.id === "education" && (
-                  <EducationForm education={resumeData.education} onChange={handleEducationChange} />
-                )}
+                {builderSections.map(({ id, render }) => (
+                  <ReactActivity key={id} mode={activeSection?.id === id ? "visible" : "hidden"}>
+                    {render()}
+                  </ReactActivity>
+                ))}
               </div>
             </div>
           </div>
@@ -188,9 +224,9 @@ export default function ResumeBuilder() {
             <div className="">{/* buttons */}</div>
 
             {/* resume preview */}
-            {resumeData && (
+            <ReactActivity mode={resumeData ? "visible" : "hidden"}>
               <ResumePreview data={resumeData} accentColor={resumeData.accentColor} template={resumeData.template} />
-            )}
+            </ReactActivity>
           </div>
         </div>
       </div>
