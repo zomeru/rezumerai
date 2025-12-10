@@ -46,7 +46,7 @@
     "@biomejs/biome": "2.3.8",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.2",
     "@vitest/coverage-v8": "^4.0.15",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
