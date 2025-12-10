@@ -105,8 +105,6 @@ export default function ResumeBuilder() {
     setResumeData((prev) => ({ ...prev, project }));
   }
 
-  const activeSection = sections[activeSectionIndex];
-
   const builderSections = useMemo(() => {
     const _sections = [
       {
@@ -145,7 +143,9 @@ export default function ResumeBuilder() {
     ] as const;
 
     return _sections;
-  }, [resumeData, activeSection]);
+  }, [resumeData]);
+
+  const activeSection = sections[activeSectionIndex];
 
   return (
     <div className="flex flex-1 flex-col">
