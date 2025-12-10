@@ -11,7 +11,7 @@ interface ProjectFormProps {
 export default function ProjectForm({ project, onChange }: ProjectFormProps) {
   function addProject() {
     const newProject: Project = {
-      _id: "",
+      _id: generateUuidKey(),
       name: "",
       type: "",
       description: "",
@@ -28,7 +28,7 @@ export default function ProjectForm({ project, onChange }: ProjectFormProps) {
   function updateProject<K extends keyof Project>(projectIndex: number, field: K, value: Project[K]) {
     const updatedProject = [...project];
 
-    if (updatedProject?.[projectIndex]) {
+    if (updatedProject[projectIndex]) {
       updatedProject[projectIndex] = { ...updatedProject[projectIndex], [field]: value };
       onChange(updatedProject);
     }
@@ -63,6 +63,7 @@ export default function ProjectForm({ project, onChange }: ProjectFormProps) {
                   type="button"
                   onClick={() => removeProject(index)}
                   className="text-red-500 transition-colors hover:text-red-700"
+                  aria-label={`Remove project ${index + 1}`}
                 >
                   <Trash2 className="size-4" />
                 </button>

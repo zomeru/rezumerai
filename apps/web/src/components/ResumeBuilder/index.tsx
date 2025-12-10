@@ -5,4 +5,5 @@ export { default as PersonalInfoForm } from "./PersonalInfoForm";
 export { default as ProfessionalSummaryForm } from "./ProfessionalSummaryForm";
 export { default as ProjectForm } from "./ProjectForm";
 export { default as ResumePreview } from "./ResumePreview";
+export { default as SkillsForm } from "./SkillsForm";
 export { default as TemplateSelector } from "./TemplateSelector";

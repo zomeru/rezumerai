@@ -59,11 +59,10 @@ export default function ResumeBuilder() {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
-  async function loadExistingResume() {
+  useEffect(() => {
     const resume = dummyResumeData.find((r) => r._id === resumeId) || defaultResume;
     setResumeData(resume);
-    // document.title = resume ? `${resume.title} - Rezumer AI` : "Rezumer AI";
-  }
+  }, [resumeId]);
 
   function updateResumeData(data: Resume["personalInfo"]) {
     setResumeData((prev) => {
@@ -106,10 +105,6 @@ export default function ResumeBuilder() {
     setResumeData((prev) => ({ ...prev, project }));
   }
 
-  useEffect(() => {
-    loadExistingResume();
-  }, [resumeId]);
-
   const activeSection = sections[activeSectionIndex];
 
   const builderSections = useMemo(() => {
@@ -142,6 +137,10 @@ export default function ResumeBuilder() {
       {
         id: "projects",
         render: () => <ProjectForm project={resumeData.project} onChange={handleProjectChange} />,
+      },
+      {
+        id: "skills",
+        render: () => <div>Skills form placeholder</div>, // TODO: Implement SkillsForm
       },
     ] as const;
 
