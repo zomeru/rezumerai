@@ -33,11 +33,11 @@
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@swc/cli": "^0.7.9",
-    "@swc/core": "^1.15.2",
+    "@swc/core": "^1.15.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^25.0.0",
+    "@types/node": "^25.0.1",
     "@vitest/coverage-v8": "^4.0.15",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
@@ -46,7 +46,7 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   },
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.25.0",
   "engines": {
     "node": "24.x"
   }
