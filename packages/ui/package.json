@@ -53,7 +53,7 @@
     "@vitest/coverage-v8": "^4.0.15",
     "jsdom": "^27.3.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.1.18",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
