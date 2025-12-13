@@ -33,7 +33,7 @@
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@swc/cli": "^0.7.9",
-    "@swc/core": "^1.15.3",
+    "@swc/core": "^1.15.4",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
