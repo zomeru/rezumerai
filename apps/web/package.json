@@ -32,7 +32,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.9",
+    "@biomejs/biome": "2.3.10",
     "@faker-js/faker": "^10.1.0",
     "@next/bundle-analyzer": "^16.0.10",
     "@rezumerai/tsconfig": "workspace:*",
