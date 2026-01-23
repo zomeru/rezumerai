@@ -59,6 +59,9 @@
       "sharp"
     ]
   },
+  "resolutions": {
+    "lodash": "4.17.23"
+  },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
       "pnpm check"
