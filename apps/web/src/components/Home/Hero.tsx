@@ -107,18 +107,18 @@ export default function Hero() {
 
       {/* Hero Section */}
       <div className="relative flex flex-col items-center justify-center px-4 text-black text-sm md:px-16 lg:px-24 xl:px-40">
-        <div className="-z-10 absolute top-28 left-1/4 size-72 bg-primary-300 opacity-30 blur-[100px] sm:size-96 xl:top-10 xl:size-120 2xl:size-132"></div>
+        <div className="absolute top-28 left-1/4 -z-10 size-72 bg-primary-300 opacity-30 blur-[100px] sm:size-96 xl:top-10 xl:size-120 2xl:size-132"></div>
 
         {/* Avatars + Stars */}
         <div className="mt-24 flex items-center">
-          <div className="-space-x-3 flex pr-3">
+          <div className="flex -space-x-3 pr-3">
             {users.map(({ id, name, avatar }) => {
               return (
                 <div className="relative" key={id}>
                   <Image
                     src={avatar}
                     alt={name}
-                    className="hover:-translate-y-0.5 z-1 size-8 rounded-full border-2 border-white object-cover transition"
+                    className="z-1 size-8 rounded-full border-2 border-white object-cover transition hover:-translate-y-0.5"
                     width={200}
                     height={200}
                   />
