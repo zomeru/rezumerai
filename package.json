@@ -42,7 +42,7 @@
     "rimraf": "^6.1.2",
     "turbo": "^2.7.5",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "overrides": {
@@ -59,12 +59,15 @@
       "sharp"
     ]
   },
+  "resolutions": {
+    "lodash": "4.17.23"
+  },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
       "pnpm check"
     ]
   },
-  "packageManager": "pnpm@10.25.0",
+  "packageManager": "pnpm@10.28.1",
   "engines": {
     "node": "24.x"
   }

@@ -1,9 +1,9 @@
 # ---- Base ----
-FROM node:24.12.0-slim AS base
+FROM node:24.13.0-slim AS base
 RUN apt-get update && apt-get install -y \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
 # ---- Prune ----
@@ -39,7 +39,7 @@ COPY --from=builder /app/out/full/ .
 RUN pnpm dlx turbo@2.6.1 build --filter=web
 
 # ---- Runner ----
-FROM node:24.12.0-slim AS runner
+FROM node:24.13.0-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
