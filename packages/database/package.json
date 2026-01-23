@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "concurrently \"pnpm db:migrate:dev\" \"pnpm db:generate\" \"pnpm watch\"",
-    "build": "rimraf generated && pnpm db:generate && pnpm with-env tsup",
+    "build": "pnpm clean:generated && pnpm db:generate && pnpm with-env tsup",
     "watch": "pnpm db:generate && pnpm with-env tsup --watch",
     "db:generate": "pnpm with-env prisma generate",
     "db:generate:prod": "prisma generate",
