@@ -37,7 +37,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "@rezumerai/tsconfig": "workspace:*",
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.1.0",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "prisma": "^7.3.0",
