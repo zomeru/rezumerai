@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm run build && concurrently \"npm run watch-compile\" \"npm run watch-dev\"",
-    "watch-compile": "pnpm with-env swc src index.ts -w --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec.*,vitest.config.ts,**/test/**",
-    "watch-dev": "pnpm with-env nodemon --watch dist --ext js --exec \"node -r tsconfig-paths/register dist/index.js\"",
-    "build": "pnpm with-env swc src index.ts --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec*,vitest.config.ts,**/test/**",
+    "dev": "bun run build && concurrently \"bun run watch-compile\" \"bun run watch-dev\"",
+    "watch-compile": "bun run with-env swc src index.ts -w --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec.*,vitest.config.ts,**/test/**",
+    "watch-dev": "bun run with-env nodemon --watch dist --ext js --exec \"node -r tsconfig-paths/register dist/index.js\"",
+    "build": "bun run with-env swc src index.ts --out-dir dist --ignore node_modules,dist,**/*.test.*,**/*.spec*,vitest.config.ts,**/test/**",
     "start": "node -r tsconfig-paths/register dist/index.js",
     "check-types": "tsc --noEmit",
     "test": "vitest --run",
@@ -46,7 +46,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": "24.x"
   }

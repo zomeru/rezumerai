@@ -1,16 +1,15 @@
 # ---- Base ----
-FROM node:24.13.0-slim AS base
+FROM oven/bun:1 AS base
 RUN apt-get update && apt-get install -y \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 WORKDIR /app
 
 # ---- Prune ----
 FROM base AS builder
 COPY . .
 # Prune only the 'server' app for a minimal Docker context
-RUN pnpm dlx turbo@2.6.1 prune server --docker
+RUN bunx turbo@2.8.0 prune server --docker
 
 # ---- Install & Build ----
 FROM base AS installer
@@ -20,13 +19,13 @@ ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
 
 # ----------------------------------------------------------
-# 🧠 Turborepo Remote Caching (Optional)
+# Turborepo Remote Caching (Optional)
 # Uncomment and configure these for remote caching support.
 #
 # ARG TURBO_TEAM
@@ -36,20 +35,18 @@ COPY --from=builder /app/out/full/ .
 # ----------------------------------------------------------
 
 # Build the server app
-RUN pnpm dlx turbo@2.6.1 build --filter=server
+RUN bunx turbo@2.8.0 build --filter=server
 
 # ---- Runner ----
-FROM node:24.13.0-slim AS runner
+FROM oven/bun:1-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup --system --gid 1001 expressjs \
-  && adduser --system --uid 1001 expressjs
-USER expressjs
+# Use the built-in bun user (uid 1000)
+USER bun
 
 # Copy built server app from installer
-COPY --from=installer /app .
+COPY --from=installer --chown=bun:bun /app .
 
 EXPOSE 8080
-CMD ["node", "apps/server/dist/index.js"]
+CMD ["bun", "run", "apps/server/dist/index.js"]

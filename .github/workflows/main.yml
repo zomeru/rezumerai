@@ -18,10 +18,6 @@ jobs:
     name: Format, Lint, Test and Build
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: ["24.x"]
-
     services:
       postgres:
         image: postgres:18
@@ -44,31 +40,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Setup pnpm 10
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          bun-version: latest
 
-      - name: Cache pnpm store
+      - name: Cache Bun dependencies
         uses: actions/cache@v5
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-bun-
 
       - name: Cache Next.js build
         uses: actions/cache@v5
         with:
           path: |
             ${{ github.workspace }}/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
 
       - name: Cache Turbo
         uses: actions/cache@v5
@@ -79,16 +71,16 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Create .env file
-        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env 
+        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Setup database
-        run: pnpm db:setup
+        run: bun run db:setup
 
       - name: Build packages
-        run: pnpm run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
+        run: bun run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -99,10 +91,10 @@ jobs:
         run: biome ci .
 
       - name: Type check
-        run: pnpm run check-types
+        run: bun run check-types
 
       - name: Run tests
-        run: pnpm run test
+        run: bun run test
 
       - name: Run build
-        run: pnpm run build --filter={web,server}
+        run: bun run build --filter={web,server}
