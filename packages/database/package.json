@@ -26,9 +26,6 @@
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",
-  "engines": {
-    "node": "24.x"
-  },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0"
