@@ -32,7 +32,7 @@
     "db:reset": "cd packages/database && bun run with-env prisma migrate reset --force",
     "outdated": "bun outdated",
     "update": "bun update",
-    "security:audit": "bun pm audit --production",
+    "security:audit": "bun audit --production",
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
   },
