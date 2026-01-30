@@ -36,9 +36,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# other lockfiles that's not pnpm-lock.yaml
+# other lockfiles that's not bun.lock
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
+
+# Bun
+.bun
 
 # Misc
 .DS_Store
@@ -54,3 +58,4 @@ next-env.d.ts
 .serena
 .vscode/launch.json
 .vscode/tasks.json
+.mcp.json

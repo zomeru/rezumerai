@@ -1,0 +1,14 @@
+# Bun Configuration
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Auto-install peer dependencies
+peer = true
+
+[install.cache]
+# Enable caching for faster installs
+disable = false
+
+[install.lockfile]
+# Save lockfile
+save = true

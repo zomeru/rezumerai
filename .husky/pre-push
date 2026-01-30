@@ -18,7 +18,7 @@ fi
 echo "🚀 Pre-push checks"
 
 # Ensure essential commands exist
-command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm not found in PATH"; exit 1; }
+command -v bun >/dev/null 2>&1 || { echo "❌ bun not found in PATH"; exit 1; }
 command -v turbo >/dev/null 2>&1 || { echo "❌ turbo not found in PATH"; exit 1; }
 
 # Determine current branch
@@ -54,17 +54,17 @@ CONC=$(( CORES / 2 ))
 TURBO_FLAGS="--concurrency=$CONC --cache=local:rw,remote:r"
 
 echo "📝 Running lint/format/type checks..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run check --affected $TURBO_FLAGS
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run check-types --affected $TURBO_FLAGS
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check --affected $TURBO_FLAGS
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check-types --affected $TURBO_FLAGS
 
 echo "🧪 Running tests..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run test --affected $TURBO_FLAGS
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
 
 echo "🏗️ Running builds..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" pnpm -w turbo run build --affected --cache=local:rw,remote:r
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run build --affected --cache=local:rw,remote:r
 
 echo "🔒 Running security audit..."
-pnpm security:audit
+bun run security:audit
 
 echo "✅ All pre-push checks passed."
 exit 0

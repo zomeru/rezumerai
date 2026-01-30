@@ -1,6 +1,10 @@
 {
   "name": "rezumerai",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "changeset": "changeset",
     "publish:packages": "changeset publish",
@@ -16,20 +20,20 @@
     "check": "turbo check --continue --",
     "lint-staged": "lint-staged",
     "check-types": "turbo check-types --continue --",
-    "code:check": "pnpm check && pnpm check-types",
+    "code:check": "bun run check && bun run check-types",
     "test": "turbo test --continue --",
     "test:watch": "turbo test:watch --continue --",
     "test:ui": "turbo test:ui --continue --",
     "test:coverage": "turbo test:coverage --continue --",
     "clean": "turbo clean && rimraf node_modules .turbo",
-    "clean:install": "turbo clean && rimraf node_modules .turbo && pnpm install --frozen-lockfile && turbo run build --filter=./packages/*",
-    "db:setup": "cd packages/database && pnpm db:push && pnpm db:generate",
-    "db:studio": "cd packages/database && pnpm db:studio",
-    "db:reset": "cd packages/database && pnpm with-env prisma migrate reset --force",
-    "outdated": "pnpm outdated -r",
-    "update": "pnpm update -r --latest",
-    "security:audit": "pnpm audit --prod",
-    "security:check": "pnpm dlx audit-ci --config .audit-ci.json",
+    "clean:install": "turbo clean && rimraf node_modules .turbo bun.lock && bun install && turbo run build --filter=./packages/*",
+    "db:setup": "cd packages/database && bun run db:push && bun run db:generate",
+    "db:studio": "cd packages/database && bun run db:studio",
+    "db:reset": "cd packages/database && bun run with-env prisma migrate reset --force",
+    "outdated": "bun outdated",
+    "update": "bun update",
+    "security:audit": "bun audit --production",
+    "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -44,31 +48,24 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
-  "pnpm": {
-    "overrides": {
-      "body-parser": "^2.2.1",
-      "hono": "^4.10.3",
-      "valibot": "^1.2.0"
-    },
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "@swc/core",
-      "esbuild",
-      "prisma",
-      "sharp"
-    ]
-  },
-  "resolutions": {
+  "overrides": {
+    "body-parser": "^2.2.1",
+    "hono": "^4.10.3",
+    "valibot": "^1.2.0",
     "lodash": "4.17.23"
   },
+  "trustedDependencies": [
+    "@prisma/client",
+    "@prisma/engines",
+    "@swc/core",
+    "esbuild",
+    "prisma",
+    "sharp"
+  ],
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
-      "pnpm check"
+      "bun run check"
     ]
   },
-  "packageManager": "pnpm@10.28.2",
-  "engines": {
-    "node": "24.x"
-  }
+  "packageManager": "bun@1.3.8"
 }

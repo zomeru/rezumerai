@@ -10,26 +10,22 @@
     "dist/**"
   ],
   "scripts": {
-    "dev": "concurrently \"pnpm db:migrate:dev\" \"pnpm db:generate\" \"pnpm watch\"",
-    "build": "pnpm clean:generated && pnpm db:generate && pnpm with-env tsup",
-    "watch": "pnpm db:generate && pnpm with-env tsup --watch",
-    "db:generate": "pnpm with-env prisma generate",
+    "dev": "concurrently \"bun run db:migrate:dev\" \"bun run db:generate\" \"bun run watch\"",
+    "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
+    "watch": "bun run db:generate && bun run with-env tsup --watch",
+    "db:generate": "bun run with-env prisma generate",
     "db:generate:prod": "prisma generate",
-    "db:push": "pnpm with-env prisma db push",
-    "db:migrate:dev": "pnpm clean:generated && bash ./scripts/migrate-dev.sh",
-    "db:migrate:prod": "pnpm with-env prisma migrate deploy",
-    "db:studio": "pnpm with-env prisma studio --port 5556",
-    "check-types": "pnpm db:generate && tsc --noEmit",
+    "db:push": "bun run with-env prisma db push",
+    "db:migrate:dev": "bun run clean:generated && bash ./scripts/migrate-dev.sh",
+    "db:migrate:prod": "bun run with-env prisma migrate deploy",
+    "db:studio": "bun run with-env prisma studio --port 5556",
+    "check-types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
     "clean:generated": "rimraf generated/",
     "clean": "rimraf node_modules .turbo dist generated/",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.28.2",
-  "engines": {
-    "node": "24.x"
-  },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0"

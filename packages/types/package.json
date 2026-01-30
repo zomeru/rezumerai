@@ -24,10 +24,7 @@
   },
   "devDependencies": {
     "@rezumerai/tsconfig": "workspace:*",
-    "tsup": "8.5.1"
-  },
-  "packageManager": "pnpm@10.28.2",
-  "engines": {
-    "node": "24.x"
+    "tsup": "8.5.1",
+    "typescript": "^5.9.3"
   }
 }

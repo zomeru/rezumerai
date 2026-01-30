@@ -3,6 +3,6 @@ echo "🔍 Running pre-commit checks..."
 
 # Lint and format staged files only
 echo "📝 Linting and formatting staged files..."
-pnpm exec lint-staged
+bun run lint-staged
 
 echo "✅ Pre-commit checks passed!"
