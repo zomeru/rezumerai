@@ -38,12 +38,12 @@ export default function ColorPicker({ selectedColor, onChange }: ColorPickerProp
       <button
         type="button"
         onClick={onColorPickerClick}
-        className="flex items-center gap-1 rounded-lg bg-linear-to-br from-accent-50 to-accent-100 px-3 py-2 text-accent-600 text-sm ring-accent-300 hover:ring-transition-all"
+        className="flex items-center gap-1 rounded-lg bg-linear-to-br from-accent-50 to-accent-100 px-3 py-2 text-accent-600 text-sm ring-accent-300 transition-all hover:ring"
       >
         <Palette size={16} /> <span className="max-sm:hidden">Accent</span>
       </button>
       {isOpen && (
-        <div className="absolute top-full right-0 left-0 z-10 mt-2 grid w-60 grid-cols-4 gap-2 rounded-md border border-gray-200 bg-white p-3 shadow-sm">
+        <div className="absolute top-full right-0 left-0 z-10 mt-2 grid w-60 grid-cols-4 gap-2 rounded-md border border-slate-200 bg-white p-3 shadow-sm">
           {COLORS.map(({ name, value }) => {
             return (
               <button
@@ -65,7 +65,7 @@ export default function ColorPicker({ selectedColor, onChange }: ColorPickerProp
                     <Check className="size-5 text-white" />
                   </div>
                 )}
-                <p className="mt-1 text-center text-gray-600 text-xs">{name}</p>
+                <p className="mt-1 text-center text-slate-600 text-xs">{name}</p>
               </button>
             );
           })}

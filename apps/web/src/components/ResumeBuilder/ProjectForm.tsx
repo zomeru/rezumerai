@@ -38,8 +38,8 @@ export default function ProjectForm({ project, onChange }: ProjectFormProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-lg">Projects</h3>
-          <p className="text-gray-500 text-sm">Add your projects.</p>
+          <h3 className="flex items-center gap-2 font-semibold text-lg text-slate-800">Projects</h3>
+          <p className="text-slate-500 text-sm">Add your projects.</p>
         </div>
         <button
           type="button"
@@ -56,7 +56,7 @@ export default function ProjectForm({ project, onChange }: ProjectFormProps) {
           const _key = generateUuidKey(_id);
 
           return (
-            <div key={_key} className="space-y-3 rounded-lg border border-gray-200 p-4">
+            <div key={_key} className="space-y-3 rounded-lg border border-slate-200 p-4">
               <div className="flex items-start justify-between">
                 <h4>Project {index + 1}</h4>
                 <button

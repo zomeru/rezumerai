@@ -1,6 +1,7 @@
 export { default as ColorPicker } from "./ColorPicker";
 export { default as EducationForm } from "./EducationForm";
 export { default as ExperienceForm } from "./ExperienceForm";
+export { default as FontSizeSelector, FONT_SIZE_SCALES, type FontSizeOption } from "./FontSizeSelector";
 export { default as PersonalInfoForm } from "./PersonalInfoForm";
 export { default as ProfessionalSummaryForm } from "./ProfessionalSummaryForm";
 export { default as ProjectForm } from "./ProjectForm";

@@ -41,8 +41,8 @@ export default function ExperienceForm({ experience = [], onChange }: Experience
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-lg">Professional Experience</h3>
-          <p className="text-gray-500 text-sm">Add your professional job experience.</p>
+          <h3 className="flex items-center gap-2 font-semibold text-lg text-slate-800">Professional Experience</h3>
+          <p className="text-slate-500 text-sm">Add your professional job experience.</p>
         </div>
         <button
           type="button"
@@ -55,8 +55,8 @@ export default function ExperienceForm({ experience = [], onChange }: Experience
       </div>
 
       {experience.length === 0 ? (
-        <div className="py-8 text-center text-gray-500">
-          <Briefcase className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+        <div className="py-8 text-center text-slate-500">
+          <Briefcase className="mx-auto mb-3 h-12 w-12 text-slate-300" />
           <p>No work experience added yet.</p>
           <p className="text-sm">Click "Add Experience" to get started.</p>
         </div>
@@ -66,7 +66,7 @@ export default function ExperienceForm({ experience = [], onChange }: Experience
             const _key = generateUuidKey(_id);
 
             return (
-              <div key={_key} className="space-y-3 rounded-lg border border-gray-200 p-4">
+              <div key={_key} className="space-y-3 rounded-lg border border-slate-200 p-4">
                 <div className="flex items-start justify-between">
                   <h4>Experience {index + 1}</h4>
                   <button
@@ -109,13 +109,13 @@ export default function ExperienceForm({ experience = [], onChange }: Experience
                     onChange={(e) => {
                       updateExperience(index, "isCurrent", e.target.checked);
                     }}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="text-gray-700 text-sm">Currently working here</span>
+                  <span className="text-slate-700 text-sm">Currently working here</span>
                 </label>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-700 text-sm">Job Description</span>
+                    <span className="font-medium text-slate-700 text-sm">Job Description</span>
                     <button
                       type="button"
                       className="flex items-center gap-1 rounded bg-accent-100 px-2 py-1 text-accent-700 text-xs transition-colors hover:bg-accent-200 disabled:opacity-50"

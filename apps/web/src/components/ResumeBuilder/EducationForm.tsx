@@ -40,8 +40,8 @@ export default function EducationForm({ education, onChange }: EducationFormProp
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-lg">Education</h3>
-          <p className="text-gray-500 text-sm">Add your education details.</p>
+          <h3 className="flex items-center gap-2 font-semibold text-lg text-slate-800">Education</h3>
+          <p className="text-slate-500 text-sm">Add your education details.</p>
         </div>
         <button
           type="button"
@@ -54,8 +54,8 @@ export default function EducationForm({ education, onChange }: EducationFormProp
       </div>
 
       {education.length === 0 ? (
-        <div className="py-8 text-center text-gray-500">
-          <GraduationCap className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+        <div className="py-8 text-center text-slate-500">
+          <GraduationCap className="mx-auto mb-3 h-12 w-12 text-slate-300" />
           <p>No education added yet.</p>
           <p className="text-sm">Click "Add Education" to get started.</p>
         </div>
@@ -65,7 +65,7 @@ export default function EducationForm({ education, onChange }: EducationFormProp
             const _key = generateUuidKey(_id);
 
             return (
-              <div key={_key} className="space-y-3 rounded-lg border border-gray-200 p-4">
+              <div key={_key} className="space-y-3 rounded-lg border border-slate-200 p-4">
                 <div className="flex items-start justify-between">
                   <h4>Education {index + 1}</h4>
                   <button

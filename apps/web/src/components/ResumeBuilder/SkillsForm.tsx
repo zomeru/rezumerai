@@ -36,8 +36,8 @@ export default function SkillsForm({ skills, onChange }: SkillFormProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-lg">Skills</h3>
-        <p className="text-gray-500 text-sm">Add your technical and soft skills.</p>
+        <h3 className="flex items-center gap-2 font-semibold text-lg text-slate-800">Skills</h3>
+        <p className="text-slate-500 text-sm">Add your technical and soft skills.</p>
       </div>
 
       <div className="flex gap-2">
@@ -78,8 +78,8 @@ export default function SkillsForm({ skills, onChange }: SkillFormProps) {
           ))}
         </div>
       ) : (
-        <div className="py-6 text-center text-gray-500">
-          <Sparkle className="mx-auto mb-2 h-10 w-10 text-gray-300" />
+        <div className="py-6 text-center text-slate-500">
+          <Sparkle className="mx-auto mb-2 h-10 w-10 text-slate-300" />
           <p>No skills added yet.</p>
           <p className="text-sm">Add your technical and soft skills above.</p>
         </div>

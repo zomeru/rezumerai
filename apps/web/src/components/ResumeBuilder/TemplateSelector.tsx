@@ -52,7 +52,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
         <span className="max-sm:hidden">Template</span>
       </button>
       {isOpen && (
-        <div className="absolute top-full z-10 mt-2 w-xs space-y-3 rounded-md border border-gray-200 bg-white p-3 shadow-md">
+        <div className="absolute top-full z-10 mt-2 w-xs space-y-3 rounded-md border border-slate-200 bg-white p-3 shadow-md">
           {TEMPLATES.map(({ id, name, preview }) => {
             return (
               <button
@@ -65,7 +65,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
                   "relative cursor-pointer rounded-md border p-3 transition-all",
                   selectedTemplate === id
                     ? "border-primary-400 bg-primary-100"
-                    : "border-gray-300 hover:border-gray-400 hover:bg-gray-100",
+                    : "border-slate-300 hover:border-slate-300 hover:bg-slate-50",
                 )}
               >
                 {selectedTemplate === id && (
@@ -77,8 +77,8 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
                 )}
 
                 <div className="space-y-1">
-                  <h4 className="font-medium text-gray-800">{name}</h4>
-                  <div className="mt-2 rounded bg-primary-50 p-2 text-gray-500 text-xs italic">{preview}</div>
+                  <h4 className="font-medium text-slate-800">{name}</h4>
+                  <div className="mt-2 rounded bg-primary-50 p-2 text-slate-500 text-xs italic">{preview}</div>
                 </div>
               </button>
             );
