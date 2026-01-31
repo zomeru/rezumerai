@@ -1,6 +1,9 @@
 
 # Copilot Instructions for RezumerAI Monorepo
 
+## Prerequisites
+- Before anything else, activate the Serena MCP server on this project
+
 ## Monorepo Architecture
 RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and pnpm. It consists of:
 - `apps/web`: Next.js frontend (dynamic routing, React 19, TypeScript)

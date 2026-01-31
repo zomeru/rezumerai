@@ -1,34 +1,44 @@
-# RezumerAI Monorepo Setup Guide
+# RezumerAI Monorepo
 
-This guide explains how to set up and run the RezumerAI monorepo both locally and using Docker, following Turborepo best practices.
+A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**.
 
 ---
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v22+ recommended)
-- [pnpm](https://pnpm.io/) (v10.28.2, managed via Corepack)
-- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+- [Bun](https://bun.sh/) (v1.3.8+)
+- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) (for containerized development)
+
+---
+
+## Tech Stack
+
+- **Frontend**: Next.js 16+, React 19, TypeScript, Tailwind CSS
+- **Backend**: Express, Node.js, TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Testing**: Vitest, React Testing Library
+- **Build Tools**: Turborepo, Bun
+- **Code Quality**: Biome (linting & formatting)
 
 ---
 
 ## Local Development
 
-### 1. Install Dependencies
+### 1. Install Bun
 
-Enable and pin pnpm using Corepack:
-
-```sh
-corepack enable && corepack prepare pnpm@10.28.2 --activate
-```
-
-Install all dependencies:
+If you don't have Bun installed:
 
 ```sh
-pnpm install
+curl -fsSL https://bun.sh/install | bash
 ```
 
-### 2. Set Up Environment Variables
+### 2. Install Dependencies
+
+```sh
+bun install
+```
+
+### 3. Set Up Environment Variables
 
 Copy the example environment file and edit as needed:
 
@@ -38,34 +48,54 @@ cp .env.example .env.local
 
 Edit `.env.local` to set your database, Redis, and other secrets.
 
-### 3. Database Setup
+### 4. Database Setup
 
-Start a local PostgreSQL instance (or use Docker):
-
-```sh
-# Using Docker Compose (recommended for DB/Redis only)
-docker compose up db redis
-```
-
-Run migrations (if using Prisma):
+Start a local PostgreSQL instance using Docker:
 
 ```sh
-pnpm --filter=database run migrate:dev
+bun run docker:db
 ```
 
-### 4. Build and Run Apps
-
-#### Web (Next.js)
+Set up the database schema:
 
 ```sh
-pnpm --filter=web dev
+bun run db:setup
 ```
 
-#### API (Express)
+### 5. Run Development Servers
+
+Run all apps in development mode:
 
 ```sh
-pnpm --filter=server dev
+bun run dev
 ```
+
+Or run individually:
+
+```sh
+# Web (Next.js) - http://localhost:3000
+bun run --filter=web dev
+
+# API (Express) - http://localhost:8080
+bun run --filter=server dev
+```
+
+---
+
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `bun run dev` | Start all apps in development mode |
+| `bun run build` | Build all packages and apps |
+| `bun run test` | Run all tests |
+| `bun run test:watch` | Run tests in watch mode |
+| `bun run code:check` | Run linting and type checking |
+| `bun run check` | Run Biome linting |
+| `bun run check-types` | Run TypeScript type checking |
+| `bun run clean` | Clean all build artifacts and node_modules |
+| `bun run db:setup` | Push schema and generate Prisma client |
+| `bun run db:studio` | Open Prisma Studio |
 
 ---
 
@@ -74,28 +104,55 @@ pnpm --filter=server dev
 ### 1. Build and Start All Services
 
 ```sh
-# Build all images and start all services
+bun run docker:build
+```
+
+Or manually:
+
+```sh
 docker compose up --build
 ```
 
-- Web app: [http://localhost:3000](http://localhost:3000)
-- API: [http://localhost:8080](http://localhost:8080)
-- PostgreSQL: localhost:5432
-- Redis: localhost:6379
+### 2. Service URLs
 
-### 2. Stopping Services
+- **Web app**: [http://localhost:3000](http://localhost:3000)
+- **API**: [http://localhost:8080](http://localhost:8080)
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+
+### 3. Stopping Services
 
 ```sh
-docker compose down
+bun run docker:down
 ```
 
 ---
 
 ## Project Structure
 
-- `apps/web` – Next.js frontend (has its own Dockerfile)
-- `apps/server` – Express API (has its own Dockerfile)
-- `packages/` – Shared code (database, types, utils, etc.)
-- `docker compose.yml` – Orchestrates all services
+```
+rezumerai/
+├── apps/
+│   ├── web/                 # Next.js frontend
+│   └── server/              # Express API
+├── packages/
+│   ├── database/            # Prisma schema & client
+│   ├── types/               # Shared TypeScript types
+│   ├── ui/                  # Shared UI components
+│   ├── utils/               # Shared utilities
+│   ├── vitest-config/       # Shared Vitest configuration
+│   └── tsconfig/            # Shared TypeScript configs
+├── bunfig.toml              # Bun configuration
+├── turbo.json               # Turborepo configuration
+└── docker-compose.yml       # Docker orchestration
+```
 
+---
+
+## Development Guidelines
+
+- **Package Manager**: Always use Bun (`bun install`, `bun run`, etc.)
+- **Code Style**: Biome handles all linting and formatting
+- **Type Safety**: TypeScript strict mode is enabled everywhere
+- **Testing**: Write tests alongside your code using Vitest
 
