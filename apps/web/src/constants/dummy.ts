@@ -304,6 +304,8 @@ export interface Education {
   gpa: string;
 }
 
+export type Skills = string[];
+
 export interface Project {
   _id: string;
   name: string;
@@ -324,7 +326,7 @@ export interface Resume {
 
   personalInfo: PersonalInfo;
 
-  skills: string[];
+  skills: Skills;
 
   experience: Array<Experience>;
 

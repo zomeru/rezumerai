@@ -6,9 +6,13 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  DownloadIcon,
+  EyeIcon,
+  EyeOffIcon,
   FileText,
   FolderIcon,
   GraduationCap,
+  Share2Icon,
   Sparkles,
   User,
 } from "lucide-react";
@@ -23,6 +27,7 @@ import {
   ProfessionalSummaryForm,
   ProjectForm,
   ResumePreview,
+  SkillsForm,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
 import {
@@ -105,6 +110,29 @@ export default function ResumeBuilder() {
     setResumeData((prev) => ({ ...prev, project }));
   }
 
+  function handleSkillsChange(skills: string[]) {
+    setResumeData((prev) => ({ ...prev, skills }));
+  }
+
+  async function changeResumeVisibility() {
+    setResumeData((prev) => ({ ...prev, public: !prev.public }));
+  }
+
+  function handleShareResume() {
+    const currentUrl = window.location.href.split("/app/")[0];
+    const resumeUrl = `${currentUrl}/view/${resumeData._id}`;
+
+    navigator.share({
+      title: "Check out my resume",
+      text: "Here's a link to my resume:",
+      url: resumeUrl,
+    });
+  }
+
+  function downloadResume() {
+    window.print();
+  }
+
   const builderSections = useMemo(() => {
     const _sections = [
       {
@@ -138,7 +166,7 @@ export default function ResumeBuilder() {
       },
       {
         id: "skills",
-        render: () => <div>Skills form placeholder</div>, // TODO: Implement SkillsForm
+        render: () => <SkillsForm skills={resumeData.skills} onChange={handleSkillsChange} />,
       },
     ] as const;
 
@@ -215,12 +243,45 @@ export default function ResumeBuilder() {
                   </ReactActivity>
                 ))}
               </div>
+              <button
+                type="button"
+                className="mt-6 rounded-md bg-linear-to-br from-primary-100 to-primary-200 px-6 py-2 text-primary-600 text-sm ring ring-primary-300 transition-all hover:ring-primary-500"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
 
           {/* Right Panel - Preview */}
           <div className="max-lg:mt-6 lg:col-span-7">
-            <div className="">{/* buttons */}</div>
+            <div className="relative w-full">
+              <div className="absolute right-0 bottom-3 left-0 flex items-center justify-end gap-2">
+                {resumeData.public && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-lg bg-linear-to-br from-secondary-100 to-secondary-200 p-2 px-4 text-secondary-600 text-xs ring-secondary-300 transition-colors hover:ring"
+                    onClick={handleShareResume}
+                  >
+                    <Share2Icon className="size-4" /> Share
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg bg-linear-to-br from-accent-100 to-accent-200 p-2 px-4 text-accent-600 text-xs ring-accent-300 transition-colors hover:ring"
+                  onClick={changeResumeVisibility}
+                >
+                  {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                  {resumeData.public ? "Public" : "Private"}
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg bg-linear-to-br from-primary-100 to-primary-200 px-6 py-2 text-primary-600 text-xs ring-primary-300 transition-colors hover:ring"
+                  onClick={downloadResume}
+                >
+                  <DownloadIcon className="size-4" /> Download
+                </button>
+              </div>
+            </div>
 
             {/* resume preview */}
             <ReactActivity mode={resumeData ? "visible" : "hidden"}>

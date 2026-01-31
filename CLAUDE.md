@@ -1,7 +1,9 @@
 # Claude Instructions for RezumerAI Monorepo
 
 ## Prerequisites
-- Before anything else, activate the Serena MCP server on this project
+Before anything else, ensure mcp servers are activated on this project.
+- **Activate Serena** - Call `mcp_serena_activate_project` to activate Serena MCP server on this project every time before you start working.
+- **Use Context** - Use `mcp_context7_get-library-docs` to get relevant documentation for project library and framework usage, ONLY if needed.
 
 ## Monorepo Architecture
 RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
