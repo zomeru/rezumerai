@@ -1,8 +1,7 @@
 "use client";
 
+import { pdf } from "@react-pdf/renderer";
 import { cn } from "@rezumerai/utils/styles";
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
 import {
   ArrowLeftIcon,
   Briefcase,
@@ -29,6 +28,8 @@ import {
   ExperienceFormEnhanced,
   type FontSizeOption,
   FontSizeSelector,
+  PDFDocument,
+  PDFPreview,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
@@ -115,6 +116,7 @@ export default function ResumeBuilder() {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [previewMode, setPreviewMode] = useState<"html" | "pdf">("html");
 
   // Load font size from localStorage on mount
   useEffect(() => {
@@ -233,64 +235,34 @@ export default function ResumeBuilder() {
   }
 
   const downloadResume = useCallback(async () => {
-    if (!resumePreviewRef.current || isExporting) return;
+    if (isExporting) return;
 
     setIsExporting(true);
 
     try {
-      const element = resumePreviewRef.current;
-
-      // Create canvas from the resume preview
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher resolution for better quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-
-      // Calculate dimensions for letter size (8.5 x 11 inches)
-      const imgWidth = 8.5;
-      const imgHeight = 11;
-      const pageWidth = imgWidth * 72; // 72 DPI
-      const pageHeight = imgHeight * 72;
-
-      // Create PDF with letter size
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "letter",
-      });
-
-      // Calculate scaling to fit content to page
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = Math.min(pageWidth / canvasWidth, pageHeight / canvasHeight);
-
-      const scaledWidth = canvasWidth * ratio;
-      const scaledHeight = canvasHeight * ratio;
-
-      // Center the content on the page
-      const xOffset = (pageWidth - scaledWidth) / 2;
-      const yOffset = 0;
-
-      // Add the image to PDF
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      pdf.addImage(imgData, "PNG", xOffset, yOffset, scaledWidth, scaledHeight);
+      // Generate PDF using @react-pdf/renderer for consistent, high-quality output
+      const blob = await pdf(<PDFDocument data={resumeData} accentColor={resumeData.accentColor} />).toBlob();
 
       // Generate filename
       const fileName = resumeData.personalInfo.fullName
         ? `Resume_${resumeData.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
         : "Resume.pdf";
 
-      // Download the PDF
-      pdf.save(fileName);
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
       setIsExporting(false);
     }
-  }, [resumeData.personalInfo.fullName, isExporting]);
+  }, [resumeData, isExporting]);
 
   const builderSections = useMemo(() => {
     const _sections = [
@@ -477,53 +449,89 @@ export default function ResumeBuilder() {
           <div className="lg:col-span-7">
             <div className="sticky top-8 space-y-4">
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2">
-                {resumeData.public && (
+              <div className="flex items-center justify-between gap-2">
+                {/* Preview Mode Toggle */}
+                <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                   <button
                     type="button"
-                    className="flex items-center gap-2 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 font-medium text-secondary-700 text-sm shadow-sm transition-all hover:bg-secondary-50 hover:shadow active:scale-95"
-                    onClick={handleShareResume}
+                    onClick={() => setPreviewMode("html")}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
+                      previewMode === "html"
+                        ? "bg-primary-500 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50",
+                    )}
                   >
-                    <Share2Icon className="size-4" /> Share
+                    Design
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="flex items-center gap-2 rounded-xl border border-accent-200 bg-white px-4 py-2.5 font-medium text-accent-700 text-sm shadow-sm transition-all hover:bg-accent-50 hover:shadow active:scale-95"
-                  onClick={changeResumeVisibility}
-                >
-                  {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-                  {resumeData.public ? "Public" : "Private"}
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={downloadResume}
-                  disabled={isExporting}
-                >
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <DownloadIcon className="size-4" /> Download PDF
-                    </>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode("pdf")}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
+                      previewMode === "pdf"
+                        ? "bg-primary-500 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50",
+                    )}
+                  >
+                    PDF Preview
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {resumeData.public && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 font-medium text-secondary-700 text-sm shadow-sm transition-all hover:bg-secondary-50 hover:shadow active:scale-95"
+                      onClick={handleShareResume}
+                    >
+                      <Share2Icon className="size-4" /> Share
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-xl border border-accent-200 bg-white px-4 py-2.5 font-medium text-accent-700 text-sm shadow-sm transition-all hover:bg-accent-50 hover:shadow active:scale-95"
+                    onClick={changeResumeVisibility}
+                  >
+                    {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                    {resumeData.public ? "Public" : "Private"}
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={downloadResume}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" /> Generating...
+                      </>
+                    ) : (
+                      <>
+                        <DownloadIcon className="size-4" /> Download PDF
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Resume Preview with modern styling */}
               <ReactActivity mode={resumeData ? "visible" : "hidden"}>
-                <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl">
-                  <ResumePreview
-                    ref={resumePreviewRef}
-                    data={resumeData}
-                    accentColor={resumeData.accentColor}
-                    template={resumeData.template}
-                    fontSize={fontSize}
-                  />
-                </div>
+                {previewMode === "html" ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl">
+                    <ResumePreview
+                      ref={resumePreviewRef}
+                      data={resumeData}
+                      accentColor={resumeData.accentColor}
+                      template={resumeData.template}
+                      fontSize={fontSize}
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl">
+                    <PDFPreview data={resumeData} accentColor={resumeData.accentColor} />
+                  </div>
+                )}
               </ReactActivity>
             </div>
           </div>

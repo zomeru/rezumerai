@@ -12,11 +12,30 @@ interface ColorPickerModalProps {
 export default function ColorPickerModal({ selectedColor, onChange }: ColorPickerModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [tempColor, setTempColor] = useState(selectedColor);
+  const [position, setPosition] = useState<"left" | "right">("right");
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTempColor(selectedColor);
   }, [selectedColor]);
+
+  useEffect(() => {
+    if (isOpen && wrapperRef.current && modalRef.current) {
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const modalWidth = 256; // w-64 = 16rem = 256px
+      const viewportWidth = window.innerWidth;
+      const spaceOnRight = viewportWidth - wrapperRect.right;
+      const spaceOnLeft = wrapperRect.left;
+
+      // Position to the left if not enough space on right and more space on left
+      if (spaceOnRight < modalWidth && spaceOnLeft > spaceOnRight) {
+        setPosition("left");
+      } else {
+        setPosition("right");
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -49,7 +68,12 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+        <div
+          ref={modalRef}
+          className={`absolute top-full z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-xl ${
+            position === "left" ? "left-0" : "right-0"
+          }`}
+        >
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-semibold text-slate-900 text-sm">Pick a Color</h3>
             <button

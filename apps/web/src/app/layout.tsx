@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body className={`${outfitSans.variable} antialiased`}>
+      <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>
         <Providers>{children}</Providers>
       </body>
     </html>
