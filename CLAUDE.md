@@ -147,6 +147,11 @@ When assisting with this codebase:
 - **Build Tools**: Turborepo, Bun
 - **Code Quality**: Biome (linting & formatting)
 
+## Output Rules
+- Be concise. Short answers unless detail is requested.
+- No verbose explanations, summaries, or recaps unless asked.
+- Show code changes, not descriptions of what you'll change.
+
 ---
 
 _This file provides guidance for Claude AI assistant when working with the RezumerAI monorepo. Update as project conventions evolve._

@@ -89,6 +89,11 @@ RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and pnpm. It
 - Do not add duplicate types/utilities — extend shared packages instead.
 - Do not hardcode secrets; use environment variables in `.env.local`.
 
+## Output Rules
+- Be concise. Short answers unless detail is requested.
+- No verbose explanations, summaries, or recaps unless asked.
+- Show code changes, not descriptions of what you'll change.
+
 ---
 
 _This file is auto-generated. Update as project conventions evolve._
