@@ -1,7 +1,8 @@
 "use client";
 
-import { pdf } from "@react-pdf/renderer";
 import { cn } from "@rezumerai/utils/styles";
+import html2canvas from "html2canvas-pro";
+import { jsPDF } from "jspdf";
 import {
   ArrowLeftIcon,
   Briefcase,
@@ -28,7 +29,8 @@ import {
   ExperienceFormEnhanced,
   type FontSizeOption,
   FontSizeSelector,
-  PDFDocument,
+  LETTER_HEIGHT_PX,
+  LETTER_WIDTH_PX,
   PDFPreview,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
@@ -117,6 +119,8 @@ export default function ResumeBuilder() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [previewMode, setPreviewMode] = useState<"html" | "pdf">("html");
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   // Load font size from localStorage on mount
   useEffect(() => {
@@ -234,14 +238,107 @@ export default function ResumeBuilder() {
     });
   }
 
+  // Generate PDF from HTML preview (source of truth)
+  const generatePdfFromHtml = useCallback(async (): Promise<Blob | null> => {
+    if (!resumePreviewRef.current) return null;
+
+    try {
+      const element = resumePreviewRef.current;
+
+      // Create canvas from the HTML preview at exact dimensions
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher resolution for quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: LETTER_WIDTH_PX,
+        height: LETTER_HEIGHT_PX,
+      });
+
+      // Calculate dimensions for US Letter size (8.5 x 11 inches at 72 DPI)
+      const pageWidth = 8.5 * 72; // 612 points
+      const pageHeight = 11 * 72; // 792 points
+
+      // Create PDF with exact letter size
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "pt",
+        format: [pageWidth, pageHeight],
+      });
+
+      // Calculate scaling to fit canvas to page while maintaining aspect ratio
+      const canvasAspectRatio = canvas.width / canvas.height;
+      const pageAspectRatio = pageWidth / pageHeight;
+
+      let imgWidth = pageWidth;
+      let imgHeight = pageHeight;
+
+      if (canvasAspectRatio > pageAspectRatio) {
+        // Canvas is wider than page
+        imgHeight = pageWidth / canvasAspectRatio;
+      } else {
+        // Canvas is taller than page
+        imgWidth = pageHeight * canvasAspectRatio;
+      }
+
+      // Center the image on the page
+      const xOffset = (pageWidth - imgWidth) / 2;
+      const yOffset = (pageHeight - imgHeight) / 2;
+
+      // Add the image to PDF
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight, undefined, "FAST");
+
+      return pdf.output("blob");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      return null;
+    }
+  }, []);
+
+  // Generate PDF preview when switching to PDF mode
+  useEffect(() => {
+    if (previewMode === "pdf" && !pdfBlob && !isGeneratingPdf) {
+      setIsGeneratingPdf(true);
+      generatePdfFromHtml().then((blob) => {
+        if (blob) {
+          setPdfBlob(blob);
+        }
+        setIsGeneratingPdf(false);
+      });
+    }
+  }, [previewMode, pdfBlob, isGeneratingPdf, generatePdfFromHtml]);
+
+  // Regenerate PDF when resume data changes and in PDF preview mode
+  useEffect(() => {
+    if (previewMode === "pdf" && !isGeneratingPdf) {
+      const timeoutId = setTimeout(() => {
+        setIsGeneratingPdf(true);
+        generatePdfFromHtml().then((blob) => {
+          if (blob) {
+            setPdfBlob(blob);
+          }
+          setIsGeneratingPdf(false);
+        });
+      }, 1000); // Debounce PDF regeneration
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [resumeData, previewMode, isGeneratingPdf, generatePdfFromHtml]);
+
   const downloadResume = useCallback(async () => {
     if (isExporting) return;
 
     setIsExporting(true);
 
     try {
-      // Generate PDF using @react-pdf/renderer for consistent, high-quality output
-      const blob = await pdf(<PDFDocument data={resumeData} accentColor={resumeData.accentColor} />).toBlob();
+      // Use existing PDF blob if available, otherwise generate new one
+      const blob = pdfBlob || (await generatePdfFromHtml());
+
+      if (!blob) {
+        throw new Error("Failed to generate PDF");
+      }
 
       // Generate filename
       const fileName = resumeData.personalInfo.fullName
@@ -528,9 +625,7 @@ export default function ResumeBuilder() {
                     />
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl">
-                    <PDFPreview data={resumeData} accentColor={resumeData.accentColor} />
-                  </div>
+                  <PDFPreview pdfBlob={pdfBlob} isGenerating={isGeneratingPdf} />
                 )}
               </ReactActivity>
             </div>

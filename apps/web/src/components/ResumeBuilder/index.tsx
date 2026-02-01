@@ -14,7 +14,7 @@ export { default as ProfessionalSummaryForm } from "./ProfessionalSummaryForm";
 export { default as ProfessionalSummaryFormEnhanced } from "./ProfessionalSummaryFormEnhanced";
 export { default as ProjectForm } from "./ProjectForm";
 export { default as ProjectFormEnhanced } from "./ProjectFormEnhanced";
-export { default as ResumePreview } from "./ResumePreview";
+export { default as ResumePreview, LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "./ResumePreview";
 export { default as RichTextEditor } from "./RichTextEditor";
 export { default as SkillsForm } from "./SkillsForm";
 export { default as SkillsFormEnhanced } from "./SkillsFormEnhanced";
