@@ -71,6 +71,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
         onChange(numValue);
       }
     } else {
+      setCustomValue("1");
       onChange(size);
       setIsOpen(false);
     }

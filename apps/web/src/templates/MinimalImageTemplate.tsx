@@ -37,10 +37,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
 
         {/* Name + Title */}
         <div className="col-span-2 flex flex-col justify-center px-8 py-10">
-          <h1 className="font-bold text-4xl text-zinc-700 tracking-widest">
+          <h1 className="font-bold text-[2.25em] text-zinc-700 tracking-widest">
             {data.personalInfo.fullName || "Your Name"}
           </h1>
-          <p className="font-medium text-sm text-zinc-600 uppercase tracking-widest">
+          <p className="font-medium text-[0.875em] text-zinc-600 uppercase tracking-widest">
             {data.personalInfo.profession || "Profession"}
           </p>
         </div>
@@ -49,8 +49,8 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
         <aside className="col-span-1 border-zinc-400 border-r p-6 pt-0">
           {/* Contact */}
           <section className="mb-8">
-            <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">CONTACT</h2>
-            <div className="space-y-2 text-sm">
+            <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">CONTACT</h2>
+            <div className="space-y-2 text-[0.875em]">
               {data.personalInfo.phone && (
                 <div className="flex items-center gap-2">
                   <Phone size={14} style={{ color: accentColor }} />
@@ -75,15 +75,15 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Education */}
           {data.education && data.education.length > 0 && (
             <section className="mb-8">
-              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">EDUCATION</h2>
-              <div className="space-y-4 text-sm">
+              <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">EDUCATION</h2>
+              <div className="space-y-4 text-[0.875em]">
                 {data.education.map((edu) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>
                       <p className="font-semibold uppercase">{edu.degree}</p>
                       <p className="text-zinc-600">{edu.institution}</p>
-                      <p className="text-xs text-zinc-500">{formatShortDate(edu.graduationDate)}</p>
+                      <p className="text-[0.75em] text-zinc-500">{formatShortDate(edu.graduationDate)}</p>
                     </div>
                   );
                 })}
@@ -94,8 +94,8 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Skills */}
           {data.skills && data.skills.length > 0 && (
             <section>
-              <h2 className="mb-3 font-semibold text-sm text-zinc-600 tracking-widest">SKILLS</h2>
-              <ul className="space-y-1 text-sm">
+              <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">SKILLS</h2>
+              <ul className="space-y-1 text-[0.875em]">
                 {data.skills.map((skill) => {
                   const key = generateUuidKey();
                   return <li key={key}>{skill}</li>;
@@ -110,7 +110,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Summary */}
           {data.professionalSummary && (
             <section className="mb-8">
-              <h2 className="mb-3 font-semibold text-sm tracking-widest" style={{ color: accentColor }}>
+              <h2 className="mb-3 font-semibold text-[0.875em] tracking-widest" style={{ color: accentColor }}>
                 SUMMARY
               </h2>
               <p className="text-zinc-700 leading-relaxed">{data.professionalSummary}</p>
@@ -120,7 +120,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Experience */}
           {data.experience && data.experience.length > 0 && (
             <section>
-              <h2 className="mb-4 font-semibold text-sm tracking-widest" style={{ color: accentColor }}>
+              <h2 className="mb-4 font-semibold text-[0.875em] tracking-widest" style={{ color: accentColor }}>
                 EXPERIENCE
               </h2>
               <div className="mb-8 space-y-6">
@@ -130,15 +130,15 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                     <div key={key}>
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-zinc-900">{exp.position}</h3>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-[0.75em] text-zinc-500">
                           {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
                         </span>
                       </div>
-                      <p className="mb-2 text-sm" style={{ color: accentColor }}>
+                      <p className="mb-2 text-[0.875em]" style={{ color: accentColor }}>
                         {exp.company}
                       </p>
                       {exp.description && (
-                        <ul className="list-inside list-disc space-y-1 text-sm text-zinc-700 leading-relaxed">
+                        <ul className="list-inside list-disc space-y-1 text-[0.875em] text-zinc-700 leading-relaxed">
                           {exp.description.split("\n").map((line) => (
                             <li key={line}>{line}</li>
                           ))}
@@ -154,7 +154,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           {/* Projects */}
           {data.project && data.project.length > 0 && (
             <section>
-              <h2 className="font-semibold text-sm uppercase tracking-widest" style={{ color: accentColor }}>
+              <h2 className="font-semibold text-[0.875em] uppercase tracking-widest" style={{ color: accentColor }}>
                 PROJECTS
               </h2>
               <div className="space-y-4">
@@ -162,12 +162,12 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>
-                      <h3 className="mt-3 font-medium text-md text-zinc-800">{project.name}</h3>
-                      <p className="mb-1 text-sm" style={{ color: accentColor }}>
+                      <h3 className="mt-3 font-medium text-[1.125em] text-zinc-800">{project.name}</h3>
+                      <p className="mb-1 text-[0.875em]" style={{ color: accentColor }}>
                         {project.type}
                       </p>
                       {project.description && (
-                        <ul className="list-inside list-disc space-y-1 text-sm text-zinc-700">
+                        <ul className="list-inside list-disc space-y-1 text-[0.875em] text-zinc-700">
                           {project.description.split("\n").map((line) => (
                             <li key={line}>{line}</li>
                           ))}

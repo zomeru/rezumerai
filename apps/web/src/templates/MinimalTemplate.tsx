@@ -7,9 +7,9 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">
       {/* Header */}
       <header className="mb-10">
-        <h1 className="mb-4 font-thin text-4xl tracking-wide">{data.personalInfo.fullName || "Your Name"}</h1>
+        <h1 className="mb-4 font-thin text-[2.25em] tracking-wide">{data.personalInfo.fullName || "Your Name"}</h1>
 
-        <div className="flex flex-wrap gap-6 text-gray-600 text-sm">
+        <div className="flex flex-wrap gap-6 text-[0.875em] text-gray-600">
           {data.personalInfo.email && <span>{data.personalInfo.email}</span>}
           {data.personalInfo.phone && <span>{data.personalInfo.phone}</span>}
           {data.personalInfo.location && <span>{data.personalInfo.location}</span>}
@@ -28,7 +28,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Experience */}
       {data.experience && data.experience.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-6 font-medium text-sm uppercase tracking-widest" style={{ color: accentColor }}>
+          <h2 className="mb-6 font-medium text-[0.875em] uppercase tracking-widest" style={{ color: accentColor }}>
             Experience
           </h2>
 
@@ -38,8 +38,8 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
               return (
                 <div key={key}>
                   <div className="mb-1 flex items-baseline justify-between">
-                    <h3 className="font-medium text-lg">{exp.position}</h3>
-                    <span className="text-gray-500 text-sm">
+                    <h3 className="font-medium text-[1.125em]">{exp.position}</h3>
+                    <span className="text-[0.875em] text-gray-500">
                       {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
                     </span>
                   </div>
@@ -57,7 +57,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Projects */}
       {data.project && data.project.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-6 font-medium text-sm uppercase tracking-widest" style={{ color: accentColor }}>
+          <h2 className="mb-6 font-medium text-[0.875em] uppercase tracking-widest" style={{ color: accentColor }}>
             Projects
           </h2>
 
@@ -66,7 +66,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="flex flex-col items-baseline justify-between gap-2">
-                  <h3 className="font-medium text-lg">{proj.name}</h3>
+                  <h3 className="font-medium text-[1.125em]">{proj.name}</h3>
                   <p className="text-gray-600">{proj.description}</p>
                 </div>
               );
@@ -78,7 +78,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Education */}
       {data.education && data.education.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-6 font-medium text-sm uppercase tracking-widest" style={{ color: accentColor }}>
+          <h2 className="mb-6 font-medium text-[0.875em] uppercase tracking-widest" style={{ color: accentColor }}>
             Education
           </h2>
 
@@ -92,9 +92,9 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                       {edu.degree} {edu.field && `in ${edu.field}`}
                     </h3>
                     <p className="text-gray-600">{edu.institution}</p>
-                    {edu.gpa && <p className="text-gray-500 text-sm">GPA: {edu.gpa}</p>}
+                    {edu.gpa && <p className="text-[0.875em] text-gray-500">GPA: {edu.gpa}</p>}
                   </div>
-                  <span className="text-gray-500 text-sm">{formatShortDate(edu.graduationDate)}</span>
+                  <span className="text-[0.875em] text-gray-500">{formatShortDate(edu.graduationDate)}</span>
                 </div>
               );
             })}
@@ -105,7 +105,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Skills */}
       {data.skills && data.skills.length > 0 && (
         <section>
-          <h2 className="mb-6 font-medium text-sm uppercase tracking-widest" style={{ color: accentColor }}>
+          <h2 className="mb-6 font-medium text-[0.875em] uppercase tracking-widest" style={{ color: accentColor }}>
             Skills
           </h2>
 
