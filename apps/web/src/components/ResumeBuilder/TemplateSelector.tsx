@@ -3,6 +3,7 @@
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Layout } from "lucide-react";
 import { useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import type { TemplateType } from "@/templates";
 
 interface TemplateSelectorProps {
@@ -35,6 +36,7 @@ const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = [
 
 export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
   function onTemplateChange(template: TemplateType) {
     onChange(template);
@@ -42,7 +44,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
   }
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative">
       <button
         type="button"
         className="flex items-center gap-1 rounded-lg bg-linear-to-br from-primary-50 to-primary-100 px-3 py-2 text-primary-600 text-sm ring-primary-300 transition-all hover:ring"

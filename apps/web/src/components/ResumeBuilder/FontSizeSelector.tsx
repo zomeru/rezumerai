@@ -3,6 +3,7 @@
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Type } from "lucide-react";
 import { useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 export type FontSizeOption = "small" | "medium" | "large";
 
@@ -40,6 +41,7 @@ export const FONT_SIZE_SCALES: Record<FontSizeOption, number> = {
 
 export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
   function onSizeChange(size: FontSizeOption) {
     onChange(size);
@@ -47,7 +49,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
   }
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative">
       <button
         type="button"
         className="flex items-center gap-1 rounded-lg bg-linear-to-br from-secondary-50 to-secondary-100 px-3 py-2 text-secondary-600 text-sm ring-secondary-300 transition-all hover:ring"
