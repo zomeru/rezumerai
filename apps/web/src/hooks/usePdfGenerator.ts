@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Resume } from "@/constants/dummy";
 
 export type PreviewMode = "html" | "pdf";
@@ -31,6 +31,7 @@ export function usePdfGenerator({
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const hasGeneratedRef = useRef(false);
 
   // Generate PDF from HTML preview (source of truth)
   const generatePdfFromHtml = useCallback(async (): Promise<Blob | null> => {
@@ -128,9 +129,10 @@ export function usePdfGenerator({
     }
   }, [resumePreviewRef]);
 
-  // Generate PDF preview when switching to PDF mode
+  // Generate PDF when switching to PDF preview mode (only once)
   useEffect(() => {
-    if (previewMode === "pdf" && !pdfBlob && !isGeneratingPdf) {
+    if (previewMode === "pdf" && !hasGeneratedRef.current && !isGeneratingPdf) {
+      hasGeneratedRef.current = true;
       setIsGeneratingPdf(true);
       generatePdfFromHtml()
         .then((blob) => {
@@ -147,7 +149,7 @@ export function usePdfGenerator({
           setIsGeneratingPdf(false);
         });
     }
-  }, [previewMode, pdfBlob, isGeneratingPdf, generatePdfFromHtml]);
+  }, [previewMode, isGeneratingPdf, generatePdfFromHtml]);
 
   // Regenerate PDF when resume data changes (with debounce)
   useEffect(() => {

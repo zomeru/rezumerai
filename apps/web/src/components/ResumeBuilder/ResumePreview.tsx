@@ -3,6 +3,7 @@
 import { cn } from "@rezumerai/utils/styles";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { Resume } from "@/constants/dummy";
+import type { PreviewMode } from "@/hooks/usePdfGenerator";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
 import { FONT_SIZE_SCALES, type FontSizeOption } from "./FontSizeSelector";
 
@@ -16,6 +17,7 @@ interface ResumePreviewProps {
   accentColor: string;
   className?: string;
   fontSize?: FontSizeOption;
+  previewMode: PreviewMode;
 }
 
 interface RenderTemplateProps {
@@ -46,29 +48,40 @@ function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: Re
 }
 
 const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
-  ({ data, template, accentColor, className, fontSize = "medium" }, ref) => {
+  ({ data, template, accentColor, className, fontSize = "medium", previewMode }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
 
     useEffect(() => {
       const updateScale = () => {
         if (containerRef.current) {
-          const containerWidth = containerRef.current.offsetWidth;
-          const calculatedScale = Math.min(1, (containerWidth - 32) / LETTER_WIDTH_PX); // 32px for padding
+          // Use clientWidth (excludes scrollbar) for accurate measurement
+          const containerWidth = containerRef.current.clientWidth;
+          // Account for padding (16px on each side = 32px total)
+          const availableWidth = containerWidth - 32;
+          const calculatedScale = Math.min(1, availableWidth / LETTER_WIDTH_PX);
           setScale(calculatedScale);
         }
       };
 
       updateScale();
+      // Use setTimeout to ensure layout is settled after DOM updates
+      const timeoutId = setTimeout(updateScale, 100);
       window.addEventListener("resize", updateScale);
-      return () => window.removeEventListener("resize", updateScale);
-    }, []);
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener("resize", updateScale);
+      };
+    }, [previewMode]);
 
     return (
-      <div ref={containerRef} className="flex w-full items-center justify-center rounded-lg bg-slate-100 p-4">
+      <div
+        ref={containerRef}
+        className="flex w-full items-center justify-center overflow-auto rounded-lg bg-slate-100 p-4"
+      >
         {/* Container maintains aspect ratio and scales content to fit */}
         <div
-          className="relative"
+          className="relative flex-shrink-0"
           style={{
             width: `${LETTER_WIDTH_PX * scale}px`,
             height: `${LETTER_HEIGHT_PX * scale}px`,

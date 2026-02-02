@@ -228,15 +228,23 @@ export default function ResumeBuilder() {
     }
   }
 
-  function handleShareResume() {
+  async function handleShareResume() {
     const currentUrl = window.location.href.split("/app/")[0];
     const resumeUrl = `${currentUrl}/view/${resumeData._id}`;
 
-    navigator.share({
-      title: "Check out my resume",
-      text: "Here's a link to my resume:",
-      url: resumeUrl,
-    });
+    try {
+      await navigator.share({
+        title: "Check out my resume",
+        text: "Here's a link to my resume:",
+        url: resumeUrl,
+      });
+    } catch (error) {
+      // Silently handle cancellation or errors
+      // AbortError is thrown when user cancels the share dialog
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error("Error sharing resume:", error);
+      }
+    }
   }
 
   const builderSections = useMemo(() => {
@@ -506,6 +514,7 @@ export default function ResumeBuilder() {
                     accentColor={resumeData.accentColor}
                     template={resumeData.template}
                     fontSize={fontSize}
+                    previewMode={previewMode}
                   />
                 </div>
                 {/* PDF Preview */}
