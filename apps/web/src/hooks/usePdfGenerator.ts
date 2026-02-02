@@ -9,6 +9,8 @@ interface UsePdfGeneratorProps {
   resumeData: Resume;
   previewMode: PreviewMode;
   resumePreviewRef: React.RefObject<HTMLDivElement | null>;
+  fontSize?: string;
+  accentColor?: string;
 }
 
 interface UsePdfGeneratorReturn {
@@ -27,6 +29,8 @@ export function usePdfGenerator({
   resumeData,
   previewMode,
   resumePreviewRef,
+  fontSize,
+  accentColor,
 }: UsePdfGeneratorProps): UsePdfGeneratorReturn {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -151,7 +155,7 @@ export function usePdfGenerator({
     }
   }, [previewMode, isGeneratingPdf, generatePdfFromHtml]);
 
-  // Regenerate PDF when resume data changes (with debounce)
+  // Regenerate PDF when resume data, font size, or accent color changes (with debounce)
   useEffect(() => {
     // Only regenerate if we're in PDF mode and have already generated a PDF
     if (previewMode === "pdf" && pdfBlob && !isGeneratingPdf) {
@@ -176,7 +180,7 @@ export function usePdfGenerator({
       return () => clearTimeout(timeoutId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeData, previewMode]);
+  }, [resumeData, previewMode, fontSize, accentColor]);
 
   // Download resume as PDF
   const downloadResume = useCallback(async () => {

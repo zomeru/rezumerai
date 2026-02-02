@@ -131,6 +131,8 @@ export default function ResumeBuilder() {
     resumeData,
     previewMode,
     resumePreviewRef,
+    fontSize,
+    accentColor: resumeData.accentColor,
   });
 
   // Load font size from localStorage on mount
