@@ -5,14 +5,15 @@ import { Check, Type } from "lucide-react";
 import { useState } from "react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
-export type FontSizeOption = "small" | "medium" | "large";
+export type FontSizePreset = "small" | "medium" | "large" | "custom";
+export type FontSizeValue = FontSizePreset | number;
 
 interface FontSizeSelectorProps {
-  selectedSize: FontSizeOption;
-  onChange: (size: FontSizeOption) => void;
+  selectedSize: FontSizeValue;
+  onChange: (size: FontSizeValue) => void;
 }
 
-const FONT_SIZES: { id: FontSizeOption; name: string; description: string; scale: number }[] = [
+const FONT_SIZES: { id: FontSizePreset; name: string; description: string; scale: number }[] = [
   {
     id: "small",
     name: "Small",
@@ -31,21 +32,56 @@ const FONT_SIZES: { id: FontSizeOption; name: string; description: string; scale
     description: "Enhanced readability",
     scale: 1.1,
   },
+  {
+    id: "custom",
+    name: "Custom",
+    description: "Enter your own size",
+    scale: 1,
+  },
 ];
 
-export const FONT_SIZE_SCALES: Record<FontSizeOption, number> = {
+export const FONT_SIZE_SCALES: Record<FontSizePreset, number> = {
   small: 0.9,
   medium: 1,
   large: 1.1,
+  custom: 1,
 };
+
+export function getFontScale(size: FontSizeValue): number {
+  if (typeof size === "number") {
+    return size;
+  }
+  return FONT_SIZE_SCALES[size];
+}
 
 export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [customValue, setCustomValue] = useState<string>(
+    typeof selectedSize === "number" ? selectedSize.toString() : "1",
+  );
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
-  function onSizeChange(size: FontSizeOption) {
-    onChange(size);
-    setIsOpen(false);
+  const isCustomSelected = typeof selectedSize === "number";
+  const currentPreset = isCustomSelected ? "custom" : selectedSize;
+
+  function onSizeChange(size: FontSizePreset) {
+    if (size === "custom") {
+      const numValue = Number.parseFloat(customValue);
+      if (!Number.isNaN(numValue) && numValue > 0) {
+        onChange(numValue);
+      }
+    } else {
+      onChange(size);
+      setIsOpen(false);
+    }
+  }
+
+  function handleCustomChange(value: string) {
+    setCustomValue(value);
+    const numValue = Number.parseFloat(value);
+    if (!Number.isNaN(numValue) && numValue > 0) {
+      onChange(numValue);
+    }
   }
 
   return (
@@ -61,29 +97,48 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
       {isOpen && (
         <div className="absolute top-full z-10 mt-2 w-56 space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
           {FONT_SIZES.map(({ id, name, description }) => (
-            <button
-              type="button"
-              key={id}
-              onClick={() => onSizeChange(id)}
-              className={cn(
-                "relative w-full cursor-pointer rounded-lg border p-3 text-left transition-all",
-                selectedSize === id
-                  ? "border-secondary-400 bg-secondary-50"
-                  : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
-              )}
-            >
-              {selectedSize === id && (
-                <div className="absolute top-2 right-2">
-                  <div className="flex size-5 items-center justify-center rounded-full bg-secondary-500">
-                    <Check className="h-3 w-3 text-white" />
+            <div key={id}>
+              <button
+                type="button"
+                onClick={() => onSizeChange(id)}
+                className={cn(
+                  "relative w-full cursor-pointer rounded-lg border p-3 text-left transition-all",
+                  currentPreset === id
+                    ? "border-secondary-400 bg-secondary-50"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                )}
+              >
+                {currentPreset === id && (
+                  <div className="absolute top-2 right-2">
+                    <div className="flex size-5 items-center justify-center rounded-full bg-secondary-500">
+                      <Check className="h-3 w-3 text-white" />
+                    </div>
                   </div>
+                )}
+                <div className="space-y-0.5">
+                  <h4 className="font-medium text-slate-800 text-sm">{name}</h4>
+                  <p className="text-slate-500 text-xs">{description}</p>
+                </div>
+              </button>
+              {id === "custom" && currentPreset === "custom" && (
+                <div className="mt-2 space-y-2">
+                  <label htmlFor="custom-font-size" className="block font-medium text-slate-600 text-xs">
+                    Scale (e.g., 0.8 to 1.5)
+                  </label>
+                  <input
+                    id="custom-font-size"
+                    type="number"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value={customValue}
+                    onChange={(e) => handleCustomChange(e.target.value)}
+                    className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-secondary-400 focus:outline-none focus:ring-2 focus:ring-secondary-200"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </div>
               )}
-              <div className="space-y-0.5">
-                <h4 className="font-medium text-slate-800 text-sm">{name}</h4>
-                <p className="text-slate-500 text-xs">{description}</p>
-              </div>
-            </button>
+            </div>
           ))}
         </div>
       )}

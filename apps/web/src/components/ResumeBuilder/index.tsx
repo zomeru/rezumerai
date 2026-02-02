@@ -3,7 +3,13 @@ export { default as DatePicker } from "./DatePicker";
 export { default as DraggableList } from "./DraggableList";
 export { default as EducationFormEnhanced } from "./EducationFormEnhanced";
 export { default as ExperienceFormEnhanced } from "./ExperienceFormEnhanced";
-export { default as FontSizeSelector, FONT_SIZE_SCALES, type FontSizeOption } from "./FontSizeSelector";
+export {
+  default as FontSizeSelector,
+  FONT_SIZE_SCALES,
+  type FontSizePreset,
+  type FontSizeValue,
+  getFontScale,
+} from "./FontSizeSelector";
 // PDFPreview is not exported here to avoid SSR issues - import it directly with dynamic import
 export { default as PersonalInfoForm } from "./PersonalInfoForm";
 export { default as ProfessionalSummaryFormEnhanced } from "./ProfessionalSummaryFormEnhanced";

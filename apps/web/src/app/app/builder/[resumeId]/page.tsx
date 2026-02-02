@@ -26,8 +26,8 @@ import {
   ColorPickerModal,
   EducationFormEnhanced,
   ExperienceFormEnhanced,
-  type FontSizeOption,
   FontSizeSelector,
+  type FontSizeValue,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
@@ -75,9 +75,18 @@ const FONT_SIZE_STORAGE_KEY = "rezumerai_font_size";
 const AUTO_SAVE_KEY = "rezumerai_autosave";
 const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 
-function getStoredFontSize(): FontSizeOption {
+function getStoredFontSize(): FontSizeValue {
   if (typeof window === "undefined") return "medium";
   const stored = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
+  if (!stored) return "medium";
+
+  // Try to parse as number first
+  const numValue = Number.parseFloat(stored);
+  if (!Number.isNaN(numValue)) {
+    return numValue;
+  }
+
+  // Otherwise return as preset
   if (stored === "small" || stored === "medium" || stored === "large") {
     return stored;
   }
@@ -121,7 +130,7 @@ export default function ResumeBuilder() {
   const [resumeData, setResumeData] = useState<Resume>(defaultResume);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
-  const [fontSize, setFontSize] = useState<FontSizeOption>("medium");
+  const [fontSize, setFontSize] = useState<FontSizeValue>("medium");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("html");
@@ -197,9 +206,9 @@ export default function ResumeBuilder() {
     });
   }
 
-  function handleFontSizeChange(size: FontSizeOption) {
+  function handleFontSizeChange(size: FontSizeValue) {
     setFontSize(size);
-    localStorage.setItem(FONT_SIZE_STORAGE_KEY, size);
+    localStorage.setItem(FONT_SIZE_STORAGE_KEY, typeof size === "number" ? size.toString() : size);
   }
 
   function handleSummaryChange(summary: string) {

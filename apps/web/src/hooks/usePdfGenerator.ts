@@ -1,6 +1,7 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { FontSizeValue } from "@/components/ResumeBuilder";
 import type { Resume } from "@/constants/dummy";
 
 export type PreviewMode = "html" | "pdf";
@@ -9,7 +10,7 @@ interface UsePdfGeneratorProps {
   resumeData: Resume;
   previewMode: PreviewMode;
   resumePreviewRef: React.RefObject<HTMLDivElement | null>;
-  fontSize?: string;
+  fontSize: FontSizeValue;
   accentColor?: string;
 }
 
@@ -63,6 +64,8 @@ export function usePdfGenerator({
       const originalLeft = element.style.left;
       const originalTop = element.style.top;
       const originalOpacity = element.style.opacity;
+      const originalOverflow = element.style.overflow;
+      const originalHeight = element.style.height;
 
       // Temporarily remove scale transform and bring into view for accurate PDF capture
       element.style.transform = "scale(1)";
@@ -70,11 +73,16 @@ export function usePdfGenerator({
       element.style.left = "0";
       element.style.top = "0";
       element.style.opacity = "1";
+      element.style.overflow = "visible";
+      element.style.height = "auto";
 
       // Wait for next frame to ensure styles are applied
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      // Create canvas from the HTML preview at exact dimensions
+      // Get actual content height
+      const contentHeight = element.scrollHeight;
+
+      // Create canvas from the HTML preview with full content height
       const canvas = await html2canvas(element, {
         scale: 2, // Higher resolution for quality
         useCORS: true,
@@ -82,7 +90,7 @@ export function usePdfGenerator({
         backgroundColor: "#ffffff",
         logging: false,
         width: LETTER_WIDTH_PX,
-        height: LETTER_HEIGHT_PX,
+        height: contentHeight,
       });
 
       // Restore original styles
@@ -91,6 +99,8 @@ export function usePdfGenerator({
       element.style.left = originalLeft;
       element.style.top = originalTop;
       element.style.opacity = originalOpacity;
+      element.style.overflow = originalOverflow;
+      element.style.height = originalHeight;
 
       // Calculate dimensions for US Letter size (8.5 x 11 inches at 72 DPI)
       const pageWidth = 8.5 * 72; // 612 points
@@ -103,28 +113,41 @@ export function usePdfGenerator({
         format: [pageWidth, pageHeight],
       });
 
-      // Calculate scaling to fit canvas to page while maintaining aspect ratio
-      const canvasAspectRatio = canvas.width / canvas.height;
-      const pageAspectRatio = pageWidth / pageHeight;
+      // Calculate how many pages we need
+      const contentHeightInPx = contentHeight;
+      const pagesNeeded = Math.ceil(contentHeightInPx / LETTER_HEIGHT_PX);
 
-      let imgWidth = pageWidth;
-      let imgHeight = pageHeight;
+      // Convert canvas dimensions to match PDF dimensions
+      const canvasWidthInPdf = pageWidth;
+      const pixelToPdfRatio = canvasWidthInPdf / LETTER_WIDTH_PX;
 
-      if (canvasAspectRatio > pageAspectRatio) {
-        // Canvas is wider than page
-        imgHeight = pageWidth / canvasAspectRatio;
-      } else {
-        // Canvas is taller than page
-        imgWidth = pageHeight * canvasAspectRatio;
+      for (let pageIndex = 0; pageIndex < pagesNeeded; pageIndex++) {
+        if (pageIndex > 0) {
+          pdf.addPage();
+        }
+
+        // Calculate the portion of canvas to capture for this page
+        const sourceY = pageIndex * LETTER_HEIGHT_PX * 2; // *2 because canvas scale is 2
+        const sourceHeight = Math.min(LETTER_HEIGHT_PX * 2, canvas.height - sourceY);
+
+        // Create a temporary canvas for this page's content
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sourceHeight;
+
+        const pageContext = pageCanvas.getContext("2d");
+        if (pageContext) {
+          // Draw the portion of the full canvas onto the page canvas
+          pageContext.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+
+          // Calculate height for this page in PDF units
+          const pageContentHeight = (sourceHeight / 2) * pixelToPdfRatio;
+
+          // Add the page image to PDF
+          const imgData = pageCanvas.toDataURL("image/png", 1.0);
+          pdf.addImage(imgData, "PNG", 0, 0, canvasWidthInPdf, pageContentHeight, undefined, "FAST");
+        }
       }
-
-      // Center the image on the page
-      const xOffset = (pageWidth - imgWidth) / 2;
-      const yOffset = (pageHeight - imgHeight) / 2;
-
-      // Add the image to PDF
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight, undefined, "FAST");
 
       return pdf.output("blob");
     } catch (error) {
