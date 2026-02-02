@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@rezumerai/utils/styles";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { Resume } from "@/constants/dummy";
 import type { PreviewMode } from "@/hooks/usePdfGenerator";
@@ -120,29 +120,31 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
         role="region"
         aria-label="Resume preview"
       >
-        {/* Page navigation buttons */}
+        {/* Page navigation buttons - Up/Down at top right */}
         {totalPages > 1 && isHovered && (
           <>
-            {currentPage > 0 && (
-              <button
-                type="button"
-                onClick={goToPrevPage}
-                className="absolute top-6 left-6 z-10 flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-white to-slate-50 shadow-xl ring-1 ring-slate-200/50 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:ring-slate-300/70 active:scale-95"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="size-6 text-slate-700" strokeWidth={2.5} />
-              </button>
-            )}
-            {currentPage < totalPages - 1 && (
-              <button
-                type="button"
-                onClick={goToNextPage}
-                className="absolute top-6 right-6 z-10 flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-white to-slate-50 shadow-xl ring-1 ring-slate-200/50 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:ring-slate-300/70 active:scale-95"
-                aria-label="Next page"
-              >
-                <ChevronRight className="size-6 text-slate-700" strokeWidth={2.5} />
-              </button>
-            )}
+            <div className="absolute top-6 right-6 z-10 flex flex-col gap-2">
+              {currentPage > 0 && (
+                <button
+                  type="button"
+                  onClick={goToPrevPage}
+                  className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-white to-slate-50 shadow-xl ring-1 ring-slate-200/50 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:ring-slate-300/70 active:scale-95"
+                  aria-label="Previous page"
+                >
+                  <ChevronUp className="size-5 text-slate-700" strokeWidth={2.5} />
+                </button>
+              )}
+              {currentPage < totalPages - 1 && (
+                <button
+                  type="button"
+                  onClick={goToNextPage}
+                  className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-white to-slate-50 shadow-xl ring-1 ring-slate-200/50 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:ring-slate-300/70 active:scale-95"
+                  aria-label="Next page"
+                >
+                  <ChevronDown className="size-5 text-slate-700" strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
             {/* Page indicator */}
             <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-slate-900/90 to-slate-800/90 px-4 py-2 font-medium text-sm text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md">
               Page {currentPage + 1} of {totalPages}
