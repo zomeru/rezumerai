@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@rezumerai/utils/styles";
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import type { Resume } from "@/constants/dummy";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
 import { FONT_SIZE_SCALES, type FontSizeOption } from "./FontSizeSelector";
@@ -47,24 +47,48 @@ function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: Re
 
 const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
   ({ data, template, accentColor, className, fontSize = "medium" }, ref) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+      const updateScale = () => {
+        if (containerRef.current) {
+          const containerWidth = containerRef.current.offsetWidth;
+          const calculatedScale = Math.min(1, (containerWidth - 32) / LETTER_WIDTH_PX); // 32px for padding
+          setScale(calculatedScale);
+        }
+      };
+
+      updateScale();
+      window.addEventListener("resize", updateScale);
+      return () => window.removeEventListener("resize", updateScale);
+    }, []);
+
     return (
-      <div className="flex w-full items-center justify-center overflow-auto rounded-lg bg-slate-100 p-4">
-        {/* Fixed dimensions container - exactly 8.5 × 11 inches */}
+      <div ref={containerRef} className="flex w-full items-center justify-center rounded-lg bg-slate-100 p-4">
+        {/* Container maintains aspect ratio and scales content to fit */}
         <div
-          ref={ref}
-          id="resume-preview"
-          className={cn(
-            "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm print:border-none print:shadow-none",
-            className,
-          )}
+          className="relative"
           style={{
-            width: `${LETTER_WIDTH_PX}px`,
-            height: `${LETTER_HEIGHT_PX}px`,
-            minWidth: `${LETTER_WIDTH_PX}px`,
-            minHeight: `${LETTER_HEIGHT_PX}px`,
+            width: `${LETTER_WIDTH_PX * scale}px`,
+            height: `${LETTER_HEIGHT_PX * scale}px`,
           }}
         >
-          <RenderTemplate template={template} data={data} accentColor={accentColor} fontSize={fontSize} />
+          <div
+            ref={ref}
+            id="resume-preview"
+            className={cn(
+              "origin-top-left overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm print:border-none print:shadow-none",
+              className,
+            )}
+            style={{
+              width: `${LETTER_WIDTH_PX}px`,
+              height: `${LETTER_HEIGHT_PX}px`,
+              transform: `scale(${scale})`,
+            }}
+          >
+            <RenderTemplate template={template} data={data} accentColor={accentColor} fontSize={fontSize} />
+          </div>
         </div>
       </div>
     );

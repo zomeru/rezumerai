@@ -21,18 +21,31 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
   const [scale, setScale] = useState<number>(1.0);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fitMode, setFitMode] = useState<"width" | "page" | "custom">("width");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (pdfBlob) {
-      const url = URL.createObjectURL(pdfBlob);
-      setPdfUrl(url);
-      return () => URL.revokeObjectURL(url);
+      try {
+        const url = URL.createObjectURL(pdfBlob);
+        setPdfUrl(url);
+        setError(null);
+        return () => URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Error creating PDF URL:", err);
+        setError("Failed to load PDF");
+      }
     }
   }, [pdfBlob]);
 
   const onDocumentLoadSuccess = useCallback(({ numPages: nextNumPages }: { numPages: number }) => {
     setNumPages(nextNumPages);
     setPageNumber(1);
+    setError(null);
+  }, []);
+
+  const onDocumentLoadError = useCallback((error: Error) => {
+    console.error("PDF load error:", error);
+    setError("Failed to load PDF document");
   }, []);
 
   const handleZoomIn = () => {
@@ -71,8 +84,18 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
 
   if (!pdfUrl) {
     return (
-      <div className="flex min-h-[800px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
-        <p className="text-slate-500 text-sm">No PDF to preview</p>
+      <div className="flex min-h-[800px] flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50">
+        {error ? (
+          <>
+            <p className="text-red-500 text-sm">{error}</p>
+            <p className="text-slate-400 text-xs">Check console for details</p>
+          </>
+        ) : (
+          <>
+            <p className="text-slate-500 text-sm">No PDF preview available</p>
+            <p className="text-slate-400 text-xs">Switch to Design tab and back to regenerate</p>
+          </>
+        )}
       </div>
     );
   }
@@ -164,13 +187,25 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
-          loading={<Loader2 className="size-8 animate-spin text-primary-500" />}
+          onLoadError={onDocumentLoadError}
+          loading={
+            <div className="flex items-center gap-2">
+              <Loader2 className="size-8 animate-spin text-primary-500" />
+              <span className="text-slate-600 text-sm">Loading PDF...</span>
+            </div>
+          }
+          error={
+            <div className="flex flex-col items-center gap-2 text-red-500">
+              <p className="text-sm">Failed to load PDF</p>
+              <p className="text-slate-400 text-xs">Try switching tabs or refreshing</p>
+            </div>
+          }
         >
           <Page
             pageNumber={pageNumber}
             scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
             className="shadow-lg"
           />
         </Document>

@@ -29,8 +29,6 @@ import {
   ExperienceFormEnhanced,
   type FontSizeOption,
   FontSizeSelector,
-  LETTER_HEIGHT_PX,
-  LETTER_WIDTH_PX,
   PDFPreview,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
@@ -240,10 +238,40 @@ export default function ResumeBuilder() {
 
   // Generate PDF from HTML preview (source of truth)
   const generatePdfFromHtml = useCallback(async (): Promise<Blob | null> => {
-    if (!resumePreviewRef.current) return null;
+    // Ensure we're in browser environment
+    if (typeof window === "undefined") {
+      console.error("PDF generation must run in browser");
+      return null;
+    }
+
+    if (!resumePreviewRef.current) {
+      console.error("Resume preview ref is null");
+      return null;
+    }
 
     try {
       const element = resumePreviewRef.current;
+
+      // Letter size dimensions
+      const LETTER_WIDTH_PX = 816;
+      const LETTER_HEIGHT_PX = 1056;
+
+      // Store original styles to restore later
+      const originalTransform = element.style.transform;
+      const originalPosition = element.style.position;
+      const originalLeft = element.style.left;
+      const originalTop = element.style.top;
+      const originalOpacity = element.style.opacity;
+
+      // Temporarily remove scale transform and bring into view for accurate PDF capture
+      element.style.transform = "scale(1)";
+      element.style.position = "relative";
+      element.style.left = "0";
+      element.style.top = "0";
+      element.style.opacity = "1";
+
+      // Wait for next frame to ensure styles are applied
+      await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Create canvas from the HTML preview at exact dimensions
       const canvas = await html2canvas(element, {
@@ -255,6 +283,13 @@ export default function ResumeBuilder() {
         width: LETTER_WIDTH_PX,
         height: LETTER_HEIGHT_PX,
       });
+
+      // Restore original styles
+      element.style.transform = originalTransform;
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
+      element.style.top = originalTop;
+      element.style.opacity = originalOpacity;
 
       // Calculate dimensions for US Letter size (8.5 x 11 inches at 72 DPI)
       const pageWidth = 8.5 * 72; // 612 points
@@ -301,31 +336,49 @@ export default function ResumeBuilder() {
   useEffect(() => {
     if (previewMode === "pdf" && !pdfBlob && !isGeneratingPdf) {
       setIsGeneratingPdf(true);
-      generatePdfFromHtml().then((blob) => {
-        if (blob) {
-          setPdfBlob(blob);
-        }
-        setIsGeneratingPdf(false);
-      });
-    }
-  }, [previewMode, pdfBlob, isGeneratingPdf, generatePdfFromHtml]);
-
-  // Regenerate PDF when resume data changes and in PDF preview mode
-  useEffect(() => {
-    if (previewMode === "pdf" && !isGeneratingPdf) {
-      const timeoutId = setTimeout(() => {
-        setIsGeneratingPdf(true);
-        generatePdfFromHtml().then((blob) => {
+      generatePdfFromHtml()
+        .then((blob) => {
           if (blob) {
             setPdfBlob(blob);
+          } else {
+            console.error("Failed to generate PDF: blob is null");
           }
+        })
+        .catch((error) => {
+          console.error("Error in PDF generation:", error);
+        })
+        .finally(() => {
           setIsGeneratingPdf(false);
         });
+    }
+  }, [previewMode, pdfBlob, isGeneratingPdf]);
+
+  // Regenerate PDF when resume data changes (with debounce)
+  useEffect(() => {
+    // Only regenerate if we're in PDF mode and have already generated a PDF
+    if (previewMode === "pdf" && pdfBlob && !isGeneratingPdf) {
+      const timeoutId = setTimeout(() => {
+        setIsGeneratingPdf(true);
+        generatePdfFromHtml()
+          .then((blob) => {
+            if (blob) {
+              setPdfBlob(blob);
+            } else {
+              console.error("Failed to regenerate PDF: blob is null");
+            }
+          })
+          .catch((error) => {
+            console.error("Error in PDF regeneration:", error);
+          })
+          .finally(() => {
+            setIsGeneratingPdf(false);
+          });
       }, 1000); // Debounce PDF regeneration
 
       return () => clearTimeout(timeoutId);
     }
-  }, [resumeData, previewMode, isGeneratingPdf, generatePdfFromHtml]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeData, previewMode]);
 
   const downloadResume = useCallback(async () => {
     if (isExporting) return;
@@ -435,7 +488,7 @@ export default function ResumeBuilder() {
               <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
                 <div className="border-slate-100 border-b bg-gradient-to-br from-slate-50 to-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <TemplateSelector
                         selectedTemplate={resumeData.template}
                         onChange={(template) => handleTemplateChange(template)}
@@ -504,7 +557,7 @@ export default function ResumeBuilder() {
                 </div>
 
                 {/* Form Content */}
-                <div className="p-6">
+                <div className="max-w-full overflow-hidden p-6">
                   <div className="mb-4">
                     <h2 className="font-semibold text-slate-900 text-xl">{activeSection?.name}</h2>
                     <p className="text-slate-600 text-sm">Complete this section to build your resume</p>
@@ -546,7 +599,7 @@ export default function ResumeBuilder() {
           <div className="lg:col-span-7">
             <div className="sticky top-8 space-y-4">
               {/* Action Buttons */}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 {/* Preview Mode Toggle */}
                 <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                   <button
@@ -575,7 +628,7 @@ export default function ResumeBuilder() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {resumeData.public && (
                     <button
                       type="button"
@@ -614,19 +667,24 @@ export default function ResumeBuilder() {
 
               {/* Resume Preview with modern styling */}
               <ReactActivity mode={resumeData ? "visible" : "hidden"}>
-                {previewMode === "html" ? (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl">
-                    <ResumePreview
-                      ref={resumePreviewRef}
-                      data={resumeData}
-                      accentColor={resumeData.accentColor}
-                      template={resumeData.template}
-                      fontSize={fontSize}
-                    />
-                  </div>
-                ) : (
-                  <PDFPreview pdfBlob={pdfBlob} isGenerating={isGeneratingPdf} />
-                )}
+                {/* Keep HTML preview always mounted for PDF generation */}
+                <div
+                  className={cn(
+                    "overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-xl",
+                    previewMode === "pdf" && "pointer-events-none absolute opacity-0",
+                  )}
+                  aria-hidden={previewMode === "pdf"}
+                >
+                  <ResumePreview
+                    ref={resumePreviewRef}
+                    data={resumeData}
+                    accentColor={resumeData.accentColor}
+                    template={resumeData.template}
+                    fontSize={fontSize}
+                  />
+                </div>
+                {/* PDF Preview */}
+                {previewMode === "pdf" && <PDFPreview pdfBlob={pdfBlob} isGenerating={isGeneratingPdf} />}
               </ReactActivity>
             </div>
           </div>
