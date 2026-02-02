@@ -55,6 +55,7 @@ export default function Preview() {
           data={resumeData}
           template={resumeData.template}
           accentColor={resumeData.accentColor}
+          previewMode="html"
           className="bg-white py-4"
         />
       </div>
