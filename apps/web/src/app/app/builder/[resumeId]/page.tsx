@@ -18,6 +18,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Activity as ReactActivity, useEffect, useMemo, useRef, useState } from "react";
@@ -27,7 +28,6 @@ import {
   ExperienceFormEnhanced,
   type FontSizeOption,
   FontSizeSelector,
-  PDFPreview,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
@@ -45,6 +45,16 @@ import {
 } from "@/constants/dummy";
 import { type PreviewMode, usePdfGenerator } from "@/hooks/usePdfGenerator";
 import type { TemplateType } from "@/templates";
+
+// Dynamically import PDFPreview to avoid SSR issues with pdfjs
+const PDFPreview = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center">
+      <Loader2 className="size-8 animate-spin text-primary-500" />
+    </div>
+  ),
+});
 
 type SectionType = {
   id: "personal" | "summary" | "experience" | "education" | "projects" | "skills";

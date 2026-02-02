@@ -5,11 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "./pdf-viewer.css";
 
-// Configure pdf.js worker
-if (typeof window !== "undefined") {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-}
-
 interface PDFPreviewProps {
   pdfBlob: Blob | null;
   isGenerating?: boolean;
@@ -22,6 +17,13 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fitMode, setFitMode] = useState<"width" | "page" | "custom">("width");
   const [error, setError] = useState<string | null>(null);
+
+  // Configure pdf.js worker on mount (client-side only)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    }
+  }, []);
 
   useEffect(() => {
     if (pdfBlob) {
