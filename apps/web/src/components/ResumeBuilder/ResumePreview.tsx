@@ -4,13 +4,10 @@ import { cn } from "@rezumerai/utils/styles";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { Resume } from "@/constants/dummy";
+import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "@/constants/pdf";
 import type { PreviewMode } from "@/hooks/usePdfGenerator";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
 import { type FontSizeValue, getFontScale } from "./FontSizeSelector";
-
-// US Letter size: 8.5 × 11 inches at 96 DPI (standard web DPI)
-const LETTER_WIDTH_PX = 816; // 8.5 * 96
-const LETTER_HEIGHT_PX = 1056; // 11 * 96
 
 interface ResumePreviewProps {
   data: Resume;
@@ -187,4 +184,4 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 ResumePreview.displayName = "ResumePreview";
 
 export default ResumePreview;
-export { LETTER_WIDTH_PX, LETTER_HEIGHT_PX };
+export type { LETTER_WIDTH_PX, LETTER_HEIGHT_PX };

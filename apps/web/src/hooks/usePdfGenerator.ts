@@ -3,6 +3,7 @@ import { jsPDF } from "jspdf";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontSizeValue } from "@/components/ResumeBuilder";
 import type { Resume } from "@/constants/dummy";
+import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "@/constants/pdf";
 
 export type PreviewMode = "html" | "pdf";
 
@@ -53,10 +54,6 @@ export function usePdfGenerator({
 
     try {
       const element = resumePreviewRef.current;
-
-      // Letter size dimensions
-      const LETTER_WIDTH_PX = 816;
-      const LETTER_HEIGHT_PX = 1056;
 
       // Store original styles to restore later
       const originalTransform = element.style.transform;
@@ -206,7 +203,7 @@ export function usePdfGenerator({
   }, [resumeData, previewMode, fontSize, accentColor]);
 
   // Download resume as PDF
-  const downloadResume = useCallback(async () => {
+  const downloadResume = useCallback(async (): Promise<void> => {
     if (isExporting) return;
 
     setIsExporting(true);

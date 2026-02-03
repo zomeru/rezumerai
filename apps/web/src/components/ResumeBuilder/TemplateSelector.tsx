@@ -2,7 +2,7 @@
 
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Layout } from "lucide-react";
-import { useState } from "react";
+import { type JSX, useState } from "react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import type { TemplateType } from "@/templates";
 
@@ -34,11 +34,11 @@ const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = [
   },
 ];
 
-export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps) {
+export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
-  function onTemplateChange(template: TemplateType) {
+  function onTemplateChange(template: TemplateType): void {
     onChange(template);
     setIsOpen(false);
   }
