@@ -90,7 +90,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
         {/* Modern Header */}
         <div className="mb-8">
           <h1 className="mb-2 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text font-bold text-3xl text-transparent sm:text-4xl">

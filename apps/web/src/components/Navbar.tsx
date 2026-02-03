@@ -11,7 +11,7 @@ export default function Navbar() {
 
   return (
     <div className="bg-white shadow">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 text-slate-800 transition-all">
+      <nav className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 text-slate-800 transition-all sm:px-6 lg:px-8">
         <Logo />
         <div className="flex items-center gap-4 text-sm">
           <p className="max-sm:hidden">Hi, {user.name}!</p>

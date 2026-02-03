@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  reactCompiler: true,
   transpilePackages: ["@rezumerai/ui"],
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
