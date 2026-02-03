@@ -39,7 +39,7 @@
     "vitest": "^4.0.18"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.13",
+    "@biomejs/biome": "2.3.14",
     "@rezumerai/tsconfig": "workspace:*",
     "@types/node": "^25.1.0",
     "tsup": "^8.5.1",
