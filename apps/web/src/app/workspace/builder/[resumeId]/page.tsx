@@ -36,6 +36,7 @@ import {
   TemplateSelector,
 } from "@/components/ResumeBuilder";
 import { defaultResume, type Education, type Experience, type Project, type Resume } from "@/constants/dummy";
+import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
 import { useBuilderStore } from "@/store/useBuilderStore";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -161,8 +162,8 @@ export default function ResumeBuilder() {
   }
 
   async function handleShareResume() {
-    const currentUrl = window.location.href.split("/app/")[0];
-    const resumeUrl = `${currentUrl}/view/${resumeData._id}`;
+    const currentUrl = window.location.href.split(ROUTES.WORKSPACE)[0];
+    const resumeUrl = `${currentUrl}${ROUTES.PREVIEW}/${resumeData._id}`;
 
     try {
       await navigator.share({
@@ -229,7 +230,7 @@ export default function ResumeBuilder() {
         <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <Link
-              href="/app"
+              href={ROUTES.WORKSPACE}
               className="inline-flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900"
             >
               <ArrowLeftIcon className="size-4" />

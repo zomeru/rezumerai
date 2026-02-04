@@ -24,12 +24,13 @@ RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and Bun. It 
 
 - **Bun workspaces**: All dependency management and scripts use Bun (v1.3.8+). Never use npm, yarn, or pnpm.
 - **TypeScript everywhere**: Types are centralized in `packages/types` and shared across all apps/packages. Prioritize type safety, readability, and maintainability.
+- **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema and migrations in `packages/database/prisma/schema.prisma`. Use scripts in `packages/database/scripts/` for migrations.
 - **Testing**: Vitest 4.x is used everywhere with comprehensive unit and end-to-end tests. Test setup files are in `src/test` or alongside components. Shared config in `packages/vitest-config`.
 - **Linting/Formatting**: Biome (see `biome.json`) is the only linter/formatter. Run on save or via CLI.
 - **State Management**: Zustand for client-side state (`apps/web/src/store`).
 - **API Contracts**: @ts-rest for type-safe API definitions shared between frontend and backend.
-- **Dynamic Routing**: Next.js App Router uses folders like `[resumeId]` under `apps/web/src/app/view` for dynamic routes.
+- **Dynamic Routing**: Next.js App Router uses folders like `[resumeId]` under `apps/web/src/app/preview` for dynamic routes.
 - **Component/Hook Structure**: Place React components in `apps/web/src/components`, hooks in `apps/web/src/hooks`.
 - **Resume Templates**: In `apps/web/src/templates` (Classic, Modern, Minimal, MinimalImage).
 - **Shared UI**: Use and extend components in `packages/ui/src/components`.
@@ -98,10 +99,10 @@ bun run code:check     # Run both linting and type checking
 ```
 apps/web/src/
 ├── app/                   # Next.js App Router (routing, pages, layout)
-│   ├── app/               # Authenticated app routes
+│   ├── workspace/         # Authenticated app routes (dashboard, builder)
 │   ├── signin/            # Sign in page
 │   ├── signup/            # Sign up page
-│   └── view/              # Resume view routes
+│   └── preview/           # Resume preview routes
 ├── components/            # React components
 │   ├── Home/              # Homepage components
 │   ├── Dashboard/         # Dashboard components

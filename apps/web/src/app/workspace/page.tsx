@@ -9,6 +9,7 @@ import {
   ResumeCard,
   UploadResumeModal,
 } from "@/components/Dashboard";
+import { ROUTES } from "@/constants/routing";
 import { generateUuidKey } from "@/lib/utils";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -40,13 +41,13 @@ export default function Dashboard() {
   function handleCreateResume(title: string) {
     if (!title.trim()) return;
     setModalState({ type: null });
-    router.push("/app/builder/123");
+    router.push(`${ROUTES.BUILDER}/123`);
   }
 
   function handleUploadResume(title: string, file: File) {
     if (!title.trim() || !file) return;
     setModalState({ type: null });
-    router.push("/app/builder/123");
+    router.push(`${ROUTES.BUILDER}/123`);
   }
 
   function handleEditTitle(newTitle: string) {
@@ -63,7 +64,7 @@ export default function Dashboard() {
   }
 
   function handleOpenResume(resumeId: string) {
-    router.push(`/app/builder/${resumeId}`);
+    router.push(`${ROUTES.BUILDER}/${resumeId}`);
   }
 
   function handleOpenEditModal(resumeId: string, title: string) {
