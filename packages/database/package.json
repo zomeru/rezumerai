@@ -10,10 +10,10 @@
     "dist/**"
   ],
   "scripts": {
-    "dev": "concurrently \"bun run db:migrate:dev\" \"bun run db:generate\" \"bun run watch\"",
+    "dev": "bun run db:migrate:dev && bun run db:generate && bun run watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
     "watch": "bun run db:generate && bun run with-env tsup --watch",
-    "db:generate": "bun run with-env prisma generate",
+    "db:generate": "mkdir -p generated/prisma && bun run with-env prisma generate",
     "db:generate:prod": "prisma generate",
     "db:push": "bun run with-env prisma db push",
     "db:migrate:dev": "bun run clean:generated && bash ./scripts/migrate-dev.sh",

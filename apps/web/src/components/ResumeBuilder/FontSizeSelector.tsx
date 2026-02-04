@@ -3,9 +3,9 @@
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Type } from "lucide-react";
 import { useState } from "react";
+import type { FontSizePreset } from "@/constants/dummy";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
-export type FontSizePreset = "small" | "medium" | "large" | "custom";
 export type FontSizeValue = FontSizePreset | number;
 
 interface FontSizeSelectorProps {

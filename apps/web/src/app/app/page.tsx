@@ -2,7 +2,6 @@
 
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   CreateResumeModal,
   DownloadResumeModal,
@@ -10,17 +9,11 @@ import {
   ResumeCard,
   UploadResumeModal,
 } from "@/components/Dashboard";
-import { dummyResumeData, type Resume } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
+import { useDashboardStore } from "@/store/useDashboardStore";
+import { useResumeStore } from "@/store/useResumeStore";
 
 const RESUME_COLORS = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
-
-interface ModalState {
-  type: "create" | "upload" | "edit" | "download" | null;
-  resumeId?: string;
-}
-
-type ViewMode = "grid" | "list";
 
 /**
  * Dashboard component for managing resumes
@@ -29,25 +22,20 @@ type ViewMode = "grid" | "list";
 export default function Dashboard() {
   const router = useRouter();
 
-  // State management
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [modalState, setModalState] = useState<ModalState>({ type: null });
-  const [editingTitle, setEditingTitle] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  // Resume store
+  const resumes = useResumeStore((state) => state.resumes);
+  const updateResume = useResumeStore((state) => state.updateResume);
+  const deleteResume = useResumeStore((state) => state.deleteResume);
 
-  // Initialize resumes on mount
-  useEffect(() => {
-    loadResumes();
-  }, []);
-
-  async function loadResumes() {
-    try {
-      setResumes(dummyResumeData);
-    } catch (error) {
-      console.error("Failed to load resumes:", error);
-    }
-  }
+  // Dashboard UI store
+  const modalState = useDashboardStore((state) => state.modalState);
+  const setModalState = useDashboardStore((state) => state.setModalState);
+  const editingTitle = useDashboardStore((state) => state.editingTitle);
+  const setEditingTitle = useDashboardStore((state) => state.setEditingTitle);
+  const viewMode = useDashboardStore((state) => state.viewMode);
+  const setViewMode = useDashboardStore((state) => state.setViewMode);
+  const searchQuery = useDashboardStore((state) => state.searchQuery);
+  const setSearchQuery = useDashboardStore((state) => state.setSearchQuery);
 
   function handleCreateResume(title: string) {
     if (!title.trim()) return;
@@ -63,17 +51,14 @@ export default function Dashboard() {
 
   function handleEditTitle(newTitle: string) {
     if (!newTitle.trim() || !modalState.resumeId) return;
-
-    setResumes((prev) =>
-      prev.map((resume) => (resume._id === modalState.resumeId ? { ...resume, title: newTitle } : resume)),
-    );
+    updateResume(modalState.resumeId, { title: newTitle });
     setModalState({ type: null });
   }
 
   function handleDeleteResume(resumeId: string) {
     const confirmed = window.confirm("Are you sure you want to delete this resume?");
     if (confirmed) {
-      setResumes((prev) => prev.filter((resume) => resume._id !== resumeId));
+      deleteResume(resumeId);
     }
   }
 

@@ -1,3 +1,4 @@
+export type { FontSizePreset } from "@/constants/dummy";
 export { default as ColorPickerModal } from "./ColorPickerModal";
 export { default as DatePicker } from "./DatePicker";
 export { default as DraggableList } from "./DraggableList";
@@ -6,7 +7,6 @@ export { default as ExperienceFormEnhanced } from "./ExperienceFormEnhanced";
 export {
   default as FontSizeSelector,
   FONT_SIZE_SCALES,
-  type FontSizePreset,
   type FontSizeValue,
   getFontScale,
 } from "./FontSizeSelector";

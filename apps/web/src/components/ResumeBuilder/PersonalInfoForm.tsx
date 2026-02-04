@@ -9,7 +9,7 @@ type PersonalInfoFormProps = {
   data: Resume["personalInfo"];
   onChangeAction: (data: Resume["personalInfo"]) => void;
   removeBackground: boolean;
-  setRemoveBackgroundAction: (value: boolean | ((prev: boolean) => boolean)) => void;
+  setRemoveBackgroundAction: (value: boolean) => void;
 };
 
 const FIELDS: {
@@ -91,7 +91,7 @@ export default function PersonalInfoForm({
                 type="checkbox"
                 className="peer sr-only"
                 checked={removeBackground}
-                onChange={() => setRemoveBackgroundAction((prev) => !prev)}
+                onChange={() => setRemoveBackgroundAction(!removeBackground)}
               />
               <div className="peer h-5 w-9 rounded-full bg-slate-300 transition-colors duration-200 peer-checked:bg-primary-600"></div>
               <span className="dot absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>

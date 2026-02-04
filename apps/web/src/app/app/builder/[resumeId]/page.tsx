@@ -21,7 +21,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity as ReactActivity, useEffect, useMemo, useRef, useState } from "react";
+import { Activity as ReactActivity, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -35,15 +35,10 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import {
-  defaultResume,
-  dummyResumeData,
-  type Education,
-  type Experience,
-  type Project,
-  type Resume,
-} from "@/constants/dummy";
-import { type PreviewMode, usePdfGenerator } from "@/hooks/usePdfGenerator";
+import { defaultResume, type Education, type Experience, type Project, type Resume } from "@/constants/dummy";
+import { usePdfGenerator } from "@/hooks/usePdfGenerator";
+import { useBuilderStore } from "@/store/useBuilderStore";
+import { useResumeStore } from "@/store/useResumeStore";
 import type { TemplateType } from "@/templates";
 
 // Dynamically import PDFPreview to avoid SSR issues with pdfjs
@@ -71,178 +66,92 @@ const sections: SectionType[] = [
   { id: "skills", name: "Skills", icon: Sparkles },
 ];
 
-const FONT_SIZE_STORAGE_KEY = "rezumerai_font_size";
-const AUTO_SAVE_KEY = "rezumerai_autosave";
-const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
-
-function getStoredFontSize(): FontSizeValue {
-  if (typeof window === "undefined") return "medium";
-  const stored = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
-  if (!stored) return "medium";
-
-  // Try to parse as number first
-  const numValue = Number.parseFloat(stored);
-  if (!Number.isNaN(numValue)) {
-    return numValue;
-  }
-
-  // Otherwise return as preset
-  if (stored === "small" || stored === "medium" || stored === "large") {
-    return stored;
-  }
-  return "medium";
-}
-
-function saveToLocalStorage(resumeId: string, data: Resume) {
-  if (typeof window === "undefined") return;
-  try {
-    const storageData = {
-      resumeId,
-      data,
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem(`${AUTO_SAVE_KEY}_${resumeId}`, JSON.stringify(storageData));
-  } catch (error) {
-    console.error("Failed to save to localStorage:", error);
-  }
-}
-
-function loadFromLocalStorage(resumeId: string): Resume | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem(`${AUTO_SAVE_KEY}_${resumeId}`);
-    if (stored) {
-      const { data } = JSON.parse(stored);
-      return data;
-    }
-  } catch (error) {
-    console.error("Failed to load from localStorage:", error);
-  }
-  return null;
-}
-
 export default function ResumeBuilder() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
 
   const resumePreviewRef = useRef<HTMLDivElement>(null);
-  const [resumeData, setResumeData] = useState<Resume>(defaultResume);
-  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
-  const [removeBackground, setRemoveBackground] = useState(false);
-  const [fontSize, setFontSize] = useState<FontSizeValue>("medium");
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("html");
 
-  console.log("Resume data:", resumeData);
+  // Resume store
+  const resumeData = useResumeStore((state) => state.resumes.find((r) => r._id === resumeId) ?? defaultResume);
+  const updateResume = useResumeStore((state) => state.updateResume);
+
+  // Builder UI store
+  const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
+  const setActiveSectionIndex = useBuilderStore((state) => state.setActiveSectionIndex);
+  const removeBackground = useBuilderStore((state) => state.removeBackground);
+  const setRemoveBackground = useBuilderStore((state) => state.setRemoveBackground);
+  const isSaving = useBuilderStore((state) => state.isSaving);
+  const setIsSaving = useBuilderStore((state) => state.setIsSaving);
+  const lastSaved = useBuilderStore((state) => state.lastSaved);
+  const setLastSaved = useBuilderStore((state) => state.setLastSaved);
+  const previewMode = useBuilderStore((state) => state.previewMode);
+  const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
+
+  const effectiveFontSize: FontSizeValue =
+    resumeData.fontSize === "custom" ? resumeData.customFontSize : resumeData.fontSize;
 
   // PDF generation hook
   const { pdfBlob, isGeneratingPdf, isExporting, downloadResume } = usePdfGenerator({
     resumeData,
     previewMode,
     resumePreviewRef,
-    fontSize,
+    fontSize: effectiveFontSize,
     accentColor: resumeData.accentColor,
   });
 
-  // Load font size from localStorage on mount
-  useEffect(() => {
-    setFontSize(getStoredFontSize());
-  }, []);
-
-  // Load resume data (check localStorage first, then dummy data)
-  useEffect(() => {
-    const savedData = loadFromLocalStorage(resumeId);
-    if (savedData) {
-      setResumeData(savedData);
-    } else {
-      const resume = dummyResumeData.find((r) => r._id === resumeId) || defaultResume;
-      setResumeData(resume);
-    }
-  }, [resumeId]);
-
-  // Auto-save to localStorage
-  useEffect(() => {
-    if (!resumeData._id) return;
-
-    const intervalId = setInterval(() => {
-      saveToLocalStorage(resumeId, resumeData);
-      setLastSaved(new Date());
-    }, AUTO_SAVE_INTERVAL);
-
-    return () => clearInterval(intervalId);
-  }, [resumeId, resumeData]);
-
-  // Save on unmount
-  useEffect(() => {
-    return () => {
-      if (resumeData._id) {
-        saveToLocalStorage(resumeId, resumeData);
-      }
-    };
-  }, [resumeId, resumeData]);
-
   function updateResumeData(data: Resume["personalInfo"]) {
-    setResumeData((prev) => {
-      if (!prev) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        personalInfo: data,
-      };
-    });
+    updateResume(resumeId, { personalInfo: data });
   }
 
   function handleTemplateChange(template: TemplateType) {
-    setResumeData((prev) => {
-      return { ...prev, template };
-    });
+    updateResume(resumeId, { template });
   }
 
   function handleColorChange(color: string) {
-    setResumeData((prev) => {
-      return { ...prev, accentColor: color };
-    });
+    updateResume(resumeId, { accentColor: color });
   }
 
   function handleFontSizeChange(size: FontSizeValue) {
-    setFontSize(size);
-    localStorage.setItem(FONT_SIZE_STORAGE_KEY, typeof size === "number" ? size.toString() : size);
+    if (typeof size === "number") {
+      updateResume(resumeId, { fontSize: "custom", customFontSize: size });
+    } else if (size !== "custom") {
+      updateResume(resumeId, { fontSize: size, customFontSize: 1 });
+    } else {
+      updateResume(resumeId, { fontSize: "custom" });
+    }
   }
 
   function handleSummaryChange(summary: string) {
-    setResumeData((prev) => ({ ...prev, professionalSummary: summary }));
+    updateResume(resumeId, { professionalSummary: summary });
   }
 
   function handleExperienceChange(experience: Experience[]) {
-    setResumeData((prev) => ({ ...prev, experience }));
+    updateResume(resumeId, { experience });
   }
 
   function handleEducationChange(education: Education[]) {
-    setResumeData((prev) => ({ ...prev, education }));
+    updateResume(resumeId, { education });
   }
 
   function handleProjectChange(project: Project[]) {
-    setResumeData((prev) => ({ ...prev, project }));
+    updateResume(resumeId, { project });
   }
 
   function handleSkillsChange(skills: string[]) {
-    setResumeData((prev) => ({ ...prev, skills }));
+    updateResume(resumeId, { skills });
   }
 
-  async function changeResumeVisibility() {
-    setResumeData((prev) => ({ ...prev, public: !prev.public }));
+  function changeResumeVisibility() {
+    updateResume(resumeId, { public: !resumeData.public });
   }
 
   async function handleSaveResume() {
     setIsSaving(true);
     try {
-      // Simulate API call
+      // Simulated save — will connect to backend later
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      saveToLocalStorage(resumeId, resumeData);
       setLastSaved(new Date());
     } catch (error) {
       console.error("Failed to save resume:", error);
@@ -353,14 +262,14 @@ export default function ResumeBuilder() {
                         selectedColor={resumeData.accentColor}
                         onChange={(color) => handleColorChange(color)}
                       />
-                      <FontSizeSelector selectedSize={fontSize} onChange={handleFontSizeChange} />
+                      <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
                     </div>
                     <div className="flex items-center gap-2">
                       {activeSectionIndex !== 0 && (
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveSectionIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+                            setActiveSectionIndex(Math.max(activeSectionIndex - 1, 0));
                           }}
                           className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
                         >
@@ -371,7 +280,7 @@ export default function ResumeBuilder() {
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveSectionIndex((prevIndex) => Math.min(prevIndex + 1, sections.length - 1));
+                            setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
                           }}
                           className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
                         >
@@ -536,7 +445,7 @@ export default function ResumeBuilder() {
                     data={resumeData}
                     accentColor={resumeData.accentColor}
                     template={resumeData.template}
-                    fontSize={fontSize}
+                    fontSize={effectiveFontSize}
                     previewMode={previewMode}
                   />
                 </div>

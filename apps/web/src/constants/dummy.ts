@@ -82,6 +82,8 @@ export const dummyResumeData: Resume[] = [
     ],
     template: "minimal-image",
     accentColor: "#14B8A6",
+    fontSize: "medium",
+    customFontSize: 1,
     project: [
       {
         name: "Team Task Management System",
@@ -173,6 +175,8 @@ export const dummyResumeData: Resume[] = [
     ],
     template: "minimal-image",
     accentColor: "#6366F1",
+    fontSize: "medium",
+    customFontSize: 1,
     project: [
       {
         name: "FitTrack - Fitness Dashboard",
@@ -253,6 +257,8 @@ export const dummyResumeData: Resume[] = [
     ],
     template: "minimal-image",
     accentColor: "#F59E0B",
+    fontSize: "medium",
+    customFontSize: 1,
     project: [
       {
         name: "Invoicr - Invoice Management System",
@@ -313,6 +319,8 @@ export interface Project {
   description: string;
 }
 
+export type FontSizePreset = "small" | "medium" | "large" | "custom";
+
 export interface Resume {
   _id: string;
   userId: string;
@@ -321,6 +329,8 @@ export interface Resume {
   professionalSummary: string;
   template: TemplateType;
   accentColor: string;
+  fontSize: FontSizePreset;
+  customFontSize: number;
   updatedAt: string;
   createdAt: string;
 
@@ -343,6 +353,8 @@ export const defaultResume: Resume = {
   professionalSummary: "",
   template: "",
   accentColor: "",
+  fontSize: "medium",
+  customFontSize: 1,
   updatedAt: "",
   createdAt: "",
 

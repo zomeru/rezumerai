@@ -16,8 +16,6 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
-  console.log("Selected template:", selectedTemplate);
-
   function onTemplateChange(template: TemplateType): void {
     onChange(template);
     setIsOpen(false);
