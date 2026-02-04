@@ -15,17 +15,22 @@
       "inputs": [".env"]
     },
     "test": {
+      "dependsOn": ["^build"],
       "cache": true
     },
     "test:watch": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "test:ui": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
       "cache": true
     },
     "dev": {
