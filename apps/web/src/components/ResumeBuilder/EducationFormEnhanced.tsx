@@ -1,12 +1,12 @@
 "use client";
 
-import { format, parse } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { formatShortDate, formatYearMonth, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Education } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
+import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 
 interface EducationFormEnhancedProps {
   education: Education[];
@@ -42,33 +42,9 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     onChange(updated);
   };
 
-  const parseDate = (dateStr: string): Date | undefined => {
-    if (!dateStr) return undefined;
-    try {
-      return parse(dateStr, "yyyy-MM", new Date());
-    } catch {
-      return undefined;
-    }
-  };
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return "";
-    return format(date, "yyyy-MM");
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-slate-900">Education</h3>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-primary-600"
-        >
-          <Plus className="size-4" />
-          Add
-        </button>
-      </div>
+      <SectionHeader title="Education" onAdd={handleAdd} />
 
       <DraggableList
         items={education}
@@ -88,100 +64,58 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                 <p className="text-slate-500 text-sm">
                   {edu.institution || "Institution"}
                   {edu.graduationDate &&
-                    parseDate(edu.graduationDate) &&
-                    ` • ${format(parseDate(edu.graduationDate) as Date, "MMM yyyy")}`}
+                    parseYearMonth(edu.graduationDate) &&
+                    ` • ${formatShortDate(edu.graduationDate)}`}
                 </p>
               </div>
-              {/* biome-ignore lint/a11y/useSemanticElements: Cannot nest button inside button */}
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemove(index);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation();
-                    handleRemove(index);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className="ml-2 cursor-pointer rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="size-4" />
-              </span>
+              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${edu.degree || "education"}`} />
             </button>
 
             {expandedIndex === index && (
               <div className="space-y-4 border-slate-200 border-t p-4">
-                <div>
-                  <label
-                    htmlFor={`edu-institution-${index}`}
-                    className="mb-1.5 block font-medium text-slate-700 text-sm"
-                  >
-                    Institution *
-                  </label>
-                  <input
-                    id={`edu-institution-${index}`}
-                    type="text"
-                    value={edu.institution}
-                    onChange={(e) => handleUpdate(index, "institution", e.target.value)}
-                    placeholder="e.g. Harvard University"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                  />
-                </div>
+                <TextInput
+                  id={`edu-institution-${index}`}
+                  label="Institution"
+                  required
+                  value={edu.institution}
+                  onValueChange={(value) => handleUpdate(index, "institution", value)}
+                  placeholder="e.g. Harvard University"
+                />
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label htmlFor={`edu-degree-${index}`} className="mb-1.5 block font-medium text-slate-700 text-sm">
-                      Degree *
-                    </label>
-                    <input
-                      id={`edu-degree-${index}`}
-                      type="text"
-                      value={edu.degree}
-                      onChange={(e) => handleUpdate(index, "degree", e.target.value)}
-                      placeholder="e.g. Bachelor of Science"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`edu-field-${index}`} className="mb-1.5 block font-medium text-slate-700 text-sm">
-                      Field of Study
-                    </label>
-                    <input
-                      id={`edu-field-${index}`}
-                      type="text"
-                      value={edu.field}
-                      onChange={(e) => handleUpdate(index, "field", e.target.value)}
-                      placeholder="e.g. Computer Science"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
+                  <TextInput
+                    id={`edu-degree-${index}`}
+                    label="Degree"
+                    required
+                    value={edu.degree}
+                    onValueChange={(value) => handleUpdate(index, "degree", value)}
+                    placeholder="e.g. Bachelor of Science"
+                  />
+                  <TextInput
+                    id={`edu-field-${index}`}
+                    label="Field of Study"
+                    value={edu.field}
+                    onValueChange={(value) => handleUpdate(index, "field", value)}
+                    placeholder="e.g. Computer Science"
+                  />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
                     <DatePicker
-                      selected={parseDate(edu.graduationDate)}
-                      onSelect={(date) => handleUpdate(index, "graduationDate", formatDate(date))}
+                      selected={parseYearMonth(edu.graduationDate)}
+                      onSelect={(date) => handleUpdate(index, "graduationDate", formatYearMonth(date))}
                       placeholder="Select graduation date"
                     />
                   </div>
-                  <div>
-                    <label htmlFor={`edu-gpa-${index}`} className="mb-1.5 block font-medium text-slate-700 text-sm">
-                      GPA (Optional)
-                    </label>
-                    <input
-                      id={`edu-gpa-${index}`}
-                      type="text"
-                      value={edu.gpa}
-                      onChange={(e) => handleUpdate(index, "gpa", e.target.value)}
-                      placeholder="e.g. 3.8 or 8.5/10"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
+                  <TextInput
+                    id={`edu-gpa-${index}`}
+                    label="GPA (Optional)"
+                    value={edu.gpa}
+                    onValueChange={(value) => handleUpdate(index, "gpa", value)}
+                    placeholder="e.g. 3.8 or 8.5/10"
+                  />
                 </div>
               </div>
             )}
@@ -189,11 +123,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
         )}
       />
 
-      {education.length === 0 && (
-        <div className="rounded-lg border-2 border-slate-300 border-dashed bg-slate-50 p-8 text-center">
-          <p className="text-slate-500">No education added yet. Click "Add" to get started.</p>
-        </div>
-      )}
+      {education.length === 0 && <EmptyState message="No education added yet. Click &quot;Add&quot; to get started." />}
     </div>
   );
 }

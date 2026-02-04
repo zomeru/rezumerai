@@ -1,12 +1,12 @@
 "use client";
 
-import { format, parse } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { formatShortDate, formatYearMonth, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Experience } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
+import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
 
 interface ExperienceFormEnhancedProps {
@@ -44,33 +44,9 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
     onChange(updated);
   };
 
-  const parseDate = (dateStr: string): Date | undefined => {
-    if (!dateStr) return undefined;
-    try {
-      return parse(dateStr, "yyyy-MM", new Date());
-    } catch {
-      return undefined;
-    }
-  };
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return "";
-    return format(date, "yyyy-MM");
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-slate-900">Work Experience</h3>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-primary-600"
-        >
-          <Plus className="size-4" />
-          Add
-        </button>
-      </div>
+      <SectionHeader title="Work Experience" onAdd={handleAdd} />
 
       <DraggableList
         items={experience}
@@ -88,84 +64,52 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                   {exp.position || "Position"} {exp.company && `at ${exp.company}`}
                 </p>
                 <p className="text-slate-500 text-sm">
-                  {exp.startDate && parseDate(exp.startDate) && format(parseDate(exp.startDate) as Date, "MMM yyyy")}
+                  {exp.startDate && formatShortDate(exp.startDate)}
                   {exp.startDate && " - "}
-                  {exp.isCurrent
-                    ? "Present"
-                    : exp.endDate && parseDate(exp.endDate) && format(parseDate(exp.endDate) as Date, "MMM yyyy")}
+                  {exp.isCurrent ? "Present" : exp.endDate && formatShortDate(exp.endDate)}
                 </p>
               </div>
-              {/* biome-ignore lint/a11y/useSemanticElements: Cannot nest button inside button */}
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemove(index);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation();
-                    handleRemove(index);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className="ml-2 cursor-pointer rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="size-4" />
-              </span>
+              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${exp.position || "experience"}`} />
             </button>
 
             {expandedIndex === index && (
               <div className="space-y-4 border-slate-200 border-t p-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor={`exp-position-${index}`}
-                      className="mb-1.5 block font-medium text-slate-700 text-sm"
-                    >
-                      Position *
-                    </label>
-                    <input
-                      id={`exp-position-${index}`}
-                      type="text"
-                      value={exp.position}
-                      onChange={(e) => handleUpdate(index, "position", e.target.value)}
-                      placeholder="e.g. Senior Software Engineer"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`exp-company-${index}`} className="mb-1.5 block font-medium text-slate-700 text-sm">
-                      Company *
-                    </label>
-                    <input
-                      id={`exp-company-${index}`}
-                      type="text"
-                      value={exp.company}
-                      onChange={(e) => handleUpdate(index, "company", e.target.value)}
-                      placeholder="e.g. Google Inc."
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
+                  <TextInput
+                    id={`exp-position-${index}`}
+                    label="Position"
+                    required
+                    value={exp.position}
+                    onValueChange={(value) => handleUpdate(index, "position", value)}
+                    placeholder="e.g. Senior Software Engineer"
+                  />
+                  <TextInput
+                    id={`exp-company-${index}`}
+                    label="Company"
+                    required
+                    value={exp.company}
+                    onValueChange={(value) => handleUpdate(index, "company", value)}
+                    placeholder="e.g. Google Inc."
+                  />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
                     <DatePicker
-                      selected={parseDate(exp.startDate)}
-                      onSelect={(date) => handleUpdate(index, "startDate", formatDate(date))}
+                      selected={parseYearMonth(exp.startDate)}
+                      onSelect={(date) => handleUpdate(index, "startDate", formatYearMonth(date))}
                       placeholder="Select start date"
                     />
                   </div>
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">End Date</p>
                     <DatePicker
-                      selected={parseDate(exp.endDate)}
-                      onSelect={(date) => handleUpdate(index, "endDate", formatDate(date))}
+                      selected={parseYearMonth(exp.endDate)}
+                      onSelect={(date) => handleUpdate(index, "endDate", formatYearMonth(date))}
                       placeholder="Select end date"
                       disabled={exp.isCurrent}
-                      minDate={parseDate(exp.startDate)}
+                      minDate={parseYearMonth(exp.startDate)}
                     />
                   </div>
                 </div>
@@ -203,9 +147,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
       />
 
       {experience.length === 0 && (
-        <div className="rounded-lg border-2 border-slate-300 border-dashed bg-slate-50 p-8 text-center">
-          <p className="text-slate-500">No work experience added yet. Click "Add" to get started.</p>
-        </div>
+        <EmptyState message="No work experience added yet. Click &quot;Add&quot; to get started." />
       )}
     </div>
   );

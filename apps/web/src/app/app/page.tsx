@@ -3,14 +3,20 @@
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CreateResumeModal, EditResumeModal, ResumeCard, UploadResumeModal } from "@/components/Dashboard";
+import {
+  CreateResumeModal,
+  DownloadResumeModal,
+  EditResumeModal,
+  ResumeCard,
+  UploadResumeModal,
+} from "@/components/Dashboard";
 import { dummyResumeData, type Resume } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
 
 const RESUME_COLORS = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
 interface ModalState {
-  type: "create" | "upload" | "edit" | null;
+  type: "create" | "upload" | "edit" | "download" | null;
   resumeId?: string;
 }
 
@@ -80,10 +86,20 @@ export default function Dashboard() {
     setModalState({ type: "edit", resumeId });
   }
 
+  function handleDownloadResume(resumeId: string) {
+    setModalState({ type: "download", resumeId });
+  }
+
   function handleCloseModal() {
     setModalState({ type: null });
     setEditingTitle("");
   }
+
+  // Get the resume for download modal
+  const downloadResume =
+    modalState.type === "download" && modalState.resumeId
+      ? resumes.find((r) => r._id === modalState.resumeId)
+      : undefined;
 
   // Filter resumes based on search query
   const filteredResumes = resumes.filter((resume) => resume.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -177,6 +193,7 @@ export default function Dashboard() {
                   onOpen={() => handleOpenResume(resume._id)}
                   onEdit={() => handleOpenEditModal(resume._id, resume.title)}
                   onDelete={() => handleDeleteResume(resume._id)}
+                  onDownload={async () => handleDownloadResume(resume._id)}
                 />
               );
             })}
@@ -215,6 +232,10 @@ export default function Dashboard() {
 
       {modalState.type === "edit" && (
         <EditResumeModal title={editingTitle} onSubmit={handleEditTitle} onClose={handleCloseModal} />
+      )}
+
+      {modalState.type === "download" && downloadResume && (
+        <DownloadResumeModal resume={downloadResume} isOpen onClose={handleCloseModal} />
       )}
     </div>
   );

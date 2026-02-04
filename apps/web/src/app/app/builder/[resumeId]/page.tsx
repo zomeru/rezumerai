@@ -135,6 +135,8 @@ export default function ResumeBuilder() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("html");
 
+  console.log("Resume data:", resumeData);
+
   // PDF generation hook
   const { pdfBlob, isGeneratingPdf, isExporting, downloadResume } = usePdfGenerator({
     resumeData,

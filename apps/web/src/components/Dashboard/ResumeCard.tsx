@@ -1,6 +1,7 @@
 "use client";
 
-import { ExternalLink, FilePenLineIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
+import { useState } from "react";
 import type { Resume } from "@/constants/dummy";
 import { onKeyDown } from "@/lib/utils";
 
@@ -10,10 +11,24 @@ interface ResumeCardProps {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDownload?: () => Promise<void>;
 }
 
-export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: ResumeCardProps) {
+export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
   const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
+
+  async function handleDownload(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!onDownload || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await onDownload();
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: <div> used as a card with click handler
@@ -45,6 +60,17 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: 
 
           {/* Action buttons */}
           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {onDownload && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={isDownloading ? "Downloading..." : `Download ${resume.title}`}
+              >
+                {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+              </button>
+            )}
             <button
               type="button"
               onClick={(e) => {

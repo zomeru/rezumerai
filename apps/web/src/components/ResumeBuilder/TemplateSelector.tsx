@@ -3,6 +3,7 @@
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Layout } from "lucide-react";
 import { type JSX, useState } from "react";
+import { TEMPLATES } from "@/constants/templates";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import type { TemplateType } from "@/templates";
 
@@ -11,32 +12,11 @@ interface TemplateSelectorProps {
   onChange: (template: TemplateType) => void;
 }
 
-const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = [
-  {
-    id: "classic",
-    name: "Classic",
-    preview: "A timeless resume layout with well-defined sections and professional typography.",
-  },
-  {
-    id: "modern",
-    name: "Modern",
-    preview: "A sleek, contemporary design featuring bold accents and clean font choices.",
-  },
-  {
-    id: "minimal-image",
-    name: "Minimal with Image",
-    preview: "A refined, minimal layout that highlights your profile image and key details.",
-  },
-  {
-    id: "minimal",
-    name: "Minimal",
-    preview: "An ultra-clean, content-focused design that keeps the spotlight on your achievements.",
-  },
-];
-
 export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
+
+  console.log("Selected template:", selectedTemplate);
 
   function onTemplateChange(template: TemplateType): void {
     onChange(template);

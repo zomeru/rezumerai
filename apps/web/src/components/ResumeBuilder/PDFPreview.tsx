@@ -105,37 +105,37 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
   return (
     <div className="flex flex-col gap-3">
       {/* Viewer Controls */}
-      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:gap-3 sm:p-3">
         {/* Zoom Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={handleZoomOut}
             disabled={scale <= 0.5}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-700 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-1.5 sm:px-2.5 sm:py-1.5"
             title="Zoom Out"
             aria-label="Zoom out"
           >
             <ZoomOut className="size-4" />
           </button>
-          <span className="min-w-[60px] text-center font-medium text-slate-600 text-sm">
+          <span className="min-w-[45px] text-center font-medium text-slate-600 text-xs sm:min-w-[55px] sm:text-sm">
             {Math.round(scale * 100)}%
           </span>
           <button
             type="button"
             onClick={handleZoomIn}
             disabled={scale >= 3.0}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-700 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-1.5 sm:px-2.5 sm:py-1.5"
             title="Zoom In"
             aria-label="Zoom in"
           >
             <ZoomIn className="size-4" />
           </button>
-          <div className="mx-2 h-6 w-px bg-slate-300" />
+          <div className="mx-1 hidden h-5 w-px bg-slate-300 sm:mx-2 sm:block sm:h-6" />
           <button
             type="button"
             onClick={handleFitWidth}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center gap-1 rounded-lg border p-1.5 text-xs transition-colors sm:gap-1.5 sm:px-2.5 sm:py-1.5 sm:text-sm ${
               fitMode === "width"
                 ? "border-primary-500 bg-primary-50 text-primary-700"
                 : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
@@ -143,13 +143,13 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
             title="Fit to Width"
             aria-label="Fit to Width"
           >
-            <Maximize className="size-4" />
-            Fit Width
+            <Maximize className="size-3.5 sm:size-4" />
+            <span className="hidden sm:inline">Fit Width</span>
           </button>
           <button
             type="button"
             onClick={handleFitPage}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center gap-1 rounded-lg border p-1.5 text-xs transition-colors sm:gap-1.5 sm:px-2.5 sm:py-1.5 sm:text-sm ${
               fitMode === "page"
                 ? "border-primary-500 bg-primary-50 text-primary-700"
                 : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
@@ -157,35 +157,35 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
             title="Fit to Page"
             aria-label="Fit to Page"
           >
-            <Minimize className="size-4" />
-            Fit Page
+            <Minimize className="size-3.5 sm:size-4" />
+            <span className="hidden sm:inline">Fit Page</span>
           </button>
         </div>
 
         {/* Page Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={goToPrevPage}
             disabled={pageNumber <= 1}
-            className="rounded-lg border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
             title="Previous Page"
             aria-label="Previous Page"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-3.5 sm:size-4" />
           </button>
-          <span className="text-slate-600 text-sm">
+          <span className="whitespace-nowrap text-slate-600 text-xs sm:text-sm">
             Page {pageNumber} of {numPages}
           </span>
           <button
             type="button"
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
-            className="rounded-lg border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
             title="Next Page"
             aria-label="Next Page"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-3.5 sm:size-4" />
           </button>
         </div>
       </div>

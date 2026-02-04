@@ -3,6 +3,7 @@
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import DraggableList from "./DraggableList";
+import { EmptyState, SectionHeader } from "./Inputs";
 
 interface SkillsFormEnhancedProps {
   skills: string[];
@@ -57,9 +58,7 @@ export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhan
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-slate-900">Skills</h3>
-      </div>
+      <SectionHeader title="Skills" showAddButton={false} />
 
       <div className="space-y-2">
         <div className="relative">
@@ -128,11 +127,7 @@ export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhan
         />
       )}
 
-      {skills.length === 0 && (
-        <div className="rounded-lg border-2 border-slate-300 border-dashed bg-slate-50 p-8 text-center">
-          <p className="text-slate-500">No skills added yet. Start adding your skills above.</p>
-        </div>
-      )}
+      {skills.length === 0 && <EmptyState message="No skills added yet. Start adding your skills above." />}
     </div>
   );
 }

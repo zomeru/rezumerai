@@ -1,9 +1,7 @@
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FontSizeValue } from "@/components/ResumeBuilder";
 import type { Resume } from "@/constants/dummy";
-import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "@/constants/pdf";
+import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
 
 export type PreviewMode = "html" | "pdf";
 
@@ -21,11 +19,50 @@ interface UsePdfGeneratorReturn {
   isExporting: boolean;
   generatePdfFromHtml: () => Promise<Blob | null>;
   downloadResume: () => Promise<void>;
+  dataHash: string;
 }
+
+/**
+ * Generates a hash from resume data, font size, and accent color
+ * Used to determine if PDF regeneration is needed
+ */
+function generateDataHash(resumeData: Resume, fontSize: FontSizeValue, accentColor?: string): string {
+  const hashData = JSON.stringify({
+    personalInfo: resumeData.personalInfo,
+    professionalSummary: resumeData.professionalSummary,
+    experience: resumeData.experience,
+    education: resumeData.education,
+    project: resumeData.project,
+    skills: resumeData.skills,
+    template: resumeData.template,
+    fontSize,
+    accentColor,
+  });
+  // Simple hash function - sufficient for change detection
+  let hash = 0;
+  for (let i = 0; i < hashData.length; i++) {
+    const char = hashData.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+// Cache to persist PDF blobs across mode switches
+interface PDFCache {
+  blob: Blob;
+  dataHash: string;
+}
+const pdfCache: { current: PDFCache | null } = { current: null };
 
 /**
  * Custom hook to handle PDF generation from HTML resume preview
  * Manages PDF blob state, generation process, and download functionality
+ *
+ * Features:
+ * - Hash-based caching: Only regenerates when resume data actually changes
+ * - Persists cache across HTML/PDF mode switches
+ * - Debounced regeneration for performance
  */
 export function usePdfGenerator({
   resumeData,
@@ -38,153 +75,75 @@ export function usePdfGenerator({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const hasGeneratedRef = useRef(false);
+  const lastHashRef = useRef<string | null>(null);
+
+  // Compute hash of current resume data for cache comparison
+  const dataHash = useMemo(
+    () => generateDataHash(resumeData, fontSize, accentColor),
+    [resumeData, fontSize, accentColor],
+  );
 
   // Generate PDF from HTML preview (source of truth)
   const generatePdfFromHtml = useCallback(async (): Promise<Blob | null> => {
-    // Ensure we're in browser environment
-    if (typeof window === "undefined") {
-      console.error("PDF generation must run in browser");
-      return null;
-    }
-
     if (!resumePreviewRef.current) {
       console.error("Resume preview ref is null");
       return null;
     }
 
-    try {
-      const element = resumePreviewRef.current;
-
-      // Store original styles to restore later
-      const originalTransform = element.style.transform;
-      const originalPosition = element.style.position;
-      const originalLeft = element.style.left;
-      const originalTop = element.style.top;
-      const originalOpacity = element.style.opacity;
-      const originalOverflow = element.style.overflow;
-      const originalHeight = element.style.height;
-
-      // Temporarily remove scale transform and bring into view for accurate PDF capture
-      element.style.transform = "scale(1)";
-      element.style.position = "relative";
-      element.style.left = "0";
-      element.style.top = "0";
-      element.style.opacity = "1";
-      element.style.overflow = "visible";
-      element.style.height = "auto";
-
-      // Wait for next frame to ensure styles are applied
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-
-      // Get actual content height
-      const contentHeight = element.scrollHeight;
-
-      // Create canvas from the HTML preview with full content height
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher resolution for quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        width: LETTER_WIDTH_PX,
-        height: contentHeight,
-      });
-
-      // Restore original styles
-      element.style.transform = originalTransform;
-      element.style.position = originalPosition;
-      element.style.left = originalLeft;
-      element.style.top = originalTop;
-      element.style.opacity = originalOpacity;
-      element.style.overflow = originalOverflow;
-      element.style.height = originalHeight;
-
-      // Calculate dimensions for US Letter size (8.5 x 11 inches at 72 DPI)
-      const pageWidth = 8.5 * 72; // 612 points
-      const pageHeight = 11 * 72; // 792 points
-
-      // Create PDF with exact letter size
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: [pageWidth, pageHeight],
-      });
-
-      // Calculate how many pages we need
-      const contentHeightInPx = contentHeight;
-      const pagesNeeded = Math.ceil(contentHeightInPx / LETTER_HEIGHT_PX);
-
-      // Convert canvas dimensions to match PDF dimensions
-      const canvasWidthInPdf = pageWidth;
-      const pixelToPdfRatio = canvasWidthInPdf / LETTER_WIDTH_PX;
-
-      for (let pageIndex = 0; pageIndex < pagesNeeded; pageIndex++) {
-        if (pageIndex > 0) {
-          pdf.addPage();
-        }
-
-        // Calculate the portion of canvas to capture for this page
-        const sourceY = pageIndex * LETTER_HEIGHT_PX * 2; // *2 because canvas scale is 2
-        const sourceHeight = Math.min(LETTER_HEIGHT_PX * 2, canvas.height - sourceY);
-
-        // Create a temporary canvas for this page's content
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sourceHeight;
-
-        const pageContext = pageCanvas.getContext("2d");
-        if (pageContext) {
-          // Draw the portion of the full canvas onto the page canvas
-          pageContext.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
-
-          // Calculate height for this page in PDF units
-          const pageContentHeight = (sourceHeight / 2) * pixelToPdfRatio;
-
-          // Add the page image to PDF
-          const imgData = pageCanvas.toDataURL("image/png", 1.0);
-          pdf.addImage(imgData, "PNG", 0, 0, canvasWidthInPdf, pageContentHeight, undefined, "FAST");
-        }
-      }
-
-      return pdf.output("blob");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      return null;
-    }
+    return generatePdfFromElement(resumePreviewRef.current);
   }, [resumePreviewRef]);
 
-  // Generate PDF when switching to PDF preview mode (only once)
+  // Check for cached PDF on mode switch - use cache if hash matches
   useEffect(() => {
-    if (previewMode === "pdf" && !hasGeneratedRef.current && !isGeneratingPdf) {
-      hasGeneratedRef.current = true;
-      setIsGeneratingPdf(true);
-      generatePdfFromHtml()
-        .then((blob) => {
-          if (blob) {
-            setPdfBlob(blob);
-          } else {
-            console.error("Failed to generate PDF: blob is null");
-          }
-        })
-        .catch((error) => {
-          console.error("Error in PDF generation:", error);
-        })
-        .finally(() => {
-          setIsGeneratingPdf(false);
-        });
-    }
-  }, [previewMode, isGeneratingPdf, generatePdfFromHtml]);
+    if (previewMode === "pdf" && !isGeneratingPdf) {
+      // Check if we have a cached PDF with matching hash
+      if (pdfCache.current && pdfCache.current.dataHash === dataHash) {
+        // Use cached PDF - no regeneration needed
+        if (!pdfBlob || lastHashRef.current !== dataHash) {
+          setPdfBlob(pdfCache.current.blob);
+          lastHashRef.current = dataHash;
+        }
+        return;
+      }
 
-  // Regenerate PDF when resume data, font size, or accent color changes (with debounce)
-  useEffect(() => {
-    // Only regenerate if we're in PDF mode and have already generated a PDF
-    if (previewMode === "pdf" && pdfBlob && !isGeneratingPdf) {
-      const timeoutId = setTimeout(() => {
+      // No valid cache - generate new PDF
+      if (!hasGeneratedRef.current || lastHashRef.current !== dataHash) {
+        hasGeneratedRef.current = true;
+        lastHashRef.current = dataHash;
         setIsGeneratingPdf(true);
         generatePdfFromHtml()
           .then((blob) => {
             if (blob) {
               setPdfBlob(blob);
+              // Store in cache
+              pdfCache.current = { blob, dataHash };
+            } else {
+              console.error("Failed to generate PDF: blob is null");
+            }
+          })
+          .catch((error) => {
+            console.error("Error in PDF generation:", error);
+          })
+          .finally(() => {
+            setIsGeneratingPdf(false);
+          });
+      }
+    }
+  }, [previewMode, dataHash, isGeneratingPdf, generatePdfFromHtml, pdfBlob]);
+
+  // Regenerate PDF when resume data actually changes (detected via hash)
+  useEffect(() => {
+    // Only regenerate if we're in PDF mode, have a cached PDF, and hash has changed
+    if (previewMode === "pdf" && pdfBlob && !isGeneratingPdf && lastHashRef.current !== dataHash) {
+      const timeoutId = setTimeout(() => {
+        lastHashRef.current = dataHash;
+        setIsGeneratingPdf(true);
+        generatePdfFromHtml()
+          .then((blob) => {
+            if (blob) {
+              setPdfBlob(blob);
+              // Update cache with new PDF
+              pdfCache.current = { blob, dataHash };
             } else {
               console.error("Failed to regenerate PDF: blob is null");
             }
@@ -199,8 +158,7 @@ export function usePdfGenerator({
 
       return () => clearTimeout(timeoutId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeData, previewMode, fontSize, accentColor]);
+  }, [previewMode, dataHash, pdfBlob, isGeneratingPdf, generatePdfFromHtml]);
 
   // Download resume as PDF
   const downloadResume = useCallback(async (): Promise<void> => {
@@ -209,33 +167,35 @@ export function usePdfGenerator({
     setIsExporting(true);
 
     try {
-      // Use existing PDF blob if available, otherwise generate new one
-      const blob = pdfBlob || (await generatePdfFromHtml());
+      // Use cached PDF if available and hash matches
+      let blob: Blob | null = null;
+      if (pdfCache.current && pdfCache.current.dataHash === dataHash) {
+        blob = pdfCache.current.blob;
+      } else {
+        // Generate new PDF
+        blob = await generatePdfFromHtml();
+        if (blob) {
+          // Store in cache for future use
+          pdfCache.current = { blob, dataHash };
+        }
+      }
 
       if (!blob) {
         throw new Error("Failed to generate PDF");
       }
 
-      // Generate filename
+      // Generate filename and download
       const fileName = resumeData.personalInfo.fullName
         ? `Resume_${resumeData.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
         : "Resume.pdf";
 
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadPdfBlob(blob, fileName);
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
       setIsExporting(false);
     }
-  }, [resumeData, pdfBlob, generatePdfFromHtml, isExporting]);
+  }, [resumeData, dataHash, generatePdfFromHtml, isExporting]);
 
   return {
     pdfBlob,
@@ -243,5 +203,6 @@ export function usePdfGenerator({
     isExporting,
     generatePdfFromHtml,
     downloadResume,
+    dataHash,
   };
 }
