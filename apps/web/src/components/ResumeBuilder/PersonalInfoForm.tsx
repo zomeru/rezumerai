@@ -9,7 +9,7 @@ type PersonalInfoFormProps = {
   data: Resume["personalInfo"];
   onChangeAction: (data: Resume["personalInfo"]) => void;
   removeBackground: boolean;
-  setRemoveBackgroundAction: (value: boolean | ((prev: boolean) => boolean)) => void;
+  setRemoveBackgroundAction: (value: boolean) => void;
 };
 
 const FIELDS: {
@@ -49,8 +49,8 @@ export default function PersonalInfoForm({
 
   return (
     <div>
-      <h3 className="font-semibold text-gray-900 text-lg">Personal Information</h3>
-      <p className="text-gray-600 text-sm">Get Started with the personal information</p>
+      <h3 className="font-semibold text-lg text-slate-800">Personal Information</h3>
+      <p className="text-slate-600 text-sm">Get Started with the personal information</p>
       <div className="flex items-center gap-2">
         <label htmlFor="">
           {data.image ? (
@@ -86,12 +86,12 @@ export default function PersonalInfoForm({
         {data.image && (
           <div className="flex flex-col gap-1 pl-4 text-sm">
             <p>Remove Background</p>
-            <label className="relative inline-flex cursor-pointer items-center gap-3 text-gray-900">
+            <label className="relative inline-flex cursor-pointer items-center gap-3 text-slate-800">
               <input
                 type="checkbox"
                 className="peer sr-only"
                 checked={removeBackground}
-                onChange={() => setRemoveBackgroundAction((prev) => !prev)}
+                onChange={() => setRemoveBackgroundAction(!removeBackground)}
               />
               <div className="peer h-5 w-9 rounded-full bg-slate-300 transition-colors duration-200 peer-checked:bg-primary-600"></div>
               <span className="dot absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
@@ -103,7 +103,7 @@ export default function PersonalInfoForm({
       {FIELDS.map(({ icon: Icon, key, label, type, required }) => {
         return (
           <div key={key} className="mt-5 space-y-1">
-            <label htmlFor={key} className="flex items-center gap-2 font-medium text-gray-600 text-sm">
+            <label htmlFor={key} className="flex items-center gap-2 font-medium text-slate-600 text-sm">
               <Icon className="size-4" />
               {label}
               {required && <span className="text-red-500">*</span>}
@@ -114,7 +114,7 @@ export default function PersonalInfoForm({
               value={data[key]}
               required={required}
               onChange={(e) => handleImageChange(key, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
               placeholder={`Enter your ${label.toLowerCase()}`}
             />
           </div>

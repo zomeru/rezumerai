@@ -70,3 +70,36 @@ export function formatShortDate(date: string): string {
     year: "numeric",
   });
 }
+
+/**
+ * Parses a date string in "YYYY-MM" format to a Date object.
+ * Returns undefined if the input is invalid.
+ * @param dateStr - The date string in "YYYY-MM" format.
+ * @returns Date object or undefined.
+ */
+export function parseYearMonth(dateStr: string): Date | undefined {
+  if (!dateStr) return undefined;
+
+  const [year, month] = dateStr.split("-").map(Number);
+
+  if (Number.isNaN(year) || Number.isNaN(month) || year === undefined || month === undefined) {
+    return undefined;
+  }
+
+  return new Date(year, month - 1);
+}
+
+/**
+ * Formats a Date object to "YYYY-MM" format string.
+ * Returns an empty string if the date is undefined.
+ * @param date - The Date object to format.
+ * @returns Formatted date string in "YYYY-MM" format.
+ */
+export function formatYearMonth(date: Date | undefined): string {
+  if (!date) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}

@@ -1,6 +1,7 @@
 "use client";
 
-import { FilePenLineIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
+import { useState } from "react";
 import type { Resume } from "@/constants/dummy";
 import { onKeyDown } from "@/lib/utils";
 
@@ -10,63 +11,106 @@ interface ResumeCardProps {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDownload?: () => Promise<void>;
 }
 
-export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete }: ResumeCardProps) {
+export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
   const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
 
+  async function handleDownload(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!onDownload || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await onDownload();
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
   return (
-    <>
-      {/* biome-ignore lint/a11y/useSemanticElements: This div is intentionally used as a button container */}
+    // biome-ignore lint/a11y/useSemanticElements: <div> used as a card with click handler
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      className="group relative flex h-56 w-full cursor-pointer flex-col overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white p-6 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-slate-200 hover:shadow-xl"
+      aria-label={`Open ${resume.title} resume`}
+      onKeyDown={onKeyDown}
+    >
+      {/* Background gradient */}
       <div
-        role="button"
-        onClick={onOpen}
-        className="group relative flex h-48 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border transition-all duration-300 hover:shadow-lg sm:max-w-36"
+        className="absolute inset-0 opacity-5 transition-opacity group-hover:opacity-10"
         style={{
-          background: `linear-gradient(135deg, ${color}10, ${color}40)`,
-          borderColor: `${color}40`,
+          background: `linear-gradient(135deg, ${color}20, ${color}60)`,
         }}
-        aria-label={`Open ${resume.title} resume`}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-      >
-        <FilePenLineIcon className="size-7 transition-all group-hover:scale-105" style={{ color }} />
+      />
 
-        <p className="px-2 text-center text-sm transition-all group-hover:scale-105" style={{ color }}>
-          {resume.title}
-        </p>
-
-        <p className="absolute bottom-1 px-2 text-center text-[11px]" style={{ color: `${color}90` }}>
-          Updated on {formatDate(resume.updatedAt)}
-        </p>
-
-        {/* Action buttons */}
-        <div className="absolute top-1 right-1 hidden items-center gap-1 group-hover:flex">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="rounded p-1.5 text-slate-700 transition-colors hover:bg-white/50"
-            aria-label={`Delete ${resume.title}`}
+      {/* Content */}
+      <div className="relative z-10 flex flex-1 flex-col">
+        <div className="mb-4 flex items-start justify-between">
+          <div
+            className="flex size-12 items-center justify-center rounded-xl shadow-md transition-transform group-hover:scale-110"
+            style={{ backgroundColor: `${color}15`, color }}
           >
-            <TrashIcon className="size-5" />
-          </button>
+            <FilePenLineIcon className="size-6" />
+          </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="rounded p-1.5 text-slate-700 transition-colors hover:bg-white/50"
-            aria-label={`Edit ${resume.title}`}
+          {/* Action buttons */}
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {onDownload && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={isDownloading ? "Downloading..." : `Download ${resume.title}`}
+              >
+                {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900"
+              aria-label={`Edit ${resume.title}`}
+            >
+              <PencilIcon className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="rounded-lg bg-white p-2 text-red-600 shadow-md transition-all hover:bg-red-50"
+              aria-label={`Delete ${resume.title}`}
+            >
+              <TrashIcon className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <h3
+            className="mb-2 line-clamp-2 font-semibold text-lg transition-colors group-hover:text-slate-900"
+            style={{ color: `${color}` }}
           >
-            <PencilIcon className="size-5" />
-          </button>
+            {resume.title}
+          </h3>
+          <p className="text-slate-500 text-sm">Updated {formatDate(resume.updatedAt)}</p>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 font-medium text-slate-600 text-sm opacity-0 transition-opacity group-hover:opacity-100">
+          <span>Open</span>
+          <ExternalLink className="size-4" />
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -59,3 +59,4 @@ next-env.d.ts
 .vscode/launch.json
 .vscode/tasks.json
 .mcp.json
+.playwright-mcp

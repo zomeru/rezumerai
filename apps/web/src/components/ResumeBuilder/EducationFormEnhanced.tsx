@@ -1,0 +1,129 @@
+"use client";
+
+import { formatShortDate, formatYearMonth, parseYearMonth } from "@rezumerai/utils/date";
+import { useState } from "react";
+import type { Education } from "@/constants/dummy";
+import { generateUuidKey } from "@/lib/utils";
+import DatePicker from "./DatePicker";
+import DraggableList from "./DraggableList";
+import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
+
+interface EducationFormEnhancedProps {
+  education: Education[];
+  onChange: (education: Education[]) => void;
+}
+
+export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps) {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+
+  const handleAdd = () => {
+    const newEducation: Education = {
+      _id: generateUuidKey(),
+      institution: "",
+      degree: "",
+      field: "",
+      graduationDate: "",
+      gpa: "",
+    };
+    onChange([...education, newEducation]);
+    setExpandedIndex(education.length);
+  };
+
+  const handleRemove = (index: number) => {
+    const updated = education.filter((_, i) => i !== index);
+    onChange(updated);
+    if (expandedIndex === index) {
+      setExpandedIndex(null);
+    }
+  };
+
+  const handleUpdate = (index: number, field: keyof Education, value: string) => {
+    const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Education" onAdd={handleAdd} />
+
+      <DraggableList
+        items={education}
+        onReorder={onChange}
+        getItemId={(item) => item._id}
+        renderItem={(edu, index) => (
+          <div className="rounded-lg border border-slate-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <div className="flex-1">
+                <p className="font-medium text-slate-900">
+                  {edu.degree || "Degree"} {edu.field && `in ${edu.field}`}
+                </p>
+                <p className="text-slate-500 text-sm">
+                  {edu.institution || "Institution"}
+                  {edu.graduationDate &&
+                    parseYearMonth(edu.graduationDate) &&
+                    ` • ${formatShortDate(edu.graduationDate)}`}
+                </p>
+              </div>
+              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${edu.degree || "education"}`} />
+            </button>
+
+            {expandedIndex === index && (
+              <div className="space-y-4 border-slate-200 border-t p-4">
+                <TextInput
+                  id={`edu-institution-${index}`}
+                  label="Institution"
+                  required
+                  value={edu.institution}
+                  onValueChange={(value) => handleUpdate(index, "institution", value)}
+                  placeholder="e.g. Harvard University"
+                />
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <TextInput
+                    id={`edu-degree-${index}`}
+                    label="Degree"
+                    required
+                    value={edu.degree}
+                    onValueChange={(value) => handleUpdate(index, "degree", value)}
+                    placeholder="e.g. Bachelor of Science"
+                  />
+                  <TextInput
+                    id={`edu-field-${index}`}
+                    label="Field of Study"
+                    value={edu.field}
+                    onValueChange={(value) => handleUpdate(index, "field", value)}
+                    placeholder="e.g. Computer Science"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
+                    <DatePicker
+                      selected={parseYearMonth(edu.graduationDate)}
+                      onSelect={(date) => handleUpdate(index, "graduationDate", formatYearMonth(date))}
+                      placeholder="Select graduation date"
+                    />
+                  </div>
+                  <TextInput
+                    id={`edu-gpa-${index}`}
+                    label="GPA (Optional)"
+                    value={edu.gpa}
+                    onValueChange={(value) => handleUpdate(index, "gpa", value)}
+                    placeholder="e.g. 3.8 or 8.5/10"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      {education.length === 0 && <EmptyState message="No education added yet. Click &quot;Add&quot; to get started." />}
+    </div>
+  );
+}

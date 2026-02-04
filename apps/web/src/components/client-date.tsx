@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate } from "@rezumerai/utils/date";
-import { useClientDate } from "../hooks/use-client-date";
+import { useClientDate } from "../hooks/useClientDate";
 
 interface ClientDateProps {
   options?: Intl.DateTimeFormatOptions;

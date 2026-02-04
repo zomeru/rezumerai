@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useId, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { ROUTES } from "@/constants/routing";
 import Logo from "../Logo";
 
 const stars = Array(5)
@@ -158,13 +159,13 @@ export default function Hero() {
 
         <div className="flex gap-2">
           <Link
-            href="/signup"
+            href={ROUTES.SIGNUP}
             className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
           >
             Get started
           </Link>
           <Link
-            href="/signin"
+            href={ROUTES.SIGNIN}
             className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
           >
             Login
@@ -268,7 +269,7 @@ export default function Hero() {
         {/* CTA Buttons */}
         <div className="flex items-center gap-4">
           <Link
-            href="/signup"
+            href={ROUTES.SIGNUP}
             className="m-1 flex h-12 items-center rounded-full bg-primary-500 px-9 text-white ring-1 ring-primary-400 ring-offset-2 transition-colors hover:bg-primary-600"
           >
             Get started
