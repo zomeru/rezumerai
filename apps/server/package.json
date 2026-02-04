@@ -21,7 +21,7 @@
     "@rezumerai/database": "workspace:*",
     "@rezumerai/types": "workspace:*",
     "@rezumerai/utils": "workspace:*",
-    "@ts-rest/core": "3.52.1",
+    "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.52.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
