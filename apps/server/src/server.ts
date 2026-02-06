@@ -62,7 +62,7 @@ function createServer() {
             data: {
               message,
               timestamp,
-              server: "RezumerAI API",
+              server: "Rezumer API",
             },
           },
         };

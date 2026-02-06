@@ -5,9 +5,9 @@ export default function Home() {
   return (
     <div>
       <BannerWithTag
-        tag="AI Feature Added"
-        bannerStyle="from-secondary-400 to-secondary-100 text-primary-700"
-        textStyle="bg-primary-500 "
+        tag="Early access — feedback welcome"
+        bannerStyle="from-secondary-300 to-secondary-100 text-slate-800"
+        textStyle="bg-primary-600"
       />
       <div className="space-y-48">
         <Hero />

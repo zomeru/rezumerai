@@ -1,4 +1,4 @@
-# Claude Instructions for RezumerAI Monorepo
+# Claude Instructions for Rezumer Monorepo
 
 ## Prerequisites
 
@@ -9,7 +9,7 @@ Before anything else, ensure MCP servers are activated on this project.
 
 ## Monorepo Architecture
 
-RezumerAI is a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
+Rezumer is a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
 
 - `apps/web`: Next.js 16+ frontend (App Router, React 19, TypeScript, Tailwind CSS 4.x)
 - `apps/server`: Express 5.x API (Node.js, TypeScript, @ts-rest)
@@ -240,4 +240,4 @@ When assisting with this codebase:
 
 ---
 
-_This file provides guidance for Claude AI assistant when working with the RezumerAI monorepo. Update as project conventions evolve._
+_This file provides guidance for Claude AI assistant when working with the Rezumer monorepo. Update as project conventions evolve._

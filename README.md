@@ -1,4 +1,4 @@
-# RezumerAI
+# Rezumer
 
 A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**.
 

@@ -41,7 +41,7 @@ export function UserFetcher({ className }: UserFetcherProps) {
               className="flex-1 rounded border p-2"
               placeholder="Enter user ID (e.g., 1, 2, 3)"
             />
-            <Button appName="RezumerAI" onClick={handleFetchUser}>
+            <Button appName="Rezumer" onClick={handleFetchUser}>
               Fetch User
             </Button>
           </div>

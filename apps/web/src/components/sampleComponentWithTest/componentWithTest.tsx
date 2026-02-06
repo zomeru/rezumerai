@@ -99,7 +99,7 @@ export default function SampleComponentWithTest() {
                 className="w-full rounded border p-2"
                 required
               />
-              <Button appName="RezumerAI" type="submit" disabled={createUserMutation.isPending}>
+              <Button appName="Rezumer" type="submit" disabled={createUserMutation.isPending}>
                 {createUserMutation.isPending ? "Creating..." : "Create User"}
               </Button>
             </form>
@@ -129,7 +129,7 @@ export default function SampleComponentWithTest() {
       </div>
 
       <div className="mt-8">
-        <Button appName="RezumerAI">Get Started</Button>
+        <Button appName="Rezumer">Get Started</Button>
       </div>
     </div>
   );

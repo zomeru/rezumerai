@@ -37,7 +37,7 @@ vi.mock("../lib/api", () => ({
             data: {
               message: "Hello from express!",
               timestamp: "10/13/2025",
-              server: "RezumerAI API",
+              server: "Rezumer API",
             },
           },
         },

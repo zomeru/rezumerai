@@ -10,7 +10,7 @@ const outfitSans = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "RezumerAI",
+  title: "Rezumer",
   description: "AI-powered resume builder",
 };
 
