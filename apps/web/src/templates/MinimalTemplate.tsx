@@ -1,5 +1,6 @@
 import { formatShortDate } from "@rezumerai/utils/date";
 import { generateUuidKey } from "@/lib/utils";
+import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
 const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
@@ -21,7 +22,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Professional Summary */}
       {data.professionalSummary && (
         <section className="mb-10">
-          <p className="text-gray-700">{data.professionalSummary}</p>
+          <HtmlContent html={data.professionalSummary} className="rich-text-content text-gray-700" />
         </section>
       )}
 
@@ -45,7 +46,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                   </div>
                   <p className="mb-2 text-gray-600">{exp.company}</p>
                   {exp.description && (
-                    <div className="whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
+                    <HtmlContent html={exp.description} className="rich-text-content text-gray-700 leading-relaxed" />
                   )}
                 </div>
               );
@@ -67,7 +68,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
               return (
                 <div key={key} className="flex flex-col items-baseline justify-between gap-2">
                   <h3 className="font-medium text-[1.125em]">{proj.name}</h3>
-                  <p className="text-gray-600">{proj.description}</p>
+                  <HtmlContent html={proj.description} className="rich-text-content text-gray-600" />
                 </div>
               );
             })}

@@ -1,7 +1,9 @@
 "use client";
 
+import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   CreateResumeModal,
   DownloadResumeModal,
@@ -25,8 +27,15 @@ export default function Dashboard() {
 
   // Resume store
   const resumes = useResumeStore((state) => state.resumes);
+  const isLoading = useResumeStore((state) => state.isLoading);
+  const hasFetched = useResumeStore((state) => state.hasFetched);
+  const fetchResumes = useResumeStore((state) => state.fetchResumes);
   const updateResume = useResumeStore((state) => state.updateResume);
   const deleteResume = useResumeStore((state) => state.deleteResume);
+
+  useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
 
   // Dashboard UI store
   const modalState = useDashboardStore((state) => state.modalState);
@@ -162,7 +171,13 @@ export default function Dashboard() {
         </div>
 
         {/* Resume Grid/List */}
-        {filteredResumes.length > 0 ? (
+        {isLoading || !hasFetched ? (
+          viewMode === "grid" ? (
+            <ResumeCardSkeletonGrid count={5} />
+          ) : (
+            <ResumeCardSkeletonList count={5} />
+          )
+        ) : filteredResumes.length > 0 ? (
           <div
             className={
               viewMode === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" : "space-y-3"

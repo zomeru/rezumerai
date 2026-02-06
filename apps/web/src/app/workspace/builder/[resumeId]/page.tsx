@@ -1,5 +1,6 @@
 "use client";
 
+import { ResumeBuilderSkeleton } from "@rezumerai/ui";
 import { cn } from "@rezumerai/utils/styles";
 import {
   ArrowLeftIcon,
@@ -21,7 +22,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity as ReactActivity, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -75,8 +76,15 @@ export default function ResumeBuilder() {
   const resumePreviewRef = useRef<HTMLDivElement>(null);
 
   // Resume store
+  const isLoading = useResumeStore((state) => state.isLoading);
+  const hasFetched = useResumeStore((state) => state.hasFetched);
+  const fetchResumes = useResumeStore((state) => state.fetchResumes);
   const resumeData = useResumeStore((state) => state.resumes.find((r) => r._id === resumeId) ?? defaultResume);
   const updateResume = useResumeStore((state) => state.updateResume);
+
+  useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -246,216 +254,220 @@ export default function ResumeBuilder() {
 
       {/* Main Content - Completely Redesigned */}
       <div className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
-          {/* Left Panel - Editor */}
-          <div className="w-full lg:col-span-5">
-            <div className="sticky top-8 space-y-6">
-              {/* Controls Card */}
-              <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
-                <div className="border-slate-100 border-b bg-gradient-to-br from-slate-50 to-white p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <TemplateSelector
-                        selectedTemplate={resumeData.template}
-                        onChange={(template) => handleTemplateChange(template)}
-                      />
-                      <ColorPickerModal
-                        selectedColor={resumeData.accentColor}
-                        onChange={(color) => handleColorChange(color)}
-                      />
-                      <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {activeSectionIndex !== 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveSectionIndex(Math.max(activeSectionIndex - 1, 0));
-                          }}
-                          className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
-                        >
-                          <ChevronLeft className="size-4" />
-                        </button>
-                      )}
-                      {activeSectionIndex < sections.length - 1 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
-                          }}
-                          className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
-                        >
-                          <ChevronRight className="size-4" />
-                        </button>
-                      )}
+        {isLoading || !hasFetched ? (
+          <ResumeBuilderSkeleton />
+        ) : (
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
+            {/* Left Panel - Editor */}
+            <div className="w-full lg:col-span-5">
+              <div className="sticky top-8 space-y-6">
+                {/* Controls Card */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
+                  <div className="border-slate-100 border-b bg-gradient-to-br from-slate-50 to-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <TemplateSelector
+                          selectedTemplate={resumeData.template}
+                          onChange={(template) => handleTemplateChange(template)}
+                        />
+                        <ColorPickerModal
+                          selectedColor={resumeData.accentColor}
+                          onChange={(color) => handleColorChange(color)}
+                        />
+                        <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {activeSectionIndex !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSectionIndex(Math.max(activeSectionIndex - 1, 0));
+                            }}
+                            className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
+                          >
+                            <ChevronLeft className="size-4" />
+                          </button>
+                        )}
+                        {activeSectionIndex < sections.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
+                            }}
+                            className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
+                          >
+                            <ChevronRight className="size-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Progress Bar */}
-                <div className="h-1.5 w-full bg-slate-100">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-
-                {/* Section Steps */}
-                <div className="flex items-center justify-center gap-2 border-slate-100 border-b p-4">
-                  {sections.map((section, index) => (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => setActiveSectionIndex(index)}
-                      className={cn(
-                        "flex size-10 items-center justify-center rounded-xl font-semibold text-sm transition-all",
-                        index === activeSectionIndex
-                          ? "scale-110 bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/30"
-                          : index < activeSectionIndex
-                            ? "bg-primary-100 text-primary-700 hover:bg-primary-200"
-                            : "bg-slate-100 text-slate-500 hover:bg-slate-200",
-                      )}
-                      title={section.name}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Form Content */}
-                <div className="max-w-full overflow-hidden p-6">
-                  <div className="mb-4">
-                    <h2 className="font-semibold text-slate-900 text-xl">{activeSection?.name}</h2>
-                    <p className="text-slate-600 text-sm">Complete this section to build your resume</p>
+                  {/* Progress Bar */}
+                  <div className="h-1.5 w-full bg-slate-100">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500"
+                      style={{ width: `${progressPercentage}%` }}
+                    />
                   </div>
 
-                  <div className="space-y-6">
-                    {builderSections.map(({ id, render }) => (
-                      <ReactActivity key={id} mode={activeSection?.id === id ? "visible" : "hidden"}>
-                        {render()}
-                      </ReactActivity>
+                  {/* Section Steps */}
+                  <div className="flex items-center justify-center gap-2 border-slate-100 border-b p-4">
+                    {sections.map((section, index) => (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => setActiveSectionIndex(index)}
+                        className={cn(
+                          "flex size-10 items-center justify-center rounded-xl font-semibold text-sm transition-all",
+                          index === activeSectionIndex
+                            ? "scale-110 bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/30"
+                            : index < activeSectionIndex
+                              ? "bg-primary-100 text-primary-700 hover:bg-primary-200"
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+                        )}
+                        title={section.name}
+                      >
+                        {index + 1}
+                      </button>
                     ))}
                   </div>
+
+                  {/* Form Content */}
+                  <div className="max-w-full overflow-hidden p-6">
+                    <div className="mb-4">
+                      <h2 className="font-semibold text-slate-900 text-xl">{activeSection?.name}</h2>
+                      <p className="text-slate-600 text-sm">Complete this section to build your resume</p>
+                    </div>
+
+                    <div className="space-y-6">
+                      {builderSections.map(({ id, render }) => (
+                        <ReactActivity key={id} mode={activeSection?.id === id ? "visible" : "hidden"}>
+                          {render()}
+                        </ReactActivity>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Save Button */}
+                <button
+                  type="button"
+                  onClick={handleSaveResume}
+                  disabled={isSaving}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <SaveIcon className="size-5" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
               </div>
-
-              {/* Save Button */}
-              <button
-                type="button"
-                onClick={handleSaveResume}
-                disabled={isSaving}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <SaveIcon className="size-5" />
-                    Save Changes
-                  </>
-                )}
-              </button>
             </div>
-          </div>
 
-          {/* Right Panel - Preview */}
-          <div className="w-full lg:col-span-7">
-            <div className="sticky top-8 space-y-4">
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {/* Preview Mode Toggle */}
-                <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewMode("html")}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
-                      previewMode === "html"
-                        ? "bg-primary-500 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50",
-                    )}
-                  >
-                    Design
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewMode("pdf")}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
-                      previewMode === "pdf"
-                        ? "bg-primary-500 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50",
-                    )}
-                  >
-                    PDF Preview
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {resumeData.public && (
+            {/* Right Panel - Preview */}
+            <div className="w-full lg:col-span-7">
+              <div className="sticky top-8 space-y-4">
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {/* Preview Mode Toggle */}
+                  <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                     <button
                       type="button"
-                      className="flex items-center gap-2 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 font-medium text-secondary-700 text-sm shadow-sm transition-all hover:bg-secondary-50 hover:shadow active:scale-95"
-                      onClick={handleShareResume}
+                      onClick={() => setPreviewMode("html")}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
+                        previewMode === "html"
+                          ? "bg-primary-500 text-white shadow-sm"
+                          : "text-slate-600 hover:bg-slate-50",
+                      )}
                     >
-                      <Share2Icon className="size-4" /> Share
+                      Design
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-xl border border-accent-200 bg-white px-4 py-2.5 font-medium text-accent-700 text-sm shadow-sm transition-all hover:bg-accent-50 hover:shadow active:scale-95"
-                    onClick={changeResumeVisibility}
-                  >
-                    {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-                    {resumeData.public ? "Public" : "Private"}
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={downloadResume}
-                    disabled={isExporting}
-                  >
-                    {isExporting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" /> Generating...
-                      </>
-                    ) : (
-                      <>
-                        <DownloadIcon className="size-4" /> Download PDF
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("pdf")}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
+                        previewMode === "pdf"
+                          ? "bg-primary-500 text-white shadow-sm"
+                          : "text-slate-600 hover:bg-slate-50",
+                      )}
+                    >
+                      PDF Preview
+                    </button>
+                  </div>
 
-              {/* Resume Preview with modern styling */}
-              <ReactActivity mode={resumeData ? "visible" : "hidden"}>
-                {/* Keep HTML preview always mounted for PDF generation */}
-                <div
-                  className={cn(
-                    "overflow-auto rounded-2xl border border-slate-200/60 bg-white shadow-xl",
-                    previewMode === "pdf" && "pointer-events-none absolute opacity-0",
-                  )}
-                  aria-hidden={previewMode === "pdf"}
-                >
-                  <ResumePreview
-                    ref={resumePreviewRef}
-                    data={resumeData}
-                    accentColor={resumeData.accentColor}
-                    template={resumeData.template}
-                    fontSize={effectiveFontSize}
-                    previewMode={previewMode}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    {resumeData.public && (
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 font-medium text-secondary-700 text-sm shadow-sm transition-all hover:bg-secondary-50 hover:shadow active:scale-95"
+                        onClick={handleShareResume}
+                      >
+                        <Share2Icon className="size-4" /> Share
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-xl border border-accent-200 bg-white px-4 py-2.5 font-medium text-accent-700 text-sm shadow-sm transition-all hover:bg-accent-50 hover:shadow active:scale-95"
+                      onClick={changeResumeVisibility}
+                    >
+                      {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                      {resumeData.public ? "Public" : "Private"}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={downloadResume}
+                      disabled={isExporting}
+                    >
+                      {isExporting ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" /> Generating...
+                        </>
+                      ) : (
+                        <>
+                          <DownloadIcon className="size-4" /> Download PDF
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                {/* PDF Preview */}
-                {previewMode === "pdf" && <PDFPreview pdfBlob={pdfBlob} isGenerating={isGeneratingPdf} />}
-              </ReactActivity>
+
+                {/* Resume Preview with modern styling */}
+                <ReactActivity mode={resumeData ? "visible" : "hidden"}>
+                  {/* Keep HTML preview always mounted for PDF generation */}
+                  <div
+                    className={cn(
+                      "overflow-auto rounded-2xl border border-slate-200/60 bg-white shadow-xl",
+                      previewMode === "pdf" && "pointer-events-none absolute opacity-0",
+                    )}
+                    aria-hidden={previewMode === "pdf"}
+                  >
+                    <ResumePreview
+                      ref={resumePreviewRef}
+                      data={resumeData}
+                      accentColor={resumeData.accentColor}
+                      template={resumeData.template}
+                      fontSize={effectiveFontSize}
+                      previewMode={previewMode}
+                    />
+                  </div>
+                  {/* PDF Preview */}
+                  {previewMode === "pdf" && <PDFPreview pdfBlob={pdfBlob} isGenerating={isGeneratingPdf} />}
+                </ReactActivity>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

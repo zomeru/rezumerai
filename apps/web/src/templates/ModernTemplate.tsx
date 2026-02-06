@@ -1,6 +1,7 @@
 import { formatShortDate } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import { generateUuidKey } from "@/lib/utils";
+import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
 const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
@@ -57,7 +58,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
         {data.professionalSummary && (
           <section className="mb-8">
             <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-[1.5em]">Professional Summary</h2>
-            <p className="text-gray-700">{data.professionalSummary}</p>
+            <HtmlContent html={data.professionalSummary} className="rich-text-content text-gray-700" />
           </section>
         )}
 
@@ -83,7 +84,10 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                       </div>
                     </div>
                     {exp.description && (
-                      <div className="mt-3 whitespace-pre-line text-gray-700 leading-relaxed">{exp.description}</div>
+                      <HtmlContent
+                        html={exp.description}
+                        className="rich-text-content mt-3 text-gray-700 leading-relaxed"
+                      />
                     )}
                   </div>
                 );
@@ -112,7 +116,10 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                       </div>
                     </div>
                     {p.description && (
-                      <div className="mt-3 text-[0.875em] text-gray-700 leading-relaxed">{p.description}</div>
+                      <HtmlContent
+                        html={p.description}
+                        className="rich-text-content mt-3 text-[0.875em] text-gray-700 leading-relaxed"
+                      />
                     )}
                   </div>
                 );
