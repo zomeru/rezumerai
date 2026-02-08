@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/utils";
 import SampleComponentWithTest from "./componentWithTest";
@@ -24,22 +24,28 @@ vi.mock("@/lib/api", () => {
 });
 
 describe("SampleComponentWithTest Page", () => {
-  it("renders the welcome text", () => {
+  it("renders the welcome text", async () => {
     renderWithProviders(<SampleComponentWithTest />);
 
-    expect(screen.getByText("Welcome to rezumerai")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Welcome to rezumerai")).toBeInTheDocument();
+    });
   });
 
-  it("renders the get started button", () => {
+  it("renders the get started button", async () => {
     renderWithProviders(<SampleComponentWithTest />);
 
-    expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
+    });
   });
 
-  it("renders a div container", () => {
+  it("renders a div container", async () => {
     const { container } = renderWithProviders(<SampleComponentWithTest />);
 
-    expect(container.firstChild).toBeInstanceOf(HTMLDivElement);
-    expect(container.firstChild).toHaveClass("p-8");
+    await waitFor(() => {
+      expect(container.firstChild).toBeInstanceOf(HTMLDivElement);
+      expect(container.firstChild).toHaveClass("p-8");
+    });
   });
 });
