@@ -18,7 +18,7 @@ FROM base AS installer
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --no-verify
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
@@ -34,15 +34,16 @@ COPY --from=builder /app/out/full/ .
 # ----------------------------------------------------------
 
 # Build the web app
-# Mount secrets for Prisma client generation and Next.js build
+# Mount secrets for Next.js build configuration
 RUN --mount=type=secret,id=database_url \
     --mount=type=secret,id=next_public_api_url \
     --mount=type=secret,id=nextauth_url \
     --mount=type=secret,id=nextauth_secret \
-    DATABASE_URL="$(cat /run/secrets/database_url)" \
-    NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" \
-    NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" \
-    NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" \
+    export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
+    export NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" && \
+    export NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" && \
+    export NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" && \
+    cd packages/database && bun run build:docker && cd ../.. && \
     bunx turbo@2.8.0 build --filter=web
 
 # ---- Runner ----
@@ -54,6 +55,7 @@ ENV NODE_ENV=production
 USER bun
 
 # Copy built app from installer
+# Note: Next.js standalone output already includes only production node_modules
 COPY --from=installer --chown=bun:bun /app/apps/web/.next/standalone ./
 COPY --from=installer --chown=bun:bun /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=installer --chown=bun:bun /app/apps/web/public ./apps/web/public

@@ -82,5 +82,10 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
 }
 
 export function useAuthSocialForm(): AuthContextType {
-  return useContext(AuthContext);
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuthSocialForm must be used within an AuthProvider");
+  }
+
+  return ctx;
 }

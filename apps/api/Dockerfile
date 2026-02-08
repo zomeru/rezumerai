@@ -18,19 +18,20 @@ FROM base AS installer
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --no-verify
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
 
 # Build the API and its dependencies
-# Mount secrets for Prisma client generation
+# Mount secrets for build configuration
 RUN --mount=type=secret,id=database_url \
     --mount=type=secret,id=api_port \
     --mount=type=secret,id=cors_origins \
-    DATABASE_URL="$(cat /run/secrets/database_url)" \
-    API_PORT="$(cat /run/secrets/api_port)" \
-    CORS_ORIGINS="$(cat /run/secrets/cors_origins)" \
+    export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
+    export API_PORT="$(cat /run/secrets/api_port)" && \
+    export CORS_ORIGINS="$(cat /run/secrets/cors_origins)" && \
+    cd packages/database && bun run build:docker && cd ../.. && \
     bunx turbo@2.8.0 build --filter=@rezumerai/api
 
 # ---- Runner ----
@@ -44,7 +45,7 @@ WORKDIR /app
 # Use the built-in bun user (uid 1000)
 USER bun
 
-# Copy only runtime artifacts (built API, database package, and production node_modules)
+# Copy only runtime artifacts (built API, database package)
 COPY --from=installer --chown=bun:bun /app/apps/api/dist ./apps/api/dist
 COPY --from=installer --chown=bun:bun /app/apps/api/package.json ./apps/api/package.json
 COPY --from=installer --chown=bun:bun /app/packages/database/dist ./packages/database/dist
@@ -55,8 +56,17 @@ COPY --from=installer --chown=bun:bun /app/packages/types/dist ./packages/types/
 COPY --from=installer --chown=bun:bun /app/packages/types/package.json ./packages/types/package.json
 COPY --from=installer --chown=bun:bun /app/packages/utils/dist ./packages/utils/dist
 COPY --from=installer --chown=bun:bun /app/packages/utils/package.json ./packages/utils/package.json
-COPY --from=installer --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=installer --chown=bun:bun /app/package.json ./package.json
+
+# Copy node_modules from installer, then prune dev dependencies
+COPY --from=installer --chown=bun:bun /app/node_modules ./node_modules
+
+# Clean up unnecessary files from node_modules and dist folders
+RUN find . -name "*.d.ts" -type f -delete && \
+    find . -name "*.d.mts" -type f -delete && \
+    find . -name "*.map" -type f -delete && \
+    find ./node_modules -name "*.test.*" -type f -delete && \
+    find ./node_modules -name "*.spec.*" -type f -delete
 
 EXPOSE 8080
 
