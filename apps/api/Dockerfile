@@ -18,20 +18,19 @@ FROM base AS installer
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile --no-verify
+RUN bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
 
 # Build the API and its dependencies
-# Mount secrets for build configuration
-RUN --mount=type=secret,id=database_url \
-    --mount=type=secret,id=api_port \
+# Mount secrets for build configuration (DATABASE_URL uses placeholder for Prisma generation)
+RUN --mount=type=secret,id=api_port \
     --mount=type=secret,id=cors_origins \
     export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
     export API_PORT="$(cat /run/secrets/api_port)" && \
     export CORS_ORIGINS="$(cat /run/secrets/cors_origins)" && \
-    cd packages/database && bun run build:docker && cd ../.. && \
+    (cd packages/database && bun run build:docker) && \
     bunx turbo@2.8.0 build --filter=@rezumerai/api
 
 # ---- Runner ----

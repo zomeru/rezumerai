@@ -40,8 +40,7 @@ services:
       context: .
       dockerfile: ./apps/web/Dockerfile
       secrets:
-        # Build-time secrets (for Prisma generation & Next.js build)
-        - database_url
+        # Build-time secrets (for Next.js build)
         - next_public_api_url
         - nextauth_url
         - nextauth_secret
@@ -67,8 +66,7 @@ services:
       context: .
       dockerfile: ./apps/api/Dockerfile
       secrets:
-        # Build-time secrets (for Prisma generation)
-        - database_url
+        # Build-time secrets (for build configuration)
         - api_port
         - cors_origins
     restart: always

@@ -18,7 +18,7 @@ FROM base AS installer
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile --no-verify
+RUN bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
@@ -34,16 +34,15 @@ COPY --from=builder /app/out/full/ .
 # ----------------------------------------------------------
 
 # Build the web app
-# Mount secrets for Next.js build configuration
-RUN --mount=type=secret,id=database_url \
-    --mount=type=secret,id=next_public_api_url \
+# Mount secrets for Next.js build configuration (DATABASE_URL uses placeholder for Prisma generation)
+RUN --mount=type=secret,id=next_public_api_url \
     --mount=type=secret,id=nextauth_url \
     --mount=type=secret,id=nextauth_secret \
     export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
     export NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" && \
     export NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" && \
     export NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" && \
-    cd packages/database && bun run build:docker && cd ../.. && \
+    (cd packages/database && bun run build:docker) && \
     bunx turbo@2.8.0 build --filter=web
 
 # ---- Runner ----

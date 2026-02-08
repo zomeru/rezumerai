@@ -40,7 +40,6 @@ echo "All required environment variables validated successfully"
 # Build API
 echo "Building API service..."
 docker build \
-  --secret id=database_url,env=DATABASE_URL \
   --secret id=api_port,env=API_PORT \
   --secret id=cors_origins,env=CORS_ORIGINS \
   -f apps/api/Dockerfile \
@@ -50,7 +49,6 @@ docker build \
 # Build Web
 echo "Building Web service..."
 docker build \
-  --secret id=database_url,env=DATABASE_URL \
   --secret id=next_public_api_url,env=NEXT_PUBLIC_API_URL \
   --secret id=nextauth_url,env=NEXTAUTH_URL \
   --secret id=nextauth_secret,env=NEXTAUTH_SECRET \
