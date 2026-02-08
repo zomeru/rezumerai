@@ -49,8 +49,8 @@ export default function Preview(): React.JSX.Element {
   }
 
   return (
-    <div className="h-screen bg-slate-100">
-      <div className="mx-auto max-w-3xl bg-red py-10">
+    <div className="min-h-screen bg-slate-100">
+      <div className="mx-auto max-w-3xl py-10">
         <ResumePreview
           data={resumeData}
           template={resumeData.template}
