@@ -53,7 +53,14 @@ export default function Hero(): React.JSX.Element {
           </Link>
         </div>
 
-        <button type="button" onClick={(): void => setMenuOpen(true)} className="transition active:scale-90 md:hidden">
+        <button
+          type="button"
+          onClick={(): void => setMenuOpen(true)}
+          className="transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-90 md:hidden"
+          aria-label="Open mobile menu"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="26"
@@ -62,6 +69,7 @@ export default function Hero(): React.JSX.Element {
             stroke="currentColor"
             strokeWidth="2"
             className="lucide lucide-menu"
+            aria-hidden="true"
           >
             <title>Menu</title>
             <path d="M4 5h16M4 12h16M4 19h16" />
@@ -70,22 +78,35 @@ export default function Hero(): React.JSX.Element {
       </nav>
 
       {/* Mobile Menu */}
-      <div
-        className={`fixed inset-0 z-100 flex flex-col items-center justify-center gap-8 bg-black/40 text-black text-lg backdrop-blur transition-transform duration-300 md:hidden ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
-      >
-        {menuItems.map(({ label, href, id }) => (
-          <Link key={id} href={href} className="text-2xl text-white" onClick={(): void => setMenuOpen(false)}>
-            {label}
-          </Link>
-        ))}
-        <button
-          type="button"
-          onClick={(): void => setMenuOpen(false)}
-          className="flex aspect-square size-10 items-center justify-center rounded-md bg-primary-600 p-1 text-white transition hover:bg-primary-700 active:ring-3 active:ring-white"
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-100 flex flex-col items-center justify-center gap-8 bg-black/40 text-black text-lg backdrop-blur transition-opacity duration-300 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation menu"
         >
-          X
-        </button>
-      </div>
+          <nav aria-label="Mobile navigation">
+            {menuItems.map(({ label, href, id }) => (
+              <Link
+                key={id}
+                href={href}
+                className="block py-3 text-center text-2xl text-white transition-colors hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent"
+                onClick={(): void => setMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <button
+            type="button"
+            onClick={(): void => setMenuOpen(false)}
+            className="flex aspect-square size-10 items-center justify-center rounded-md bg-primary-600 p-1 text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent active:ring-3 active:ring-white"
+            aria-label="Close mobile menu"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div className="relative flex flex-col items-center justify-center px-4 text-black text-sm md:px-16 lg:px-24 xl:px-40">

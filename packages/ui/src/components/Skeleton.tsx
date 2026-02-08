@@ -12,6 +12,7 @@ interface SkeletonProps {
 /**
  * Reusable skeleton loader component for indicating loading states.
  * Renders a pulsing placeholder that can be customized in size and shape.
+ * Includes proper ARIA attributes for accessibility.
  */
 export default function Skeleton({
   width,
@@ -21,7 +22,7 @@ export default function Skeleton({
   style,
 }: SkeletonProps): React.JSX.Element {
   return (
-    <div
+    <output
       className={cn("animate-pulse bg-slate-200", className)}
       style={{
         width,
@@ -29,7 +30,12 @@ export default function Skeleton({
         borderRadius,
         ...style,
       }}
-    />
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="Loading content"
+    >
+      <span className="sr-only">Loading...</span>
+    </output>
   );
 }
 
