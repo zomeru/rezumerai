@@ -114,7 +114,7 @@ export default function Dashboard(): React.JSX.Element {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
+    <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="mx-auto max-w-400 px-4 py-4 sm:px-6 lg:px-8">
         {/* Modern Header */}
         <div className="mb-8">
@@ -258,6 +258,6 @@ export default function Dashboard(): React.JSX.Element {
       {modalState.type === "download" && downloadResume && (
         <DownloadResumeModal resume={downloadResume} isOpen onClose={handleCloseModal} />
       )}
-    </div>
+    </main>
   );
 }

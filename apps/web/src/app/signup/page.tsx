@@ -7,9 +7,9 @@ export default function SignUp(): React.JSX.Element {
   async function onSignUp(): Promise<void> {}
 
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center space-y-10">
+    <main className="flex h-screen w-screen flex-col items-center justify-center space-y-10">
       <Logo />
       <AuthWithSocialForm type="signup" onSubmit={onSignUp} />
-    </div>
+    </main>
   );
 }

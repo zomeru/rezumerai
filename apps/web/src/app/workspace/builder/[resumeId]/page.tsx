@@ -236,7 +236,7 @@ export default function ResumeBuilder(): React.JSX.Element {
   const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-linear-to-br from-slate-50 to-slate-100">
+    <main className="flex min-h-screen flex-1 flex-col bg-linear-to-br from-slate-50 to-slate-100">
       {/* Redesigned Header */}
       <div className="border-slate-200/60 border-b bg-white/80 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-400 px-4 py-4 sm:px-6 lg:px-8">
@@ -487,6 +487,6 @@ export default function ResumeBuilder(): React.JSX.Element {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
