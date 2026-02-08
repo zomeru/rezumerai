@@ -204,7 +204,6 @@
   "trustedDependencies": [
     "esbuild",
     "sharp",
-    "@prisma/engines",
     "prisma",
     "@prisma/client",
   ],

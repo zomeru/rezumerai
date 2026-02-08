@@ -1,6 +1,6 @@
 # ---- Base ----
 FROM oven/bun:1 AS base
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
   libc6-dev libssl-dev openssl curl git \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -13,7 +13,6 @@ RUN bunx turbo@2.8.0 prune web --docker
 
 # ---- Install & Build ----
 FROM base AS installer
-ENV DATABASE_URL=${DATABASE_URL}
 
 # Copy pruned package manifests
 COPY --from=builder /app/out/json/ .
@@ -35,7 +34,16 @@ COPY --from=builder /app/out/full/ .
 # ----------------------------------------------------------
 
 # Build the web app
-RUN bunx turbo@2.8.0 build --filter=web
+# Mount secrets for Prisma client generation and Next.js build
+RUN --mount=type=secret,id=database_url \
+    --mount=type=secret,id=next_public_api_url \
+    --mount=type=secret,id=nextauth_url \
+    --mount=type=secret,id=nextauth_secret \
+    DATABASE_URL="$(cat /run/secrets/database_url)" \
+    NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" \
+    NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" \
+    NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" \
+    bunx turbo@2.8.0 build --filter=web
 
 # ---- Runner ----
 FROM oven/bun:1-slim AS runner
