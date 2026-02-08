@@ -7,7 +7,7 @@ interface ActionButtonsProps {
   onUploadClick: () => void;
 }
 
-export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps) {
+export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps): React.JSX.Element {
   return (
     <div className="flex gap-4">
       <button

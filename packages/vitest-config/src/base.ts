@@ -1,6 +1,7 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// biome-ignore lint/nursery/useExplicitType: Vitest config type inference required
 export const createBaseConfig = (dirname: string) => ({
   test: {
     globals: true,
@@ -29,4 +30,4 @@ export const createBaseConfig = (dirname: string) => ({
   },
 });
 
-export const baseConfig = defineConfig(createBaseConfig(__dirname));
+export const baseConfig: ReturnType<typeof defineConfig> = defineConfig(createBaseConfig(__dirname));

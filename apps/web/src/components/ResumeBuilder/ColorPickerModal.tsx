@@ -15,7 +15,7 @@ interface ColorPickerModalProps {
   onChange: (color: string) => void;
 }
 
-export default function ColorPickerModal({ selectedColor, onChange }: ColorPickerModalProps) {
+export default function ColorPickerModal({ selectedColor, onChange }: ColorPickerModalProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [tempColor, setTempColor] = useState(selectedColor);
   const [modalPosition, setModalPosition] = useState<ModalPosition>({ top: 0, left: 0 });
@@ -33,7 +33,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const updatePosition = () => {
+      const updatePosition = (): void => {
         const buttonRect = buttonRef.current?.getBoundingClientRect();
         if (!buttonRect) return;
 
@@ -62,7 +62,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
       window.addEventListener("scroll", updatePosition, true);
       window.addEventListener("resize", updatePosition);
 
-      return () => {
+      return (): void => {
         window.removeEventListener("scroll", updatePosition, true);
         window.removeEventListener("resize", updatePosition);
       };
@@ -70,7 +70,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
   }, [isOpen]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent): void {
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target as Node) &&
@@ -83,13 +83,13 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return (): void => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
   const popularColors = ["#14B8A6", "#3B82F6", "#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#6366F1", "#EC4899"];
 
-  const handleApply = () => {
+  const handleApply = (): void => {
     onChange(tempColor);
     setIsOpen(false);
   };
@@ -97,7 +97,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
   const modalContent = isOpen && (
     <div
       ref={modalRef}
-      className="fixed z-[9999] w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-xl"
+      className="fixed z-9999 w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-xl"
       style={{
         top: `${modalPosition.top}px`,
         left: `${modalPosition.left}px`,
@@ -107,7 +107,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
         <h3 className="font-semibold text-slate-900 text-sm">Pick a Color</h3>
         <button
           type="button"
-          onClick={() => setIsOpen(false)}
+          onClick={(): void => setIsOpen(false)}
           className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
         >
           <X className="size-4" />
@@ -125,7 +125,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
             <button
               key={color}
               type="button"
-              onClick={() => setTempColor(color)}
+              onClick={(): void => setTempColor(color)}
               className="size-6 rounded border-2 transition-transform hover:scale-110"
               style={{
                 backgroundColor: color,
@@ -145,7 +145,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
           id="hex-input"
           type="text"
           value={tempColor}
-          onChange={(e) => setTempColor(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setTempColor(e.target.value)}
           className="w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           placeholder="#000000"
         />
@@ -166,7 +166,7 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(): void => setIsOpen(!isOpen)}
         className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm transition-colors hover:border-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         title="Change accent color"
       >

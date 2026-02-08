@@ -5,12 +5,17 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   onValueChange: (value: string) => void;
 }
 
-export default function FormField({ onValueChange, className, type = "text", ...props }: FormFieldProps) {
+export default function FormField({
+  onValueChange,
+  className,
+  type = "text",
+  ...props
+}: FormFieldProps): React.JSX.Element {
   return (
     <input
       {...props}
       type={type}
-      onChange={(e) => {
+      onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
         onValueChange(e.target.value);
         props.onChange?.(e);
       }}

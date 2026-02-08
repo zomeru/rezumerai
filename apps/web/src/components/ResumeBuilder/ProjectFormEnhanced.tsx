@@ -12,10 +12,10 @@ interface ProjectFormEnhancedProps {
   onChange: (project: Project[]) => void;
 }
 
-export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEnhancedProps) {
+export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEnhancedProps): React.JSX.Element {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
-  const handleAdd = () => {
+  const handleAdd = (): void => {
     const newProject: Project = {
       _id: generateUuidKey(),
       name: "",
@@ -26,7 +26,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
     setExpandedIndex(project.length);
   };
 
-  const handleRemove = (index: number) => {
+  const handleRemove = (index: number): void => {
     const updated = project.filter((_, i) => i !== index);
     onChange(updated);
     if (expandedIndex === index) {
@@ -34,7 +34,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Project, value: string) => {
+  const handleUpdate = (index: number, field: keyof Project, value: string): void => {
     const updated = project.map((proj, i) => (i === index ? { ...proj, [field]: value } : proj));
     onChange(updated);
   };
@@ -46,19 +46,19 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
       <DraggableList
         items={project}
         onReorder={onChange}
-        getItemId={(item) => item._id}
-        renderItem={(proj, index) => (
+        getItemId={(item: Project): string => item._id}
+        renderItem={(proj: Project, index: number): React.JSX.Element => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
-              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+              onClick={(): void => setExpandedIndex(expandedIndex === index ? null : index)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex-1">
                 <p className="font-medium text-slate-900">{proj.name || "Project Name"}</p>
                 <p className="text-slate-500 text-sm">{proj.type || "Project Type"}</p>
               </div>
-              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${proj.name || "project"}`} />
+              <DeleteButton onDelete={(): void => handleRemove(index)} ariaLabel={`Delete ${proj.name || "project"}`} />
             </button>
 
             {expandedIndex === index && (
@@ -68,7 +68,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
                   label="Project Name"
                   required
                   value={proj.name}
-                  onValueChange={(value) => handleUpdate(index, "name", value)}
+                  onValueChange={(value: string): void => handleUpdate(index, "name", value)}
                   placeholder="e.g. E-commerce Platform"
                 />
 
@@ -76,7 +76,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
                   id={`proj-type-${index}`}
                   label="Project Type"
                   value={proj.type}
-                  onValueChange={(value) => handleUpdate(index, "type", value)}
+                  onValueChange={(value: string): void => handleUpdate(index, "type", value)}
                   placeholder="e.g. Web Application, Mobile App"
                 />
 
@@ -84,7 +84,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
                   <p className="mb-1.5 block font-medium text-slate-700 text-sm">Description</p>
                   <RichTextEditor
                     content={proj.description}
-                    onChange={(html) => handleUpdate(index, "description", html)}
+                    onChange={(html: string): void => handleUpdate(index, "description", html)}
                     placeholder="Describe the project, technologies used, and your role..."
                   />
                 </div>

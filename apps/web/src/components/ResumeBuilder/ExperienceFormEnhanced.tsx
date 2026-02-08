@@ -1,6 +1,6 @@
 "use client";
 
-import { formatShortDate, formatYearMonth, parseYearMonth } from "@rezumerai/utils/date";
+import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Experience } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
@@ -14,10 +14,13 @@ interface ExperienceFormEnhancedProps {
   onChange: (experience: Experience[]) => void;
 }
 
-export default function ExperienceFormEnhanced({ experience, onChange }: ExperienceFormEnhancedProps) {
+export default function ExperienceFormEnhanced({
+  experience,
+  onChange,
+}: ExperienceFormEnhancedProps): React.JSX.Element {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
-  const handleAdd = () => {
+  const handleAdd = (): void => {
     const newExperience: Experience = {
       _id: generateUuidKey(),
       company: "",
@@ -31,7 +34,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
     setExpandedIndex(experience.length);
   };
 
-  const handleRemove = (index: number) => {
+  const handleRemove = (index: number): void => {
     const updated = experience.filter((_, i) => i !== index);
     onChange(updated);
     if (expandedIndex === index) {
@@ -39,7 +42,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Experience, value: string | boolean) => {
+  const handleUpdate = (index: number, field: keyof Experience, value: string | boolean): void => {
     const updated = experience.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp));
     onChange(updated);
   };
@@ -51,12 +54,12 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
       <DraggableList
         items={experience}
         onReorder={onChange}
-        getItemId={(item) => item._id}
-        renderItem={(exp, index) => (
+        getItemId={(item: Experience): string => item._id}
+        renderItem={(exp: Experience, index: number): React.JSX.Element => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
-              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+              onClick={(): void => setExpandedIndex(expandedIndex === index ? null : index)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex-1">
@@ -69,7 +72,10 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                   {exp.isCurrent ? "Present" : exp.endDate && formatShortDate(exp.endDate)}
                 </p>
               </div>
-              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${exp.position || "experience"}`} />
+              <DeleteButton
+                onDelete={(): void => handleRemove(index)}
+                ariaLabel={`Delete ${exp.position || "experience"}`}
+              />
             </button>
 
             {expandedIndex === index && (
@@ -80,7 +86,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     label="Position"
                     required
                     value={exp.position}
-                    onValueChange={(value) => handleUpdate(index, "position", value)}
+                    onValueChange={(value: string): void => handleUpdate(index, "position", value)}
                     placeholder="e.g. Senior Software Engineer"
                   />
                   <TextInput
@@ -88,7 +94,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     label="Company"
                     required
                     value={exp.company}
-                    onValueChange={(value) => handleUpdate(index, "company", value)}
+                    onValueChange={(value: string): void => handleUpdate(index, "company", value)}
                     placeholder="e.g. Google Inc."
                   />
                 </div>
@@ -98,7 +104,9 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
                     <DatePicker
                       selected={parseYearMonth(exp.startDate)}
-                      onSelect={(date) => handleUpdate(index, "startDate", formatYearMonth(date))}
+                      onSelect={(date: Date | undefined): void =>
+                        handleUpdate(index, "startDate", formatFullDate(date))
+                      }
                       placeholder="Select start date"
                     />
                   </div>
@@ -106,7 +114,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">End Date</p>
                     <DatePicker
                       selected={parseYearMonth(exp.endDate)}
-                      onSelect={(date) => handleUpdate(index, "endDate", formatYearMonth(date))}
+                      onSelect={(date: Date | undefined): void => handleUpdate(index, "endDate", formatFullDate(date))}
                       placeholder="Select end date"
                       disabled={exp.isCurrent}
                       minDate={parseYearMonth(exp.startDate)}
@@ -119,7 +127,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     type="checkbox"
                     id={`current-${exp._id}`}
                     checked={exp.isCurrent}
-                    onChange={(e) => {
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                       handleUpdate(index, "isCurrent", e.target.checked);
                       if (e.target.checked) {
                         handleUpdate(index, "endDate", "");
@@ -136,7 +144,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                   <p className="mb-1.5 block font-medium text-slate-700 text-sm">Description</p>
                   <RichTextEditor
                     content={exp.description}
-                    onChange={(html) => handleUpdate(index, "description", html)}
+                    onChange={(html: string): void => handleUpdate(index, "description", html)}
                     placeholder="Describe your responsibilities and achievements..."
                   />
                 </div>

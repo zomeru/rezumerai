@@ -1,22 +1,30 @@
 {
-  "extends": "@rezumerai/tsconfig/express.json",
+  "extends": "@rezumerai/tsconfig/base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "outDir": "./dist",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
     "paths": {
+      "@/*": ["./src/*"],
       "@rezumerai/types": ["../../packages/types/dist"],
       "@rezumerai/types/*": ["../../packages/types/dist/*"],
       "@rezumerai/utils": ["../../packages/utils/src"],
       "@rezumerai/utils/*": ["../../packages/utils/src/*"],
       "@rezumerai/database": ["../../packages/database"],
       "@rezumerai/database/*": ["../../packages/database/*"]
-    },
-    "module": "CommonJS",
-    "target": "ES2022",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "verbatimModuleSyntax": false
+    }
   },
-  "include": ["src/**/*.ts", "index.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.*", "vitest.config.ts"]
 }

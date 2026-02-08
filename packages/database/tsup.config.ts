@@ -8,7 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ["./generated/**"],
-  outExtension({ format }) {
+  outExtension({ format }: { format: string }): { js: string } {
     if (format === "esm") return { js: ".mjs" };
     return { js: ".js" };
   },

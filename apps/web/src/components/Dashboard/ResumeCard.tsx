@@ -14,11 +14,18 @@ interface ResumeCardProps {
   onDownload?: () => Promise<void>;
 }
 
-export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
+export default function ResumeCard({
+  resume,
+  color,
+  onOpen,
+  onEdit,
+  onDelete,
+  onDownload,
+}: ResumeCardProps): React.JSX.Element {
   const [isDownloading, setIsDownloading] = useState(false);
-  const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
+  const formatDate = (date: string | Date): string => new Date(date).toLocaleDateString();
 
-  async function handleDownload(e: React.MouseEvent) {
+  async function handleDownload(e: React.MouseEvent): Promise<void> {
     e.stopPropagation();
     if (!onDownload || isDownloading) return;
 
@@ -73,7 +80,7 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, on
             )}
             <button
               type="button"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent): void => {
                 e.stopPropagation();
                 onEdit();
               }}
@@ -84,7 +91,7 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, on
             </button>
             <button
               type="button"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent): void => {
                 e.stopPropagation();
                 onDelete();
               }}

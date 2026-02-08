@@ -1,0 +1,41 @@
+{
+  "name": "@rezumerai/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run with-env bun --watch --no-clear-screen src/server.ts",
+    "build": "bun build src/server.ts --outdir dist --target bun",
+    "start": "bun run with-env bun dist/server.js",
+    "check-types": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "check": "biome check --write .",
+    "clean": "rimraf dist .turbo node_modules coverage",
+    "with-env": "dotenv -e ../../.env.local --"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/app.ts"
+    }
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.3.1",
+    "@rezumerai/database": "workspace:*",
+    "@rezumerai/types": "workspace:*",
+    "@rezumerai/utils": "workspace:*",
+    "elysia": "^1.3.12",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.14",
+    "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/vitest-config": "workspace:*",
+    "@types/bun": "^1.2.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "dotenv-cli": "^11.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

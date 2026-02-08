@@ -1,3 +1,4 @@
+import type { StoreApi, UseBoundStore } from "zustand";
 import { create } from "zustand";
 
 export interface ModalState {
@@ -18,14 +19,14 @@ interface DashboardStore {
   setSearchQuery: (query: string) => void;
 }
 
-export const useDashboardStore = create<DashboardStore>((set) => ({
+export const useDashboardStore: UseBoundStore<StoreApi<DashboardStore>> = create<DashboardStore>((set) => ({
   modalState: { type: null },
   editingTitle: "",
   viewMode: "grid",
   searchQuery: "",
 
-  setModalState: (modalState) => set({ modalState }),
-  setEditingTitle: (editingTitle) => set({ editingTitle }),
-  setViewMode: (viewMode) => set({ viewMode }),
-  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setModalState: (modalState: ModalState): void => set({ modalState }),
+  setEditingTitle: (editingTitle: string): void => set({ editingTitle }),
+  setViewMode: (viewMode: ViewMode): void => set({ viewMode }),
+  setSearchQuery: (searchQuery: string): void => set({ searchQuery }),
 }));

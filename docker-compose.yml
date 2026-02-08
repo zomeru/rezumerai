@@ -41,17 +41,17 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      server:
+      api:
         condition: service_started
     environment:
       NODE_ENV: production
     networks:
       - app_network
 
-  server:
+  api:
     build:
       context: .
-      dockerfile: ./apps/server/Dockerfile
+      dockerfile: ./apps/api/Dockerfile
     restart: always
     env_file:
       - .env.local

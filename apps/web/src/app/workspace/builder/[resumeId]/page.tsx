@@ -22,7 +22,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { type ComponentType, Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -36,6 +36,7 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
+import type { PDFPreviewProps } from "@/components/ResumeBuilder/PDFPreview";
 import { defaultResume, type Education, type Experience, type Project, type Resume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
@@ -44,7 +45,7 @@ import { useResumeStore } from "@/store/useResumeStore";
 import type { TemplateType } from "@/templates";
 
 // Dynamically import PDFPreview to avoid SSR issues with pdfjs
-const PDFPreview = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
+const PDFPreview: ComponentType<PDFPreviewProps> = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center">
@@ -68,7 +69,7 @@ const sections: SectionType[] = [
   { id: "skills", name: "Skills", icon: Sparkles },
 ];
 
-export default function ResumeBuilder() {
+export default function ResumeBuilder(): React.JSX.Element {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
@@ -79,7 +80,10 @@ export default function ResumeBuilder() {
   const isLoading = useResumeStore((state) => state.isLoading);
   const hasFetched = useResumeStore((state) => state.hasFetched);
   const fetchResumes = useResumeStore((state) => state.fetchResumes);
-  const resumeData = useResumeStore((state) => state.resumes.find((r) => r._id === resumeId) ?? defaultResume);
+  const resumes = useResumeStore((state) => state.resumes);
+  const foundResume = resumes.find((r) => r._id === resumeId);
+  const resumeData = foundResume ?? defaultResume;
+  const resumeNotFound = hasFetched && !foundResume;
   const updateResume = useResumeStore((state) => state.updateResume);
 
   useEffect(() => {
@@ -110,19 +114,19 @@ export default function ResumeBuilder() {
     accentColor: resumeData.accentColor,
   });
 
-  function updateResumeData(data: Resume["personalInfo"]) {
+  function updateResumeData(data: Resume["personalInfo"]): void {
     updateResume(resumeId, { personalInfo: data });
   }
 
-  function handleTemplateChange(template: TemplateType) {
+  function handleTemplateChange(template: TemplateType): void {
     updateResume(resumeId, { template });
   }
 
-  function handleColorChange(color: string) {
+  function handleColorChange(color: string): void {
     updateResume(resumeId, { accentColor: color });
   }
 
-  function handleFontSizeChange(size: FontSizeValue) {
+  function handleFontSizeChange(size: FontSizeValue): void {
     if (typeof size === "number") {
       updateResume(resumeId, { fontSize: "custom", customFontSize: size });
     } else if (size !== "custom") {
@@ -132,31 +136,31 @@ export default function ResumeBuilder() {
     }
   }
 
-  function handleSummaryChange(summary: string) {
+  function handleSummaryChange(summary: string): void {
     updateResume(resumeId, { professionalSummary: summary });
   }
 
-  function handleExperienceChange(experience: Experience[]) {
+  function handleExperienceChange(experience: Experience[]): void {
     updateResume(resumeId, { experience });
   }
 
-  function handleEducationChange(education: Education[]) {
+  function handleEducationChange(education: Education[]): void {
     updateResume(resumeId, { education });
   }
 
-  function handleProjectChange(project: Project[]) {
+  function handleProjectChange(project: Project[]): void {
     updateResume(resumeId, { project });
   }
 
-  function handleSkillsChange(skills: string[]) {
+  function handleSkillsChange(skills: string[]): void {
     updateResume(resumeId, { skills });
   }
 
-  function changeResumeVisibility() {
+  function changeResumeVisibility(): void {
     updateResume(resumeId, { public: !resumeData.public });
   }
 
-  async function handleSaveResume() {
+  async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
       // Simulated save — will connect to backend later
@@ -169,7 +173,7 @@ export default function ResumeBuilder() {
     }
   }
 
-  async function handleShareResume() {
+  async function handleShareResume(): Promise<void> {
     const currentUrl = window.location.href.split(ROUTES.WORKSPACE)[0];
     const resumeUrl = `${currentUrl}${ROUTES.PREVIEW}/${resumeData._id}`;
 
@@ -232,10 +236,10 @@ export default function ResumeBuilder() {
   const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex min-h-screen flex-1 flex-col bg-linear-to-br from-slate-50 to-slate-100">
       {/* Redesigned Header */}
       <div className="border-slate-200/60 border-b bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-400 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <Link
               href={ROUTES.WORKSPACE}
@@ -253,9 +257,23 @@ export default function ResumeBuilder() {
       </div>
 
       {/* Main Content - Completely Redesigned */}
-      <div className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-400 flex-1 px-4 py-8 sm:px-6 lg:px-8">
         {isLoading || !hasFetched ? (
           <ResumeBuilderSkeleton />
+        ) : resumeNotFound ? (
+          <div className="flex min-h-[60vh] flex-col items-center justify-center">
+            <div className="text-center">
+              <h1 className="mb-2 font-bold text-3xl text-slate-800">Resume not found</h1>
+              <p className="mb-6 text-slate-600">The resume you're looking for doesn't exist or has been deleted.</p>
+              <Link
+                href={ROUTES.WORKSPACE}
+                className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
+              >
+                <ArrowLeftIcon className="size-4" />
+                Back to Workspace
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
             {/* Left Panel - Editor */}
@@ -263,16 +281,16 @@ export default function ResumeBuilder() {
               <div className="sticky top-8 space-y-6">
                 {/* Controls Card */}
                 <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
-                  <div className="border-slate-100 border-b bg-gradient-to-br from-slate-50 to-white p-4">
+                  <div className="border-slate-100 border-b bg-linear-to-br from-slate-50 to-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <TemplateSelector
                           selectedTemplate={resumeData.template}
-                          onChange={(template) => handleTemplateChange(template)}
+                          onChange={(template: TemplateType): void => handleTemplateChange(template)}
                         />
                         <ColorPickerModal
                           selectedColor={resumeData.accentColor}
-                          onChange={(color) => handleColorChange(color)}
+                          onChange={(color: string): void => handleColorChange(color)}
                         />
                         <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
                       </div>
@@ -280,7 +298,7 @@ export default function ResumeBuilder() {
                         {activeSectionIndex !== 0 && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(): void => {
                               setActiveSectionIndex(Math.max(activeSectionIndex - 1, 0));
                             }}
                             className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
@@ -291,7 +309,7 @@ export default function ResumeBuilder() {
                         {activeSectionIndex < sections.length - 1 && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(): void => {
                               setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
                             }}
                             className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
@@ -306,7 +324,7 @@ export default function ResumeBuilder() {
                   {/* Progress Bar */}
                   <div className="h-1.5 w-full bg-slate-100">
                     <div
-                      className="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500"
+                      className="h-full bg-linear-to-r from-primary-500 to-primary-600 transition-all duration-500"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
@@ -317,11 +335,11 @@ export default function ResumeBuilder() {
                       <button
                         key={section.id}
                         type="button"
-                        onClick={() => setActiveSectionIndex(index)}
+                        onClick={(): void => setActiveSectionIndex(index)}
                         className={cn(
                           "flex size-10 items-center justify-center rounded-xl font-semibold text-sm transition-all",
                           index === activeSectionIndex
-                            ? "scale-110 bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/30"
+                            ? "scale-110 bg-linear-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/30"
                             : index < activeSectionIndex
                               ? "bg-primary-100 text-primary-700 hover:bg-primary-200"
                               : "bg-slate-100 text-slate-500 hover:bg-slate-200",
@@ -355,7 +373,7 @@ export default function ResumeBuilder() {
                   type="button"
                   onClick={handleSaveResume}
                   disabled={isSaving}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-6 py-4 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>
@@ -381,7 +399,7 @@ export default function ResumeBuilder() {
                   <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                     <button
                       type="button"
-                      onClick={() => setPreviewMode("html")}
+                      onClick={(): void => setPreviewMode("html")}
                       className={cn(
                         "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
                         previewMode === "html"
@@ -393,7 +411,7 @@ export default function ResumeBuilder() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPreviewMode("pdf")}
+                      onClick={(): void => setPreviewMode("pdf")}
                       className={cn(
                         "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
                         previewMode === "pdf"
@@ -425,7 +443,7 @@ export default function ResumeBuilder() {
                     </button>
                     <button
                       type="button"
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={downloadResume}
                       disabled={isExporting}
                     >
@@ -443,7 +461,7 @@ export default function ResumeBuilder() {
                 </div>
 
                 {/* Resume Preview with modern styling */}
-                <ReactActivity mode={resumeData ? "visible" : "hidden"}>
+                <ReactActivity mode={!resumeNotFound ? "visible" : "hidden"}>
                   {/* Keep HTML preview always mounted for PDF generation */}
                   <div
                     className={cn(

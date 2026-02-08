@@ -7,7 +7,10 @@ interface ProfessionalSummaryFormEnhancedProps {
   onChange: (summary: string) => void;
 }
 
-export default function ProfessionalSummaryFormEnhanced({ summary, onChange }: ProfessionalSummaryFormEnhancedProps) {
+export default function ProfessionalSummaryFormEnhanced({
+  summary,
+  onChange,
+}: ProfessionalSummaryFormEnhancedProps): React.JSX.Element {
   return (
     <div className="space-y-4">
       <div>

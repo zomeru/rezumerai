@@ -1,7 +1,7 @@
 import { Badge, SectionTitle } from "@rezumerai/ui/components";
 import { FileText, Sparkles, Target } from "lucide-react";
 
-export default function Feature() {
+export default function Feature(): React.JSX.Element {
   return (
     <div className="flex scroll-mt-12 flex-col items-center" id="features">
       <Badge title="What it does" style="text-primary-600" svgStyle="fill-primary-600" />

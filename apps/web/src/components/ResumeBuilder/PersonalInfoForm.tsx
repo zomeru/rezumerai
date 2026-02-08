@@ -33,18 +33,23 @@ export default function PersonalInfoForm({
   onChangeAction,
   removeBackground,
   setRemoveBackgroundAction,
-}: PersonalInfoFormProps) {
+}: PersonalInfoFormProps): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleImageChange(field: keyof Resume["personalInfo"], value: string) {
+  function handleImageChange(field: keyof Resume["personalInfo"], value: string): void {
     onChangeAction({
       ...data,
       [field]: value,
     });
   }
 
-  function handleClickUpload() {
+  function handleClickUpload(): void {
     fileInputRef.current?.click();
+  }
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>): void {
+    const imageUrl = e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : "";
+    handleImageChange("image", imageUrl);
   }
 
   return (
@@ -78,9 +83,7 @@ export default function PersonalInfoForm({
             type="file"
             accept="image/jpeg, image/png"
             className="hidden"
-            onChange={(e) =>
-              handleImageChange("image", e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : "")
-            }
+            onChange={onInputChange}
           />
         </label>
         {data.image && (
@@ -91,7 +94,7 @@ export default function PersonalInfoForm({
                 type="checkbox"
                 className="peer sr-only"
                 checked={removeBackground}
-                onChange={() => setRemoveBackgroundAction(!removeBackground)}
+                onChange={(): void => setRemoveBackgroundAction(!removeBackground)}
               />
               <div className="peer h-5 w-9 rounded-full bg-slate-300 transition-colors duration-200 peer-checked:bg-primary-600"></div>
               <span className="dot absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
@@ -113,7 +116,7 @@ export default function PersonalInfoForm({
               type={type}
               value={data[key]}
               required={required}
-              onChange={(e) => handleImageChange(key, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => handleImageChange(key, e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
               placeholder={`Enter your ${label.toLowerCase()}`}
             />

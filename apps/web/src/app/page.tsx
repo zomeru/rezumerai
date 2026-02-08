@@ -1,7 +1,7 @@
 import { BannerWithTag } from "@rezumerai/ui";
 import { CallToAction, Feature, Footer, Hero, Testimonial } from "@/components/Home";
 
-export default function Home() {
+export default function Home(): React.JSX.Element {
   return (
     <div>
       <BannerWithTag

@@ -1,6 +1,12 @@
 import { cn } from "@rezumerai/utils/styles";
 
-export default function Badge({ title, style, svgStyle }: { title: string; style?: string; svgStyle?: string }) {
+interface BadgeProps {
+  title: string;
+  style?: string;
+  svgStyle?: string;
+}
+
+export default function Badge({ title, style, svgStyle }: BadgeProps): React.JSX.Element {
   return (
     <div
       className={cn(

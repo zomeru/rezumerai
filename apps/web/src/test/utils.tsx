@@ -3,7 +3,7 @@ import { type RenderResult, render } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 
 // Create a new QueryClient for each test to ensure isolation
-const createTestQueryClient = () =>
+const createTestQueryClient = (): QueryClient =>
   new QueryClient({
     defaultOptions: {
       queries: {
@@ -20,7 +20,7 @@ interface TestProvidersProps {
   children: ReactNode;
 }
 
-function TestProviders({ children }: TestProvidersProps) {
+function TestProviders({ children }: TestProvidersProps): React.JSX.Element {
   const queryClient = createTestQueryClient();
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

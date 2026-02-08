@@ -8,7 +8,7 @@ interface HtmlContentProps {
  * Used in resume templates to properly display formatted text
  * (paragraphs, bold, italic, lists, etc.) instead of raw HTML tags.
  */
-export default function HtmlContent({ html, className }: HtmlContentProps) {
+export default function HtmlContent({ html, className }: HtmlContentProps): React.JSX.Element | null {
   if (!html) return null;
 
   // biome-ignore lint/security/noDangerouslySetInnerHtml: Content comes from the user's own Tiptap rich text editor

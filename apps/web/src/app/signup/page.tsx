@@ -3,8 +3,8 @@
 import AuthWithSocialForm from "@rezumerai/ui/components/AuthWithSocialForm";
 import { Logo } from "@/components";
 
-export default function SignUp() {
-  async function onSignUp() {}
+export default function SignUp(): React.JSX.Element {
+  async function onSignUp(): Promise<void> {}
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center space-y-10">

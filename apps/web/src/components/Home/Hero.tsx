@@ -6,7 +6,13 @@ import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import Logo from "../Logo";
 
-const menuItems = [
+type MenuItem = {
+  label: string;
+  href: string;
+  id: string;
+};
+
+const menuItems: MenuItem[] = [
   { label: "Home", href: "#", id: "home" },
   { label: "Features", href: "#features", id: "features" },
   { label: "How it works", href: "#how-it-works", id: "how-it-works" },
@@ -16,7 +22,7 @@ const menuItems = [
 const SAMPLE_PREVIEW_RESUME_ID = "68d2a31a1c4dd38875bb037e";
 const samplePreviewHref = `${ROUTES.PREVIEW}/${SAMPLE_PREVIEW_RESUME_ID}`;
 
-export default function Hero() {
+export default function Hero(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div>
@@ -47,7 +53,7 @@ export default function Hero() {
           </Link>
         </div>
 
-        <button type="button" onClick={() => setMenuOpen(true)} className="transition active:scale-90 md:hidden">
+        <button type="button" onClick={(): void => setMenuOpen(true)} className="transition active:scale-90 md:hidden">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="26"
@@ -68,13 +74,13 @@ export default function Hero() {
         className={`fixed inset-0 z-100 flex flex-col items-center justify-center gap-8 bg-black/40 text-black text-lg backdrop-blur transition-transform duration-300 md:hidden ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {menuItems.map(({ label, href, id }) => (
-          <Link key={id} href={href} className="text-2xl text-white" onClick={() => setMenuOpen(false)}>
+          <Link key={id} href={href} className="text-2xl text-white" onClick={(): void => setMenuOpen(false)}>
             {label}
           </Link>
         ))}
         <button
           type="button"
-          onClick={() => setMenuOpen(false)}
+          onClick={(): void => setMenuOpen(false)}
           className="flex aspect-square size-10 items-center justify-center rounded-md bg-primary-600 p-1 text-white transition hover:bg-primary-700 active:ring-3 active:ring-white"
         >
           X
@@ -104,7 +110,7 @@ export default function Hero() {
         </div>
 
         {/* Headline + CTA */}
-        <h1 className="mt-4 max-w-5xl text-center font-semibold text-5xl md:text-6xl md:leading-[70px]">
+        <h1 className="mt-4 max-w-5xl text-center font-semibold text-5xl md:text-6xl md:leading-17.5">
           Build a resume you’re proud to send with an{" "}
           <span className="text-nowrap bg-linear-to-r from-primary-700 to-primary-600 bg-clip-text text-transparent">
             AI-powered{" "}

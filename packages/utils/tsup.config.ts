@@ -16,7 +16,7 @@ export default defineConfig({
   clean: true,
   external: ["clsx", "tailwind-merge"],
   tsconfig: "./tsconfig.json",
-  outExtension({ format }) {
+  outExtension({ format }: { format: string }): { js: string } {
     if (format === "esm") return { js: ".mjs" };
     return { js: ".js" };
   },

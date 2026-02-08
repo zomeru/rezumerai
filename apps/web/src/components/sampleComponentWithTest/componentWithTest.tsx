@@ -1,41 +1,74 @@
+// biome-ignore-all lint: This is a sample component for testing purposes, not production code
+
 "use client";
 
 import type { UserType } from "@rezumerai/types";
 import { Button } from "@rezumerai/ui";
 import { capitalize } from "@rezumerai/utils/string";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { ClientDate } from "../client-date";
 import { UserFetcher } from "../user-fetcher";
+
+interface HealthData {
+  message: string;
+  server: string;
+  timestamp: string;
+}
 
 export default function SampleComponentWithTest() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
 
-  // Use ts-rest queries
-  const { data: healthData, isLoading: healthLoading } = api.getHealth.useQuery(["health"]);
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = api.getUsers.useQuery(["users"]);
-  const { data: projectsData, isLoading: projectsLoading } = api.getProjects.useQuery(["projects"]);
+  // Health state
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
 
-  // Use ts-rest mutations
-  const createUserMutation = api.createUser.useMutation({
-    onSuccess: () => {
-      refetchUsers();
-      setNewUserName("");
-      setNewUserEmail("");
-    },
-  });
+  // Users state
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
 
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newUserName && newUserEmail) {
-      createUserMutation.mutate({
-        body: {
-          name: newUserName,
-          email: newUserEmail,
-        },
-      });
+  // Projects state (endpoint removed in Elysia migration — placeholder)
+  const [projects] = useState<{ id: string; title: string; description: string; userId: string }[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+
+  const [creating, setCreating] = useState(false);
+
+  const fetchHealth = useCallback(async () => {
+    setHealthLoading(true);
+    const { data } = await api.api.health.get();
+    if (data && "data" in data && data.data) {
+      setHealthData(data.data as HealthData);
     }
+    setHealthLoading(false);
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    const { data } = await api.api.users.get();
+    if (data && "data" in data) {
+      setUsers((data.data ?? []) as UserType[]);
+    }
+    setUsersLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchHealth();
+    fetchUsers();
+    // Projects endpoint not yet migrated — clear loading
+    setProjectsLoading(false);
+  }, [fetchHealth, fetchUsers]);
+
+  const handleCreateUser = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+
+    setCreating(true);
+    await api.api.users.post({ name: newUserName, email: newUserEmail });
+    setCreating(false);
+    setNewUserName("");
+    setNewUserEmail("");
+    fetchUsers();
   };
 
   return (
@@ -52,12 +85,12 @@ export default function SampleComponentWithTest() {
           <p>Loading...</p>
         ) : (
           <div>
-            <p>Status: {healthData?.body.success ? "✅ Healthy" : "❌ Unhealthy"}</p>
-            {healthData?.body.data && (
+            <p>Status: {healthData ? "✅ Healthy" : "❌ Unhealthy"}</p>
+            {healthData && (
               <div className="mt-2">
-                <p>Message: {healthData.body.data.message}</p>
-                <p>Server: {healthData.body.data.server}</p>
-                <p>Timestamp: {healthData.body.data.timestamp}</p>
+                <p>Message: {healthData.message}</p>
+                <p>Server: {healthData.server}</p>
+                <p>Timestamp: {healthData.timestamp}</p>
               </div>
             )}
           </div>
@@ -72,7 +105,7 @@ export default function SampleComponentWithTest() {
         ) : (
           <div>
             <div className="mb-4 grid gap-2">
-              {usersData?.body.data?.map((user: UserType) => (
+              {users.map((user: UserType) => (
                 <div key={user.id} className="rounded border bg-white p-2">
                   <p className="font-medium">{user.name}</p>
                   <p className="text-gray-600 text-sm">{user.email}</p>
@@ -99,8 +132,8 @@ export default function SampleComponentWithTest() {
                 className="w-full rounded border p-2"
                 required
               />
-              <Button appName="Rezumer" type="submit" disabled={createUserMutation.isPending}>
-                {createUserMutation.isPending ? "Creating..." : "Create User"}
+              <Button appName="Rezumer" type="submit" disabled={creating}>
+                {creating ? "Creating..." : "Create User"}
               </Button>
             </form>
           </div>
@@ -117,13 +150,14 @@ export default function SampleComponentWithTest() {
           <p>Loading projects...</p>
         ) : (
           <div className="grid gap-2">
-            {projectsData?.body.data?.map((project) => (
+            {projects.map((project) => (
               <div key={project.id} className="rounded border bg-white p-3">
                 <h3 className="font-medium">{project.title}</h3>
                 <p className="text-gray-600 text-sm">{project.description}</p>
                 <p className="text-gray-500 text-xs">User ID: {project.userId}</p>
               </div>
             ))}
+            {projects.length === 0 && <p className="text-gray-500">No projects yet (endpoint not migrated).</p>}
           </div>
         )}
       </div>

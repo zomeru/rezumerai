@@ -8,7 +8,7 @@ import { Loader } from "@/components";
 import { ResumePreview } from "@/components/ResumeBuilder";
 import { dummyResumeData, type Resume } from "@/constants/dummy";
 
-export default function Preview() {
+export default function Preview(): React.JSX.Element {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
@@ -27,7 +27,7 @@ export default function Preview() {
       }
     }, 1000);
 
-    return () => clearTimeout(timeout);
+    return (): void => clearTimeout(timeout);
   }, [resumeId]);
 
   if (isLoading) {

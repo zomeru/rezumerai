@@ -1,6 +1,7 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 import { createBaseConfig } from "./base";
 
+// biome-ignore lint/nursery/useExplicitType: Vitest config type inference required
 export const createReactConfig = (dirname: string) =>
   mergeConfig(
     createBaseConfig(dirname),
@@ -20,4 +21,4 @@ export const createReactConfig = (dirname: string) =>
     }),
   );
 
-export const reactConfig = defineConfig(createReactConfig(__dirname));
+export const reactConfig: ReturnType<typeof defineConfig> = defineConfig(createReactConfig(__dirname));

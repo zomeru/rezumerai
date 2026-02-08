@@ -112,7 +112,7 @@ export function parseYearMonth(dateStr: string): Date | undefined {
  * Formats a Date object to "YYYY-MM-DD" format string.
  * Returns an empty string if the date is undefined.
  */
-export function formatYearMonth(date: Date | undefined): string {
+export function formatFullDate(date: Date | undefined): string {
   if (!date) return "";
 
   const year = date.getFullYear();

@@ -5,7 +5,7 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
-const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
+const MinimalImageTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-5xl bg-white text-zinc-800">
       <div className="grid grid-cols-3">

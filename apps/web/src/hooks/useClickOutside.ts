@@ -8,14 +8,14 @@ import { type RefObject, useEffect, useRef } from "react";
  */
 export function useClickOutside<T extends HTMLElement = HTMLElement>(
   handler: () => void,
-  isActive = true,
+  isActive: boolean = true,
 ): RefObject<T | null> {
   const ref = useRef<T>(null);
 
   useEffect(() => {
     if (!isActive) return;
 
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent): void {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         handler();
       }

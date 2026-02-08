@@ -16,13 +16,13 @@ import { generateUuidKey } from "@/lib/utils";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useResumeStore } from "@/store/useResumeStore";
 
-const RESUME_COLORS = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
+const RESUME_COLORS: `#${string}`[] = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
 /**
  * Dashboard component for managing resumes
  * Completely redesigned with modern UI patterns
  */
-export default function Dashboard() {
+export default function Dashboard(): React.JSX.Element {
   const router = useRouter();
 
   // Resume store
@@ -47,45 +47,45 @@ export default function Dashboard() {
   const searchQuery = useDashboardStore((state) => state.searchQuery);
   const setSearchQuery = useDashboardStore((state) => state.setSearchQuery);
 
-  function handleCreateResume(title: string) {
+  function handleCreateResume(title: string): void {
     if (!title.trim()) return;
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleUploadResume(title: string, file: File) {
+  function handleUploadResume(title: string, file: File): void {
     if (!title.trim() || !file) return;
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleEditTitle(newTitle: string) {
+  function handleEditTitle(newTitle: string): void {
     if (!newTitle.trim() || !modalState.resumeId) return;
     updateResume(modalState.resumeId, { title: newTitle });
     setModalState({ type: null });
   }
 
-  function handleDeleteResume(resumeId: string) {
+  function handleDeleteResume(resumeId: string): void {
     const confirmed = window.confirm("Are you sure you want to delete this resume?");
     if (confirmed) {
       deleteResume(resumeId);
     }
   }
 
-  function handleOpenResume(resumeId: string) {
+  function handleOpenResume(resumeId: string): void {
     router.push(`${ROUTES.BUILDER}/${resumeId}`);
   }
 
-  function handleOpenEditModal(resumeId: string, title: string) {
+  function handleOpenEditModal(resumeId: string, title: string): void {
     setEditingTitle(title);
     setModalState({ type: "edit", resumeId });
   }
 
-  function handleDownloadResume(resumeId: string) {
+  function handleDownloadResume(resumeId: string): void {
     setModalState({ type: "download", resumeId });
   }
 
-  function handleCloseModal() {
+  function handleCloseModal(): void {
     setModalState({ type: null });
     setEditingTitle("");
   }
@@ -100,11 +100,11 @@ export default function Dashboard() {
   const filteredResumes = resumes.filter((resume) => resume.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
+      <div className="mx-auto max-w-400 px-4 py-4 sm:px-6 lg:px-8">
         {/* Modern Header */}
         <div className="mb-8">
-          <h1 className="mb-2 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text font-bold text-3xl text-transparent sm:text-4xl">
+          <h1 className="mb-2 bg-linear-to-r from-slate-800 to-slate-600 bg-clip-text font-bold text-3xl text-transparent sm:text-4xl">
             My Resumes
           </h1>
           <p className="text-lg text-slate-600">Create, manage, and download your professional resumes</p>
@@ -115,15 +115,15 @@ export default function Dashboard() {
           <div className="flex flex-1 gap-3">
             <button
               type="button"
-              onClick={() => setModalState({ type: "create" })}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
+              onClick={(): void => setModalState({ type: "create" })}
+              className="flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
             >
               <Plus className="size-5" />
               <span>Create New</span>
             </button>
             <button
               type="button"
-              onClick={() => setModalState({ type: "upload" })}
+              onClick={(): void => setModalState({ type: "upload" })}
               className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow active:scale-95"
             >
               <Upload className="size-5" />
@@ -139,7 +139,7 @@ export default function Dashboard() {
                 type="text"
                 placeholder="Search resumes..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-4 pl-10 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               />
             </div>
@@ -148,7 +148,7 @@ export default function Dashboard() {
             <div className="flex rounded-xl border border-slate-300 bg-white p-1 shadow-sm">
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
+                onClick={(): void => setViewMode("grid")}
                 className={`rounded-lg p-2 transition-colors ${
                   viewMode === "grid" ? "bg-primary-100 text-primary-700" : "text-slate-600 hover:bg-slate-100"
                 }`}
@@ -158,7 +158,7 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
+                onClick={(): void => setViewMode("list")}
                 className={`rounded-lg p-2 transition-colors ${
                   viewMode === "list" ? "bg-primary-100 text-primary-700" : "text-slate-600 hover:bg-slate-100"
                 }`}
@@ -191,10 +191,10 @@ export default function Dashboard() {
                   key={key}
                   resume={resume}
                   color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-                  onOpen={() => handleOpenResume(resume._id)}
-                  onEdit={() => handleOpenEditModal(resume._id, resume.title)}
-                  onDelete={() => handleDeleteResume(resume._id)}
-                  onDownload={async () => handleDownloadResume(resume._id)}
+                  onOpen={(): void => handleOpenResume(resume._id)}
+                  onEdit={(): void => handleOpenEditModal(resume._id, resume.title)}
+                  onDelete={(): void => handleDeleteResume(resume._id)}
+                  onDownload={async (): Promise<void> => handleDownloadResume(resume._id)}
                 />
               );
             })}
@@ -215,8 +215,8 @@ export default function Dashboard() {
             {!searchQuery && (
               <button
                 type="button"
-                onClick={() => setModalState({ type: "create" })}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
+                onClick={(): void => setModalState({ type: "create" })}
+                className="flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
               >
                 <Plus className="size-5" />
                 Create Your First Resume

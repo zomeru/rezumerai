@@ -6,12 +6,12 @@ const user = {
   name: "John Doe",
 };
 
-export default function Navbar() {
-  async function onLogout() {}
+export default function Navbar(): React.JSX.Element {
+  async function onLogout(): Promise<void> {}
 
   return (
     <div className="bg-white shadow">
-      <nav className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 text-slate-800 transition-all sm:px-6 lg:px-8">
+      <nav className="mx-auto flex max-w-400 items-center justify-between px-4 py-4 text-slate-800 transition-all sm:px-6 lg:px-8">
         <Logo />
         <div className="flex items-center gap-4 text-sm">
           <p className="max-sm:hidden">Hi, {user.name}!</p>

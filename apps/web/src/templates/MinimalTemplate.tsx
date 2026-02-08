@@ -3,7 +3,7 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
-const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
+const MinimalTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">
       {/* Header */}

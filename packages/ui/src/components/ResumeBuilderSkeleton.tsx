@@ -5,7 +5,7 @@ import Skeleton, { SkeletonText } from "./Skeleton";
  * Mirrors the two-column layout: left editor panel + right preview panel.
  * Only the data-dependent areas pulse; structural chrome (back link, headers) is omitted.
  */
-export default function ResumeBuilderSkeleton() {
+export default function ResumeBuilderSkeleton(): React.JSX.Element {
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
       {/* Left Panel – Editor skeleton */}
@@ -14,7 +14,7 @@ export default function ResumeBuilderSkeleton() {
           {/* Controls Card skeleton */}
           <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
             {/* Controls bar */}
-            <div className="flex items-center justify-between border-slate-100 border-b bg-gradient-to-br from-slate-50 to-white p-4">
+            <div className="flex items-center justify-between border-slate-100 border-b bg-linear-to-br from-slate-50 to-white p-4">
               <div className="flex items-center gap-2">
                 <Skeleton width={100} height={36} borderRadius={8} />
                 <Skeleton width={36} height={36} borderRadius={8} />
@@ -28,7 +28,7 @@ export default function ResumeBuilderSkeleton() {
 
             {/* Progress bar placeholder */}
             <div className="h-1.5 w-full bg-slate-100">
-              <Skeleton width="30%" height={6} borderRadius={0} className="!bg-slate-200" />
+              <Skeleton width="30%" height={6} borderRadius={0} className="bg-slate-200!" />
             </div>
 
             {/* Section steps */}

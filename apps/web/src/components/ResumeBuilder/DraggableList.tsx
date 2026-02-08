@@ -25,7 +25,7 @@ interface SortableItemProps {
   children: ReactNode;
 }
 
-function SortableItem({ id, children }: SortableItemProps) {
+function SortableItem({ id, children }: SortableItemProps): React.JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
@@ -51,7 +51,12 @@ interface DraggableListProps<T> {
   getItemId: (item: T) => string;
 }
 
-export default function DraggableList<T>({ items, onReorder, renderItem, getItemId }: DraggableListProps<T>) {
+export default function DraggableList<T>({
+  items,
+  onReorder,
+  renderItem,
+  getItemId,
+}: DraggableListProps<T>): React.JSX.Element {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -59,7 +64,7 @@ export default function DraggableList<T>({ items, onReorder, renderItem, getItem
     }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent): void => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {

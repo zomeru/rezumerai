@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, createContext, type ReactNode, useContext, useReducer } from "react";
+import { type ChangeEvent, type Context, createContext, type ReactNode, useContext, useReducer } from "react";
 
 export interface AuthState {
   email: string;
@@ -35,13 +35,15 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-const AuthContext = createContext<{
+type AuthContextType = {
   state: AuthState;
   setEmail: (e: ChangeEvent<HTMLInputElement>) => void;
   setPassword: (e: ChangeEvent<HTMLInputElement>) => void;
   setConfirmPassword: (e: ChangeEvent<HTMLInputElement>) => void;
   reset: () => void;
-}>({
+};
+
+const AuthContext: Context<AuthContextType> = createContext<AuthContextType>({
   state: initialState,
   setEmail: () => {},
   setPassword: () => {},
@@ -49,22 +51,26 @@ const AuthContext = createContext<{
   reset: () => {},
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  function setEmail(e: ChangeEvent<HTMLInputElement>) {
+  function setEmail(e: ChangeEvent<HTMLInputElement>): void {
     dispatch({ type: "SET_EMAIL", payload: e.target.value });
   }
 
-  function setPassword(e: ChangeEvent<HTMLInputElement>) {
+  function setPassword(e: ChangeEvent<HTMLInputElement>): void {
     dispatch({ type: "SET_PASSWORD", payload: e.target.value });
   }
 
-  function setConfirmPassword(e: ChangeEvent<HTMLInputElement>) {
+  function setConfirmPassword(e: ChangeEvent<HTMLInputElement>): void {
     dispatch({ type: "SET_CONFIRM_PASSWORD", payload: e.target.value });
   }
 
-  function reset() {
+  function reset(): void {
     dispatch({ type: "RESET" });
   }
 
@@ -75,6 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuthSocialForm() {
+export function useAuthSocialForm(): AuthContextType {
   return useContext(AuthContext);
 }

@@ -22,7 +22,11 @@ export default function BaseModal({
   onSubmit,
   submitLabel = "Submit",
   isLoading = false,
-}: BaseModalProps) {
+}: BaseModalProps): React.JSX.Element | null {
+  function handleModalClick(e: React.MouseEvent): void {
+    e.stopPropagation();
+  }
+
   if (!isOpen) return null;
 
   return (
@@ -38,7 +42,7 @@ export default function BaseModal({
       {/* biome-ignore lint/a11y/useSemanticElements: This div is intentionally used as a button container */}
       <div
         role="button"
-        onClick={(e) => e.stopPropagation()}
+        onClick={handleModalClick}
         tabIndex={0}
         onKeyDown={onKeyDown}
         className="relative w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-6 shadow-lg"

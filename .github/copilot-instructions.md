@@ -12,7 +12,7 @@ Before anything else, ensure MCP servers are activated on this project.
 Rezumer is a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
 
 - `apps/web`: Next.js 16+ frontend (App Router, React 19, TypeScript, Tailwind CSS 4.x)
-- `apps/server`: Express 5.x API (Node.js, TypeScript, @ts-rest)
+- `apps/api`: Elysia API (Bun-native, TypeScript, Zod validation, Eden type safety)
 - `packages/database`: Prisma 7.x schema, migration scripts, and DB utilities
 - `packages/types`: Shared TypeScript types
 - `packages/utils`: Shared utility functions
@@ -29,7 +29,6 @@ Rezumer is a fullstack TypeScript monorepo managed with Turborepo and Bun. It co
 - **Testing**: Vitest 4.x is used everywhere. Test setup files are in `src/test` or alongside components. Shared config in `packages/vitest-config`.
 - **Linting/Formatting**: Biome (see `biome.json`) is the only linter/formatter. Run on save or via CLI.
 - **State Management**: Zustand for client-side state (`apps/web/src/store`).
-- **API Contracts**: @ts-rest for type-safe API definitions.
 - **Dynamic Routing**: Next.js App Router uses folders like `[resumeId]` under `apps/web/src/app/preview` or `apps/web/src/app/workspace/builder` for dynamic routes.
 - **Component/Hook Structure**: Place React components in `apps/web/src/components`, hooks in `apps/web/src/hooks`.
 - **Resume Templates**: In `apps/web/src/templates` (Classic, Modern, Minimal, MinimalImage).
@@ -50,7 +49,7 @@ bun install
 bun run dev
 # or individually:
 bun run --filter=web dev       # Next.js on http://localhost:3000
-bun run --filter=server dev    # Express on http://localhost:8080
+bun run --filter=@rezumerai/api dev  # Elysia on http://localhost:8080
 ```
 
 ### Database operations
@@ -106,9 +105,13 @@ apps/web/src/
 ├── constants/             # App constants
 └── test/                  # Test utilities
 
-apps/server/src/
-├── server.ts              # Express server entrypoint
-└── test/                  # Server tests
+apps/api/src/
+├── app.ts                 # Elysia app (single source of truth for API types)
+├── server.ts              # Bun server entrypoint
+├── env.ts                 # Typed environment (Zod)
+├── modules/               # Feature-based modules (auth, user, etc.)
+├── plugins/               # Cross-cutting plugins (prisma, auth, logger, error)
+└── test/                  # API tests
 
 packages/
 ├── database/prisma/schema.prisma   # Prisma schema
@@ -138,10 +141,10 @@ packages/
 | Category | Technology |
 |----------|------------|
 | Frontend | Next.js 16+, React 19, TypeScript, Tailwind CSS 4.x |
-| Backend | Express 5.x, Node.js, TypeScript |
+| Backend | Elysia, Bun, TypeScript |
 | Database | PostgreSQL with Prisma 7.x ORM |
 | State | Zustand |
-| API | @ts-rest for type-safe contracts |
+| API | Eden for end-to-end type safety |
 | Testing | Vitest 4.x, React Testing Library |
 | Build | Turborepo, Bun |
 | Code Quality | Biome |

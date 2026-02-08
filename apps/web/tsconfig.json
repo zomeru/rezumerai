@@ -2,8 +2,11 @@
   "extends": "@rezumerai/tsconfig/next.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "declaration": false,
+    "declarationMap": false,
     "paths": {
       "@/*": ["./src/*"],
+      "@rezumerai/api": ["../../apps/api/src/app"],
       "@rezumerai/ui": ["../../packages/ui/src"],
       "@rezumerai/ui/*": ["../../packages/ui/src/*"],
       "@rezumerai/types": ["../../packages/types/dist"],

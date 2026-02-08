@@ -4,7 +4,7 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
-const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
+const ClassicTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 text-gray-800 leading-relaxed">
       {/* Header */}

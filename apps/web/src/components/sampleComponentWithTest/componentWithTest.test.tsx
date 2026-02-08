@@ -1,7 +1,27 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/utils";
 import SampleComponentWithTest from "./componentWithTest";
+
+// Mock the Eden treaty API client so tests don't make real HTTP calls
+vi.mock("@/lib/api", () => {
+  const mockGet = vi.fn().mockResolvedValue({ data: null, error: null });
+  const mockPost = vi.fn().mockResolvedValue({ data: null, error: null });
+
+  return {
+    api: {
+      api: {
+        health: { get: mockGet },
+        users: {
+          get: mockGet,
+          post: mockPost,
+          // Dynamic param route: api.api.users({ id }).get()
+          __call: vi.fn().mockReturnValue({ get: mockGet }),
+        },
+      },
+    },
+  };
+});
 
 describe("SampleComponentWithTest Page", () => {
   it("renders the welcome text", () => {

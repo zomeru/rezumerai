@@ -15,13 +15,17 @@ export interface DeleteButtonProps {
  * Reusable delete button component with keyboard accessibility
  * Used in list items to remove entries
  */
-export default function DeleteButton({ onDelete, ariaLabel = "Delete item", size = "md" }: DeleteButtonProps) {
-  const handleClick = (e: React.MouseEvent) => {
+export default function DeleteButton({
+  onDelete,
+  ariaLabel = "Delete item",
+  size = "md",
+}: DeleteButtonProps): React.JSX.Element {
+  const handleClick = (e: React.MouseEvent): void => {
     e.stopPropagation();
     onDelete();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === "Enter" || e.key === " ") {
       e.stopPropagation();
       onDelete();
