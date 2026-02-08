@@ -5,7 +5,7 @@ import { z } from "zod";
 // biome-ignore lint/nursery/useExplicitType: Zod type inference required
 export const SessionUserSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().nullable(),
 });
 

@@ -6,11 +6,11 @@ import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import Logo from "../Logo";
 
-type MenuItem = {
+interface MenuItem {
   label: string;
   href: string;
   id: string;
-};
+}
 
 const menuItems: MenuItem[] = [
   { label: "Home", href: "#", id: "home" },

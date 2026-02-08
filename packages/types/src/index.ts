@@ -25,7 +25,7 @@ export interface ApiResponse<T = unknown> {
 export const UserSchema: z.ZodType<UserType> = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export const ProjectSchema: z.ZodType<ProjectType> = z.object({
@@ -35,11 +35,15 @@ export const ProjectSchema: z.ZodType<ProjectType> = z.object({
   userId: z.string(),
 });
 
-export const ApiResponseSchema: <T extends z.ZodTypeAny>(dataSchema: T) => z.ZodType<ApiResponse<z.infer<T>>> = <
-  T extends z.ZodTypeAny,
+export const ApiResponseSchema: <
+  T extends z.ZodType<{
+    success: boolean;
+    data?: unknown;
+    error?: string;
+  }>,
 >(
   dataSchema: T,
-) =>
+) => z.ZodType<ApiResponse<z.infer<T>>> = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
     success: z.boolean(),
     data: dataSchema.optional(),

@@ -1,8 +1,7 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-// biome-ignore lint/nursery/useExplicitType: Vitest config type inference required
-export const createBaseConfig = (dirname: string) => ({
+export const createBaseConfig = (dirname: string): Record<string, unknown> => ({
   test: {
     globals: true,
     coverage: {

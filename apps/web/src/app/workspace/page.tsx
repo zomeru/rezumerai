@@ -194,7 +194,7 @@ export default function Dashboard(): React.JSX.Element {
                   onOpen={(): void => handleOpenResume(resume._id)}
                   onEdit={(): void => handleOpenEditModal(resume._id, resume.title)}
                   onDelete={(): void => handleDeleteResume(resume._id)}
-                  onDownload={async (): Promise<void> => handleDownloadResume(resume._id)}
+                  onDownload={(): void => handleDownloadResume(resume._id)}
                 />
               );
             })}

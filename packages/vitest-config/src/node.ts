@@ -1,8 +1,7 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 import { createBaseConfig } from "./base";
 
-// biome-ignore lint/nursery/useExplicitType: Vitest config type inference required
-export const createNodeConfig = (dirname: string) =>
+export const createNodeConfig = (dirname: string): Record<string, unknown> =>
   mergeConfig(
     createBaseConfig(dirname),
     defineConfig({

@@ -35,13 +35,13 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-type AuthContextType = {
+interface AuthContextType {
   state: AuthState;
   setEmail: (e: ChangeEvent<HTMLInputElement>) => void;
   setPassword: (e: ChangeEvent<HTMLInputElement>) => void;
   setConfirmPassword: (e: ChangeEvent<HTMLInputElement>) => void;
   reset: () => void;
-};
+}
 
 const AuthContext: Context<AuthContextType> = createContext<AuthContextType>({
   state: initialState,

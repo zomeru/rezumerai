@@ -2,14 +2,14 @@ import { Badge, SectionTitle } from "@rezumerai/ui/components";
 import { FileText, Sparkles, Target } from "lucide-react";
 import type { ReactNode } from "react";
 
-type CardData = {
+interface CardData {
   id: string;
   title: string;
   description: string;
   icon: ReactNode;
-}[];
+}
 
-const cards: CardData = [
+const cards: CardData[] = [
   {
     id: "paste-resume",
     title: "Paste your current resume",
@@ -60,12 +60,12 @@ const cards: CardData = [
   },
 ];
 
-const topCardsData: Array<CardData[number] & { id: string }> = cards.flatMap((card) => [
+const topCardsData: Array<CardData[][number] & { id: string }> = cards.flatMap((card) => [
   { ...card, id: `${card.id}-top-1` },
   { ...card, id: `${card.id}-top-2` },
 ]);
 
-const bottomCardsData: Array<CardData[number] & { id: string }> = [...cards].reverse().flatMap((card) => [
+const bottomCardsData: Array<CardData[][number] & { id: string }> = [...cards].reverse().flatMap((card) => [
   { ...card, id: `${card.id}-bottom-1` },
   { ...card, id: `${card.id}-bottom-2` },
 ]);
@@ -117,7 +117,7 @@ export default function Testimonial(): React.JSX.Element {
   );
 }
 
-const CreateCard = ({ card }: { card: CardData[number] }): React.JSX.Element => (
+const CreateCard = ({ card }: { card: CardData[][number] }): React.JSX.Element => (
   <div className="mx-4 w-72 shrink-0 rounded-lg border border-slate-200 bg-white p-4 shadow transition-all duration-200 hover:shadow-lg">
     <div className="flex items-start gap-3">
       <div className="flex size-10 items-center justify-center rounded-full bg-primary-50">{card.icon}</div>

@@ -11,7 +11,7 @@ interface ResumeCardProps {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onDownload?: () => Promise<void>;
+  onDownload?: () => void;
 }
 
 export default function ResumeCard({
@@ -31,7 +31,7 @@ export default function ResumeCard({
 
     setIsDownloading(true);
     try {
-      await onDownload();
+      onDownload();
     } finally {
       setIsDownloading(false);
     }
