@@ -8,9 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
-# Load environment variables from .env.local
+# Load environment variables from .env.local using safe POSIX method
 if [ -f .env.local ]; then
-  export $(grep -v '^#' .env.local | xargs)
+  set -a  # Enable auto-export
+  source .env.local
+  set +a  # Disable auto-export
 else
   echo "Error: .env.local file not found in $PROJECT_ROOT"
   exit 1

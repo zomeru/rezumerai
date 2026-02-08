@@ -8,13 +8,34 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
-# Load environment variables from .env.local
+# Load environment variables from .env.local using safe POSIX method
 if [ -f .env.local ]; then
-  export $(grep -v '^#' .env.local | xargs)
+  set -a  # Enable auto-export
+  source .env.local
+  set +a  # Disable auto-export
 else
   echo "Error: .env.local file not found in $PROJECT_ROOT"
   exit 1
 fi
+
+# Validate required environment variables
+REQUIRED_ENV_VARS=(
+  "DATABASE_URL"
+  "NEXT_PUBLIC_API_URL"
+  "NEXTAUTH_URL"
+  "NEXTAUTH_SECRET"
+  "API_PORT"
+  "CORS_ORIGINS"
+)
+
+for var in "${REQUIRED_ENV_VARS[@]}"; do
+  if [ -z "${!var}" ]; then
+    echo "Error: Required environment variable $var is not set or empty"
+    exit 1
+  fi
+done
+
+echo "All required environment variables validated successfully"
 
 # Build API
 echo "Building API service..."
