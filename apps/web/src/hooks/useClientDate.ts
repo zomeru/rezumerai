@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * Hook to get current date only on client side to prevent hydration mismatch
  * @returns Current date or null during SSR
  */
-export function useClientDate() {
+export function useClientDate(): Date | null {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function useClientDate() {
  * Useful for preventing hydration mismatches
  * @returns true if mounted on client, false during SSR
  */
-export function useIsMounted() {
+export function useIsMounted(): boolean {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

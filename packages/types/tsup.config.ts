@@ -10,7 +10,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   tsconfig: "./tsconfig.json",
-  outExtension({ format }) {
+  outExtension({ format }: { format: string }): { js: string } {
     if (format === "esm") return { js: ".mjs" };
     return { js: ".js" };
   },

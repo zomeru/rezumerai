@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 import { createBaseConfig } from "./base";
 
-export const createReactConfig = (dirname: string) =>
+export const createReactConfig = (dirname: string): Record<string, unknown> =>
   mergeConfig(
     createBaseConfig(dirname),
     defineConfig({
@@ -20,4 +20,4 @@ export const createReactConfig = (dirname: string) =>
     }),
   );
 
-export const reactConfig = defineConfig(createReactConfig(__dirname));
+export const reactConfig: ReturnType<typeof defineConfig> = defineConfig(createReactConfig(__dirname));

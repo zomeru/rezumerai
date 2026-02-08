@@ -15,7 +15,11 @@ interface DownloadResumeModalProps {
 /**
  * Modal component that renders a resume in a hidden container and generates a PDF for download
  */
-export default function DownloadResumeModal({ resume, isOpen, onClose }: DownloadResumeModalProps) {
+export default function DownloadResumeModal({
+  resume,
+  isOpen,
+  onClose,
+}: DownloadResumeModalProps): React.JSX.Element | null {
   const [status, setStatus] = useState<"generating" | "success" | "error">("generating");
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -31,7 +35,7 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
     if (hasDownloadedRef.current) return;
     hasDownloadedRef.current = true;
 
-    async function generateAndDownload() {
+    async function generateAndDownload(): Promise<void> {
       setStatus("generating");
       setError(null);
 

@@ -2,9 +2,10 @@ import { formatShortDate } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import { generateUuidKey } from "@/lib/utils";
+import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
-const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
+const MinimalImageTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-5xl bg-white text-zinc-800">
       <div className="grid grid-cols-3">
@@ -113,7 +114,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
               <h2 className="mb-3 font-semibold text-[0.875em] tracking-widest" style={{ color: accentColor }}>
                 SUMMARY
               </h2>
-              <p className="text-zinc-700 leading-relaxed">{data.professionalSummary}</p>
+              <HtmlContent
+                html={data.professionalSummary}
+                className="rich-text-content text-zinc-700 leading-relaxed"
+              />
             </section>
           )}
 
@@ -138,11 +142,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                         {exp.company}
                       </p>
                       {exp.description && (
-                        <ul className="list-inside list-disc space-y-1 text-[0.875em] text-zinc-700 leading-relaxed">
-                          {exp.description.split("\n").map((line) => (
-                            <li key={line}>{line}</li>
-                          ))}
-                        </ul>
+                        <HtmlContent
+                          html={exp.description}
+                          className="rich-text-content text-[0.875em] text-zinc-700 leading-relaxed"
+                        />
                       )}
                     </div>
                   );
@@ -167,11 +170,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                         {project.type}
                       </p>
                       {project.description && (
-                        <ul className="list-inside list-disc space-y-1 text-[0.875em] text-zinc-700">
-                          {project.description.split("\n").map((line) => (
-                            <li key={line}>{line}</li>
-                          ))}
-                        </ul>
+                        <HtmlContent
+                          html={project.description}
+                          className="rich-text-content text-[0.875em] text-zinc-700"
+                        />
                       )}
                     </div>
                   );

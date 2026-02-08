@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-describe("Server Utils", () => {
+describe("API Utils", () => {
   it("basic math works", () => {
     expect(1 + 1).toBe(2);
   });

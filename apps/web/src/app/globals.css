@@ -13,7 +13,7 @@
   --color-primary-200: oklch(0.86 0.08 250);
   --color-primary-300: oklch(0.75 0.13 250);
   --color-primary-400: oklch(0.67 0.16 250);
-  --color-primary-500: oklch(0.58 0.17 250); /* #2563EB */
+  --color-primary-500: oklch(0.54 0.18 250); /* Darker for WCAG AA contrast */
   --color-primary-600: oklch(0.48 0.15 250);
   --color-primary-700: oklch(0.4 0.13 250);
 
@@ -65,4 +65,48 @@ textarea {
   box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   --ring-color: #3b82f6;
   resize: none;
+}
+
+/* Rich text content styling for resume templates */
+.rich-text-content p {
+  margin-bottom: 0.25em;
+}
+
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content strong {
+  font-weight: 600;
+}
+
+.rich-text-content em {
+  font-style: italic;
+}
+
+.rich-text-content u {
+  text-decoration: underline;
+}
+
+.rich-text-content ul {
+  list-style-type: disc;
+  padding-left: 1.25em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal;
+  padding-left: 1.25em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.rich-text-content li {
+  margin-bottom: 0.125em;
+}
+
+.rich-text-content a {
+  text-decoration: underline;
+  color: inherit;
 }

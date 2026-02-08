@@ -60,3 +60,5 @@ next-env.d.ts
 .vscode/tasks.json
 .mcp.json
 .playwright-mcp
+tsup.config.bundled*
+.agent-files/feature-requests

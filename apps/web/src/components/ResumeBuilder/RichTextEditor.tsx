@@ -31,7 +31,12 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-export default function RichTextEditor({ content, onChange, placeholder, className }: RichTextEditorProps) {
+export default function RichTextEditor({
+  content,
+  onChange,
+  placeholder,
+  className,
+}: RichTextEditorProps): React.JSX.Element | null {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -56,7 +61,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
       }),
     ],
     content,
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: ReturnType<typeof useEditor> }): void => {
       onChange(editor.getHTML());
     },
     editorProps: {
@@ -76,7 +81,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
     return null;
   }
 
-  const setLink = () => {
+  const setLink = (): void => {
     const url = window.prompt("Enter URL");
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
@@ -88,7 +93,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
       <div className="flex flex-wrap gap-1 border-slate-200 border-b bg-slate-50 p-2">
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          onClick={(): boolean => editor.chain().focus().toggleBold().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("bold") ? "bg-slate-200" : ""
           }`}
@@ -98,7 +103,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          onClick={(): boolean => editor.chain().focus().toggleItalic().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("italic") ? "bg-slate-200" : ""
           }`}
@@ -108,7 +113,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          onClick={(): boolean => editor.chain().focus().toggleUnderline().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("underline") ? "bg-slate-200" : ""
           }`}
@@ -118,7 +123,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleStrike().run()}
+          onClick={(): boolean => editor.chain().focus().toggleStrike().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("strike") ? "bg-slate-200" : ""
           }`}
@@ -129,7 +134,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         <div className="mx-1 w-px bg-slate-300" />
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onClick={(): boolean => editor.chain().focus().toggleBulletList().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("bulletList") ? "bg-slate-200" : ""
           }`}
@@ -139,7 +144,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onClick={(): boolean => editor.chain().focus().toggleOrderedList().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("orderedList") ? "bg-slate-200" : ""
           }`}
@@ -150,7 +155,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         <div className="mx-1 w-px bg-slate-300" />
         <button
           type="button"
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          onClick={(): boolean => editor.chain().focus().setTextAlign("left").run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive({ textAlign: "left" }) ? "bg-slate-200" : ""
           }`}
@@ -160,7 +165,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          onClick={(): boolean => editor.chain().focus().setTextAlign("center").run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive({ textAlign: "center" }) ? "bg-slate-200" : ""
           }`}
@@ -170,7 +175,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          onClick={(): boolean => editor.chain().focus().setTextAlign("right").run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive({ textAlign: "right" }) ? "bg-slate-200" : ""
           }`}
@@ -191,7 +196,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
+          onClick={(): boolean => editor.chain().focus().toggleHighlight().run()}
           className={`rounded p-1.5 transition-colors hover:bg-slate-200 ${
             editor.isActive("highlight") ? "bg-slate-200" : ""
           }`}
@@ -200,7 +205,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
           <Highlighter className="size-4" />
         </button>
       </div>
-      <div className="min-h-[120px] border border-slate-200 bg-white">
+      <div className="min-h-30 border border-slate-200 bg-white">
         <EditorContent editor={editor} />
       </div>
     </div>

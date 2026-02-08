@@ -1,6 +1,6 @@
 "use client";
 
-import { formatShortDate, formatYearMonth, parseYearMonth } from "@rezumerai/utils/date";
+import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Education } from "@/constants/dummy";
 import { generateUuidKey } from "@/lib/utils";
@@ -13,10 +13,10 @@ interface EducationFormEnhancedProps {
   onChange: (education: Education[]) => void;
 }
 
-export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps) {
+export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps): React.JSX.Element {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
-  const handleAdd = () => {
+  const handleAdd = (): void => {
     const newEducation: Education = {
       _id: generateUuidKey(),
       institution: "",
@@ -29,7 +29,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     setExpandedIndex(education.length);
   };
 
-  const handleRemove = (index: number) => {
+  const handleRemove = (index: number): void => {
     const updated = education.filter((_, i) => i !== index);
     onChange(updated);
     if (expandedIndex === index) {
@@ -37,7 +37,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Education, value: string) => {
+  const handleUpdate = (index: number, field: keyof Education, value: string): void => {
     const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
     onChange(updated);
   };
@@ -49,12 +49,12 @@ export default function EducationFormEnhanced({ education, onChange }: Education
       <DraggableList
         items={education}
         onReorder={onChange}
-        getItemId={(item) => item._id}
-        renderItem={(edu, index) => (
+        getItemId={(item: Education): string => item._id}
+        renderItem={(edu: Education, index: number): React.JSX.Element => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
-              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+              onClick={(): void => setExpandedIndex(expandedIndex === index ? null : index)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex-1">
@@ -68,7 +68,10 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     ` • ${formatShortDate(edu.graduationDate)}`}
                 </p>
               </div>
-              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${edu.degree || "education"}`} />
+              <DeleteButton
+                onDelete={(): void => handleRemove(index)}
+                ariaLabel={`Delete ${edu.degree || "education"}`}
+              />
             </button>
 
             {expandedIndex === index && (
@@ -78,7 +81,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                   label="Institution"
                   required
                   value={edu.institution}
-                  onValueChange={(value) => handleUpdate(index, "institution", value)}
+                  onValueChange={(value: string): void => handleUpdate(index, "institution", value)}
                   placeholder="e.g. Harvard University"
                 />
 
@@ -88,14 +91,14 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     label="Degree"
                     required
                     value={edu.degree}
-                    onValueChange={(value) => handleUpdate(index, "degree", value)}
+                    onValueChange={(value: string): void => handleUpdate(index, "degree", value)}
                     placeholder="e.g. Bachelor of Science"
                   />
                   <TextInput
                     id={`edu-field-${index}`}
                     label="Field of Study"
                     value={edu.field}
-                    onValueChange={(value) => handleUpdate(index, "field", value)}
+                    onValueChange={(value: string): void => handleUpdate(index, "field", value)}
                     placeholder="e.g. Computer Science"
                   />
                 </div>
@@ -105,7 +108,9 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
                     <DatePicker
                       selected={parseYearMonth(edu.graduationDate)}
-                      onSelect={(date) => handleUpdate(index, "graduationDate", formatYearMonth(date))}
+                      onSelect={(date: Date | undefined): void =>
+                        handleUpdate(index, "graduationDate", formatFullDate(date))
+                      }
                       placeholder="Select graduation date"
                     />
                   </div>
@@ -113,7 +118,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     id={`edu-gpa-${index}`}
                     label="GPA (Optional)"
                     value={edu.gpa}
-                    onValueChange={(value) => handleUpdate(index, "gpa", value)}
+                    onValueChange={(value: string): void => handleUpdate(index, "gpa", value)}
                     placeholder="e.g. 3.8 or 8.5/10"
                   />
                 </div>

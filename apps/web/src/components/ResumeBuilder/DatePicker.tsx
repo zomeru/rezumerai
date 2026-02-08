@@ -22,27 +22,27 @@ export default function DatePicker({
   disabled,
   minDate,
   maxDate,
-}: DatePickerProps) {
+}: DatePickerProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent): void {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return (): void => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (date: Date | undefined) => {
+  const handleSelect = (date: Date | undefined): void => {
     onSelect(date);
     setIsOpen(false);
   };
 
-  const handleClear = (e: React.MouseEvent) => {
+  const handleClear = (e: React.MouseEvent): void => {
     e.stopPropagation();
     onSelect(undefined);
   };
@@ -51,12 +51,16 @@ export default function DatePicker({
     <div className="relative" ref={wrapperRef}>
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={(): void => {
+          if (!disabled) {
+            setIsOpen((prev) => !prev);
+          }
+        }}
         disabled={disabled}
         className="flex w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm transition-colors hover:border-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
       >
         <span className={selected ? "text-slate-900" : "text-slate-500"}>
-          {selected && !Number.isNaN(selected.getTime()) ? format(selected, "MMM yyyy") : placeholder}
+          {selected && !Number.isNaN(selected.getTime()) ? format(selected, "MMM d, yyyy") : placeholder}
         </span>
         <div className="flex items-center gap-1">
           {selected && !disabled && (
@@ -73,7 +77,7 @@ export default function DatePicker({
             selected={selected}
             onSelect={handleSelect}
             disabled={[...(minDate ? [{ before: minDate }] : []), ...(maxDate ? [{ after: maxDate }] : [])]}
-            captionLayout="dropdown-months"
+            captionLayout="dropdown"
             fromYear={1950}
             toYear={new Date().getFullYear() + 10}
             classNames={{

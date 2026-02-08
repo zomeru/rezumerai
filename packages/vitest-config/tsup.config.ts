@@ -14,7 +14,7 @@ export default defineConfig({
   clean: true,
   target: "esnext",
   tsconfig: "./tsconfig.json",
-  outExtension({ format }) {
+  outExtension({ format }: { format: string }): { js: string } {
     if (format === "esm") return { js: ".mjs" };
     return { js: ".js" };
   },

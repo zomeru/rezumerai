@@ -1,4 +1,4 @@
-# RezumerAI
+# Rezumer
 
 A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**.
 
@@ -12,10 +12,10 @@ A fullstack TypeScript monorepo for building AI-powered resume tools, managed wi
 | Category | Technology |
 |----------|------------|
 | Frontend | Next.js 16+, React 19, TypeScript, Tailwind CSS 4.x |
-| Backend | Express 5.x, Node.js, TypeScript |
+| Backend | Elysia, Bun, TypeScript |
 | Database | PostgreSQL with Prisma 7.x ORM |
 | State | Zustand |
-| API | @ts-rest for type-safe contracts |
+| API | Eden for end-to-end type safety |
 | Testing | Vitest 4.x, React Testing Library |
 | Build | Turborepo, Bun |
 | Code Quality | Biome |
@@ -66,7 +66,7 @@ Or run individually:
 
 ```sh
 bun run --filter=web dev       # Web (Next.js) - http://localhost:3000
-bun run --filter=server dev    # API (Express) - http://localhost:8080
+bun run --filter=@rezumerai/api dev    # API (Elysia) - http://localhost:8080
 ```
 
 ## Available Scripts
@@ -133,9 +133,13 @@ rezumerai/
 │   │       ├── templates/            # Resume templates
 │   │       └── constants/            # App constants
 │   │
-│   └── server/                       # Express 5.x API
+│   └── api/                          # Elysia API (Bun-native)
 │       └── src/
-│           └── server.ts             # Main server entry
+│           ├── app.ts                # Elysia app (single source of truth)
+│           ├── server.ts             # Bun server entrypoint
+│           ├── env.ts                # Typed env (Zod)
+│           ├── modules/              # Feature modules (auth, user)
+│           └── plugins/              # Plugins (prisma, auth, logger, error)
 │
 ├── packages/
 │   ├── database/                     # Prisma 7.x ORM
@@ -159,7 +163,7 @@ rezumerai/
 - **Type Safety**: TypeScript strict mode is enabled everywhere
 - **Testing**: Write tests alongside your code using Vitest
 - **State Management**: Use Zustand for client-side state
-- **API**: Use @ts-rest for type-safe API contracts
+- **API**: Use Eden for type-safe API consumption (types inferred from Elysia)
 
 ## License
 

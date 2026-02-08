@@ -97,4 +97,4 @@ jobs:
         run: bun run test
 
       - name: Run build
-        run: bun run build --filter={web,server}
+        run: bun run build --filter={web,@rezumerai/api}

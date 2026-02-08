@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useId } from "react";
 import type { NextImageProps } from "../types/image";
 import { AuthProvider, type AuthState, useAuthSocialForm } from "./AuthContext";
@@ -22,7 +23,7 @@ type BaseAuthFormProps =
 
 interface RequiredImageProps {
   NextImage: React.ComponentType<NextImageProps>;
-  onSubmit: (state: AuthState, e: React.FormEvent) => Promise<void>;
+  onSubmit: (state: AuthState, e: React.SubmitEvent<HTMLFormElement>) => Promise<void>;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
@@ -31,7 +32,7 @@ interface RequiredImageProps {
 
 interface OptionalImageProps {
   NextImage?: React.ComponentType<NextImageProps>;
-  onSubmit: (state: AuthState, e: React.FormEvent) => Promise<void>;
+  onSubmit: (state: AuthState, e: React.SubmitEvent<HTMLFormElement>) => Promise<void>;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
@@ -47,7 +48,7 @@ type AuthWithSocialFormProps =
       type: "signup";
     });
 
-function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }) {
+function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }): React.JSX.Element {
   const passwordId = useId();
   const confirmPasswordId = useId();
   const { state, setPassword, setConfirmPassword } = useAuthSocialForm();
@@ -69,7 +70,7 @@ function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }) {
   );
 }
 
-function AuthWithSocialForm(props: AuthWithSocialFormProps) {
+function AuthWithSocialForm(props: AuthWithSocialFormProps): React.JSX.Element {
   const {
     type,
     onSubmit,
@@ -88,7 +89,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
 
   const { state, setEmail, reset } = useAuthSocialForm();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     try {
       await onSubmit(state, e);
@@ -106,11 +107,11 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
     }
   }
 
-  function handleGoogleAuth() {
+  function handleGoogleAuth(): void {
     googleAuth?.();
   }
 
-  function handleAppleAuth() {
+  function handleAppleAuth(): void {
     appleAuth?.();
   }
 
@@ -190,7 +191,7 @@ function AuthWithSocialForm(props: AuthWithSocialFormProps) {
   );
 }
 
-export default function AuthWithSocialFormWrapper(props: AuthWithSocialFormProps) {
+export default function AuthWithSocialFormWrapper(props: AuthWithSocialFormProps): React.JSX.Element {
   return (
     <AuthProvider>
       <AuthWithSocialForm {...props} />

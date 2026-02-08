@@ -50,21 +50,34 @@ export function isToday(date: Date | string): boolean {
 }
 
 /**
- * Formats a date string (YYYY-MM) to "Mon YYYY" format (e.g., "Jan 2020")
+ * Formats a date string to a human-readable format.
+ * Supports both "YYYY-MM-DD" and legacy "YYYY-MM" formats.
+ * - "YYYY-MM-DD" renders as "Mon DD, YYYY" (e.g., "Jan 15, 2020")
+ * - "YYYY-MM" renders as "Mon YYYY" (e.g., "Jan 2020")
  * Returns an empty string if the input is invalid.
- * @param date - The date string in "YYYY-MM" format.
- * @returns Formatted date string or empty string.
  */
 export function formatShortDate(date: string): string {
   if (!date) return "";
 
-  const [year, month] = date.split("-");
-
-  const yearNum = Number(year);
-  const monthNum = Number(month);
+  const parts = date.split("-");
+  const yearNum = Number(parts[0]);
+  const monthNum = Number(parts[1]);
 
   if (Number.isNaN(yearNum) || Number.isNaN(monthNum)) return "";
 
+  // Full date format: YYYY-MM-DD
+  if (parts.length >= 3 && parts[2]) {
+    const dayNum = Number(parts[2]);
+    if (!Number.isNaN(dayNum)) {
+      return new Date(yearNum, monthNum - 1, dayNum).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+  }
+
+  // Legacy format: YYYY-MM
   return new Date(yearNum, monthNum - 1).toLocaleDateString("en-US", {
     month: "short",
     year: "numeric",
@@ -72,34 +85,39 @@ export function formatShortDate(date: string): string {
 }
 
 /**
- * Parses a date string in "YYYY-MM" format to a Date object.
+ * Parses a date string to a Date object.
+ * Supports both "YYYY-MM-DD" and legacy "YYYY-MM" formats.
  * Returns undefined if the input is invalid.
- * @param dateStr - The date string in "YYYY-MM" format.
- * @returns Date object or undefined.
  */
 export function parseYearMonth(dateStr: string): Date | undefined {
   if (!dateStr) return undefined;
 
-  const [year, month] = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map(Number);
+  const [year, month, day] = parts;
 
-  if (Number.isNaN(year) || Number.isNaN(month) || year === undefined || month === undefined) {
+  if (year === undefined || month === undefined || Number.isNaN(year) || Number.isNaN(month)) {
     return undefined;
   }
 
+  // Full date format: YYYY-MM-DD
+  if (day !== undefined && !Number.isNaN(day)) {
+    return new Date(year, month - 1, day);
+  }
+
+  // Legacy format: YYYY-MM
   return new Date(year, month - 1);
 }
 
 /**
- * Formats a Date object to "YYYY-MM" format string.
+ * Formats a Date object to "YYYY-MM-DD" format string.
  * Returns an empty string if the date is undefined.
- * @param date - The Date object to format.
- * @returns Formatted date string in "YYYY-MM" format.
  */
-export function formatYearMonth(date: Date | undefined): string {
+export function formatFullDate(date: Date | undefined): string {
   if (!date) return "";
 
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-  return `${year}-${month}`;
+  return `${year}-${month}-${day}`;
 }

@@ -2,7 +2,7 @@
 
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Layout } from "lucide-react";
-import { type JSX, useState } from "react";
+import { useState } from "react";
 import { TEMPLATES } from "@/constants/templates";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import type { TemplateType } from "@/templates";
@@ -12,7 +12,7 @@ interface TemplateSelectorProps {
   onChange: (template: TemplateType) => void;
 }
 
-export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): JSX.Element {
+export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
@@ -21,12 +21,16 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
     setIsOpen(false);
   }
 
+  function toggleDropdown(): void {
+    setIsOpen((prev) => !prev);
+  }
+
   return (
     <div ref={dropdownRef} className="relative">
       <button
         type="button"
         className="flex items-center gap-1 rounded-lg bg-linear-to-br from-primary-50 to-primary-100 px-3 py-2 text-primary-600 text-sm ring-primary-300 transition-all hover:ring"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggleDropdown}
       >
         <Layout size={14} />
         <span className="max-sm:hidden">Template</span>
@@ -38,7 +42,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
               <button
                 type="button"
                 key={id}
-                onClick={() => {
+                onClick={(): void => {
                   onTemplateChange(id);
                 }}
                 className={cn(

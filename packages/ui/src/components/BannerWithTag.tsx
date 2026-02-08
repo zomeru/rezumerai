@@ -8,7 +8,7 @@ export default function BannerWithTag({
   tag: string;
   bannerStyle?: string;
   textStyle?: string;
-}) {
+}): React.JSX.Element {
   return (
     <div
       className={cn(

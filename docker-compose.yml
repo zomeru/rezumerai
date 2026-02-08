@@ -2,21 +2,25 @@ services:
   # PostgreSQL Database
   database:
     image: postgres:18-alpine
-    env_file:
-      - .env.local
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_password
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-rezumerdb}
-      POSTGRES_USER: ${POSTGRES_USER:-zomeru}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zomeru} -d ${POSTGRES_DB:-rezumerdb}"]
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
   # Redis (optional, for caching/sessions)
   # redis:
@@ -35,26 +39,42 @@ services:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
+      secrets:
+        # Build-time secrets (for Next.js build)
+        - next_public_api_url
+        - nextauth_url
+        - nextauth_secret
     restart: unless-stopped
     env_file:
-      - .env.local
+      - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
+    secrets:
+      # Runtime secrets (available when container runs)
+      - database_url
+      - nextauth_secret
     ports:
       - "3000:3000"
     depends_on:
-      server:
+      api:
         condition: service_started
     environment:
       NODE_ENV: production
     networks:
       - app_network
 
-  server:
+  api:
     build:
       context: .
-      dockerfile: ./apps/server/Dockerfile
+      dockerfile: ./apps/api/Dockerfile
+      secrets:
+        # Build-time secrets (for build configuration)
+        - api_port
+        - cors_origins
     restart: always
     env_file:
-      - .env.local
+      - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
+    secrets:
+      # Runtime secrets (available when container runs)
+      - database_url
     ports:
       - "8080:8080"
     depends_on:
@@ -71,3 +91,23 @@ volumes:
 networks:
   app_network:
     driver: bridge
+
+secrets:
+  database_url:
+    environment: DATABASE_URL
+  nextauth_secret:
+    environment: NEXTAUTH_SECRET
+  next_public_api_url:
+    environment: NEXT_PUBLIC_API_URL
+  nextauth_url:
+    environment: NEXTAUTH_URL
+  api_port:
+    environment: API_PORT
+  cors_origins:
+    environment: CORS_ORIGINS
+  postgres_db:
+    environment: POSTGRES_DB
+  postgres_user:
+    environment: POSTGRES_USER
+  postgres_password:
+    environment: POSTGRES_PASSWORD

@@ -9,7 +9,7 @@ export interface EmptyStateProps {
  * Reusable empty state placeholder component
  * Used when a list section has no items
  */
-export default function EmptyState({ message }: EmptyStateProps) {
+export default function EmptyState({ message }: EmptyStateProps): React.JSX.Element {
   return (
     <div className="rounded-lg border-2 border-slate-300 border-dashed bg-slate-50 p-8 text-center">
       <p className="text-slate-500">{message}</p>

@@ -54,7 +54,7 @@ export function getFontScale(size: FontSizeValue): number {
   return FONT_SIZE_SCALES[size];
 }
 
-export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSelectorProps) {
+export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSelectorProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [customValue, setCustomValue] = useState<string>(
     typeof selectedSize === "number" ? selectedSize.toString() : "1",
@@ -64,7 +64,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
   const isCustomSelected = typeof selectedSize === "number";
   const currentPreset = isCustomSelected ? "custom" : selectedSize;
 
-  function onSizeChange(size: FontSizePreset) {
+  function onSizeChange(size: FontSizePreset): void {
     if (size === "custom") {
       const numValue = Number.parseFloat(customValue);
       if (!Number.isNaN(numValue) && numValue > 0) {
@@ -77,7 +77,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
     }
   }
 
-  function handleCustomChange(value: string) {
+  function handleCustomChange(value: string): void {
     setCustomValue(value);
     const numValue = Number.parseFloat(value);
     if (!Number.isNaN(numValue) && numValue > 0) {
@@ -90,7 +90,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
       <button
         type="button"
         className="flex items-center gap-1 rounded-lg bg-linear-to-br from-secondary-50 to-secondary-100 px-3 py-2 text-secondary-600 text-sm ring-secondary-300 transition-all hover:ring"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={(): void => setIsOpen((prev) => !prev)}
       >
         <Type size={14} />
         <span className="max-sm:hidden">Size</span>
@@ -101,7 +101,7 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
             <div key={id}>
               <button
                 type="button"
-                onClick={() => onSizeChange(id)}
+                onClick={(): void => onSizeChange(id)}
                 className={cn(
                   "relative w-full cursor-pointer rounded-lg border p-3 text-left transition-all",
                   currentPreset === id
@@ -133,9 +133,9 @@ export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSel
                     max="2"
                     step="0.05"
                     value={customValue}
-                    onChange={(e) => handleCustomChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => handleCustomChange(e.target.value)}
                     className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-secondary-400 focus:outline-none focus:ring-2 focus:ring-secondary-200"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: React.MouseEvent<HTMLInputElement>): void => e.stopPropagation()}
                   />
                 </div>
               )}

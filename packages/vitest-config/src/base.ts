@@ -1,7 +1,7 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-export const createBaseConfig = (dirname: string) => ({
+export const createBaseConfig = (dirname: string): Record<string, unknown> => ({
   test: {
     globals: true,
     coverage: {
@@ -29,4 +29,4 @@ export const createBaseConfig = (dirname: string) => ({
   },
 });
 
-export const baseConfig = defineConfig(createBaseConfig(__dirname));
+export const baseConfig: ReturnType<typeof defineConfig> = defineConfig(createBaseConfig(__dirname));

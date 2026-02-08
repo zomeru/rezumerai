@@ -1,3 +1,5 @@
+// biome-ignore-all lint: This is a sample component for testing purposes, not production code
+
 "use client";
 
 import type { UserType } from "@rezumerai/types";
@@ -9,19 +11,28 @@ interface UserFetcherProps {
   className?: string;
 }
 
-export function UserFetcher({ className }: UserFetcherProps) {
+export function UserFetcher({ className }: UserFetcherProps): React.JSX.Element {
   const [userId, setUserId] = useState<string>("1");
   const userIdInputId = useId();
+  const [userData, setUserData] = useState<UserType | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userError, setUserError] = useState<string | null>(null);
 
-  const {
-    data: userData,
-    isLoading: userLoading,
-    error: userError,
-    refetch: refetchUser,
-  } = api.getUser.useQuery(["user", userId], { params: { id: userId } });
+  const handleFetchUser = async () => {
+    setUserLoading(true);
+    setUserError(null);
+    setUserData(null);
 
-  const handleFetchUser = () => {
-    refetchUser();
+    const { data, error } = await api.api.users({ id: userId }).get();
+
+    setUserLoading(false);
+    if (error) {
+      setUserError(
+        typeof error === "object" && "error" in error ? (error as { error: string }).error : "User not found",
+      );
+    } else if (data && "data" in data && data.data) {
+      setUserData(data.data as UserType);
+    }
   };
 
   return (
@@ -41,7 +52,7 @@ export function UserFetcher({ className }: UserFetcherProps) {
               className="flex-1 rounded border p-2"
               placeholder="Enter user ID (e.g., 1, 2, 3)"
             />
-            <Button appName="RezumerAI" onClick={handleFetchUser}>
+            <Button appName="Rezumer" onClick={handleFetchUser}>
               Fetch User
             </Button>
           </div>
@@ -51,12 +62,12 @@ export function UserFetcher({ className }: UserFetcherProps) {
           <div className="rounded border border-blue-300 bg-blue-100 p-3">
             <p className="text-blue-700">Loading user...</p>
           </div>
-        ) : userError || (userData && !userData.body.success) ? (
+        ) : userError ? (
           <div className="rounded border border-red-300 bg-red-100 p-3">
-            <p className="text-red-700">Error: {userData?.body.error || "User not found"}</p>
+            <p className="text-red-700">Error: {userError}</p>
           </div>
-        ) : userData?.body.success && userData.body.data ? (
-          <UserCard user={userData.body.data} />
+        ) : userData ? (
+          <UserCard user={userData} />
         ) : (
           <p className="text-gray-500">Enter a user ID and click "Fetch User" to see details</p>
         )}
@@ -69,7 +80,7 @@ interface UserCardProps {
   user: UserType;
 }
 
-function UserCard({ user }: UserCardProps) {
+function UserCard({ user }: UserCardProps): React.JSX.Element {
   return (
     <div className="rounded border bg-white p-4 shadow-sm">
       <h3 className="mb-2 font-semibold text-lg">User Details</h3>

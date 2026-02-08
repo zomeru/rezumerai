@@ -9,12 +9,12 @@ interface UploadResumeModalProps {
   onClose: () => void;
 }
 
-export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps) {
+export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps): React.JSX.Element {
   const inputId = useId();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent): void {
     e.preventDefault();
     if (file) {
       onSubmit(title, file);
@@ -23,10 +23,15 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
     }
   }
 
-  function handleClose() {
+  function handleClose(): void {
     setTitle("");
     setFile(null);
     onClose();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>): void {
+    const selectedFile = e.target.files?.[0] ?? null;
+    setFile(selectedFile);
   }
 
   return (
@@ -39,7 +44,7 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
     >
       <input
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setTitle(e.target.value)}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -59,17 +64,7 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
         </div>
       </label>
 
-      <input
-        hidden
-        type="file"
-        id={inputId}
-        accept=".pdf"
-        onChange={(e) => {
-          const selectedFile = e.target.files?.[0] ?? null;
-          setFile(selectedFile);
-        }}
-        required
-      />
+      <input hidden type="file" id={inputId} accept=".pdf" onChange={handleFileChange} required />
     </BaseModal>
   );
 }
