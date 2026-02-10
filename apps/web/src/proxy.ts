@@ -11,11 +11,13 @@ export function proxy(_request: NextRequest): NextResponse {
   // Apply strict Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-inline needed for Next.js, consider using nonces in production
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com blob:", // Added CDN for PDF.js worker and blob: for inline workers
+    "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
+    "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:8080 https://api.rezumer.ai", // API endpoints
+    "connect-src 'self' http://localhost:8080 https://api.rezumer.ai blob:", // API endpoints + blob: for workers
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

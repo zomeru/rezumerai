@@ -21,7 +21,8 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
   // Configure pdf.js worker on mount (client-side only)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      // Use jsdelivr CDN which is more reliable and included in CSP
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
     }
   }, []);
 
