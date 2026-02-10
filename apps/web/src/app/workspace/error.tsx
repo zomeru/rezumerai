@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logError } from "@/lib/errors";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -13,8 +14,11 @@ interface ErrorProps {
  */
 export default function WorkspaceError({ error, reset }: ErrorProps): React.JSX.Element {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error("Workspace error:", error);
+    // Log error with context for monitoring
+    logError(error, "error", {
+      route: "/workspace",
+      component: "WorkspaceError",
+    });
   }, [error]);
 
   return (

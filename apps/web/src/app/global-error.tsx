@@ -1,16 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
+import { logError } from "@/lib/errors";
+
 /**
  * Global error boundary that catches errors in the root layout.
  * This is a fallback for critical errors that occur during rendering.
  */
 export default function GlobalError({
-  error: _error,
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }): React.JSX.Element {
+  useEffect(() => {
+    // Log critical error with maximum severity
+    logError(error, "fatal", {
+      component: "GlobalErrorBoundary",
+      route: typeof window !== "undefined" ? window.location.pathname : "unknown",
+    });
+  }, [error]);
   return (
     <html lang="en">
       <body>
