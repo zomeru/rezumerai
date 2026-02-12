@@ -8,10 +8,25 @@ import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 
-interface EducationFormEnhancedProps {
+/**
+ * Props for the EducationFormEnhanced component.
+ *
+ * @property education - Array of education entries
+ * @property onChange - Callback with updated education array
+ */
+export interface EducationFormEnhancedProps {
   education: Education[];
   onChange: (education: Education[]) => void;
 }
+
+/**
+ * Enhanced education form with drag-and-drop reordering.
+ * Supports adding, removing, and editing education entries with
+ * accordion expand/collapse, date picker, and field inputs.
+ *
+ * @param props - Form configuration with education data and change handler
+ * @returns Education form with DnD reordering and accordion entries
+ */
 
 export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps): React.JSX.Element {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);

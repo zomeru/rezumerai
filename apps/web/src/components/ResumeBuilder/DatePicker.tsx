@@ -6,7 +6,17 @@ import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 
-interface DatePickerProps {
+/**
+ * Props for the DatePicker component.
+ *
+ * @property selected - Currently selected date (undefined if none)
+ * @property onSelect - Callback when a date is selected or cleared
+ * @property placeholder - Placeholder text when no date is selected (default: "Select date")
+ * @property disabled - Whether the picker is disabled
+ * @property minDate - Earliest selectable date
+ * @property maxDate - Latest selectable date
+ */
+export interface DatePickerProps {
   selected: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   placeholder?: string;
@@ -14,6 +24,23 @@ interface DatePickerProps {
   minDate?: Date;
   maxDate?: Date;
 }
+
+/**
+ * Calendar date picker with dropdown calendar, clear button, and date range support.
+ * Uses react-day-picker for calendar rendering with click-outside-to-close behavior.
+ *
+ * @param props - Date picker configuration
+ * @returns Date picker input with dropdown calendar
+ *
+ * @example
+ * ```tsx
+ * <DatePicker
+ *   selected={startDate}
+ *   onSelect={setStartDate}
+ *   placeholder="Start date"
+ * />
+ * ```
+ */
 
 export default function DatePicker({
   selected,

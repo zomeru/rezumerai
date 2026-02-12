@@ -6,13 +6,26 @@ import { useState } from "react";
 import type { FontSizePreset } from "@/constants/dummy";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
+/**
+ * Font size value - either a preset name or a custom numeric scale.
+ */
 export type FontSizeValue = FontSizePreset | number;
 
-interface FontSizeSelectorProps {
+/**
+ * Props for FontSizeSelector component.
+ *
+ * @property selectedSize - Currently selected font size
+ * @property onChange - Callback when size changes
+ */
+export interface FontSizeSelectorProps {
   selectedSize: FontSizeValue;
   onChange: (size: FontSizeValue) => void;
 }
 
+/**
+ * Available font size presets with metadata.
+ * Displayed in the font size dropdown selector.
+ */
 const FONT_SIZES: { id: FontSizePreset; name: string; description: string; scale: number }[] = [
   {
     id: "small",
@@ -40,6 +53,10 @@ const FONT_SIZES: { id: FontSizePreset; name: string; description: string; scale
   },
 ];
 
+/**
+ * Mapping of font size presets to their numeric scale multipliers.
+ * Used to convert preset names to actual scale values.
+ */
 export const FONT_SIZE_SCALES: Record<FontSizePreset, number> = {
   small: 0.9,
   medium: 1,
@@ -47,6 +64,20 @@ export const FONT_SIZE_SCALES: Record<FontSizePreset, number> = {
   custom: 1,
 };
 
+/**
+ * Converts a FontSizeValue to a numeric scale multiplier.
+ * Returns the value directly if numeric, otherwise looks up preset scale.
+ *
+ * @param size - Font size preset or custom numeric value
+ * @returns Numeric scale multiplier (e.g., 0.9, 1, 1.1)
+ *
+ * @example
+ * ```ts
+ * getFontScale('small') // => 0.9
+ * getFontScale('medium') // => 1
+ * getFontScale(1.25) // => 1.25
+ * ```
+ */
 export function getFontScale(size: FontSizeValue): number {
   if (typeof size === "number") {
     return size;
@@ -54,6 +85,21 @@ export function getFontScale(size: FontSizeValue): number {
   return FONT_SIZE_SCALES[size];
 }
 
+/**
+ * Dropdown selector for resume font size with preset and custom options.
+ * Allows users to choose from small/medium/large presets or enter a custom scale.
+ *
+ * @param props - FontSizeSelector configuration
+ * @returns Font size dropdown selector component
+ *
+ * @example
+ * ```tsx
+ * <FontSizeSelector
+ *   selectedSize="medium"
+ *   onChange={(size) => updateResume({ fontSize: size })}
+ * />
+ * ```
+ */
 export default function FontSizeSelector({ selectedSize, onChange }: FontSizeSelectorProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [customValue, setCustomValue] = useState<string>(

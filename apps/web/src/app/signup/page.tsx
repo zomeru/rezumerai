@@ -3,6 +3,9 @@
 import AuthWithSocialForm from "@rezumerai/ui/components/AuthWithSocialForm";
 import { Logo } from "@/components";
 
+/**
+ * Sign-up page with social authentication form.
+ */
 export default function SignUp(): React.JSX.Element {
   async function onSignUp(): Promise<void> {}
 

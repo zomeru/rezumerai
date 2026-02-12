@@ -5,10 +5,29 @@ import { useCallback, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "./pdf-viewer.css";
 
+/**
+ * Props for the PDFPreview component.
+ *
+ * @property pdfBlob - PDF blob to display (null while loading)
+ * @property isGenerating - Whether the PDF is currently being generated
+ */
 export interface PDFPreviewProps {
   pdfBlob: Blob | null;
   isGenerating?: boolean;
 }
+
+/**
+ * Interactive PDF viewer with zoom, pagination, and fit mode controls.
+ * Renders PDF blobs using react-pdf with configurable zoom and navigation.
+ *
+ * @param props - PDF preview configuration
+ * @returns PDF viewer with toolbar controls
+ *
+ * @example
+ * ```tsx
+ * <PDFPreview pdfBlob={generatedPdf} isGenerating={isLoading} />
+ * ```
+ */
 
 export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreviewProps): React.JSX.Element {
   const [numPages, setNumPages] = useState<number>(0);

@@ -3,8 +3,29 @@ import type { FontSizeValue } from "@/components/ResumeBuilder";
 import type { Resume } from "@/constants/dummy";
 import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
 
+/**
+ * Preview mode for resume display.
+ *
+ * @property "html" - Render resume as HTML (live editing, faster)
+ * @property "pdf" - Render resume as PDF blob (accurate output, slower)
+ *
+ * @example
+ * ```ts
+ * const [mode, setMode] = useState<PreviewMode>('html');
+ * setMode('pdf'); // Switch to PDF preview
+ * ```
+ */
 export type PreviewMode = "html" | "pdf";
 
+/**
+ * Configuration props for usePdfGenerator hook.
+ *
+ * @property resumeData - Complete resume data object
+ * @property previewMode - Current preview mode ("html" or "pdf")
+ * @property resumePreviewRef - React ref pointing to HTML resume element
+ * @property fontSize - Current font size setting
+ * @property accentColor - Optional accent color for theming
+ */
 interface UsePdfGeneratorProps {
   resumeData: Resume;
   previewMode: PreviewMode;
@@ -13,6 +34,16 @@ interface UsePdfGeneratorProps {
   accentColor?: string;
 }
 
+/**
+ * Return value from usePdfGenerator hook.
+ *
+ * @property pdfBlob - Generated PDF blob (null if not yet generated)
+ * @property isGeneratingPdf - Whether PDF is currently being generated
+ * @property isExporting - Whether resume is currently being exported/downloaded
+ * @property generatePdfFromHtml - Function to manually generate PDF from HTML element
+ * @property downloadResume - Function to download resume as PDF file
+ * @property dataHash - Hash of current resume data for change detection
+ */
 interface UsePdfGeneratorReturn {
   pdfBlob: Blob | null;
   isGeneratingPdf: boolean;
@@ -23,8 +54,23 @@ interface UsePdfGeneratorReturn {
 }
 
 /**
- * Generates a hash from resume data, font size, and accent color
- * Used to determine if PDF regeneration is needed
+ * Generates a deterministic hash from resume data, font size, and accent color.
+ * Uses a simple 32-bit hash algorithm for efficient change detection.
+ *
+ * @param resumeData - Complete resume data object
+ * @param fontSize - Current font size setting
+ * @param accentColor - Optional accent color value
+ * @returns Base-36 encoded hash string
+ *
+ * @example
+ * ```ts
+ * const hash1 = generateDataHash(resumeData, 'md', '#3b82f6');
+ * const hash2 = generateDataHash(resumeData, 'md', '#3b82f6');
+ * console.log(hash1 === hash2); // => true (same data = same hash)
+ *
+ * const hash3 = generateDataHash(updatedData, 'md', '#3b82f6');
+ * console.log(hash1 === hash3); // => false (changed data = different hash)
+ * ```
  */
 function generateDataHash(resumeData: Resume, fontSize: FontSizeValue, accentColor?: string): string {
   const hashData = JSON.stringify({
@@ -48,11 +94,26 @@ function generateDataHash(resumeData: Resume, fontSize: FontSizeValue, accentCol
   return hash.toString(36);
 }
 
-// Cache to persist PDF blobs across mode switches
+/**
+ * Internal cache structure for PDF blob persistence.
+ * Stores generated PDF with its corresponding data hash for validation.
+ *
+ * @property blob - Generated PDF blob
+ * @property dataHash - Hash of the data used to generate this PDF
+ *
+ * @internal
+ */
 interface PDFCache {
   blob: Blob;
   dataHash: string;
 }
+
+/**
+ * Module-level cache to persist PDF blobs across HTML/PDF mode switches.
+ * Prevents unnecessary regeneration when switching between preview modes.
+ *
+ * @internal
+ */
 const pdfCache: { current: PDFCache | null } = { current: null };
 
 /**

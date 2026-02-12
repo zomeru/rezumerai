@@ -7,10 +7,28 @@ import { Button } from "@rezumerai/ui";
 import { useId, useState } from "react";
 import { api } from "../lib/api";
 
-interface UserFetcherProps {
+/**
+ * Props for UserFetcher component.
+ *
+ * @property className - Optional CSS classes for container styling
+ */
+export interface UserFetcherProps {
   className?: string;
 }
 
+/**
+ * Demo component for testing Eden treaty API client with user fetching.
+ * Allows entering a user ID and fetching user data from the API.
+ * Displays loading, error, and success states.
+ *
+ * @param props - UserFetcher configuration
+ * @returns User fetching demo component
+ *
+ * @example
+ * ```tsx
+ * <UserFetcher className="mt-4" />
+ * ```
+ */
 export function UserFetcher({ className }: UserFetcherProps): React.JSX.Element {
   const [userId, setUserId] = useState<string>("1");
   const userIdInputId = useId();
@@ -76,10 +94,22 @@ export function UserFetcher({ className }: UserFetcherProps): React.JSX.Element 
   );
 }
 
+/**
+ * Props for UserCard component.
+ *
+ * @property user - User data to display
+ */
 interface UserCardProps {
   user: UserType;
 }
 
+/**
+ * Displays user information in a card layout.
+ * Shows ID, name, and email in a formatted display.
+ *
+ * @param props - UserCard configuration
+ * @returns User information card
+ */
 function UserCard({ user }: UserCardProps): React.JSX.Element {
   return (
     <div className="rounded border bg-white p-4 shadow-sm">

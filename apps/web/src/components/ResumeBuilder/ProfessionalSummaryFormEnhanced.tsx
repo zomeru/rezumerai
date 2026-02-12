@@ -2,10 +2,25 @@
 
 import RichTextEditor from "./RichTextEditor";
 
-interface ProfessionalSummaryFormEnhancedProps {
+/**
+ * Props for the ProfessionalSummaryFormEnhanced component.
+ *
+ * @property summary - Current professional summary HTML content
+ * @property onChange - Callback with updated summary HTML
+ */
+export interface ProfessionalSummaryFormEnhancedProps {
   summary: string;
   onChange: (summary: string) => void;
 }
+
+/**
+ * Professional summary form section with rich text editing.
+ * Provides a TipTap editor for composing the resume's professional summary
+ * with formatting support and a helpful tip.
+ *
+ * @param props - Form configuration with summary data and change handler
+ * @returns Professional summary form with rich text editor
+ */
 
 export default function ProfessionalSummaryFormEnhanced({
   summary,

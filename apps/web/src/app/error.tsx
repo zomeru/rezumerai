@@ -9,9 +9,7 @@ interface ErrorProps {
 }
 
 /**
- * Root-level error boundary.
- * Catches errors in app routes (below global-error.tsx in hierarchy).
- * Provides user-friendly interface with retry and navigation actions.
+ * Root-level error boundary with retry and navigation actions.
  */
 export default function RootError({ error, reset }: ErrorProps): React.JSX.Element {
   useEffect(() => {
@@ -23,7 +21,7 @@ export default function RootError({ error, reset }: ErrorProps): React.JSX.Eleme
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
         {/* Error icon */}
         <div className="mb-4 text-6xl" role="img" aria-label="Error icon">

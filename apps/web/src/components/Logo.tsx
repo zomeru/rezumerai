@@ -3,10 +3,28 @@ import Link from "next/link";
 import { LOGO_TEXT } from "@/constants";
 import { ROUTES } from "@/constants/routing";
 
-interface LogoProps {
+/**
+ * Props for Logo component.
+ *
+ * @property className - Optional Tailwind classes for logo text styling
+ */
+export interface LogoProps {
   className?: string;
 }
 
+/**
+ * Application logo component with brand text and styled period accent.
+ * Renders as a clickable link to the homepage with a decorative period.
+ *
+ * @param props - Logo configuration
+ * @returns Linked logo heading with accent period
+ *
+ * @example
+ * ```tsx
+ * <Logo />
+ * <Logo className="text-white" />
+ * ```
+ */
 export default function Logo({ className }: LogoProps): React.JSX.Element {
   return (
     <Link href={ROUTES.HOME} className="inline-block">

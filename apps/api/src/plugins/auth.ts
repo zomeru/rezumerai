@@ -15,7 +15,14 @@ import { env } from "../env";
  * Protected routes `.use(authPlugin)` to require authentication.
  */
 
-interface SessionUser {
+/**
+ * Authenticated user data extracted from NextAuth session.
+ *
+ * @property id - Unique user identifier
+ * @property email - User email address
+ * @property name - User display name (nullable)
+ */
+export interface SessionUser {
   id: string;
   email: string;
   name: string | null;

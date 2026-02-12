@@ -9,8 +9,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Homepage - Server Component by default.
- * Renders landing page sections with proper semantic structure.
+ * Home page component that renders the landing page sections including hero, features, testimonials, and call-to-action.
  */
 export default function Home(): React.JSX.Element {
   return (

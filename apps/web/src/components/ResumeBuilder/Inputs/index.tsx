@@ -1,3 +1,4 @@
+/** Barrel exports for shared Resume Builder input components. */
 export { type DeleteButtonProps, default as DeleteButton } from "./DeleteButton";
 export { default as EmptyState, type EmptyStateProps } from "./EmptyState";
 export { default as FormField } from "./FormField";

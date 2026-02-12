@@ -5,10 +5,25 @@ import { useState } from "react";
 import DraggableList from "./DraggableList";
 import { EmptyState, SectionHeader } from "./Inputs";
 
-interface SkillsFormEnhancedProps {
+/**
+ * Props for the SkillsFormEnhanced component.
+ *
+ * @property skills - Array of skill name strings
+ * @property onChange - Callback with updated skills array
+ */
+export interface SkillsFormEnhancedProps {
   skills: string[];
   onChange: (skills: string[]) => void;
 }
+
+/**
+ * Enhanced skills form with autocomplete suggestions and drag-and-drop reordering.
+ * Supports adding skills via text input with Enter key, removing individual skills,
+ * and reordering via drag handles. Provides common skill suggestions based on input.
+ *
+ * @param props - Form configuration with skills data and change handler
+ * @returns Skills form with suggestions, DnD reordering, and skill tags
+ */
 
 export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhancedProps): React.JSX.Element {
   const [newSkill, setNewSkill] = useState("");

@@ -1,3 +1,21 @@
+/**
+ * Section title component with heading and description text.
+ * Used for introducing major page sections with centered, responsive typography.
+ *
+ * @param props - Section title configuration
+ * @param props.title - Main heading text
+ * @param props.description - Descriptive subtext
+ * @returns Centered section header with title and description
+ *
+ * @example
+ * ```tsx
+ * <SectionTitle
+ *   title="Our Features"
+ *   description="Discover powerful tools for building resumes"
+ * />
+ * ```
+ */
+
 interface SectionTitleProps {
   title: string;
   description: string;

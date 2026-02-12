@@ -6,6 +6,23 @@ const user = {
   name: "John Doe",
 };
 
+/**
+ * Main navigation bar component for authenticated users.
+ * Displays the application logo and user controls (greeting + logout button).
+ *
+ * Features:
+ * - Responsive layout with max-width container
+ * - Logo link to homepage
+ * - User greeting (hidden on small screens)
+ * - Logout button with hover/active states
+ *
+ * @returns Navigation bar with logo and user controls
+ *
+ * @example
+ * ```tsx
+ * <Navbar />
+ * ```
+ */
 export default function Navbar(): React.JSX.Element {
   async function onLogout(): Promise<void> {}
 

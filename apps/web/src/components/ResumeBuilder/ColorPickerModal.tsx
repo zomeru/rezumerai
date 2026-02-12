@@ -5,21 +5,43 @@ import { useEffect, useRef, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { createPortal } from "react-dom";
 
-interface ModalPosition {
+/**
+ * Position coordinates for the modal overlay.
+ *
+ * @property top - Vertical position in pixels
+ * @property left - Horizontal position in pixels
+ */
+export interface ModalPosition {
   top: number;
   left: number;
 }
 
-interface ColorPickerModalProps {
+/**
+ * Props for the ColorPickerModal component.
+ *
+ * @property selectedColor - Current hex color value
+ * @property onChange - Callback when a new color is applied
+ */
+export interface ColorPickerModalProps {
   selectedColor: string;
   onChange: (color: string) => void;
 }
 
 /**
- * Accessible color picker modal with keyboard support.
- * - Closes on Escape key
- * - Click outside to close
- * - Proper focus management
+ * Accessible color picker modal with hex input and preset colors.
+ * Supports keyboard navigation (Escape to close), click-outside-to-close,
+ * proper focus management, and portal-based rendering.
+ *
+ * @param props - Color picker configuration
+ * @returns Color picker trigger button and modal overlay
+ *
+ * @example
+ * ```tsx
+ * <ColorPickerModal
+ *   selectedColor="#3b82f6"
+ *   onChange={(color) => updateResume({ accentColor: color })}
+ * />
+ * ```
  */
 export default function ColorPickerModal({ selectedColor, onChange }: ColorPickerModalProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);

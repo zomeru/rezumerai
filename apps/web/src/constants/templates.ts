@@ -1,5 +1,20 @@
 import type { TemplateType } from "@/templates";
 
+/**
+ * Available resume template configurations.
+ * Defines metadata for all selectable resume templates.
+ *
+ * @property id - Unique template identifier matching TemplateType
+ * @property name - Display name shown in template selector
+ * @property preview - Description text explaining template style
+ *
+ * @example
+ * ```tsx
+ * {TEMPLATES.map(template => (
+ *   <TemplateCard key={template.id} {...template} />
+ * ))}
+ * ```
+ */
 export const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = [
   {
     id: "classic",

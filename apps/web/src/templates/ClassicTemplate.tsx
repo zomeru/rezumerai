@@ -4,6 +4,12 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
+/**
+ * Classic resume template with a centered header and bordered sections.
+ *
+ * @param props - {@link TemplateProps}
+ * @returns The classic-style resume layout
+ */
 const ClassicTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 text-gray-800 leading-relaxed">

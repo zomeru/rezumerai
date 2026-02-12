@@ -1,3 +1,4 @@
+// Dashboard page for managing resumes (create, edit, delete, download).
 "use client";
 
 import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";

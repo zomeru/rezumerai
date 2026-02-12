@@ -4,7 +4,18 @@ import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 
-interface BaseModalProps {
+/**
+ * Props for the {@link BaseModal} component.
+ *
+ * @property isOpen - Whether the modal is visible
+ * @property title - Modal heading text
+ * @property children - Modal body content
+ * @property onClose - Callback when the modal is dismissed
+ * @property onSubmit - Form submission handler
+ * @property submitLabel - Text for the submit button (default: "Submit")
+ * @property isLoading - Disables submit and shows loading state
+ */
+export interface BaseModalProps {
   isOpen: boolean;
   title: string;
   children: ReactNode;
@@ -16,10 +27,21 @@ interface BaseModalProps {
 
 /**
  * Accessible modal component with focus trap and keyboard support.
+ *
  * - Traps focus within modal when open
  * - Supports Escape key to close
  * - Restores focus when closed
  * - ARIA compliant
+ *
+ * @param props - {@link BaseModalProps}
+ * @returns The modal dialog or `null` when closed
+ *
+ * @example
+ * ```tsx
+ * <BaseModal isOpen={true} title="Confirm" onClose={close} onSubmit={submit}>
+ *   <p>Are you sure?</p>
+ * </BaseModal>
+ * ```
  */
 export default function BaseModal({
   isOpen,

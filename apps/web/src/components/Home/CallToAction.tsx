@@ -1,3 +1,6 @@
+/**
+ * GitHub CTA section encouraging users to star the repository.
+ */
 export default function CallToAction(): React.JSX.Element {
   return (
     <div className="mx-auto w-full max-w-5xl border-slate-200 border-y border-dashed px-10 sm:px-16" id="github">

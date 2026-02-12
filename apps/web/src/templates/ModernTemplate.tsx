@@ -4,6 +4,12 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
+/**
+ * Modern resume template with a full-width colored header and two-column contact layout.
+ *
+ * @param props - {@link TemplateProps}
+ * @returns The modern-style resume layout
+ */
 const ModernTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-4xl bg-white text-gray-800">

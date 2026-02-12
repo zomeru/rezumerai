@@ -6,8 +6,16 @@ export interface EmptyStateProps {
 }
 
 /**
- * Reusable empty state placeholder component
- * Used when a list section has no items
+ * Reusable empty state placeholder with dashed border.
+ * Displayed when a list section has no items.
+ *
+ * @param props - Empty state configuration
+ * @returns Centered placeholder message in a dashed border box
+ *
+ * @example
+ * ```tsx
+ * {items.length === 0 && <EmptyState message="No experience entries yet" />}
+ * ```
  */
 export default function EmptyState({ message }: EmptyStateProps): React.JSX.Element {
   return (

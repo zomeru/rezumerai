@@ -5,7 +5,6 @@ import { logError } from "@/lib/errors";
 
 /**
  * Global error boundary that catches errors in the root layout.
- * This is a fallback for critical errors that occur during rendering.
  */
 export default function GlobalError({
   error,

@@ -5,6 +5,12 @@ import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
+/**
+ * Minimal resume template with a profile image sidebar and three-column grid layout.
+ *
+ * @param props - {@link TemplateProps}
+ * @returns The minimal-image-style resume layout
+ */
 const MinimalImageTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-5xl bg-white text-zinc-800">

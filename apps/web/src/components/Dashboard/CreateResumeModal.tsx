@@ -4,11 +4,28 @@ import type React from "react";
 import { useState } from "react";
 import BaseModal from "./BaseModal";
 
-interface CreateResumeModalProps {
+/**
+ * Props for the {@link CreateResumeModal} component.
+ *
+ * @property onSubmit - Called with the new resume title on form submission
+ * @property onClose - Callback to close the modal
+ */
+export interface CreateResumeModalProps {
   onSubmit: (title: string) => void;
   onClose: () => void;
 }
 
+/**
+ * Modal form for creating a new resume with a title.
+ *
+ * @param props - {@link CreateResumeModalProps}
+ * @returns The create‑resume modal dialog
+ *
+ * @example
+ * ```tsx
+ * <CreateResumeModal onSubmit={(title) => create(title)} onClose={close} />
+ * ```
+ */
 export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps): React.JSX.Element {
   const [title, setTitle] = useState("");
 

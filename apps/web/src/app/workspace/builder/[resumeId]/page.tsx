@@ -1,3 +1,4 @@
+// Resume builder page with multi-step form, live preview, and PDF export.
 "use client";
 
 import { ResumeBuilderSkeleton } from "@rezumerai/ui";

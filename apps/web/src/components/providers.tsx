@@ -5,14 +5,29 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { isRetryableError, logError } from "@/lib/errors";
 
-interface ProvidersProps {
+/**
+ * Props for the Providers component.
+ *
+ * @property children - Child components to wrap with providers
+ */
+export interface ProvidersProps {
   children: ReactNode;
 }
 
 /**
  * Root providers component that wraps the application.
- * - React Query for data fetching and caching with enterprise retry logic
- * - Axe-core for development accessibility testing
+ * Configures React Query with enterprise retry logic, exponential backoff,
+ * and axe-core accessibility testing in development.
+ *
+ * @param props - Provider props containing children
+ * @returns Application wrapped with QueryClientProvider
+ *
+ * @example
+ * ```tsx
+ * <Providers>
+ *   <App />
+ * </Providers>
+ * ```
  */
 export function Providers({ children }: ProvidersProps): React.JSX.Element {
   const [queryClient] = useState(

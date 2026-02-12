@@ -23,7 +23,7 @@ export default function PreviewError({ error, reset }: ErrorProps): React.JSX.El
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
         <div className="mb-4 text-6xl">📄</div>
         <h1 className="mb-2 font-bold text-2xl text-slate-900">Preview Error</h1>

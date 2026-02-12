@@ -10,7 +10,17 @@ import type { PreviewMode } from "@/hooks/usePdfGenerator";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
 import { type FontSizeValue, getFontScale } from "./FontSizeSelector";
 
-interface ResumePreviewProps {
+/**
+ * Props for the ResumePreview component.
+ *
+ * @property data - Complete resume data to render
+ * @property template - Selected resume template identifier
+ * @property accentColor - Hex color code for template accents
+ * @property className - Optional Tailwind classes for container styling
+ * @property fontSize - Font size setting for resume text (default: "medium")
+ * @property previewMode - Current preview mode ("html" or "pdf")
+ */
+export interface ResumePreviewProps {
   data: Resume;
   template: TemplateType;
   accentColor: string;
@@ -19,12 +29,27 @@ interface ResumePreviewProps {
   previewMode: PreviewMode;
 }
 
-interface RenderTemplateProps {
+/**
+ * Props for the internal RenderTemplate component.
+ *
+ * @property template - Template identifier to render
+ * @property data - Resume data to display
+ * @property accentColor - Template accent color
+ * @property fontSize - Font size setting
+ */
+export interface RenderTemplateProps {
   template: TemplateType;
   data: Resume;
   accentColor: string;
   fontSize?: FontSizeValue;
 }
+
+/**
+ * Renders the selected resume template with font scaling.
+ *
+ * @param props - Template rendering configuration
+ * @returns Rendered template component with applied font scale
+ */
 
 function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: RenderTemplateProps): React.JSX.Element {
   const fontScale = getFontScale(fontSize);
@@ -46,6 +71,14 @@ function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: Re
   return <div style={style}>{templateContent}</div>;
 }
 
+/**
+ * Resume preview component with paginated US Letter-sized display.
+ * Renders resume templates at proper scale with page navigation controls.
+ * Supports both HTML and PDF preview modes with multi-page pagination.
+ *
+ * @param props - Preview configuration including data, template, and display settings
+ * @returns Scaled resume preview with page navigation
+ */
 const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.RefAttributes<HTMLDivElement>> =
   forwardRef<HTMLDivElement, ResumePreviewProps>(
     ({ data, template, accentColor, className, fontSize = "medium", previewMode }, ref): React.JSX.Element => {

@@ -8,6 +8,9 @@ import { Loader } from "@/components";
 import { ResumePreview } from "@/components/ResumeBuilder";
 import { dummyResumeData, type Resume } from "@/constants/dummy";
 
+/**
+ * Full-screen resume preview page for a single resume.
+ */
 export default function Preview(): React.JSX.Element {
   const { resumeId } = useParams<{
     resumeId: string;

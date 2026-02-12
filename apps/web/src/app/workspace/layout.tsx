@@ -1,5 +1,8 @@
 import { Navbar } from "@/components";
 
+/**
+ * AppLayout wraps all workspace-related pages, providing a consistent layout with a persistent Navbar.
+ */
 export default function AppLayout({
   children,
 }: Readonly<{

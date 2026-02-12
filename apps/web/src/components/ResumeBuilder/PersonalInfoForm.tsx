@@ -5,13 +5,24 @@ import Image from "next/image";
 import { useRef } from "react";
 import type { Resume } from "@/constants/dummy";
 
-type PersonalInfoFormProps = {
+/**
+ * Props for the PersonalInfoForm component.
+ *
+ * @property data - Personal information section data
+ * @property onChangeAction - Callback when any personal info field changes
+ * @property removeBackground - Whether to remove the profile image background
+ * @property setRemoveBackgroundAction - Callback to toggle background removal
+ */
+export type PersonalInfoFormProps = {
   data: Resume["personalInfo"];
   onChangeAction: (data: Resume["personalInfo"]) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean) => void;
 };
 
+/**
+ * Field configuration for personal info form inputs.
+ */
 const FIELDS: {
   key: keyof Resume["personalInfo"];
   label: string;
@@ -28,6 +39,14 @@ const FIELDS: {
   { key: "website", label: "Personal Website", icon: Globe, type: "url", required: false },
 ];
 
+/**
+ * Form for editing resume personal information section.
+ * Includes profile image upload with background removal toggle and
+ * input fields for name, email, phone, location, profession, LinkedIn, and website.
+ *
+ * @param props - Form configuration with data and change handlers
+ * @returns Personal info form with image upload and text fields
+ */
 export default function PersonalInfoForm({
   data,
   onChangeAction,

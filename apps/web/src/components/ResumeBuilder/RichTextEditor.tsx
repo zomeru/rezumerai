@@ -24,12 +24,38 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 
-interface RichTextEditorProps {
+/**
+ * Props for the RichTextEditor component.
+ *
+ * @property content - Initial HTML content string
+ * @property onChange - Callback with updated HTML when content changes
+ * @property placeholder - Placeholder text when editor is empty
+ * @property className - Optional Tailwind classes for container styling
+ */
+export interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
 }
+
+/**
+ * TipTap-powered rich text editor with formatting toolbar.
+ * Supports bold, italic, underline, strikethrough, lists, text alignment,
+ * links, color, and highlight formatting.
+ *
+ * @param props - Editor configuration
+ * @returns Rich text editor with toolbar, or null if editor fails to initialize
+ *
+ * @example
+ * ```tsx
+ * <RichTextEditor
+ *   content={description}
+ *   onChange={setDescription}
+ *   placeholder="Describe your experience..."
+ * />
+ * ```
+ */
 
 export default function RichTextEditor({
   content,
