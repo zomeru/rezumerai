@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Before anything else, ensure MCP servers are activated on this project.
+Before anything else, ensure Serena MCP server is activated on this project.
 
 - **Activate Serena** — Call `mcp_serena_activate_project` to activate Serena MCP server on this project every time before you start working.
 - **Use Context7** — Use `mcp_context7_query-docs` to get relevant documentation for project library and framework usage, ONLY if needed.
@@ -22,13 +22,13 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 
 ### Key Patterns & Structure
 
-- **Bun workspaces**: All dependency management and scripts use Bun (v1.3.8+). Never use npm, yarn, or pnpm.
+- **Bun workspaces**: All dependency management and scripts use Bun (v1.x+). Never use npm, yarn, or pnpm.
 - **TypeScript everywhere**: Types are centralized in `packages/types` and shared across all apps/packages. Prioritize type safety, readability, and maintainability.
 - **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `App` type in `apps/api/src/app.ts`. This provides end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema in `packages/database/prisma/schema.prisma`. Prisma client generated to `packages/database/generated/prisma/`. Uses client engine type.
-- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`.
-- **Linting/Formatting**: Biome 2.3.x is the only linter/formatter. Key rules: `useExplicitType: "error"`, `useSortedClasses`, `noUnusedImports: "warn"`, `noUnusedVariables: "error"`.
+- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`. **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
+- **Linting/Formatting**: Biome 2.x+ is the only linter/formatter. Key rules: `useExplicitType: "error"`, `useSortedClasses`, `noUnusedImports: "warn"`, `noUnusedVariables: "error"`.
 - **State Management**: Zustand 5.x for client-side state (`useResumeStore`, `useBuilderStore`, `useDashboardStore`).
 - **Data Fetching**: TanStack React Query 5.x via `Providers` component with `QueryClientProvider`.
 - **Dynamic Routing**: Next.js App Router uses `[resumeId]` folders under `workspace/builder/` and `preview/`.
@@ -225,7 +225,7 @@ packages/
 - Explicit return types for all functions (Biome `useExplicitType: "error"`).
 - Exception: Elysia modules/plugins use `biome-ignore lint/nursery/useExplicitType` for Eden type inference.
 
-### Formatting/Linting (Biome 2.3.x)
+### Formatting/Linting (Biome)
 
 - 120 char line width
 - Spaces for indentation (2 spaces)
@@ -276,9 +276,11 @@ packages/
 - Vitest 4.x with globals enabled
 - React Testing Library + jsdom for component tests
 - Shared configs via `packages/vitest-config` (`createReactConfig`, `createNodeConfig`)
-- Test files alongside components or in `src/test`
+- **Test Co-location**: Tests live in `__tests__` folders next to components: `components/ComponentName.tsx` → `components/__tests__/ComponentName.test.tsx`
+- Use relative imports (`../ComponentName`) in test files
 - Coverage via `@vitest/coverage-v8`
 - Path alias `@/` resolves to `./src`
+- Aim for 100% coverage on new components
 
 ### Styling
 
@@ -307,7 +309,9 @@ packages/
 
 - **Prisma 7.x**: Schema-first approach with client engine
 - **PostgreSQL 18**: Running via Docker (port 5432)
+- **PrismaPg adapter**: Uses `@prisma/adapter-pg` with native pg driver
 - Generated client output: `packages/database/generated/prisma/`
+- Singleton pattern: global reference survives hot reloads in dev
 - Run migrations via `packages/database/scripts/migrate-dev.sh`
 - Use Prisma Client types in application code
 - Table mapping uses `@@map("snake_case")` convention
@@ -334,16 +338,16 @@ When assisting with this codebase:
 5. **Consider UI/UX implications** when working on frontend features
 6. **Recommend best practices** for maintainability and scalability
 7. **Flag potential issues** with type safety, performance, or accessibility
-8. **Suggest modern patterns** using React 19, Next.js 16+, and TypeScript 5.9+ features
+8. **Suggest modern patterns** using React 19, Next.js 16+, and latest TypeScript features
 9. **Use Biome-compatible style** — double quotes, 120 char width, sorted Tailwind classes
 
 ## Technology Stack Summary
 
 | Category       | Technology                                                |
 | -------------- | --------------------------------------------------------- |
-| Frontend       | Next.js 16+, React 19, React Compiler, TypeScript 5.9+   |
+| Frontend       | Next.js 16+, React 19, React Compiler, TypeScript 5.x+   |
 | Styling        | Tailwind CSS 4.x (PostCSS)                               |
-| Backend        | Elysia 1.3+, Bun 1.3.8+, TypeScript                     |
+| Backend        | Elysia 1.x+, Bun 1.x+, TypeScript                       |
 | Database       | PostgreSQL 18 with Prisma 7.x ORM                        |
 | State          | Zustand 5.x                                              |
 | Data Fetching  | TanStack React Query 5.x, Eden (Elysia type-safe client) |
@@ -352,15 +356,40 @@ When assisting with this codebase:
 | Drag & Drop    | @dnd-kit/core + @dnd-kit/sortable                        |
 | Testing        | Vitest 4.x, React Testing Library                        |
 | Build          | Turborepo, Turbopack, Bun                                |
-| Code Quality   | Biome 2.3.x                                              |
+| Code Quality   | Biome 2.x+                                               |
 | Git Hooks      | Husky + lint-staged                                      |
 | Containerization | Docker, docker-compose                                 |
+
+## MEMORY — Follow these steps for each interaction:
+
+1. Memory Scope:
+   - Memory is limited to project-relevant, non-identifying context only
+   - Store only: coding preferences, project settings, tool choices, workflow patterns
+   - Never store personal identifying information (PII)
+
+2. Memory Retrieval:
+   - Always begin your chat by saying only "Remembering..."
+   - Retrieve relevant project context when needed for the current task
+   - Do not reference personal information about the user
+
+3. Project Context Storage:
+   - Coding style preferences (naming conventions, patterns)
+   - Frequently used tools and commands
+   - Project-specific decisions and conventions
+   - Workflow optimizations
+
+4. Privacy Guidelines:
+   - Do not collect, store, or reference: age, gender, location, job title, personal relationships
+   - Do not create entities for people or personal events
+   - Memory must comply with repository privacy guidelines
+   - Focus exclusively on technical project context
 
 ## Output Rules
 
 - Be concise. Short answers unless detail is requested.
 - No verbose explanations, summaries, or recaps unless asked.
 - Show code changes, not descriptions of what you'll change.
+- Do not ever create documentation files (.md, .txt, .json, etc.) without explicit user request.
 
 ---
 

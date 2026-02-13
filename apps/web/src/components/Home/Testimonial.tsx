@@ -70,6 +70,9 @@ const bottomCardsData: Array<CardData[][number] & { id: string }> = [...cards].r
   { ...card, id: `${card.id}-bottom-2` },
 ]);
 
+/**
+ * How it works" marquee section showing Rezumer workflows.
+ */
 export default function Testimonial(): React.JSX.Element {
   return (
     <>

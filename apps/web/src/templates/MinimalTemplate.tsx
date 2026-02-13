@@ -1,8 +1,14 @@
+import { generateUuidKey } from "@rezumerai/utils";
 import { formatShortDate } from "@rezumerai/utils/date";
-import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
+/**
+ * Minimal resume template with clean typography and subtle accent lines.
+ *
+ * @param props - {@link TemplateProps}
+ * @returns The minimal-style resume layout
+ */
 const MinimalTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">

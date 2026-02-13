@@ -1,3 +1,4 @@
+// Barrel exports for Home page components.
 export { default as CallToAction } from "./CallToAction";
 export { default as Feature } from "./Feature";
 export { default as Footer } from "./Footer";

@@ -1,4 +1,5 @@
 // biome-ignore-all lint: This is a sample component for testing purposes, not production code
+// Sample component demonstrating Eden API client usage with health check and user CRUD.
 
 "use client";
 

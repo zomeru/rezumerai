@@ -22,6 +22,9 @@ const menuItems: MenuItem[] = [
 const SAMPLE_PREVIEW_RESUME_ID = "68d2a31a1c4dd38875bb037e";
 const samplePreviewHref = `${ROUTES.PREVIEW}/${SAMPLE_PREVIEW_RESUME_ID}`;
 
+/**
+ * Hero section of the homepage, featuring the main headline, navigation bar, and call-to-action buttons.
+ */
 export default function Hero(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   return (

@@ -1,3 +1,4 @@
+/** Barrel exports for Dashboard components. */
 export { default as ActionButtons } from "./ActionButtons";
 export { default as CreateResumeModal } from "./CreateResumeModal";
 export { default as DownloadResumeModal } from "./DownloadResumeModal";

@@ -15,8 +15,22 @@ export interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 }
 
 /**
- * Reusable text input component with consistent styling
- * Used across form components in the Resume Builder
+ * Reusable text input component with label and consistent styling.
+ * Used across form components in the Resume Builder.
+ *
+ * @param props - Input configuration extending native HTML input attributes
+ * @returns Styled input with optional label
+ *
+ * @example
+ * ```tsx
+ * <TextInput
+ *   label="Company"
+ *   required
+ *   value={company}
+ *   onValueChange={setCompany}
+ *   placeholder="Enter company name"
+ * />
+ * ```
  */
 export default function TextInput({
   label,

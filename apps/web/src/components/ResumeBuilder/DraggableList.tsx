@@ -20,10 +20,24 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { ReactNode } from "react";
 
+/**
+ * Props for the internal SortableItem wrapper.
+ *
+ * @property id - Unique identifier for the sortable item
+ * @property children - Content to render inside the sortable wrapper
+ */
 interface SortableItemProps {
   id: string;
   children: ReactNode;
 }
+
+/**
+ * Internal wrapper that makes a child element sortable via drag handle.
+ *
+ * @param props - Sortable item configuration
+ * @returns Draggable item with grip handle
+ * @internal
+ */
 
 function SortableItem({ id, children }: SortableItemProps): React.JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -44,12 +58,40 @@ function SortableItem({ id, children }: SortableItemProps): React.JSX.Element {
   );
 }
 
-interface DraggableListProps<T> {
+/**
+ * Props for the DraggableList component.
+ *
+ * @template T - Type of items in the list
+ * @property items - Array of items to render and reorder
+ * @property onReorder - Callback with reordered items after drag-and-drop
+ * @property renderItem - Render function for each list item
+ * @property getItemId - Function to extract unique ID from each item
+ */
+export interface DraggableListProps<T> {
   items: T[];
   onReorder: (items: T[]) => void;
   renderItem: (item: T, index: number) => ReactNode;
   getItemId: (item: T) => string;
 }
+
+/**
+ * Generic drag-and-drop reorderable list component.
+ * Uses @dnd-kit for accessible keyboard and pointer-based sorting.
+ *
+ * @template T - Type of items in the list
+ * @param props - List configuration with items and callbacks
+ * @returns Sortable list with drag handles
+ *
+ * @example
+ * ```tsx
+ * <DraggableList
+ *   items={experiences}
+ *   onReorder={setExperiences}
+ *   getItemId={(item) => item._id}
+ *   renderItem={(item, index) => <ExperienceCard {...item} />}
+ * />
+ * ```
+ */
 
 export default function DraggableList<T>({
   items,

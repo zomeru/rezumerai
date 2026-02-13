@@ -6,14 +6,32 @@ import { ResumePreview } from "@/components/ResumeBuilder";
 import type { Resume } from "@/constants/dummy";
 import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
 
-interface DownloadResumeModalProps {
+/**
+ * Props for the {@link DownloadResumeModal} component.
+ *
+ * @property resume - The resume data to render and download
+ * @property isOpen - Whether the download modal is visible
+ * @property onClose - Callback to close the modal after download completes
+ */
+export interface DownloadResumeModalProps {
   resume: Resume;
   isOpen: boolean;
   onClose: () => void;
 }
 
 /**
- * Modal component that renders a resume in a hidden container and generates a PDF for download
+ * Modal that renders a resume in a hidden container and generates a PDF for download.
+ *
+ * Automatically starts PDF generation when opened and triggers a browser download
+ * on success. Displays progress, success, and error states.
+ *
+ * @param props - {@link DownloadResumeModalProps}
+ * @returns The download modal or `null` when closed
+ *
+ * @example
+ * ```tsx
+ * <DownloadResumeModal resume={resume} isOpen={showDownload} onClose={close} />
+ * ```
  */
 export default function DownloadResumeModal({
   resume,

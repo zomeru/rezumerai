@@ -7,10 +7,8 @@ export default defineConfig({
     string: "src/string.ts",
     date: "src/date.ts",
   },
-  format: ["cjs", "esm"],
-  dts: {
-    resolve: true,
-  },
+  format: ["esm"],
+  dts: process.env.NODE_ENV === "development" ? { resolve: true } : false,
   splitting: false,
   sourcemap: true,
   clean: true,

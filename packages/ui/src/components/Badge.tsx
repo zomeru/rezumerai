@@ -1,5 +1,21 @@
 import { cn } from "@rezumerai/utils/styles";
 
+/**
+ * Badge component with lightning bolt icon for highlighting features, status, or categories.
+ *
+ * @param props - Badge configuration
+ * @param props.title - Text displayed in the badge
+ * @param props.style - Optional Tailwind classes for badge container styling
+ * @param props.svgStyle - Optional Tailwind classes for SVG icon stroke color
+ * @returns Badge component with icon and text
+ *
+ * @example
+ * ```tsx
+ * <Badge title="Featured" />
+ * <Badge title="New" style="bg-blue-100" svgStyle="stroke-blue-700" />
+ * ```
+ */
+
 interface BadgeProps {
   title: string;
   style?: string;

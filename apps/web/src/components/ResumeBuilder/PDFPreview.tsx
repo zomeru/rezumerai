@@ -3,25 +3,45 @@
 import { ChevronLeft, ChevronRight, Loader2, Maximize, Minimize, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import "./pdf-viewer.css";
+import "./PDFPreview.css";
 
+export type PdfPreviewFitMode = "width" | "page" | "custom";
+/**
+ * Props for the PDFPreview component.
+ *
+ * @property pdfBlob - PDF blob to display (null while loading)
+ * @property isGenerating - Whether the PDF is currently being generated
+ */
 export interface PDFPreviewProps {
   pdfBlob: Blob | null;
   isGenerating?: boolean;
 }
+
+/**
+ * Interactive PDF viewer with zoom, pagination, and fit mode controls.
+ * Renders PDF blobs using react-pdf with configurable zoom and navigation.
+ *
+ * @param props - PDF preview configuration
+ * @returns PDF viewer with toolbar controls
+ *
+ * @example
+ * ```tsx
+ * <PDFPreview pdfBlob={generatedPdf} isGenerating={isLoading} />
+ * ```
+ */
 
 export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreviewProps): React.JSX.Element {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [fitMode, setFitMode] = useState<"width" | "page" | "custom">("width");
+  const [fitMode, setFitMode] = useState<PdfPreviewFitMode>("width");
   const [error, setError] = useState<string | null>(null);
 
   // Configure pdf.js worker on mount (client-side only)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf-worker/pdf.worker.min.mjs";
     }
   }, []);
 
@@ -75,7 +95,7 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
 
   if (isGenerating) {
     return (
-      <div className="flex min-h-[800px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+      <div className="flex min-h-200 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary-500" />
           <p className="text-slate-600 text-sm">Generating PDF preview...</p>
@@ -86,7 +106,7 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
 
   if (!pdfUrl) {
     return (
-      <div className="flex min-h-[800px] flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50">
+      <div className="flex min-h-200 flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50">
         {error ? (
           <>
             <p className="text-red-500 text-sm">{error}</p>
@@ -118,7 +138,7 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
           >
             <ZoomOut className="size-4" />
           </button>
-          <span className="min-w-[45px] text-center font-medium text-slate-600 text-xs sm:min-w-[55px] sm:text-sm">
+          <span className="min-w-11.25 text-center font-medium text-slate-600 text-xs sm:min-w-13.75 sm:text-sm">
             {Math.round(scale * 100)}%
           </span>
           <button

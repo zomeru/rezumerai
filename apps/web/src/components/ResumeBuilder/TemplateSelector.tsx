@@ -7,10 +7,32 @@ import { TEMPLATES } from "@/constants/templates";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import type { TemplateType } from "@/templates";
 
-interface TemplateSelectorProps {
+/**
+ * Props for the TemplateSelector component.
+ *
+ * @property selectedTemplate - Currently active template identifier
+ * @property onChange - Callback when a new template is selected
+ */
+export interface TemplateSelectorProps {
   selectedTemplate: TemplateType;
   onChange: (template: TemplateType) => void;
 }
+
+/**
+ * Dropdown template selector for choosing resume layout styles.
+ * Displays template names with preview descriptions and checkmark for active selection.
+ *
+ * @param props - Template selector configuration
+ * @returns Template selection dropdown button
+ *
+ * @example
+ * ```tsx
+ * <TemplateSelector
+ *   selectedTemplate="modern"
+ *   onChange={(template) => updateResume({ template })}
+ * />
+ * ```
+ */
 
 export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);

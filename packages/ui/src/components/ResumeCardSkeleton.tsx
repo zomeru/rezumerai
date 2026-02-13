@@ -27,11 +27,28 @@ export default function ResumeCardSkeleton(): React.JSX.Element {
   );
 }
 
+/**
+ * Props for ResumeCardSkeletonGrid component.
+ *
+ * @property count - Number of skeleton cards to render (default: 5)
+ */
 interface ResumeCardSkeletonGridProps {
   count?: number;
 }
 
-/** Renders a grid of ResumeCardSkeleton placeholders */
+/**
+ * Renders a responsive grid of ResumeCardSkeleton placeholders.
+ * Grid adapts from 2 columns on mobile to 5 columns on extra-large screens.
+ *
+ * @param props - Grid configuration
+ * @returns Grid layout of skeleton cards
+ *
+ * @example
+ * ```tsx
+ * <ResumeCardSkeletonGrid count={8} />
+ * <ResumeCardSkeletonGrid /> // defaults to 5 cards
+ * ```
+ */
 export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProps): React.JSX.Element {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -43,11 +60,28 @@ export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProp
   );
 }
 
+/**
+ * Props for ResumeCardSkeletonList component.
+ *
+ * @property count - Number of skeleton cards to render (default: 5)
+ */
 interface ResumeCardSkeletonListProps {
   count?: number;
 }
 
-/** Renders a list of skeleton rows for list view mode */
+/**
+ * Renders a vertical list of ResumeCardSkeleton placeholders.
+ * Optimized for list view mode with vertical spacing.
+ *
+ * @param props - List configuration
+ * @returns Vertical list of skeleton cards
+ *
+ * @example
+ * ```tsx
+ * <ResumeCardSkeletonList count={3} />
+ * <ResumeCardSkeletonList /> // defaults to 5 cards
+ * ```
+ */
 export function ResumeCardSkeletonList({ count = 5 }: ResumeCardSkeletonListProps): React.JSX.Element {
   return (
     <div className="space-y-3">

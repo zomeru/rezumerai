@@ -52,6 +52,18 @@ pnpm-lock.yaml
 *.tsbuildinfo
 next-env.d.ts
 
+# TypeScript compilation artifacts (should only be in dist/build folders)
+apps/*/src/**/*.js
+apps/*/src/**/*.jsx
+apps/*/src/**/*.d.ts
+apps/*/src/**/*.d.ts.map
+packages/*/src/**/*.js
+packages/*/src/**/*.jsx
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+!*.config.js
+!*.config.mjs
+
 /test-results/
 /playwright-report/
 /playwright/.cache/
@@ -62,3 +74,4 @@ next-env.d.ts
 .playwright-mcp
 tsup.config.bundled*
 .agent-files/feature-requests
+.claude

@@ -17,16 +17,33 @@ const mockUsers: User[] = [
 export class UserService {
   constructor(readonly db: PrismaClient) {}
 
+  /**
+   * Retrieves all users.
+   *
+   * @returns Array of all user records
+   */
   async findAll(): Promise<User[]> {
     // TODO: return this.db.user.findMany();
     return mockUsers;
   }
 
+  /**
+   * Finds a user by their unique identifier.
+   *
+   * @param id - User ID to look up
+   * @returns User record if found, null otherwise
+   */
   async findById(id: string): Promise<User | null> {
     // TODO: return this.db.user.findUnique({ where: { id } });
     return mockUsers.find((u): u is User => u.id === id) ?? null;
   }
 
+  /**
+   * Creates a new user with the provided input data.
+   *
+   * @param input - User creation data (name, email)
+   * @returns Newly created user record
+   */
   async create(input: CreateUserInput): Promise<User> {
     // TODO: return this.db.user.create({ data: input });
     const newUser: User = {

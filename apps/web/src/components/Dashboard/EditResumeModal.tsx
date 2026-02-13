@@ -3,12 +3,30 @@
 import { useEffect, useState } from "react";
 import BaseModal from "./BaseModal";
 
-interface EditResumeModalProps {
+/**
+ * Props for the {@link EditResumeModal} component.
+ *
+ * @property title - Current resume title (pre‑filled in the input)
+ * @property onSubmit - Called with the updated title on form submission
+ * @property onClose - Callback to close the modal
+ */
+export interface EditResumeModalProps {
   title: string;
   onSubmit: (newTitle: string) => void;
   onClose: () => void;
 }
 
+/**
+ * Modal form for editing an existing resume title.
+ *
+ * @param props - {@link EditResumeModalProps}
+ * @returns The edit‑resume modal dialog
+ *
+ * @example
+ * ```tsx
+ * <EditResumeModal title="My Resume" onSubmit={update} onClose={close} />
+ * ```
+ */
 export default function EditResumeModal({
   title: initialTitle,
   onSubmit,

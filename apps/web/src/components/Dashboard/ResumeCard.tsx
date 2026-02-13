@@ -1,11 +1,21 @@
 "use client";
 
+import { onKeyDown } from "@rezumerai/utils";
 import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import type { Resume } from "@/constants/dummy";
-import { onKeyDown } from "@/lib/utils";
 
-interface ResumeCardProps {
+/**
+ * Props for the {@link ResumeCard} component.
+ *
+ * @property resume - Resume data to display
+ * @property color - Accent color for the card gradient and icon
+ * @property onOpen - Callback when the card is clicked to open the resume
+ * @property onEdit - Callback to edit the resume title
+ * @property onDelete - Callback to delete the resume
+ * @property onDownload - Optional async callback to download the resume as PDF
+ */
+export interface ResumeCardProps {
   resume: Resume;
   color: string;
   onOpen: () => void;
@@ -14,6 +24,24 @@ interface ResumeCardProps {
   onDownload?: () => Promise<void>;
 }
 
+/**
+ * Interactive card displaying a resume summary with edit, delete, and download actions.
+ *
+ * @param props - {@link ResumeCardProps}
+ * @returns A clickable resume card with hover‑revealed action buttons
+ *
+ * @example
+ * ```tsx
+ * <ResumeCard
+ *   resume={resume}
+ *   color="#6366f1"
+ *   onOpen={() => navigate(id)}
+ *   onEdit={() => openEdit(id)}
+ *   onDelete={() => remove(id)}
+ *   onDownload={() => downloadPdf(id)}
+ * />
+ * ```
+ */
 export default function ResumeCard({
   resume,
   color,

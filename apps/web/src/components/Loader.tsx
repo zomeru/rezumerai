@@ -1,3 +1,14 @@
+/**
+ * Full-screen loading spinner component.
+ * Displays a centered spinning circle indicator while content loads.
+ *
+ * @returns Centered spinner overlay
+ *
+ * @example
+ * ```tsx
+ * if (isLoading) return <Loader />;
+ * ```
+ */
 export default function Loader(): React.JSX.Element {
   return (
     <div className="flex h-screen items-center justify-center">

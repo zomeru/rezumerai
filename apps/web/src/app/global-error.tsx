@@ -1,16 +1,28 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { logError } from "@/lib/errors";
+
 /**
  * Global error boundary that catches errors in the root layout.
- * This is a fallback for critical errors that occur during rendering.
  */
 export default function GlobalError({
-  error: _error,
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }): React.JSX.Element {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Log critical error with maximum severity
+    logError(error, "fatal", {
+      component: "GlobalErrorBoundary",
+      route: pathname,
+    });
+  }, [error, pathname]);
   return (
     <html lang="en">
       <body>

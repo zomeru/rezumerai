@@ -1,3 +1,4 @@
+/** Barrel exports for Resume Builder components, types, and utilities. */
 export type { FontSizePreset } from "@/constants/dummy";
 export { default as ColorPickerModal } from "./ColorPickerModal";
 export { default as DatePicker } from "./DatePicker";

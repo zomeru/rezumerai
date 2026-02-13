@@ -1,16 +1,31 @@
 "use client";
 
+import { generateUuidKey } from "@rezumerai/utils";
 import { useState } from "react";
 import type { Project } from "@/constants/dummy";
-import { generateUuidKey } from "@/lib/utils";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
 
-interface ProjectFormEnhancedProps {
+/**
+ * Props for the ProjectFormEnhanced component.
+ *
+ * @property project - Array of project entries
+ * @property onChange - Callback with updated project array
+ */
+export interface ProjectFormEnhancedProps {
   project: Project[];
   onChange: (project: Project[]) => void;
 }
+
+/**
+ * Enhanced project portfolio form with drag-and-drop reordering.
+ * Supports adding, removing, and editing project entries with
+ * accordion expand/collapse and rich text descriptions.
+ *
+ * @param props - Form configuration with project data and change handler
+ * @returns Project form with DnD reordering and accordion entries
+ */
 
 export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEnhancedProps): React.JSX.Element {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);

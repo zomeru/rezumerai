@@ -12,8 +12,16 @@ export interface DeleteButtonProps {
 }
 
 /**
- * Reusable delete button component with keyboard accessibility
- * Used in list items to remove entries
+ * Reusable delete button with trash icon and keyboard accessibility.
+ * Renders as a span with role="button" to safely nest inside button parents.
+ *
+ * @param props - Delete button configuration
+ * @returns Accessible delete trigger with hover/focus styling
+ *
+ * @example
+ * ```tsx
+ * <DeleteButton onDelete={() => handleRemove(index)} ariaLabel="Remove experience" />
+ * ```
  */
 export default function DeleteButton({
   onDelete,

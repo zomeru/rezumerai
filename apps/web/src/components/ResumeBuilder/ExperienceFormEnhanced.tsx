@@ -1,18 +1,33 @@
 "use client";
 
+import { generateUuidKey } from "@rezumerai/utils";
 import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Experience } from "@/constants/dummy";
-import { generateUuidKey } from "@/lib/utils";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
 
-interface ExperienceFormEnhancedProps {
+/**
+ * Props for the ExperienceFormEnhanced component.
+ *
+ * @property experience - Array of work experience entries
+ * @property onChange - Callback with updated experience array
+ */
+export interface ExperienceFormEnhancedProps {
   experience: Experience[];
   onChange: (experience: Experience[]) => void;
 }
+
+/**
+ * Enhanced work experience form with drag-and-drop reordering.
+ * Supports adding, removing, and editing experience entries with
+ * accordion expand/collapse, date pickers, and rich text descriptions.
+ *
+ * @param props - Form configuration with experience data and change handler
+ * @returns Experience form with DnD reordering and accordion entries
+ */
 
 export default function ExperienceFormEnhanced({
   experience,

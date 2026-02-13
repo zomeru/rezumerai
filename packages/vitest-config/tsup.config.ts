@@ -8,9 +8,7 @@ export default defineConfig({
     react: "src/react.ts",
   },
   format: ["cjs", "esm"],
-  dts: {
-    resolve: true,
-  },
+  dts: process.env.NODE_ENV === "development" ? { resolve: true } : false,
   clean: true,
   target: "esnext",
   tsconfig: "./tsconfig.json",

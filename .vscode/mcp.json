@@ -27,10 +27,21 @@
         "CONTEXT7_API_KEY": "${input:context7}"
       }
     },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"],
       "type": "stdio"
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": ["postgres-mcp", "--access-mode=read-only"], // Read-only access for security
+      "env": {
+        "DATABASE_URI": "${input:postgres_uri}"
+      }
     }
   },
   "inputs": [
@@ -39,6 +50,12 @@
       "type": "promptString",
       "password": true,
       "description": "Enter you Context7 API key"
+    },
+    {
+      "id": "postgres_uri",
+      "type": "promptString",
+      "password": true,
+      "description": "Enter the PostgreSQL URI (e.g., postgresql://username:password@localhost:5432/dbname)"
     }
   ]
 }

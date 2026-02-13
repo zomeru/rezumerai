@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 import Logo from "../Logo";
 
+/**
+ * Footer component for the homepage, containing the logo, a brief description, and copyright information.
+ */
 export default function Footer(): React.JSX.Element {
   const year = new Date().getFullYear();
 

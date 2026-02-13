@@ -61,10 +61,8 @@ export const viewport: Viewport = {
 };
 
 /**
- * Root layout component.
- * - Sets up fonts with optimal loading
- * - Configures metadata for SEO
- * - Wraps app with providers
+ * RootLayout is the main layout component for the application.
+ * It sets up global styles, fonts, metadata, and wraps the application with necessary providers.
  */
 export default function RootLayout({
   children,

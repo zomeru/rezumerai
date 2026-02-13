@@ -2,11 +2,28 @@
 
 import { PlusIcon, UploadCloudIcon } from "lucide-react";
 
-interface ActionButtonsProps {
+/**
+ * Props for the {@link ActionButtons} component.
+ *
+ * @property onCreateClick - Callback when the "Create Resume" button is clicked
+ * @property onUploadClick - Callback when the "Upload Resume" button is clicked
+ */
+export interface ActionButtonsProps {
   onCreateClick: () => void;
   onUploadClick: () => void;
 }
 
+/**
+ * Dashboard action buttons for creating or uploading a resume.
+ *
+ * @param props - {@link ActionButtonsProps}
+ * @returns A row of dashed‑border action buttons
+ *
+ * @example
+ * ```tsx
+ * <ActionButtons onCreateClick={openCreate} onUploadClick={openUpload} />
+ * ```
+ */
 export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps): React.JSX.Element {
   return (
     <div className="flex gap-4">

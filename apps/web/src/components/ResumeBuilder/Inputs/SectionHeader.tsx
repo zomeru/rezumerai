@@ -14,8 +14,17 @@ export interface SectionHeaderProps {
 }
 
 /**
- * Reusable section header component with optional add button
- * Used at the top of form sections in the Resume Builder
+ * Reusable section header with title and optional add button.
+ * Used at the top of form sections in the Resume Builder.
+ *
+ * @param props - Section header configuration
+ * @returns Header row with title and optional add button
+ *
+ * @example
+ * ```tsx
+ * <SectionHeader title="Work Experience" onAdd={handleAddExperience} />
+ * <SectionHeader title="Skills" showAddButton={false} />
+ * ```
  */
 export default function SectionHeader({
   title,

@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["index.ts"],
   format: ["esm"],
-  dts: true, // Enable DTS generation for type exports
+  dts: process.env.NODE_ENV === "development",
   splitting: false,
   sourcemap: true,
   clean: true,

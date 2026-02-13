@@ -4,11 +4,28 @@ import { UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import BaseModal from "./BaseModal";
 
-interface UploadResumeModalProps {
+/**
+ * Props for the {@link UploadResumeModal} component.
+ *
+ * @property onSubmit - Called with the title and selected PDF file
+ * @property onClose - Callback to close the modal
+ */
+export interface UploadResumeModalProps {
   onSubmit: (title: string, file: File) => void;
   onClose: () => void;
 }
 
+/**
+ * Modal form for uploading a resume PDF with a title.
+ *
+ * @param props - {@link UploadResumeModalProps}
+ * @returns The upload‑resume modal dialog
+ *
+ * @example
+ * ```tsx
+ * <UploadResumeModal onSubmit={(title, file) => upload(title, file)} onClose={close} />
+ * ```
+ */
 export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps): React.JSX.Element {
   const inputId = useId();
   const [title, setTitle] = useState("");
