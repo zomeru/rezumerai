@@ -5,7 +5,7 @@
 import type { UserType } from "@rezumerai/types";
 import { Button } from "@rezumerai/ui";
 import { useId, useState } from "react";
-import { api } from "../lib/api";
+import { api } from "@/lib/api";
 
 /**
  * Props for UserFetcher component.

@@ -2,6 +2,7 @@
 "use client";
 
 import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
+import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useTransition } from "react";
@@ -13,7 +14,6 @@ import {
   UploadResumeModal,
 } from "@/components/Dashboard";
 import { ROUTES } from "@/constants/routing";
-import { generateUuidKey } from "@/lib/utils";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useResumeStore } from "@/store/useResumeStore";
 

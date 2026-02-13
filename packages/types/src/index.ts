@@ -1,16 +1,6 @@
 import { z } from "zod";
 
 /**
- * Basic string type alias for type consistency across the application.
- *
- * @example
- * ```ts
- * const name: StringType = "John Doe";
- * ```
- */
-export type StringType = string;
-
-/**
  * Represents a user entity in the system.
  *
  * @property id - Unique identifier for the user
@@ -26,11 +16,11 @@ export type StringType = string;
  * };
  * ```
  */
-export type UserType = {
+export interface UserType {
   id: string;
   name: string;
   email: string;
-};
+}
 
 /**
  * Represents a project entity with ownership information.
@@ -50,12 +40,12 @@ export type UserType = {
  * };
  * ```
  */
-export type ProjectType = {
+export interface ProjectType {
   id: string;
   title: string;
   description: string;
   userId: string;
-};
+}
 
 /**
  * Standardized API response wrapper for all endpoints.

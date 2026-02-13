@@ -1,6 +1,6 @@
+import { generateUuidKey } from "@rezumerai/utils";
 import { formatShortDate } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
-import { generateUuidKey } from "@/lib/utils";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 

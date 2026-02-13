@@ -24,6 +24,16 @@
       "types": "./dist/date.d.ts",
       "import": "./dist/date.mjs",
       "require": "./dist/date.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.js"
+    },
+    "./uuid": {
+      "types": "./dist/uuid.d.ts",
+      "import": "./dist/uuid.mjs",
+      "require": "./dist/uuid.js"
     }
   },
   "scripts": {
@@ -39,8 +49,10 @@
   },
   "dependencies": {
     "@rezumerai/types": "workspace:*",
+    "@types/react": "^19.0.10",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.15",

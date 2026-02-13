@@ -1,27 +1,13 @@
+import type { UserType } from "@rezumerai/types";
 import { z } from "zod";
 
 // ── User models ──────────────────────────────────────────────────────────────
 
 /**
- * Zod validation schema for user entity from database.
- * Validates complete user data returned from queries.
- *
- * @property id - Unique user identifier
- * @property name - User's full name
- * @property email - User's email address (validated format)
- */
-// biome-ignore lint/nursery/useExplicitType: Zod type inference required
-export const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.email(),
-});
-
-/**
  * User entity type from database.
- * Represents a complete user record with all fields.
+ * Alias for shared UserType from @rezumerai/types.
  */
-export type User = z.infer<typeof UserSchema>;
+export type User = UserType;
 
 /**
  * Zod validation schema for creating new users.
@@ -41,7 +27,7 @@ export type User = z.infer<typeof UserSchema>;
 // biome-ignore lint/nursery/useExplicitType: Zod type inference required
 export const CreateUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
+  email: z.email("Invalid email"),
 });
 
 /**

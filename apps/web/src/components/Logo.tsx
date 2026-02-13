@@ -1,6 +1,6 @@
 import { cn } from "@rezumerai/utils/styles";
 import Link from "next/link";
-import { LOGO_TEXT } from "@/constants";
+import { logoText } from "@/constants";
 import { ROUTES } from "@/constants/routing";
 
 /**
@@ -34,7 +34,7 @@ export default function Logo({ className }: LogoProps): React.JSX.Element {
           className,
         )}
       >
-        {LOGO_TEXT}
+        {logoText}
       </h1>
     </Link>
   );

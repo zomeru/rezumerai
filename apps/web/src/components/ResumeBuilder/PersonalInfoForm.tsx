@@ -13,12 +13,12 @@ import type { Resume } from "@/constants/dummy";
  * @property removeBackground - Whether to remove the profile image background
  * @property setRemoveBackgroundAction - Callback to toggle background removal
  */
-export type PersonalInfoFormProps = {
+export interface PersonalInfoFormProps {
   data: Resume["personalInfo"];
   onChangeAction: (data: Resume["personalInfo"]) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean) => void;
-};
+}
 
 /**
  * Field configuration for personal info form inputs.

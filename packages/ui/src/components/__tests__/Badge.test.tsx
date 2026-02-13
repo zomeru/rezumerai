@@ -29,8 +29,8 @@ describe("Badge Component", () => {
   });
 
   it("applies custom svgStyle prop to SVG path", () => {
-    render(<Badge title="Custom SVG" svgStyle="stroke-red-500" />);
-    const path = document.querySelector("path");
+    const { container } = render(<Badge title="Custom SVG" svgStyle="stroke-red-500" />);
+    const path = container.querySelector("path");
     expect(path).toHaveClass("stroke-red-500");
   });
 
@@ -94,16 +94,15 @@ describe("Badge Component", () => {
   });
 
   it("applies default stroke color to path", () => {
-    render(<Badge title="Default Stroke" />);
-    const path = document.querySelector("path");
+    const { container } = render(<Badge title="Default Stroke" />);
+    const path = container.querySelector("path");
     expect(path).toHaveClass("stroke-primary-700");
   });
 
   it("overrides default stroke color with svgStyle", () => {
-    render(<Badge title="Override" svgStyle="stroke-green-600" />);
-    const path = document.querySelector("path");
+    const { container } = render(<Badge title="Override" svgStyle="stroke-green-600" />);
+    const path = container.querySelector("path");
     expect(path).toHaveClass("stroke-green-600");
-    // svgStyle overrides default, so both classes are present due to cn() merging
   });
 
   it("combines custom style with default classes", () => {

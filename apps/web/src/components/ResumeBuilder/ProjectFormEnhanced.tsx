@@ -1,8 +1,8 @@
 "use client";
 
+import { generateUuidKey } from "@rezumerai/utils";
 import { useState } from "react";
 import type { Project } from "@/constants/dummy";
-import { generateUuidKey } from "@/lib/utils";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";

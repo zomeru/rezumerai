@@ -1,9 +1,9 @@
 "use client";
 
+import { generateUuidKey } from "@rezumerai/utils";
 import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
 import type { Education } from "@/constants/dummy";
-import { generateUuidKey } from "@/lib/utils";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";

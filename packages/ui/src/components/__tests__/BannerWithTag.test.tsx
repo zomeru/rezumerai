@@ -20,6 +20,8 @@ describe("BannerWithTag Component", () => {
     expect(banner).toHaveClass("py-2.5");
     expect(banner).toHaveClass("text-center");
     expect(banner).toHaveClass("text-green-800");
+    expect(banner).toHaveClass("font-medium");
+    expect(banner).toHaveClass("text-sm");
   });
 
   it("applies custom bannerStyle prop", () => {
@@ -55,25 +57,6 @@ describe("BannerWithTag Component", () => {
     render(<BannerWithTag tag="Test message" />);
     const badge = screen.getByText("New");
     expect(badge).toHaveClass("mr-2");
-  });
-
-  it("renders as full-width banner", () => {
-    const { container } = render(<BannerWithTag tag="Full width" />);
-    const banner = container.firstChild as HTMLElement;
-    expect(banner).toHaveClass("w-full");
-  });
-
-  it("applies text-center alignment", () => {
-    const { container } = render(<BannerWithTag tag="Centered" />);
-    const banner = container.firstChild as HTMLElement;
-    expect(banner).toHaveClass("text-center");
-  });
-
-  it("applies correct font styles", () => {
-    const { container } = render(<BannerWithTag tag="Font test" />);
-    const banner = container.firstChild as HTMLElement;
-    expect(banner).toHaveClass("font-medium");
-    expect(banner).toHaveClass("text-sm");
   });
 
   it("handles empty tag gracefully", () => {

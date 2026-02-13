@@ -8,16 +8,22 @@ import { NextResponse } from "next/server";
 export function proxy(_request: NextRequest): NextResponse {
   const response = NextResponse.next();
 
+  // Build connect-src dynamically based on environment
+  const connectSources = ["'self'", "https://api.rezumer.ai", "blob:"];
+  if (process.env.NODE_ENV !== "production") {
+    connectSources.push("http://localhost:8080");
+  }
+
   // Apply strict Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com blob:", // Added CDN for PDF.js worker and blob: for inline workers
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:", // Removed CDN origins for security; consider self-hosting PDF.js worker
     "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
     "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:8080 https://api.rezumer.ai blob:", // API endpoints + blob: for workers
+    `connect-src ${connectSources.join(" ")}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

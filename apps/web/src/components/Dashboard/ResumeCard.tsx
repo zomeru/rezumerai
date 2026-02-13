@@ -1,9 +1,9 @@
 "use client";
 
+import { onKeyDown } from "@rezumerai/utils";
 import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import type { Resume } from "@/constants/dummy";
-import { onKeyDown } from "@/lib/utils";
 
 /**
  * Props for the {@link ResumeCard} component.

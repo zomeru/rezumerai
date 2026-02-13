@@ -1,15 +1,25 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button } from "../button";
 
 describe("Button Component", () => {
+  let alertSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    alertSpy.mockRestore();
+  });
+
   it("renders correctly", () => {
     render(<Button appName="test-app">Click me</Button>);
     expect(screen.getByRole("button")).toBeInTheDocument();
     expect(screen.getByText("Click me")).toBeInTheDocument();
   });
 
-  it("handles click with appName", () => {
+  it("renders with provided appName", () => {
     render(<Button appName="my-app">Delete</Button>);
     const button = screen.getByRole("button");
     expect(button).toBeInTheDocument();
@@ -27,18 +37,15 @@ describe("Button Component", () => {
   });
 
   it("shows alert with appName when clicked", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     render(<Button appName="TestApp">Click me</Button>);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
     expect(alertSpy).toHaveBeenCalledWith("Hello from your TestApp app!");
-    alertSpy.mockRestore();
   });
 
   it("calls custom onClick handler after alert", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const mockOnClick = vi.fn();
     render(
       <Button appName="TestApp" onClick={mockOnClick}>
@@ -51,7 +58,6 @@ describe("Button Component", () => {
 
     expect(alertSpy).toHaveBeenCalled();
     expect(mockOnClick).toHaveBeenCalled();
-    alertSpy.mockRestore();
   });
 
   it("applies custom className", () => {
@@ -114,7 +120,6 @@ describe("Button Component", () => {
   });
 
   it("handles different appName values", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const { rerender } = render(<Button appName="App1">Button</Button>);
 
     fireEvent.click(screen.getByRole("button"));
@@ -123,12 +128,9 @@ describe("Button Component", () => {
     rerender(<Button appName="App2">Button</Button>);
     fireEvent.click(screen.getByRole("button"));
     expect(alertSpy).toHaveBeenCalledWith("Hello from your App2 app!");
-
-    alertSpy.mockRestore();
   });
 
   it("prevents click when disabled", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const mockOnClick = vi.fn();
 
     render(
@@ -143,8 +145,6 @@ describe("Button Component", () => {
     // Native disabled buttons don't fire click events
     expect(alertSpy).not.toHaveBeenCalled();
     expect(mockOnClick).not.toHaveBeenCalled();
-
-    alertSpy.mockRestore();
   });
 
   it("handles empty children gracefully", () => {
@@ -154,18 +154,14 @@ describe("Button Component", () => {
   });
 
   it("works without custom onClick handler", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
-
     render(<Button appName="test-app">No Custom Click</Button>);
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
     expect(alertSpy).toHaveBeenCalledWith("Hello from your test-app app!");
-    alertSpy.mockRestore();
   });
 
   it("receives click event in custom onClick handler", () => {
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const mockOnClick = vi.fn();
 
     render(
@@ -178,8 +174,8 @@ describe("Button Component", () => {
     fireEvent.click(button);
 
     expect(mockOnClick).toHaveBeenCalledTimes(1);
-    expect(mockOnClick.mock.calls[0][0]).toBeInstanceOf(Object); // Click event object
-
-    alertSpy.mockRestore();
+    const receivedEvent = mockOnClick.mock.calls[0][0];
+    expect(receivedEvent).toHaveProperty("type", "click");
+    expect(receivedEvent).toHaveProperty("target", button);
   });
 });

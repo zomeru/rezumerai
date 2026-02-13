@@ -1,5 +1,6 @@
 import Elysia from "elysia";
 import { env } from "../env";
+import type { SessionUser } from "../modules/auth/model";
 
 /**
  * Auth plugin — validates NextAuth session/JWT and injects the authenticated
@@ -14,19 +15,6 @@ import { env } from "../env";
  * Public routes should NOT use this plugin.
  * Protected routes `.use(authPlugin)` to require authentication.
  */
-
-/**
- * Authenticated user data extracted from NextAuth session.
- *
- * @property id - Unique user identifier
- * @property email - User email address
- * @property name - User display name (nullable)
- */
-export interface SessionUser {
-  id: string;
-  email: string;
-  name: string | null;
-}
 
 /**
  * Decode and verify a NextAuth JWT.
