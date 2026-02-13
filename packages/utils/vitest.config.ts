@@ -1,3 +1,3 @@
-import { createNodeConfig } from "@rezumerai/vitest-config/node";
+import { createReactConfig } from "@rezumerai/vitest-config/react";
 
-export default createNodeConfig(__dirname);
+export default createReactConfig(__dirname);
