@@ -8,6 +8,8 @@
   "scripts": {
     "predev": "turbo run build --filter=@rezumerai/database",
     "build": "turbo build",
+    "build:web": "turbo build --filter=!@rezumerai/api",
+    "build:api": "turbo build --filter=!web --filter=@rezumerai/ui",
     "build:production": "NODE_ENV=production turbo build",
     "build:packages": "turbo build --filter=./packages/*",
     "dev": "turbo dev",
