@@ -14,7 +14,8 @@
       "!!**/dist",
       "!!**/node_modules",
       "!!**/coverage",
-      "!!**/generated/prisma"
+      "!!**/generated/prisma",
+      "!!**/public"
     ]
   },
   "formatter": {

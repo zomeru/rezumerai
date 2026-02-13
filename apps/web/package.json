@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "bun run with-env next dev --turbopack",
-    "build": "bun run with-env next build --turbopack",
+    "predev": "bun scripts/download-pdf-worker.ts",
+    "prebuild": "bun scripts/download-pdf-worker.ts",
+    "dev": "bun run with-env next dev",
+    "build": "bun run with-env next build",
     "start": "next start",
     "check-types": "tsc --noEmit",
     "test": "vitest --run",
@@ -13,7 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true bun run build",
     "check": "biome check --write .",
-    "clean": "rimraf .next node_modules .turbo coverage",
+    "clean": "rimraf .next node_modules .turbo coverage tsconfig.tsbuildinfo",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "dependencies": {

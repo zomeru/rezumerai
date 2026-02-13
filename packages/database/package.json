@@ -11,7 +11,7 @@
     "dist/**"
   ],
   "scripts": {
-    "dev": "bash ./scripts/migrate-dev.sh && bun run watch",
+    "dev": "bash ./scripts/migrate-dev.sh && run with-env tsup --watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
     "build:docker": "bun run clean:generated && bun run db:generate:prod && tsup",
     "watch": "bun run db:generate && bun run with-env tsup --watch",
@@ -24,7 +24,7 @@
     "check-types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
     "clean:generated": "rimraf generated/",
-    "clean": "rimraf node_modules .turbo dist generated/",
+    "clean": "rimraf node_modules .turbo dist generated/ tsconfig.tsbuildinfo tsup.config.bundled*",
     "with-env": "dotenv -e ../../.env.local --"
   },
   "license": "ISC",

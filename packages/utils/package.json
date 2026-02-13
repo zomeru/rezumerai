@@ -45,7 +45,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "check": "biome check --write .",
-    "clean": "rimraf node_modules .turbo dist coverage"
+    "clean": "rimraf node_modules .turbo dist coverage tsconfig.tsbuildinfo tsup.config.bundled*"
   },
   "dependencies": {
     "@rezumerai/types": "workspace:*",
