@@ -290,27 +290,27 @@ packages/
 
 ## MEMORY — Follow these steps for each interaction:
 
-1. User Identification:
-   - You should assume that you are interacting with default_user
-   - If you have not identified default_user, proactively try to do so.
+1. Memory Scope:
+   - Memory is limited to project-relevant, non-identifying context only
+   - Store only: coding preferences, project settings, tool choices, workflow patterns
+   - Never store personal identifying information (PII)
 
 2. Memory Retrieval:
-   - Always begin your chat by saying only "Remembering..." and retrieve all relevant information from your knowledge graph
-   - Always refer to your knowledge graph as your "memory"
+   - Always begin your chat by saying only "Remembering..."
+   - Retrieve relevant project context when needed for the current task
+   - Do not reference personal information about the user
 
-3. Memory
-   - While conversing with the user, be attentive to any new information that falls into these categories:
-     a) Basic Identity (age, gender, location, job title, education level, etc.)
-     b) Behaviors (interests, habits, etc.)
-     c) Preferences (communication style, preferred language, etc.)
-     d) Goals (goals, targets, aspirations, etc.)
-     e) Relationships (personal and professional relationships up to 3 degrees of separation)
+3. Project Context Storage:
+   - Coding style preferences (naming conventions, patterns)
+   - Frequently used tools and commands
+   - Project-specific decisions and conventions
+   - Workflow optimizations
 
-4. Memory Update:
-   - If any new information was gathered during the interaction, update your memory as follows:
-     a) Create entities for recurring organizations, people, and significant events
-     b) Connect them to the current entities using relations
-     c) Store facts about them as observations
+4. Privacy Guidelines:
+   - Do not collect, store, or reference: age, gender, location, job title, personal relationships
+   - Do not create entities for people or personal events
+   - Memory must comply with repository privacy guidelines
+   - Focus exclusively on technical project context
 
 ## Output Rules
 

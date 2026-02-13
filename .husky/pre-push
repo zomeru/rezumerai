@@ -58,8 +58,7 @@ TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check --affected $TURBO_FLAG
 TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check-types --affected $TURBO_FLAGS
 
 echo "🧪 Running tests..."
-# TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
-bun run test:workspace
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
 
 echo "🏗️ Running builds..."
 TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run build --affected --cache=local:rw,remote:r

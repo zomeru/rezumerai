@@ -38,7 +38,7 @@
     },
     "postgres": {
       "command": "uvx",
-      "args": ["postgres-mcp", "--access-mode=unrestricted"],
+      "args": ["postgres-mcp", "--access-mode=unrestricted"], // Allow unrestricted access for development purposes
       "env": {
         "DATABASE_URI": "${input:postgres_uri}"
       }

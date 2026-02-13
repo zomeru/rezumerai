@@ -1,4 +1,4 @@
-import { defineConfig, mergeConfig } from "vitest/config";
+import { defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config";
 import { createBaseConfig } from "./base";
 
 /**
@@ -15,7 +15,7 @@ import { createBaseConfig } from "./base";
  * export default defineConfig(createReactConfig(__dirname));
  * ```
  */
-export const createReactConfig = (dirname: string): Record<string, unknown> =>
+export const createReactConfig = (dirname: string): ViteUserConfig =>
   mergeConfig(
     createBaseConfig(dirname),
     defineConfig({
@@ -38,4 +38,4 @@ export const createReactConfig = (dirname: string): Record<string, unknown> =>
  * Pre-built React Vitest configuration using the current directory.
  * Import directly when no custom dirname is needed.
  */
-export const reactConfig: ReturnType<typeof defineConfig> = defineConfig(createReactConfig(__dirname));
+export const reactConfig: ViteUserConfig = createReactConfig(__dirname);
