@@ -4,21 +4,27 @@ A fullstack TypeScript monorepo for building AI-powered resume tools, managed wi
 
 ## Prerequisites
 
-- [Bun](https://bun.sh/) (v1.3.8+)
+- [Bun](https://bun.sh/) (v1.x+)
 - [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) (for containerized development)
 
 ## Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Frontend | Next.js 16+, React 19, TypeScript, Tailwind CSS 4.x |
-| Backend | Elysia, Bun, TypeScript |
-| Database | PostgreSQL with Prisma 7.x ORM |
-| State | Zustand |
-| API | Eden for end-to-end type safety |
-| Testing | Vitest 4.x, React Testing Library |
-| Build | Turborepo, Bun |
-| Code Quality | Biome |
+| Category       | Technology                                                |
+| -------------- | --------------------------------------------------------- |
+| Frontend       | Next.js 16+, React 19, React Compiler, TypeScript 5.x+   |
+| Styling        | Tailwind CSS 4.x (PostCSS)                               |
+| Backend        | Elysia 1.x+, Bun 1.x+, TypeScript                       |
+| Database       | PostgreSQL 18 with Prisma 7.x ORM                        |
+| State          | Zustand 5.x                                              |
+| Data Fetching  | TanStack React Query 5.x, Eden (Elysia type-safe client) |
+| Rich Text      | TipTap 3.x                                               |
+| PDF            | @react-pdf/renderer, jspdf, html2canvas-pro               |
+| Drag & Drop    | @dnd-kit/core + @dnd-kit/sortable                        |
+| Testing        | Vitest 4.x, React Testing Library                        |
+| Build          | Turborepo, Turbopack, Bun                                |
+| Code Quality   | Biome 2.x+                                               |
+| Git Hooks      | Husky + lint-staged                                      |
+| Containerization | Docker, docker-compose                                 |
 
 ## Quick Start
 
@@ -40,11 +46,11 @@ bun install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` to set your database, Redis, and other secrets.
+Edit `.env.local` to set your database and other secrets.
 
 ### 4. Database Setup
 
-Start PostgreSQL and Redis:
+Start PostgreSQL:
 
 ```sh
 bun run docker:db
@@ -109,7 +115,6 @@ docker compose up --build
 | Web app | http://localhost:3000 |
 | API | http://localhost:8080 |
 | PostgreSQL | localhost:5432 |
-| Redis | localhost:6379 |
 | Prisma Studio | http://localhost:5556 |
 
 ### Stopping Services
@@ -125,45 +130,53 @@ rezumerai/
 ├── apps/
 │   ├── web/                          # Next.js 16+ frontend
 │   │   └── src/
-│   │       ├── app/                  # Next.js App Router
-│   │       ├── components/           # React components
-│   │       ├── hooks/                # Custom React hooks
-│   │       ├── lib/                  # Library utilities
-│   │       ├── store/                # Zustand state stores
-│   │       ├── templates/            # Resume templates
-│   │       └── constants/            # App constants
+│   │       ├── app/                  # Next.js App Router (pages, layouts, error boundaries)
+│   │       ├── components/           # React components (Home, Dashboard, ResumeBuilder)
+│   │       ├── hooks/                # Custom hooks (useClickOutside, useFocusTrap, usePdfGenerator)
+│   │       ├── lib/                  # Utilities (api, api-client, errors, retry, pdfUtils)
+│   │       ├── store/                # Zustand stores (useResumeStore, useBuilderStore, useDashboardStore)
+│   │       ├── templates/            # Resume templates (Classic, Modern, Minimal, MinimalImage)
+│   │       ├── constants/            # App constants (routing, dummy data, PDF, templates)
+│   │       ├── env.ts                # Zod-validated environment variables
+│   │       └── proxy.ts              # Security middleware (CSP, HSTS)
 │   │
 │   └── api/                          # Elysia API (Bun-native)
 │       └── src/
-│           ├── app.ts                # Elysia app (single source of truth)
+│           ├── app.ts                # Elysia app (exports App type for Eden)
 │           ├── server.ts             # Bun server entrypoint
-│           ├── env.ts                # Typed env (Zod)
+│           ├── env.ts                # Zod-validated env (API_PORT, DATABASE_URL, etc.)
 │           ├── modules/              # Feature modules (auth, user)
 │           └── plugins/              # Plugins (prisma, auth, logger, error)
 │
 ├── packages/
-│   ├── database/                     # Prisma 7.x ORM
-│   │   └── prisma/schema.prisma      # Database schema
-│   ├── types/                        # Shared TypeScript types
-│   ├── ui/                           # Shared UI components
-│   ├── utils/                        # Shared utility functions
-│   ├── vitest-config/                # Shared Vitest configuration
+│   ├── database/                     # Prisma 7.x ORM (PrismaPg adapter)
+│   │   ├── prisma/schema.prisma      # Database schema
+│   │   ├── generated/prisma/          # Generated Prisma client
+│   │   └── index.ts                  # Prisma singleton export
+│   ├── types/                        # Shared TypeScript types & Zod schemas
+│   ├── ui/                           # Shared UI components (shadcn/ui based)
+│   ├── utils/                        # Shared utilities (date, string, styles/cn)
+│   ├── vitest-config/                # Shared Vitest configuration (base, react, node)
 │   └── tsconfig/                     # Shared TypeScript configs
 │
-├── biome.json                        # Biome config
+├── biome.json                        # Biome linter/formatter config
 ├── turbo.json                        # Turborepo config
-├── docker-compose.yml                # Docker orchestration
-└── package.json                      # Root package.json
+├── docker-compose.yml                # Docker orchestration (PostgreSQL, web, api)
+└── package.json                      # Root package.json (Bun workspaces)
 ```
 
 ## Development Guidelines
 
-- **Package Manager**: Always use Bun (`bun install`, `bun run`, etc.)
-- **Code Style**: Biome handles all linting and formatting
-- **Type Safety**: TypeScript strict mode is enabled everywhere
-- **Testing**: Write tests alongside your code using Vitest
-- **State Management**: Use Zustand for client-side state
-- **API**: Use Eden for type-safe API consumption (types inferred from Elysia)
+- **Package Manager**: Always use Bun (`bun install`, `bun run`, etc.) — never npm, yarn, or pnpm
+- **Code Style**: Biome handles all linting and formatting (120 char width, double quotes, sorted Tailwind classes)
+- **Type Safety**: TypeScript strict mode everywhere with explicit return types enforced
+- **Testing**: Write tests alongside your code using Vitest 4.x + React Testing Library
+- **State Management**: Zustand 5.x for client-side state, TanStack React Query 5.x for server state
+- **API**: Eden treaty for end-to-end type-safe API consumption (types inferred from Elysia)
+- **Routing**: Use `ROUTES` constants from `constants/routing.ts` — never hardcode route strings
+- **Styling**: Tailwind CSS 4.x only — no inline styles; use `cn()` for class merging
+- **Security**: CSP headers, HSTS, X-Frame-Options via `proxy.ts` middleware
+- **Git Hooks**: Husky + lint-staged run `biome check --write` on every commit
 
 ## License
 

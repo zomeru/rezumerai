@@ -94,7 +94,7 @@ jobs:
         run: bun run check-types
 
       - name: Run tests
-        run: bun run test
+        run: bun run test:workspace
 
       - name: Run build
         run: bun run build --filter={web,@rezumerai/api}

@@ -175,8 +175,8 @@ export default function ResumeBuilder(): React.JSX.Element {
   }
 
   async function handleShareResume(): Promise<void> {
-    const currentUrl = window.location.href.split(ROUTES.WORKSPACE)[0];
-    const resumeUrl = `${currentUrl}${ROUTES.PREVIEW}/${resumeData._id}`;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${resumeData._id}`;
 
     try {
       await navigator.share({

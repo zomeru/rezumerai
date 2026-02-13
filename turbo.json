@@ -9,30 +9,11 @@
       "inputs": ["$TURBO_DEFAULT$", ".env.production.local", ".env.local", ".env.production", ".env"]
     },
     "check": {},
-    "check-types": {
-      "dependsOn": ["^build"],
-      "env": ["DATABASE_URL"],
-      "inputs": [".env"]
-    },
-    "test": {
-      "dependsOn": ["^build"],
-      "cache": true
-    },
-    "test:watch": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
-    "test:ui": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
-    "test:coverage": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
-      "cache": true
-    },
+    "check-types": {},
+    "test": {},
+    "test:watch": {},
+    "test:ui": {},
+    "test:coverage": {},
     "dev": {
       "cache": false,
       "persistent": true,

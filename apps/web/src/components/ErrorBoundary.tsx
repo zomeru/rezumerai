@@ -20,6 +20,7 @@
  * ```
  */
 
+import { useRouter } from "next/navigation";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { type ErrorContext, type ErrorSeverity, getUserFriendlyMessage, logError } from "@/lib/errors";
 
@@ -66,13 +67,14 @@ function DefaultFallback({
   showDevDetails?: boolean;
   retryCount: number;
 }): React.JSX.Element {
+  const router = useRouter();
   const userMessage = getUserFriendlyMessage(error);
 
   return (
     <div
       role="alert"
       aria-live="assertive"
-      className="flex min-h-[400px] items-center justify-center rounded-lg border border-red-200 bg-red-50 p-8"
+      className="flex min-h-100 items-center justify-center rounded-lg border border-red-200 bg-red-50 p-8"
     >
       <div className="w-full max-w-md text-center">
         {/* Error icon */}
@@ -123,7 +125,7 @@ function DefaultFallback({
           )}
           <button
             type="button"
-            onClick={(): void => window.location.reload()}
+            onClick={(): void => router.refresh()}
             className="flex-1 rounded-lg border border-red-300 bg-white px-6 py-3 font-semibold text-red-900 text-sm transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
           >
             Reload page

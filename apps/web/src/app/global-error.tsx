@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { logError } from "@/lib/errors";
 
@@ -13,13 +14,15 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }): React.JSX.Element {
+  const pathname = usePathname();
+
   useEffect(() => {
     // Log critical error with maximum severity
     logError(error, "fatal", {
       component: "GlobalErrorBoundary",
-      route: typeof window !== "undefined" ? window.location.pathname : "unknown",
+      route: pathname,
     });
-  }, [error]);
+  }, [error, pathname]);
   return (
     <html lang="en">
       <body>
