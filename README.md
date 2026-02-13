@@ -170,7 +170,7 @@ rezumerai/
 - **Package Manager**: Always use Bun (`bun install`, `bun run`, etc.) — never npm, yarn, or pnpm
 - **Code Style**: Biome handles all linting and formatting (120 char width, double quotes, sorted Tailwind classes)
 - **Type Safety**: TypeScript strict mode everywhere with explicit return types enforced
-- **Testing**: Write tests alongside your code using Vitest 4.x + React Testing Library
+- **Testing**: Write tests alongside your code using Vitest 4.x + React Testing Library. Tests are co-located with components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`. Use relative imports in test files. Aim for 100% coverage on new components.
 - **State Management**: Zustand 5.x for client-side state, TanStack React Query 5.x for server state
 - **API**: Eden treaty for end-to-end type-safe API consumption (types inferred from Elysia)
 - **Routing**: Use `ROUTES` constants from `constants/routing.ts` — never hardcode route strings

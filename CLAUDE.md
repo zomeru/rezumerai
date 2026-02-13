@@ -27,7 +27,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `App` type in `apps/api/src/app.ts`. This provides end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema in `packages/database/prisma/schema.prisma`. Prisma client generated to `packages/database/generated/prisma/`. Uses client engine type.
-- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`.
+- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`. **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
 - **Linting/Formatting**: Biome 2.x+ is the only linter/formatter. Key rules: `useExplicitType: "error"`, `useSortedClasses`, `noUnusedImports: "warn"`, `noUnusedVariables: "error"`.
 - **State Management**: Zustand 5.x for client-side state (`useResumeStore`, `useBuilderStore`, `useDashboardStore`).
 - **Data Fetching**: TanStack React Query 5.x via `Providers` component with `QueryClientProvider`.
@@ -276,9 +276,11 @@ packages/
 - Vitest 4.x with globals enabled
 - React Testing Library + jsdom for component tests
 - Shared configs via `packages/vitest-config` (`createReactConfig`, `createNodeConfig`)
-- Test files alongside components or in `src/test`
+- **Test Co-location**: Tests live in `__tests__` folders next to components: `components/ComponentName.tsx` → `components/__tests__/ComponentName.test.tsx`
+- Use relative imports (`../ComponentName`) in test files
 - Coverage via `@vitest/coverage-v8`
 - Path alias `@/` resolves to `./src`
+- Aim for 100% coverage on new components
 
 ### Styling
 

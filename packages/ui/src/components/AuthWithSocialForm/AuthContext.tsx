@@ -40,7 +40,7 @@ const initialState: AuthState = {
  * @param action - Action to apply
  * @returns Updated authentication state
  */
-function authReducer(state: AuthState, action: AuthAction): AuthState {
+export function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "SET_EMAIL":
       return { ...state, email: action.payload };
@@ -72,13 +72,7 @@ export interface AuthContextType {
   reset: () => void;
 }
 
-const AuthContext: Context<AuthContextType> = createContext<AuthContextType>({
-  state: initialState,
-  setEmail: () => {},
-  setPassword: () => {},
-  setConfirmPassword: () => {},
-  reset: () => {},
-});
+const AuthContext: Context<AuthContextType | null> = createContext<AuthContextType | null>(null);
 
 /**
  * Props for the AuthProvider component.
