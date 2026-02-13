@@ -5,10 +5,8 @@ export default defineConfig({
     index: "src/index.tsx",
     components: "src/components/index.tsx",
   },
-  format: ["cjs", "esm"],
-  dts: {
-    resolve: true,
-  },
+  format: ["esm"],
+  dts: process.env.NODE_ENV !== "production" ? { resolve: true } : false,
   splitting: false,
   sourcemap: true,
   clean: true,

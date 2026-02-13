@@ -11,6 +11,7 @@
     "build:production": "NODE_ENV=production turbo build",
     "build:packages": "turbo build --filter=./packages/*",
     "dev": "turbo dev",
+    "start": "turbo start",
     "check": "turbo check",
     "check-types": "turbo check-types",
     "lint-staged": "lint-staged",

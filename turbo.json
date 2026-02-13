@@ -8,6 +8,10 @@
       "env": ["DATABASE_URL"],
       "inputs": ["$TURBO_DEFAULT$", ".env.production.local", ".env.local", ".env.production", ".env"]
     },
+    "start": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "check": {},
     "check-types": {},
     "test": {},

@@ -2,10 +2,8 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["cjs", "esm"],
-  dts: {
-    resolve: true,
-  },
+  format: ["esm"],
+  dts: process.env.NODE_ENV !== "production" ? { resolve: true } : false,
   splitting: false,
   sourcemap: true,
   clean: true,
