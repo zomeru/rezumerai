@@ -17,7 +17,7 @@ export function proxy(_request: NextRequest): NextResponse {
   // Apply strict Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:", // Removed CDN origins for security; consider self-hosting PDF.js worker
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
     "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
     "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
