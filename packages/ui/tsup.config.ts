@@ -6,7 +6,7 @@ export default defineConfig({
     components: "src/components/index.tsx",
   },
   format: ["esm"],
-  dts: process.env.NODE_ENV !== "production" ? { resolve: true } : false,
+  dts: process.env.NODE_ENV === "development" ? { resolve: true } : false,
   splitting: false,
   sourcemap: true,
   clean: true,

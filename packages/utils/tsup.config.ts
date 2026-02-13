@@ -8,7 +8,7 @@ export default defineConfig({
     date: "src/date.ts",
   },
   format: ["esm"],
-  dts: process.env.NODE_ENV !== "production" ? { resolve: true } : false,
+  dts: process.env.NODE_ENV === "development" ? { resolve: true } : false,
   splitting: false,
   sourcemap: true,
   clean: true,
