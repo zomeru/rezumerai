@@ -11,15 +11,16 @@
     "dist/**"
   ],
   "scripts": {
-    "dev": "bash ./scripts/migrate-dev.sh && run with-env tsup --watch",
+    "dev": "bun run with-env tsup --watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
     "build:docker": "bun run clean:generated && bun run db:generate:prod && tsup",
     "watch": "bun run db:generate && bun run with-env tsup --watch",
-    "db:generate": "mkdir -p generated/prisma && bun run with-env prisma generate",
+    "db:generate": "bun run with-env prisma generate",
     "db:generate:prod": "mkdir -p generated/prisma && prisma generate",
     "db:push": "bun run with-env prisma db push",
-    "db:migrate:dev": "bun run clean:generated && bash ./scripts/migrate-dev.sh",
+    "db:migrate:dev": "bun run with-env prisma migrate dev --schema ./prisma",
     "db:migrate:prod": "bun run with-env prisma migrate deploy",
+    "db:reset": "bun run with-env prisma migrate reset",
     "db:studio": "bun run with-env prisma studio --port 5556",
     "check-types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
@@ -30,7 +31,8 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
-    "@prisma/client": "^7.4.0"
+    "@prisma/client": "^7.4.0",
+    "@prisma/client-runtime-utils": "7.4.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.15",
@@ -41,5 +43,8 @@
     "prisma": "^7.4.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "schema": "./prisma"
   }
 }

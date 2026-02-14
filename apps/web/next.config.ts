@@ -10,7 +10,10 @@ const nextConfig: NextConfig = {
 
   // Image optimization
   images: {
-    remotePatterns: [new URL("https://avatars.githubusercontent.com/u/19688908?v=4")],
+    remotePatterns: [
+      new URL("https://avatars.githubusercontent.com/u/19688908?v=4"),
+      new URL("https://raw.githubusercontent.com/prebuiltui/**"),
+    ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,

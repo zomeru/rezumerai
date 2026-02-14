@@ -7,7 +7,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
-  external: ["./generated/**"],
+  external: ["@prisma/client", "@prisma/adapter-pg", ".prisma/client", /^@prisma\//],
   outExtension({ format }: { format: string }): { js: string } {
     if (format === "esm") return { js: ".mjs" };
     return { js: ".js" };

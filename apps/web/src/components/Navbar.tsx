@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import Logo from "./Logo";
 
 const user = {
@@ -24,7 +25,13 @@ const user = {
  * ```
  */
 export default function Navbar(): React.JSX.Element {
-  async function onLogout(): Promise<void> {}
+  async function onLogout(): Promise<void> {
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  }
 
   return (
     <div className="bg-white shadow">
