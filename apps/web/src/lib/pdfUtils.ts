@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
-import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "@/constants/pdf";
+import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX, PAGE_HEIGHT_PT, PAGE_WIDTH_PT } from "@/constants/pdf";
 
 /**
  * Generates a PDF blob from an HTML element
@@ -69,15 +69,11 @@ export async function generatePdfFromElement(element: HTMLElement): Promise<Blob
     element.style.overflow = originalOverflow;
     element.style.height = originalHeight;
 
-    // Calculate dimensions for US Letter size (8.5 x 11 inches at 72 DPI)
-    const pageWidth = 8.5 * 72; // 612 points
-    const pageHeight = 11 * 72; // 792 points
-
     // Create PDF with exact letter size
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "pt",
-      format: [pageWidth, pageHeight],
+      format: [PAGE_WIDTH_PT, PAGE_HEIGHT_PT],
     });
 
     // Calculate how many pages we need
@@ -85,7 +81,7 @@ export async function generatePdfFromElement(element: HTMLElement): Promise<Blob
     const pagesNeeded = Math.ceil(contentHeightInPx / LETTER_HEIGHT_PX);
 
     // Convert canvas dimensions to match PDF dimensions
-    const canvasWidthInPdf = pageWidth;
+    const canvasWidthInPdf = PAGE_WIDTH_PT;
     const pixelToPdfRatio = canvasWidthInPdf / LETTER_WIDTH_PX;
 
     for (let pageIndex = 0; pageIndex < pagesNeeded; pageIndex++) {

@@ -75,3 +75,4 @@ packages/*/src/**/*.d.ts.map
 tsup.config.bundled*
 .agent-files/feature-requests
 .claude
+apps/web/public/pdf-worker

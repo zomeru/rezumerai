@@ -5,6 +5,7 @@ import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useDeferredValue, useEffect, useTransition } from "react";
 import {
   CreateResumeModal,
@@ -27,6 +28,8 @@ const RESUME_COLORS: `#${string}`[] = ["#9333ea", "#d97706", "#dc2626", "#0284c7
  */
 export default function Dashboard(): React.JSX.Element {
   const router = useRouter();
+  const { data: session } = useSession();
+  console.log("SEssion", session);
   const [isPending, startTransition] = useTransition();
 
   // Resume store

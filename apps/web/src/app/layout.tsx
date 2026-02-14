@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import { Providers } from "../components/providers";
 import "./globals.css";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
+import { env } from "@/env";
 
 const outfitSans: NextFontWithVariable = Outfit({
   variable: "--font-outfit",
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://rezumer.ai",
+    url: env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     siteName: "Rezumer",
     title: "Rezumer - AI-Powered Resume Builder",
     description: "Create professional, ATS-friendly resumes with AI assistance.",
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
     title: "Rezumer - AI-Powered Resume Builder",
     description: "Create professional, ATS-friendly resumes with AI assistance.",
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
 };
 
 export const viewport: Viewport = {

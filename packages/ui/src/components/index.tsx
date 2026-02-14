@@ -15,4 +15,3 @@ export {
   SkeletonHeading,
   SkeletonText,
 } from "./Skeleton";
-export * from "./types";

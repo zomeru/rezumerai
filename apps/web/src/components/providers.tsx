@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import React, { type ReactNode, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { isRetryableError, logError } from "@/lib/errors";
@@ -17,10 +18,10 @@ export interface ProvidersProps {
 /**
  * Root providers component that wraps the application.
  * Configures React Query with enterprise retry logic, exponential backoff,
- * and axe-core accessibility testing in development.
+ * NextAuth session management, and axe-core accessibility testing in development.
  *
  * @param props - Provider props containing children
- * @returns Application wrapped with QueryClientProvider
+ * @returns Application wrapped with SessionProvider and QueryClientProvider
  *
  * @example
  * ```tsx
@@ -125,5 +126,9 @@ export function Providers({ children }: ProvidersProps): React.JSX.Element {
     }
   }, []);
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </SessionProvider>
+  );
 }

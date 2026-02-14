@@ -40,7 +40,7 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "install-modules": "bun install && turbo run build --filter=./packages/*",
-    "update-modules": "bun update --recursive --latest",
+    "update-modules": "bun update --latest && bun update --interactive --recursive",
     "clean": "turbo clean && rimraf node_modules .turbo tsconfig.tsbuildinfo .playwright-mcp",
     "clean:install": "turbo clean && rimraf node_modules .turbo bun.lock && bun install && turbo run build --filter=./packages/*",
     "outdated": "bun outdated",
@@ -57,7 +57,7 @@
     "lint-staged": "16.2.7",
     "postcss": "^8.5.6",
     "rimraf": "^6.1.2",
-    "turbo": "^2.8.7",
+    "turbo": "^2.8.8",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },

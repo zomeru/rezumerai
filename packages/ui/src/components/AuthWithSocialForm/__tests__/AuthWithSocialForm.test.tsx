@@ -1,13 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { NextImageProps } from "../../types/image";
 import { AuthProvider, authReducer, useAuthSocialForm } from "../AuthContext";
 import AuthWithSocialForm from "../AuthWithSocialForm";
-
-// Mock Next.js Image component
-const MockImage: React.ComponentType<NextImageProps> = (props: NextImageProps) => (
-  <img src={String(props.src)} alt={props.alt} width={props.width} height={props.height} />
-);
 
 describe("AuthContext", () => {
   // Test component that uses the context
@@ -180,9 +174,7 @@ describe("AuthWithSocialForm Component", () => {
   describe("Sign In Mode", () => {
     it("renders signin form with correct heading", () => {
       const mockSubmit = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} resetPasswordLink="/reset" NextImage={MockImage} />,
-      );
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} resetPasswordLink="/reset" />);
 
       expect(screen.getByText("Log in to your account")).toBeInTheDocument();
     });
@@ -376,81 +368,125 @@ describe("AuthWithSocialForm Component", () => {
   });
 
   describe("Social Authentication", () => {
-    it("renders Apple button when googleAuth is provided (due to implementation)", () => {
+    it("renders Google button when googleAuth is provided", () => {
       const mockSubmit = vi.fn();
       const mockGoogleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} NextImage={MockImage} />,
-      );
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} />);
 
-      // Note: Due to implementation, googleAuth renders Apple button
-      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
-    });
-
-    it("renders Google button when appleAuth is provided (due to implementation)", () => {
-      const mockSubmit = vi.fn();
-      const mockAppleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} NextImage={MockImage} />,
-      );
-
-      // Note: Due to implementation, appleAuth renders Google button
       expect(screen.getByText("Continue with Google")).toBeInTheDocument();
     });
 
-    it("calls appleAuth when Apple button is clicked (googleAuth renders it)", () => {
+    it("renders GitHub button when githubAuth is provided", () => {
       const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} NextImage={MockImage} />,
-      );
+      const mockGitHubAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} githubAuth={mockGitHubAuth} />);
 
-      // googleAuth prop renders Apple button but calls handleAppleAuth
-      const appleButton = screen.getByText("Continue with Apple");
-      fireEvent.click(appleButton);
-
-      // The button calls handleAppleAuth which doesn't exist, so nothing happens
-      expect(mockGoogleAuth).not.toHaveBeenCalled();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
     });
 
-    it("calls googleAuth when Google button is clicked (appleAuth renders it)", () => {
+    it("renders Apple button when appleAuth is provided", () => {
       const mockSubmit = vi.fn();
       const mockAppleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} NextImage={MockImage} />,
-      );
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} />);
 
-      // appleAuth prop renders Google button but calls handleGoogleAuth
+      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
+    });
+
+    it("calls googleAuth when Google button is clicked", () => {
+      const mockSubmit = vi.fn();
+      const mockGoogleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} />);
+
       const googleButton = screen.getByText("Continue with Google");
       fireEvent.click(googleButton);
 
-      // The button calls handleGoogleAuth which doesn't exist, so nothing happens
-      expect(mockAppleAuth).not.toHaveBeenCalled();
+      expect(mockGoogleAuth).toHaveBeenCalledTimes(1);
     });
 
-    it("renders both social auth buttons when both are provided", () => {
+    it("calls githubAuth when GitHub button is clicked", () => {
+      const mockSubmit = vi.fn();
+      const mockGitHubAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} githubAuth={mockGitHubAuth} />);
+
+      const githubButton = screen.getByText("Continue with GitHub");
+      fireEvent.click(githubButton);
+
+      expect(mockGitHubAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls appleAuth when Apple button is clicked", () => {
+      const mockSubmit = vi.fn();
+      const mockAppleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} />);
+
+      const appleButton = screen.getByText("Continue with Apple");
+      fireEvent.click(appleButton);
+
+      expect(mockAppleAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders all social auth buttons when all are provided", () => {
       const mockSubmit = vi.fn();
       const mockGoogleAuth = vi.fn();
+      const mockGitHubAuth = vi.fn();
       const mockAppleAuth = vi.fn();
       render(
         <AuthWithSocialForm
           type="signin"
           onSubmit={mockSubmit}
           googleAuth={mockGoogleAuth}
+          githubAuth={mockGitHubAuth}
           appleAuth={mockAppleAuth}
-          NextImage={MockImage}
         />,
       );
 
       expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
       expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
     });
 
-    it("does not render social buttons when neither auth is provided", () => {
+    it("renders only Google and GitHub buttons when both are provided", () => {
+      const mockSubmit = vi.fn();
+      const mockGoogleAuth = vi.fn();
+      const mockGitHubAuth = vi.fn();
+      render(
+        <AuthWithSocialForm
+          type="signin"
+          onSubmit={mockSubmit}
+          googleAuth={mockGoogleAuth}
+          githubAuth={mockGitHubAuth}
+        />,
+      );
+
+      expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
+      expect(screen.queryByText("Continue with Apple")).not.toBeInTheDocument();
+    });
+
+    it("renders only GitHub and Apple buttons when both are provided", () => {
+      const mockSubmit = vi.fn();
+      const mockGitHubAuth = vi.fn();
+      const mockAppleAuth = vi.fn();
+      render(
+        <AuthWithSocialForm
+          type="signin"
+          onSubmit={mockSubmit}
+          githubAuth={mockGitHubAuth}
+          appleAuth={mockAppleAuth}
+        />,
+      );
+
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
+      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
+      expect(screen.queryByText("Continue with Google")).not.toBeInTheDocument();
+    });
+
+    it("does not render social buttons when none are provided", () => {
       const mockSubmit = vi.fn();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.queryByText("Continue with Google")).not.toBeInTheDocument();
+      expect(screen.queryByText("Continue with GitHub")).not.toBeInTheDocument();
       expect(screen.queryByText("Continue with Apple")).not.toBeInTheDocument();
     });
   });

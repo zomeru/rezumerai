@@ -10,14 +10,19 @@ export function proxy(_request: NextRequest): NextResponse {
 
   // Build connect-src dynamically based on environment
   const connectSources = ["'self'", "https://api.rezumer.ai", "blob:"];
+
+  // Allow localhost in development for API and Vercel live reload
+  const scriptSources = ["'self'", "'unsafe-eval'", "'unsafe-inline'", "blob:"];
+
   if (process.env.NODE_ENV !== "production") {
     connectSources.push("http://localhost:8080");
+    scriptSources.push("https://vercel.live", "http://localhost:8080");
   }
 
   // Apply strict Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+    `script-src ${scriptSources.join(" ")}`,
     "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
     "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
