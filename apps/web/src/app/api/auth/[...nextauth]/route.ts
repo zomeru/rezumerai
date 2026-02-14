@@ -223,15 +223,10 @@ const authOptions: AuthOptions = {
      * Adds access token from JWT to the session object.
      *
      * @param session - The session object
-     * @param token - The JWT token object
-     * @returns Session object with access token included
+     * @returns Session object
      * @see https://next-auth.js.org/configuration/callbacks#session-callback
      */
-    async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
-      // Add access token from JWT to session
-      if (token.accessToken) {
-        session.accessToken = token.accessToken as string;
-      }
+    async session({ session }: { session: Session }): Promise<Session> {
       return session;
     },
 
