@@ -128,15 +128,15 @@ const authOptions: AuthOptions = {
      * 4. signIn callback handles database upsert
      *
      * Required environment variables:
-     * - GOOGLE_CLIENT_ID: OAuth client ID from Google Cloud Console
-     * - GOOGLE_CLIENT_SECRET: OAuth client secret
+     * - NEXTAUTH_GOOGLE_CLIENT_ID: OAuth client ID from Google Cloud Console
+     * - NEXTAUTH_GOOGLE_CLIENT_SECRET: OAuth client secret
      *
      * @see https://next-auth.js.org/providers/google
      * @see https://console.cloud.google.com/apis/credentials
      */
     GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID || "",
-      clientSecret: env.GOOGLE_CLIENT_SECRET || "",
+      clientId: env.NEXTAUTH_GOOGLE_CLIENT_ID || "",
+      clientSecret: env.NEXTAUTH_GOOGLE_CLIENT_SECRET || "",
       /**
        * Maps Google profile data to NextAuth User format.
        *
@@ -163,15 +163,15 @@ const authOptions: AuthOptions = {
      * 4. signIn callback handles database upsert
      *
      * Required environment variables:
-     * - GITHUB_CLIENT_ID: OAuth app client ID from GitHub
-     * - GITHUB_CLIENT_SECRET: OAuth app client secret
+     * - NEXTAUTH_GITHUB_CLIENT_ID: OAuth app client ID from GitHub
+     * - NEXTAUTH_GITHUB_CLIENT_SECRET: OAuth app client secret
      *
      * @see https://next-auth.js.org/providers/github
      * @see https://github.com/settings/developers
      */
     GitHubProvider({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
+      clientId: env.NEXTAUTH_GITHUB_CLIENT_ID,
+      clientSecret: env.NEXTAUTH_GITHUB_CLIENT_SECRET,
       authorization: {
         params: {
           scope: "read:user user:email",

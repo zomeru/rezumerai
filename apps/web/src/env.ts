@@ -15,10 +15,10 @@ const envSchema = z.object({
   // Authentication variables (server-side only)
   NEXTAUTH_URL: z.url().default("http://localhost:3000").describe("NextAuth URL for authentication"),
   NEXTAUTH_SECRET: z.string().default("super_long_secret").describe("NextAuth secret for signing tokens"),
-  GITHUB_CLIENT_ID: z.string().describe("GitHub OAuth client ID"),
-  GITHUB_CLIENT_SECRET: z.string().describe("GitHub OAuth client secret"),
-  GOOGLE_CLIENT_ID: z.string().optional().describe("Google OAuth client ID"),
-  GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
+  NEXTAUTH_GITHUB_CLIENT_ID: z.string().describe("GitHub OAuth client ID"),
+  NEXTAUTH_GITHUB_CLIENT_SECRET: z.string().describe("GitHub OAuth client secret"),
+  NEXTAUTH_GOOGLE_CLIENT_ID: z.string().optional().describe("Google OAuth client ID"),
+  NEXTAUTH_GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
   DATABASE_URL: z.url().describe("Database connection URL (server-only)"),
 
   // Server-only variables (never exposed to browser)
@@ -46,9 +46,9 @@ export const env: Env = envSchema.parse({
   ANALYTICS_ID: process.env.ANALYTICS_ID,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+  NEXTAUTH_GOOGLE_CLIENT_ID: process.env.NEXTAUTH_GOOGLE_CLIENT_ID,
+  NEXTAUTH_GOOGLE_CLIENT_SECRET: process.env.NEXTAUTH_GOOGLE_CLIENT_SECRET,
+  NEXTAUTH_GITHUB_CLIENT_ID: process.env.NEXTAUTH_GITHUB_CLIENT_ID,
+  NEXTAUTH_GITHUB_CLIENT_SECRET: process.env.NEXTAUTH_GITHUB_CLIENT_SECRET,
   DATABASE_URL: process.env.DATABASE_URL,
 });
