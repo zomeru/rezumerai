@@ -27,6 +27,6 @@ export interface TemplateProps {
  * - "classic": Traditional professional layout
  * - "modern": Contemporary design with bold accents
  * - "minimal": Clean, content-focused design
- * - "minimal-image": Minimal layout with profile image
+ * - "minimal_image": Minimal layout with profile image
  */
-export type TemplateType = "classic" | "modern" | "minimal" | "minimal-image";
+export type TemplateType = "classic" | "modern" | "minimal" | "minimal_image";

@@ -7,8 +7,8 @@ import { type ZodType, z } from "zod";
  * @property API_PORT - API server port (default: 8080)
  * @property NODE_ENV - Runtime environment (development | production | test)
  * @property DATABASE_URL - PostgreSQL connection string (required)
- * @property NEXTAUTH_SECRET - NextAuth secret for session encryption (required)
- * @property NEXTAUTH_URL - NextAuth canonical URL (default: http://localhost:3000)
+ * @property BETTER_AUTH_SECRET - NextAuth secret for session encryption (required)
+ * @property BETTER_AUTH_URL - NextAuth canonical URL (default: http://localhost:3000)
  * @property CORS_ORIGINS - Comma-separated allowed origins (auto-split to array)
  */
 // biome-ignore lint/nursery/useExplicitType: Zod type inference required for env
@@ -16,8 +16,8 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().default(8080),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z.string().min(1),
-  NEXTAUTH_SECRET: z.string().min(1),
-  NEXTAUTH_URL: z.string().url().default("http://localhost:3000"),
+  BETTER_AUTH_SECRET: z.string().min(1),
+  BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
   CORS_ORIGINS: z
     .string()
     .default("http://localhost:3000,http://localhost:3001")

@@ -9,7 +9,7 @@ import type { TemplateProps } from "./types";
  * Minimal resume template with a profile image sidebar and three-column grid layout.
  *
  * @param props - {@link TemplateProps}
- * @returns The minimal-image-style resume layout
+ * @returns The minimal_image-style resume layout
  */
 const MinimalImageTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
   return (

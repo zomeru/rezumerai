@@ -14,6 +14,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { label: "Home", href: "#", id: "home" },
+  { label: "Workspace", href: ROUTES.WORKSPACE, id: "workspace" },
   { label: "Features", href: "#features", id: "features" },
   { label: "How it works", href: "#how-it-works", id: "how-it-works" },
   { label: "GitHub", href: "#github", id: "github" },

@@ -58,5 +58,7 @@
   // Breadcrumbs for better navigation
   "breadcrumbs.enabled": true,
   "breadcrumbs.showFiles": true,
-  "breadcrumbs.showModules": true
+  "breadcrumbs.showModules": true,
+
+  "chat.useAgentSkills": true
 }

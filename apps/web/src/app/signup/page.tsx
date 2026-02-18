@@ -1,18 +1,17 @@
 "use client";
 
 import AuthWithSocialForm, { type AuthState } from "@rezumerai/ui/components/AuthWithSocialForm";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+// import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components";
-import { ROUTES } from "@/constants/routing";
+// import { ROUTES } from "@/constants/routing";
 
 /**
  * Sign-up page with credential-based registration, Google OAuth, and GitHub OAuth.
  * Creates new user accounts and automatically signs them in.
  */
 export default function SignUp(): React.JSX.Element {
-  const router = useRouter();
+  // const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -23,51 +22,51 @@ export default function SignUp(): React.JSX.Element {
     setError(null);
 
     // Validate password confirmation
-    if (state.password !== state.confirmPassword) {
-      setError("Passwords do not match");
-      throw new Error("Passwords do not match");
-    }
+    // if (state.password !== state.confirmPassword) {
+    //   setError("Passwords do not match");
+    //   throw new Error("Passwords do not match");
+    // }
 
-    if (state.password.length < 8) {
-      setError("Password must be at least 8 characters");
-      throw new Error("Password must be at least 8 characters");
-    }
+    // if (state.password.length < 8) {
+    //   setError("Password must be at least 8 characters");
+    //   throw new Error("Password must be at least 8 characters");
+    // }
 
-    try {
-      // Create user account via API
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: state.email,
-          password: state.password,
-        }),
-      });
+    // try {
+    //   // Create user account via API
+    //   const response = await fetch("/api/auth/signup", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       email: state.email,
+    //       password: state.password,
+    //     }),
+    //   });
 
-      const data = await response.json();
+    //   const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create account");
-      }
+    //   if (!response.ok) {
+    //     throw new Error(data.error || "Failed to create account");
+    //   }
 
-      // Automatically sign in after successful registration
-      const result = await signIn("credentials", {
-        email: state.email,
-        password: state.password,
-        redirect: false,
-      });
+    //   // Automatically sign in after successful registration
+    //   const result = await signIn("credentials", {
+    //     email: state.email,
+    //     password: state.password,
+    //     redirect: false,
+    //   });
 
-      if (result?.error) {
-        setError(result.error);
-        throw new Error(result.error);
-      }
+    //   if (result?.error) {
+    //     setError(result.error);
+    //     throw new Error(result.error);
+    //   }
 
-      router.push(ROUTES.WORKSPACE);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create account";
-      setError(errorMessage);
-      throw err;
-    }
+    //   router.push(ROUTES.WORKSPACE);
+    // } catch (err) {
+    //   const errorMessage = err instanceof Error ? err.message : "Failed to create account";
+    //   setError(errorMessage);
+    //   throw err;
+    // }
   }
 
   /**
@@ -75,7 +74,7 @@ export default function SignUp(): React.JSX.Element {
    * Redirects to workspace after successful authentication.
    */
   async function handleGoogleAuth(): Promise<void> {
-    await signIn("google", { callbackUrl: ROUTES.WORKSPACE });
+    // await signIn("google", { callbackUrl: ROUTES.WORKSPACE });
   }
 
   /**
@@ -83,7 +82,7 @@ export default function SignUp(): React.JSX.Element {
    * Redirects to workspace after successful authentication.
    */
   async function handleGitHubAuth(): Promise<void> {
-    await signIn("github", { callbackUrl: ROUTES.WORKSPACE });
+    // await signIn("github", { callbackUrl: ROUTES.WORKSPACE });
   }
 
   return (

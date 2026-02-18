@@ -74,5 +74,6 @@ packages/*/src/**/*.d.ts.map
 .playwright-mcp
 tsup.config.bundled*
 .agent-files/feature-requests
-.claude
+.claude/worktrees
+.claude/settings.local.json
 apps/web/public/pdf-worker

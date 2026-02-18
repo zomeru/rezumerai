@@ -4,12 +4,10 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist/**"
-  ],
+  "type": "module",
   "scripts": {
     "dev": "bun run with-env tsup --watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
@@ -18,15 +16,20 @@
     "db:generate": "bun run with-env prisma generate",
     "db:generate:prod": "mkdir -p generated/prisma && prisma generate",
     "db:push": "bun run with-env prisma db push",
+    "db:push:prod": "bun run with-env:prod prisma db push",
     "db:migrate:dev": "bun run with-env prisma migrate dev --schema ./prisma",
-    "db:migrate:prod": "bun run with-env prisma migrate deploy",
+    "db:migrate:prod": "bun run with-env:prod prisma migrate deploy",
     "db:reset": "bun run with-env prisma migrate reset",
     "db:studio": "bun run with-env prisma studio --port 5556",
+    "db:pull": "bun run with-env prisma db pull",
+    "db:seed": "bun run db:pull && bun run with-env bun ./scripts/seed.ts",
     "check-types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
+    "format": "bun run with-env prisma format",
     "clean:generated": "rimraf generated/",
     "clean": "rimraf node_modules .turbo dist generated/ tsconfig.tsbuildinfo tsup.config.bundled*",
-    "with-env": "dotenv -e ../../.env.local --"
+    "with-env": "dotenv -e ../../.env.local --",
+    "with-env:prod": "dotenv -e ../../.env.production.local --"
   },
   "license": "ISC",
   "dependencies": {
@@ -37,6 +40,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.15",
     "@rezumerai/tsconfig": "workspace:*",
+    "@rezumerai/types": "workspace:*",
     "@types/node": "^25.2.3",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",

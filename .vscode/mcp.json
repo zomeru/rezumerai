@@ -16,6 +16,9 @@
       "command": "npx",
       "args": ["-y", "prisma", "mcp"]
     },
+    "Prisma-Remote": {
+      "url": "https://mcp.prisma.io/mcp"
+    },
     "tailwindcss-server": {
       "command": "npx",
       "args": ["-y", "tailwindcss-mcp-server"]

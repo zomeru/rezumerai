@@ -18,6 +18,7 @@ export const createBaseConfig = (dirname: string): ViteUserConfig =>
   defineConfig({
     test: {
       globals: true,
+      exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/build/**", "**/out/**", "**/generated/**"],
       coverage: {
         provider: "v8" as const,
         reporter: ["text", "json", "html"],

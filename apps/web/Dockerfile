@@ -36,12 +36,12 @@ COPY --from=builder /app/out/full/ .
 # Build the web app
 # Mount secrets for Next.js build configuration (DATABASE_URL uses placeholder for Prisma generation)
 RUN --mount=type=secret,id=next_public_api_url \
-    --mount=type=secret,id=nextauth_url \
-    --mount=type=secret,id=nextauth_secret \
+    --mount=type=secret,id=BETTER_AUTH_URL \
+    --mount=type=secret,id=BETTER_AUTH_SECRET \
     export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
     export NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" && \
-    export NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" && \
-    export NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" && \
+    export BETTER_AUTH_URL="$(cat /run/secrets/BETTER_AUTH_URL)" && \
+    export BETTER_AUTH_SECRET="$(cat /run/secrets/BETTER_AUTH_SECRET)" && \
     (cd packages/database && bun run build:docker) && \
     bunx turbo@2.8.0 build --filter=web
 

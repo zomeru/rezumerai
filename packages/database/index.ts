@@ -7,7 +7,9 @@ export * from "./generated/prisma/client";
  * Global reference to hold the Prisma client singleton across hot reloads.
  * Prevents connection exhaustion in development by reusing the same client instance.
  */
-const globalForPrisma = globalThis as { prisma?: PrismaClient };
+const globalForPrisma = global as unknown as {
+  prisma?: PrismaClient;
+};
 
 /**
  * PostgreSQL adapter for Prisma using the native pg driver.

@@ -1,4 +1,6 @@
 import cors from "@elysiajs/cors";
+import { fromTypes, openapi } from "@elysiajs/openapi";
+import { swagger } from "@elysiajs/swagger";
 import { formatDate } from "@rezumerai/utils/date";
 import { capitalize } from "@rezumerai/utils/string";
 import Elysia from "elysia";
@@ -22,6 +24,12 @@ export const app = new Elysia({ prefix: "/api" })
     cors({
       credentials: true,
       origin: env.CORS_ORIGINS,
+    }),
+  )
+  .use(swagger())
+  .use(
+    openapi({
+      references: fromTypes(process.env.NODE_ENV === "production" ? "dist/index.d.ts" : "src/index.ts"),
     }),
   )
   .use(loggerPlugin)

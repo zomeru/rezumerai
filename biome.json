@@ -15,7 +15,9 @@
       "!!**/node_modules",
       "!!**/coverage",
       "!!**/generated/prisma",
-      "!!**/public"
+      "!!**/public",
+      "!!**/.claude",
+      "!!**/.agents"
     ]
   },
   "formatter": {

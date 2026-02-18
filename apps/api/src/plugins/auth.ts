@@ -9,7 +9,7 @@ import type { SessionUser } from "../modules/auth/model";
  * Strategy:
  *  1. Read the `authorization` header (Bearer <jwt>) or the NextAuth session
  *     cookie from the incoming request.
- *  2. Verify the JWT using the shared NEXTAUTH_SECRET (jose / HS256).
+ *  2. Verify the JWT using the shared BETTER_AUTH_SECRET (jose / HS256).
  *  3. Attach `user` to context so downstream handlers can access it.
  *
  * Public routes should NOT use this plugin.
@@ -30,7 +30,7 @@ async function resolveSession(request: Request): Promise<SessionUser | null> {
   if (!cookie) return null;
 
   try {
-    const res = await fetch(`${env.NEXTAUTH_URL}/api/auth/session`, {
+    const res = await fetch(`${env.BETTER_AUTH_URL}/api/auth/session`, {
       headers: { cookie },
     });
 

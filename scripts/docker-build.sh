@@ -22,8 +22,8 @@ fi
 REQUIRED_ENV_VARS=(
   "DATABASE_URL"
   "NEXT_PUBLIC_API_URL"
-  "NEXTAUTH_URL"
-  "NEXTAUTH_SECRET"
+  "BETTER_AUTH_URL"
+  "BETTER_AUTH_SECRET"
   "API_PORT"
   "CORS_ORIGINS"
 )
@@ -50,8 +50,8 @@ docker build \
 echo "Building Web service..."
 docker build \
   --secret id=next_public_api_url,env=NEXT_PUBLIC_API_URL \
-  --secret id=nextauth_url,env=NEXTAUTH_URL \
-  --secret id=nextauth_secret,env=NEXTAUTH_SECRET \
+  --secret id=BETTER_AUTH_URL,env=BETTER_AUTH_URL \
+  --secret id=BETTER_AUTH_SECRET,env=BETTER_AUTH_SECRET \
   -f apps/web/Dockerfile \
   -t rezumerai-web:latest \
   .

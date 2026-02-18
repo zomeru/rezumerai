@@ -61,7 +61,7 @@ function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: Re
         return <ModernTemplate data={data} accentColor={accentColor} />;
       case "minimal":
         return <MinimalTemplate data={data} accentColor={accentColor} />;
-      case "minimal-image":
+      case "minimal_image":
         return <MinimalImageTemplate data={data} accentColor={accentColor} />;
       default:
         return <ClassicTemplate data={data} accentColor={accentColor} />;

@@ -42,15 +42,15 @@ services:
       secrets:
         # Build-time secrets (for Next.js build)
         - next_public_api_url
-        - nextauth_url
-        - nextauth_secret
+        - BETTER_AUTH_URL
+        - BETTER_AUTH_SECRET
     restart: unless-stopped
     env_file:
       - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
     secrets:
       # Runtime secrets (available when container runs)
       - database_url
-      - nextauth_secret
+      - BETTER_AUTH_SECRET
     ports:
       - "3000:3000"
     depends_on:
@@ -95,12 +95,12 @@ networks:
 secrets:
   database_url:
     environment: DATABASE_URL
-  nextauth_secret:
-    environment: NEXTAUTH_SECRET
+  BETTER_AUTH_SECRET:
+    environment: BETTER_AUTH_SECRET
   next_public_api_url:
     environment: NEXT_PUBLIC_API_URL
-  nextauth_url:
-    environment: NEXTAUTH_URL
+  BETTER_AUTH_URL:
+    environment: BETTER_AUTH_URL
   api_port:
     environment: API_PORT
   cors_origins:

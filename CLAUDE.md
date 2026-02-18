@@ -179,7 +179,7 @@ apps/web/src/
 apps/api/src/
 ├── app.ts                 # Elysia app (exports App type for Eden)
 ├── server.ts              # Bun server entrypoint
-├── env.ts                 # Zod-validated environment (API_PORT, DATABASE_URL, NEXTAUTH_SECRET, etc.)
+├── env.ts                 # Zod-validated environment (API_PORT, DATABASE_URL, BETTER_AUTH_SECRET, etc.)
 ├── modules/
 │   ├── auth/              # Auth module (protected routes)
 │   │   ├── index.ts       # Routes (/api/auth/me)

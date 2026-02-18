@@ -7,14 +7,14 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": [
         "DATABASE_URL",
-        "NEXTAUTH_SECRET",
-        "NEXTAUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
         "NEXT_PUBLIC_SITE_URL",
         "NEXT_PUBLIC_API_URL",
-        "NEXTAUTH_GOOGLE_CLIENT_ID",
-        "NEXTAUTH_GOOGLE_CLIENT_SECRET",
-        "NEXTAUTH_GITHUB_CLIENT_ID",
-        "NEXTAUTH_GITHUB_CLIENT_SECRET"
+        "BETTER_AUTH_GOOGLE_CLIENT_ID",
+        "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
+        "BETTER_AUTH_GITHUB_CLIENT_ID",
+        "BETTER_AUTH_GITHUB_CLIENT_SECRET"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.production.local", ".env.local", ".env.production", ".env"]
     },
@@ -33,14 +33,14 @@
       "persistent": true,
       "env": [
         "DATABASE_URL",
-        "NEXTAUTH_SECRET",
-        "NEXTAUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
         "NEXT_PUBLIC_SITE_URL",
         "NEXT_PUBLIC_API_URL",
-        "NEXTAUTH_GOOGLE_CLIENT_ID",
-        "NEXTAUTH_GOOGLE_CLIENT_SECRET",
-        "NEXTAUTH_GITHUB_CLIENT_ID",
-        "NEXTAUTH_GITHUB_CLIENT_SECRET"
+        "BETTER_AUTH_GOOGLE_CLIENT_ID",
+        "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
+        "BETTER_AUTH_GITHUB_CLIENT_ID",
+        "BETTER_AUTH_GITHUB_CLIENT_SECRET"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.development.local", ".env.local", ".env.development", ".env"]
     },

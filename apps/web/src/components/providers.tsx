@@ -1,7 +1,6 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SessionProvider } from "next-auth/react";
 import React, { type ReactNode, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { isRetryableError, logError } from "@/lib/errors";
@@ -126,9 +125,5 @@ export function Providers({ children }: ProvidersProps): React.JSX.Element {
     }
   }, []);
 
-  return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </SessionProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

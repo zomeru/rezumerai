@@ -1,11 +1,9 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routing";
+import { signOut, useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
-
-const user = {
-  name: "John Doe",
-};
 
 /**
  * Main navigation bar component for authenticated users.
@@ -25,9 +23,13 @@ const user = {
  * ```
  */
 export default function Navbar(): React.JSX.Element {
+  const { data: session } = useSession();
+  const router = useRouter();
+
   async function onLogout(): Promise<void> {
     try {
-      await signOut({ callbackUrl: "/" });
+      await signOut();
+      router.push(ROUTES.HOME);
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -38,7 +40,7 @@ export default function Navbar(): React.JSX.Element {
       <nav className="mx-auto flex max-w-400 items-center justify-between px-4 py-4 text-slate-800 transition-all sm:px-6 lg:px-8">
         <Logo />
         <div className="flex items-center gap-4 text-sm">
-          <p className="max-sm:hidden">Hi, {user.name}!</p>
+          <p className="max-sm:hidden">Hi, {session?.user.name || session?.user.email}!</p>
           <button
             onClick={onLogout}
             type="button"

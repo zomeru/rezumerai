@@ -33,5 +33,5 @@
       "@rezumerai/vitest-config/*": ["./packages/vitest-config/src/*"]
     }
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".claude", ".agents", "dist", "build"]
 }
