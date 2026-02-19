@@ -1,10 +1,31 @@
 {
   "name": "rezumerai",
+  "devDependencies": {
+    "@biomejs/biome": "2.4.2",
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
+    "@vitest/coverage-v8": "^4.0.18",
+    "husky": "^9.1.7",
+    "lint-staged": "16.2.7",
+    "postcss": "^8.5.6",
+    "rimraf": "^6.1.3",
+    "turbo": "^2.8.10",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
+  "overrides": {
+    "body-parser": "^2.2.1",
+    "hono": "^4.10.3",
+    "valibot": "^1.2.0",
+    "lodash": "4.17.23"
+  },
+  "packageManager": "bun@1.3.8",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "predev": "turbo run build --filter=@rezumerai/database",
     "build": "turbo build",
@@ -14,7 +35,9 @@
     "build:packages": "turbo build --filter=./packages/*",
     "dev": "turbo dev",
     "start": "turbo start",
-    "check": "turbo check",
+    "check": "bun run update:biome-configs && turbo check",
+    "biome": "bun run update:biome-configs && biome check --write .",
+    "update:biome-configs": "bun scripts/update-biome-config-version.ts",
     "check-types": "turbo check-types",
     "lint-staged": "lint-staged",
     "code:check": "bun run check && bun run check-types",
@@ -48,25 +71,6 @@
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
   },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.15",
-    "@changesets/changelog-github": "^0.5.2",
-    "@changesets/cli": "^2.29.8",
-    "@vitest/coverage-v8": "^4.0.18",
-    "husky": "^9.1.7",
-    "lint-staged": "16.2.7",
-    "postcss": "^8.5.6",
-    "rimraf": "^6.1.2",
-    "turbo": "^2.8.8",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
-  },
-  "overrides": {
-    "body-parser": "^2.2.1",
-    "hono": "^4.10.3",
-    "valibot": "^1.2.0",
-    "lodash": "4.17.23"
-  },
   "trustedDependencies": [
     "@prisma/client",
     "@swc/core",
@@ -74,13 +78,8 @@
     "prisma",
     "sharp"
   ],
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
-  },
-  "packageManager": "bun@1.3.8",
-  "dependencies": {
-    "zustand": "^5.0.11"
-  }
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

@@ -3,13 +3,12 @@ import { env } from "../env";
 import type { SessionUser } from "../modules/auth/model";
 
 /**
- * Auth plugin — validates NextAuth session/JWT and injects the authenticated
+ * Auth plugin — validates the Better Auth session and injects the authenticated
  * user into the Elysia request context.
  *
  * Strategy:
- *  1. Read the `authorization` header (Bearer <jwt>) or the NextAuth session
- *     cookie from the incoming request.
- *  2. Verify the JWT using the shared BETTER_AUTH_SECRET (jose / HS256).
+ *  1. Read the session cookie from the incoming request.
+ *  2. Forward it to the Better Auth session endpoint on the Next.js app.
  *  3. Attach `user` to context so downstream handlers can access it.
  *
  * Public routes should NOT use this plugin.
@@ -17,12 +16,8 @@ import type { SessionUser } from "../modules/auth/model";
  */
 
 /**
- * Decode and verify a NextAuth JWT.
- *
- * NextAuth v4/v5 JWTs are JWE tokens encrypted with A256CBC-HS512 by default.
- * We use the `next-auth` compatible `decode` approach here.
- * For simplicity and forward-compatibility, we call the NextAuth session
- * endpoint on the Next.js app. This keeps auth logic in one place.
+ * Resolves the current session by forwarding cookies to the Better Auth
+ * session endpoint. Keeps auth logic centralised in the Next.js app.
  */
 async function resolveSession(request: Request): Promise<SessionUser | null> {
   // Strategy 1: Forward cookies to NextAuth session endpoint
@@ -65,7 +60,7 @@ export const authPlugin = new Elysia({ name: "plugin/auth" })
       set.status = 401;
       return {
         success: false,
-        error: "Unauthorized — valid NextAuth session required",
+        error: "Unauthorized — valid session required",
       };
     }
   });

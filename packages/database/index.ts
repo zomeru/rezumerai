@@ -7,7 +7,7 @@ export * from "./generated/prisma/client";
  * Global reference to hold the Prisma client singleton across hot reloads.
  * Prevents connection exhaustion in development by reusing the same client instance.
  */
-const globalForPrisma = global as unknown as {
+const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 

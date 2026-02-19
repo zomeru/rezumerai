@@ -53,12 +53,16 @@ CONC=$(( CORES / 2 ))
 # --------------------------
 TURBO_FLAGS="--concurrency=$CONC --cache=local:rw,remote:r"
 
-echo "📝 Running lint/format/type checks..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check --affected $TURBO_FLAGS
+echo "📝 Running biome (formatting and linting) ..."
+# TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check --affected $TURBO_FLAGS
+bun run biome # Always run biome on all files
+
+echo "📝 Running type checks..."
 TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check-types --affected $TURBO_FLAGS
 
 echo "🧪 Running tests..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
+# TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
+bun run test:project # Always run tests on all files
 
 echo "🏗️ Running builds..."
 TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run build --affected --cache=local:rw,remote:r

@@ -1,22 +1,42 @@
+import { hash, type Options, verify } from "@node-rs/argon2";
 import { prisma } from "@rezumerai/database";
-import { type Auth, type BetterAuthOptions, betterAuth, type DBAdapter } from "better-auth";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { env } from "@/env";
+import { serverEnv } from "@/env";
 
-export const auth: Auth<{
-  database: (options: BetterAuthOptions) => DBAdapter<BetterAuthOptions>;
-}> = betterAuth({
+if (!serverEnv) {
+  throw new Error("Server environment variables are not defined");
+}
+
+const argon2Options: Options = {
+  memoryCost: 65536, // 64 MiB
+  timeCost: 3, // 3 iterations
+  parallelism: 4, // 4 parallel lanes
+  outputLen: 32, // 32 byte output
+  algorithm: 2, // Argon2id variant
+};
+
+type PasswordHash = string | Uint8Array;
+
+export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 32,
+    password: {
+      hash: (password: PasswordHash) => hash(password, argon2Options),
+      verify: ({ password, hash: storedHash }: { password: PasswordHash; hash: PasswordHash }) =>
+        verify(storedHash, password, argon2Options),
+    },
   },
   socialProviders: {
     github: {
-      clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
-      clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
+      clientId: serverEnv.BETTER_AUTH_GITHUB_CLIENT_ID,
+      clientSecret: serverEnv.BETTER_AUTH_GITHUB_CLIENT_SECRET,
       scope: ["read:user", "user:email"],
     },
   },
