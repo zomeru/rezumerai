@@ -1,6 +1,6 @@
 "use client";
 
-import { type MutableRefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 /**
  * Hook to trap focus within a modal or dialog for accessibility.
@@ -10,7 +10,7 @@ import { type MutableRefObject, useEffect, useRef } from "react";
  * @param onClose - Optional callback to close modal on Escape key
  * @returns ref to attach to the modal container element
  */
-export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onClose?: () => void): MutableRefObject<T | null> {
+export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onClose?: () => void): RefObject<T | null> {
   const ref = useRef<T | null>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -35,7 +35,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onClose?: (
       firstElement.focus();
     }
 
-    function handleKeyDown(e: KeyboardEvent): void {
+    function handleKeyDown(e: KeyboardEvent) {
       // Handle Escape key
       if (e.key === "Escape" && onClose) {
         e.preventDefault();
@@ -65,7 +65,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onClose?: (
 
     document.addEventListener("keydown", handleKeyDown);
 
-    return (): void => {
+    return () => {
       document.removeEventListener("keydown", handleKeyDown);
 
       // Restore focus to previous element when modal closes

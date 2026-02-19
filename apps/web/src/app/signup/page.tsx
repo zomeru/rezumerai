@@ -9,7 +9,7 @@ import { signIn, signUp } from "@/lib/auth-client";
  * Sign-up page with credential-based registration and GitHub OAuth.
  * Creates new user accounts via Better Auth and redirects to workspace.
  */
-export default function SignUp(): React.JSX.Element {
+export default function SignUp() {
   /**
    * Handles user registration with email and password via Better Auth.
    * Validates password requirements before submitting to the auth server.

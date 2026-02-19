@@ -5,8 +5,6 @@ import type React from "react";
 import { memo, useId, useState } from "react";
 import { AuthProvider, type AuthState, useAuthSocialForm } from "./AuthContext";
 
-export type OnSubmitError = { error?: string | null };
-
 /**
  * Base authentication form props.
  *
@@ -89,7 +87,7 @@ type AuthWithSocialFormProps =
  *
  * @internal
  */
-function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }): React.JSX.Element {
+function PasswordInput({ isConfirm = false }: { isConfirm?: boolean }) {
   const passwordId = useId();
   const confirmPasswordId = useId();
   const { state, setPassword, setConfirmPassword } = useAuthSocialForm();
@@ -151,7 +149,7 @@ const AuthWithSocialForm: React.MemoExoticComponent<React.FC<AuthWithSocialFormP
     handleGithubAuth,
     handleAppleAuth,
     ...props
-  }: AuthWithSocialFormProps): React.JSX.Element => {
+  }: AuthWithSocialFormProps) => {
     const type = props.type;
     const isSignIn = type === "signin";
     const resetPasswordLink = type === "signin" ? props.resetPasswordLink : undefined;
@@ -307,7 +305,7 @@ const AuthWithSocialForm: React.MemoExoticComponent<React.FC<AuthWithSocialFormP
  * />
  * ```
  */
-export default function AuthWithSocialFormWrapper(props: AuthWithSocialFormProps): React.JSX.Element {
+export default function AuthWithSocialFormWrapper(props: AuthWithSocialFormProps) {
   return (
     <AuthProvider>
       <AuthWithSocialForm {...props} />

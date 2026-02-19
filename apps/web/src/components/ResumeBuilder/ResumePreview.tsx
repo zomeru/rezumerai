@@ -51,7 +51,7 @@ export interface RenderTemplateProps {
  * @returns Rendered template component with applied font scale
  */
 
-function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: RenderTemplateProps): React.JSX.Element {
+function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: RenderTemplateProps) {
   const fontScale = getFontScale(fontSize);
   const style = { fontSize: `${fontScale}rem` };
 
@@ -81,7 +81,7 @@ function RenderTemplate({ template, data, accentColor, fontSize = "medium" }: Re
  */
 const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.RefAttributes<HTMLDivElement>> =
   forwardRef<HTMLDivElement, ResumePreviewProps>(
-    ({ data, template, accentColor, className, fontSize = "medium", previewMode }, ref): React.JSX.Element => {
+    ({ data, template, accentColor, className, fontSize = "medium", previewMode }, ref) => {
       const containerRef = useRef<HTMLDivElement>(null);
       const contentRef = useRef<HTMLDivElement>(null);
       const [scale, setScale] = useState(1);
@@ -90,7 +90,7 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
       const [isHovered, setIsHovered] = useState(false);
 
       useEffect(() => {
-        const updateScale = (): void => {
+        const updateScale = () => {
           if (containerRef.current) {
             // Use clientWidth (excludes scrollbar) for accurate measurement
             const containerWidth = containerRef.current.clientWidth;
@@ -105,7 +105,7 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
         // Use setTimeout to ensure layout is settled after DOM updates
         const timeoutId = setTimeout(updateScale, 100);
         window.addEventListener("resize", updateScale);
-        return (): void => {
+        return () => {
           clearTimeout(timeoutId);
           window.removeEventListener("resize", updateScale);
         };
@@ -113,7 +113,7 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
 
       // Calculate total pages based on content height
       useEffect(() => {
-        const calculatePages = (): void => {
+        const calculatePages = () => {
           if (contentRef.current) {
             const contentHeight = contentRef.current.scrollHeight;
             const pages = Math.ceil(contentHeight / LETTER_HEIGHT_PX);
@@ -127,16 +127,16 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
 
         calculatePages();
         const timeoutId = setTimeout(calculatePages, 200);
-        return (): void => clearTimeout(timeoutId);
+        return () => clearTimeout(timeoutId);
       }, [data, template, accentColor, fontSize, currentPage]);
 
-      const goToNextPage = (): void => {
+      const goToNextPage = () => {
         if (currentPage < totalPages - 1) {
           setCurrentPage((prev) => prev + 1);
         }
       };
 
-      const goToPrevPage = (): void => {
+      const goToPrevPage = () => {
         if (currentPage > 0) {
           setCurrentPage((prev) => prev - 1);
         }
@@ -147,7 +147,7 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
         <div
           ref={containerRef}
           className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 p-4"
-          onMouseEnter={(): void => setIsHovered(true)}
+          onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           role="region"
           aria-label="Resume preview"

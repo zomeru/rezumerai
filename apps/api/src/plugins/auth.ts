@@ -40,7 +40,6 @@ async function resolveSession(request: Request): Promise<SessionUser | null> {
   }
 }
 
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const authPlugin = new Elysia({ name: "plugin/auth" })
   .derive({ as: "scoped" }, async ({ request, set }) => {
     const user = await resolveSession(request);

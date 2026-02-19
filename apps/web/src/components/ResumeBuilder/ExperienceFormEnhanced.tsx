@@ -29,13 +29,10 @@ export interface ExperienceFormEnhancedProps {
  * @returns Experience form with DnD reordering and accordion entries
  */
 
-export default function ExperienceFormEnhanced({
-  experience,
-  onChange,
-}: ExperienceFormEnhancedProps): React.JSX.Element {
+export default function ExperienceFormEnhanced({ experience, onChange }: ExperienceFormEnhancedProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
-  const handleAdd = (): void => {
+  const handleAdd = () => {
     const newExperience: Experience = {
       _id: generateUuidKey(),
       company: "",
@@ -49,7 +46,7 @@ export default function ExperienceFormEnhanced({
     setExpandedIndex(experience.length);
   };
 
-  const handleRemove = (index: number): void => {
+  const handleRemove = (index: number) => {
     const updated = experience.filter((_, i) => i !== index);
     onChange(updated);
     if (expandedIndex === index) {
@@ -57,7 +54,7 @@ export default function ExperienceFormEnhanced({
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Experience, value: string | boolean): void => {
+  const handleUpdate = (index: number, field: keyof Experience, value: string | boolean) => {
     const updated = experience.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp));
     onChange(updated);
   };
@@ -70,11 +67,11 @@ export default function ExperienceFormEnhanced({
         items={experience}
         onReorder={onChange}
         getItemId={(item: Experience): string => item._id}
-        renderItem={(exp: Experience, index: number): React.JSX.Element => (
+        renderItem={(exp: Experience, index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
-              onClick={(): void => setExpandedIndex(expandedIndex === index ? null : index)}
+              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex-1">
@@ -87,10 +84,7 @@ export default function ExperienceFormEnhanced({
                   {exp.isCurrent ? "Present" : exp.endDate && formatShortDate(exp.endDate)}
                 </p>
               </div>
-              <DeleteButton
-                onDelete={(): void => handleRemove(index)}
-                ariaLabel={`Delete ${exp.position || "experience"}`}
-              />
+              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${exp.position || "experience"}`} />
             </button>
 
             {expandedIndex === index && (
@@ -101,7 +95,7 @@ export default function ExperienceFormEnhanced({
                     label="Position"
                     required
                     value={exp.position}
-                    onValueChange={(value: string): void => handleUpdate(index, "position", value)}
+                    onValueChange={(value: string) => handleUpdate(index, "position", value)}
                     placeholder="e.g. Senior Software Engineer"
                   />
                   <TextInput
@@ -109,7 +103,7 @@ export default function ExperienceFormEnhanced({
                     label="Company"
                     required
                     value={exp.company}
-                    onValueChange={(value: string): void => handleUpdate(index, "company", value)}
+                    onValueChange={(value: string) => handleUpdate(index, "company", value)}
                     placeholder="e.g. Google Inc."
                   />
                 </div>
@@ -119,9 +113,7 @@ export default function ExperienceFormEnhanced({
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
                     <DatePicker
                       selected={parseYearMonth(exp.startDate)}
-                      onSelect={(date: Date | undefined): void =>
-                        handleUpdate(index, "startDate", formatFullDate(date))
-                      }
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", formatFullDate(date))}
                       placeholder="Select start date"
                     />
                   </div>
@@ -129,7 +121,7 @@ export default function ExperienceFormEnhanced({
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">End Date</p>
                     <DatePicker
                       selected={parseYearMonth(exp.endDate)}
-                      onSelect={(date: Date | undefined): void => handleUpdate(index, "endDate", formatFullDate(date))}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "endDate", formatFullDate(date))}
                       placeholder="Select end date"
                       disabled={exp.isCurrent}
                       minDate={parseYearMonth(exp.startDate)}
@@ -142,7 +134,7 @@ export default function ExperienceFormEnhanced({
                     type="checkbox"
                     id={`current-${exp._id}`}
                     checked={exp.isCurrent}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       handleUpdate(index, "isCurrent", e.target.checked);
                       if (e.target.checked) {
                         handleUpdate(index, "endDate", "");
@@ -159,7 +151,7 @@ export default function ExperienceFormEnhanced({
                   <p className="mb-1.5 block font-medium text-slate-700 text-sm">Description</p>
                   <RichTextEditor
                     content={exp.description}
-                    onChange={(html: string): void => handleUpdate(index, "description", html)}
+                    onChange={(html: string) => handleUpdate(index, "description", html)}
                     placeholder="Describe your responsibilities and achievements..."
                   />
                 </div>

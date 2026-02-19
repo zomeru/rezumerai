@@ -1,5 +1,7 @@
 import type { TemplateType } from "@/templates";
 
+// TODO: Consider fetching template metadata from the server for dynamic updates without redeploying the frontend.
+
 /**
  * Available resume template configurations.
  * Defines metadata for all selectable resume templates.

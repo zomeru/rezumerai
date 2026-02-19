@@ -26,7 +26,7 @@ const samplePreviewHref = `${ROUTES.PREVIEW}/${SAMPLE_PREVIEW_RESUME_ID}`;
 /**
  * Hero section of the homepage, featuring the main headline, navigation bar, and call-to-action buttons.
  */
-export default function Hero(): React.JSX.Element {
+export default function Hero() {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div>
@@ -59,7 +59,7 @@ export default function Hero(): React.JSX.Element {
 
         <button
           type="button"
-          onClick={(): void => setMenuOpen(true)}
+          onClick={() => setMenuOpen(true)}
           className="transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-90 md:hidden"
           aria-label="Open mobile menu"
           aria-expanded={menuOpen}
@@ -95,7 +95,7 @@ export default function Hero(): React.JSX.Element {
                 key={id}
                 href={href}
                 className="block py-3 text-center text-2xl text-white transition-colors hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent"
-                onClick={(): void => setMenuOpen(false)}
+                onClick={() => setMenuOpen(false)}
               >
                 {label}
               </Link>
@@ -103,7 +103,7 @@ export default function Hero(): React.JSX.Element {
           </nav>
           <button
             type="button"
-            onClick={(): void => setMenuOpen(false)}
+            onClick={() => setMenuOpen(false)}
             className="flex aspect-square size-10 items-center justify-center rounded-md bg-primary-600 p-1 text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent active:ring-3 active:ring-white"
             aria-label="Close mobile menu"
           >

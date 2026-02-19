@@ -22,10 +22,7 @@ export interface ProfessionalSummaryFormEnhancedProps {
  * @returns Professional summary form with rich text editor
  */
 
-export default function ProfessionalSummaryFormEnhanced({
-  summary,
-  onChange,
-}: ProfessionalSummaryFormEnhancedProps): React.JSX.Element {
+export default function ProfessionalSummaryFormEnhanced({ summary, onChange }: ProfessionalSummaryFormEnhancedProps) {
   return (
     <div className="space-y-4">
       <div>

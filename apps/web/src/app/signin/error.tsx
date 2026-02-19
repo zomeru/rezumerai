@@ -1,17 +1,12 @@
 "use client";
 
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
-
-interface ErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
+import { RouteErrorBoundary, type RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 
 /**
  * Sign in page error boundary.
  * Handles authentication-related errors with appropriate messaging.
  */
-export default function SignInError({ error, reset }: ErrorProps): React.JSX.Element {
+export default function SignInError({ error, reset }: RouteErrorBoundaryProps) {
   return (
     <RouteErrorBoundary
       error={error}

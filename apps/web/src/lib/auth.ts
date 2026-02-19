@@ -17,9 +17,7 @@ const argon2Options: Options = {
   algorithm: 2, // Argon2id variant
 };
 
-type PasswordHash = string | Uint8Array;
-
-export const auth: ReturnType<typeof betterAuth> = betterAuth({
+export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -28,9 +26,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 32,
     password: {
-      hash: (password: PasswordHash) => hash(password, argon2Options),
-      verify: ({ password, hash: storedHash }: { password: PasswordHash; hash: PasswordHash }) =>
-        verify(storedHash, password, argon2Options),
+      hash: (password) => hash(password, argon2Options),
+      verify: ({ password, hash: storedHash }) => verify(storedHash, password, argon2Options),
     },
   },
   socialProviders: {

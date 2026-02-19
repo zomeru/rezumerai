@@ -99,7 +99,7 @@ export interface ApiResponse<T = unknown> {
  * }); // ✗ Throws ZodError
  * ```
  */
-export const UserSchema: z.ZodType<UserType> = z.object({
+export const UserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
@@ -127,7 +127,7 @@ export const UserSchema: z.ZodType<UserType> = z.object({
  * }); // ✗ Missing required 'description' field
  * ```
  */
-export const ProjectSchema: z.ZodType<ProjectType> = z.object({
+export const ProjectSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string(),

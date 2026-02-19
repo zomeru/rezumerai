@@ -24,7 +24,6 @@ export type User = UserType;
  * });
  * ```
  */
-// biome-ignore lint/nursery/useExplicitType: Zod type inference required
 export const CreateUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.email("Invalid email"),
@@ -42,7 +41,6 @@ export type CreateUserInput = z.infer<typeof CreateUserSchema>;
  *
  * @property id - User ID from URL path (required, non-empty)
  */
-// biome-ignore lint/nursery/useExplicitType: Zod type inference required
 export const UserParamsSchema = z.object({
   id: z.string().min(1),
 });

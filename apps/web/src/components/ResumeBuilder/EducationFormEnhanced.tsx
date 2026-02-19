@@ -28,10 +28,10 @@ export interface EducationFormEnhancedProps {
  * @returns Education form with DnD reordering and accordion entries
  */
 
-export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps): React.JSX.Element {
+export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
-  const handleAdd = (): void => {
+  const handleAdd = () => {
     const newEducation: Education = {
       _id: generateUuidKey(),
       institution: "",
@@ -44,7 +44,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     setExpandedIndex(education.length);
   };
 
-  const handleRemove = (index: number): void => {
+  const handleRemove = (index: number) => {
     const updated = education.filter((_, i) => i !== index);
     onChange(updated);
     if (expandedIndex === index) {
@@ -52,7 +52,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Education, value: string): void => {
+  const handleUpdate = (index: number, field: keyof Education, value: string) => {
     const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
     onChange(updated);
   };
@@ -65,11 +65,11 @@ export default function EducationFormEnhanced({ education, onChange }: Education
         items={education}
         onReorder={onChange}
         getItemId={(item: Education): string => item._id}
-        renderItem={(edu: Education, index: number): React.JSX.Element => (
+        renderItem={(edu: Education, index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
-              onClick={(): void => setExpandedIndex(expandedIndex === index ? null : index)}
+              onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex-1">
@@ -83,10 +83,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     ` • ${formatShortDate(edu.graduationDate)}`}
                 </p>
               </div>
-              <DeleteButton
-                onDelete={(): void => handleRemove(index)}
-                ariaLabel={`Delete ${edu.degree || "education"}`}
-              />
+              <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${edu.degree || "education"}`} />
             </button>
 
             {expandedIndex === index && (
@@ -96,7 +93,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                   label="Institution"
                   required
                   value={edu.institution}
-                  onValueChange={(value: string): void => handleUpdate(index, "institution", value)}
+                  onValueChange={(value: string) => handleUpdate(index, "institution", value)}
                   placeholder="e.g. Harvard University"
                 />
 
@@ -106,14 +103,14 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     label="Degree"
                     required
                     value={edu.degree}
-                    onValueChange={(value: string): void => handleUpdate(index, "degree", value)}
+                    onValueChange={(value: string) => handleUpdate(index, "degree", value)}
                     placeholder="e.g. Bachelor of Science"
                   />
                   <TextInput
                     id={`edu-field-${index}`}
                     label="Field of Study"
                     value={edu.field}
-                    onValueChange={(value: string): void => handleUpdate(index, "field", value)}
+                    onValueChange={(value: string) => handleUpdate(index, "field", value)}
                     placeholder="e.g. Computer Science"
                   />
                 </div>
@@ -123,9 +120,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
                     <DatePicker
                       selected={parseYearMonth(edu.graduationDate)}
-                      onSelect={(date: Date | undefined): void =>
-                        handleUpdate(index, "graduationDate", formatFullDate(date))
-                      }
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", formatFullDate(date))}
                       placeholder="Select graduation date"
                     />
                   </div>
@@ -133,7 +128,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     id={`edu-gpa-${index}`}
                     label="GPA (Optional)"
                     value={edu.gpa}
-                    onValueChange={(value: string): void => handleUpdate(index, "gpa", value)}
+                    onValueChange={(value: string) => handleUpdate(index, "gpa", value)}
                     placeholder="e.g. 3.8 or 8.5/10"
                   />
                 </div>

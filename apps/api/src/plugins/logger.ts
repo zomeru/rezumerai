@@ -4,7 +4,6 @@ import Elysia from "elysia";
  * Logger plugin — logs every incoming request with method, path, status, and
  * duration. Lightweight replacement for `morgan("tiny")`.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const loggerPlugin = new Elysia({ name: "plugin/logger" })
   .onBeforeHandle({ as: "global" }, ({ request }) => {
     // Attach timestamp for duration calculation

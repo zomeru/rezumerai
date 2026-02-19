@@ -34,16 +34,16 @@ export interface TemplateSelectorProps {
  * ```
  */
 
-export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps): React.JSX.Element {
+export default function TemplateSelector({ selectedTemplate, onChange }: TemplateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
-  function onTemplateChange(template: TemplateType): void {
+  function onTemplateChange(template: TemplateType) {
     onChange(template);
     setIsOpen(false);
   }
 
-  function toggleDropdown(): void {
+  function toggleDropdown() {
     setIsOpen((prev) => !prev);
   }
 
@@ -64,7 +64,7 @@ export default function TemplateSelector({ selectedTemplate, onChange }: Templat
               <button
                 type="button"
                 key={id}
-                onClick={(): void => {
+                onClick={() => {
                   onTemplateChange(id);
                 }}
                 className={cn(

@@ -65,11 +65,7 @@ export const viewport: Viewport = {
  * RootLayout is the main layout component for the application.
  * It sets up global styles, fonts, metadata, and wraps the application with necessary providers.
  */
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>): React.JSX.Element {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>

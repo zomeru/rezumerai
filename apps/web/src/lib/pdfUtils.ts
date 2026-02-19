@@ -134,7 +134,7 @@ export async function generatePdfFromElement(element: HTMLElement): Promise<Blob
  * }
  * ```
  */
-export function downloadPdfBlob(blob: Blob, fileName: string, onEnd?: () => void): void {
+export function downloadPdfBlob(blob: Blob, fileName: string, onEnd?: () => void) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

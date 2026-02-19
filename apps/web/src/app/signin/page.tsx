@@ -10,7 +10,7 @@ import { signIn } from "@/lib/auth-client";
  * Sign-in page with social authentication and credential-based login.
  * Supports email/password authentication, Google OAuth, and GitHub OAuth.
  */
-export default function SignIn(): React.JSX.Element {
+export default function SignIn() {
   /**
    * Handles credential-based sign in with email and password.
    * Validates input and redirects to workspace on success.

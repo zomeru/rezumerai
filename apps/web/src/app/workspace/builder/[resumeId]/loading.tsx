@@ -4,7 +4,7 @@ import { ResumeBuilderSkeleton } from "@rezumerai/ui";
  * Loading state for resume builder page.
  * Displays skeleton while fetching resume data.
  */
-export default function Loading(): React.JSX.Element {
+export default function Loading() {
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-linear-to-br from-slate-50 to-slate-100">
       <div className="border-slate-200/60 border-b bg-white/80 backdrop-blur-sm">

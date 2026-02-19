@@ -37,7 +37,7 @@ export default function SampleComponentWithTest() {
 
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
-    const { data } = await api.api.health.get();
+    const { data } = await api.health.get();
     if (data && "data" in data && data.data) {
       setHealthData(data.data as HealthData);
     }
@@ -46,7 +46,7 @@ export default function SampleComponentWithTest() {
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
-    const { data } = await api.api.users.get();
+    const { data } = await api.users.get();
     if (data && "data" in data) {
       setUsers((data.data ?? []) as UserType[]);
     }
@@ -65,7 +65,7 @@ export default function SampleComponentWithTest() {
     if (!newUserName || !newUserEmail) return;
 
     setCreating(true);
-    await api.api.users.post({ name: newUserName, email: newUserEmail });
+    await api.users.post({ name: newUserName, email: newUserEmail });
     setCreating(false);
     setNewUserName("");
     setNewUserEmail("");

@@ -17,7 +17,6 @@ import { loggerPlugin } from "./plugins/logger";
  * The exported `App` type is consumed by Eden on the frontend
  * for end-to-end type safety.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required for Eden
 export const app = new Elysia({ prefix: "/api" })
   // ── Cross-cutting plugins ───────────────────────────────────────────────
   .use(

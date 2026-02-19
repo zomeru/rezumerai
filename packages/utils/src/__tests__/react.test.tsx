@@ -81,8 +81,8 @@ describe("onKeyDown", () => {
   });
 
   it("works in a real component", () => {
-    function TestComponent(): React.JSX.Element {
-      const handleKeyDown = (e: React.KeyboardEvent): void => {
+    function TestComponent() {
+      const handleKeyDown = (e: React.KeyboardEvent) => {
         onKeyDown(e);
       };
 

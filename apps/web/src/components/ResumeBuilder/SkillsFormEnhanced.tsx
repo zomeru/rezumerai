@@ -25,21 +25,21 @@ export interface SkillsFormEnhancedProps {
  * @returns Skills form with suggestions, DnD reordering, and skill tags
  */
 
-export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhancedProps): React.JSX.Element {
+export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhancedProps) {
   const [newSkill, setNewSkill] = useState("");
 
-  const handleAdd = (): void => {
+  const handleAdd = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
       onChange([...skills, newSkill.trim()]);
       setNewSkill("");
     }
   };
 
-  const handleRemove = (index: number): void => {
+  const handleRemove = (index: number) => {
     onChange(skills.filter((_, i) => i !== index));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleAdd();
@@ -81,7 +81,7 @@ export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhan
             <input
               type="text"
               value={newSkill}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setNewSkill(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSkill(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Add a skill (e.g. JavaScript, Leadership)"
               className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
@@ -103,7 +103,7 @@ export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhan
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={(): void => {
+                  onClick={() => {
                     onChange([...skills, suggestion]);
                     setNewSkill("");
                   }}
@@ -122,16 +122,14 @@ export default function SkillsFormEnhanced({ skills, onChange }: SkillsFormEnhan
       {skills.length > 0 && (
         <DraggableList
           items={skills.map((skill, index) => ({ id: `${skill}-${index}`, name: skill }))}
-          onReorder={(reordered: Array<{ id: string; name: string }>): void =>
-            onChange(reordered.map((item) => item.name))
-          }
+          onReorder={(reordered: Array<{ id: string; name: string }>) => onChange(reordered.map((item) => item.name))}
           getItemId={(item: { id: string; name: string }): string => item.id}
-          renderItem={(item: { id: string; name: string }): React.JSX.Element => (
+          renderItem={(item: { id: string; name: string }) => (
             <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3">
               <span className="text-slate-900 text-sm">{item.name}</span>
               <button
                 type="button"
-                onClick={(): void => {
+                onClick={() => {
                   const index = skills.indexOf(item.name);
                   if (index !== -1) handleRemove(index);
                 }}

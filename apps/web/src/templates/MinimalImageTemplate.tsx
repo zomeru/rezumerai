@@ -11,7 +11,7 @@ import type { TemplateProps } from "./types";
  * @param props - {@link TemplateProps}
  * @returns The minimal_image-style resume layout
  */
-const MinimalImageTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
+const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
     <div className="mx-auto max-w-5xl bg-white text-zinc-800">
       <div className="grid grid-cols-3">

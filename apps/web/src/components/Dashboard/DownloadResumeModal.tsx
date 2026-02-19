@@ -33,11 +33,7 @@ export interface DownloadResumeModalProps {
  * <DownloadResumeModal resume={resume} isOpen={showDownload} onClose={close} />
  * ```
  */
-export default function DownloadResumeModal({
-  resume,
-  isOpen,
-  onClose,
-}: DownloadResumeModalProps): React.JSX.Element | null {
+export default function DownloadResumeModal({ resume, isOpen, onClose }: DownloadResumeModalProps) {
   const [status, setStatus] = useState<"generating" | "success" | "error">("generating");
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);

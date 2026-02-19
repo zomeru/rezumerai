@@ -15,7 +15,7 @@ const globalForPrisma = globalThis as unknown as {
  * PostgreSQL adapter for Prisma using the native pg driver.
  * Reads the connection string from the DATABASE_URL environment variable.
  */
-const adapter: PrismaPg = new PrismaPg({
+const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
 });
 
@@ -30,7 +30,7 @@ const adapter: PrismaPg = new PrismaPg({
  * const users = await prisma.user.findMany();
  * ```
  */
-export const prisma: PrismaClient =
+export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     adapter,

@@ -2,18 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import type { RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 import { logError } from "@/lib/errors";
 
 /**
  * Global error boundary that catches errors in the root layout.
  */
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}): React.JSX.Element {
+export default function GlobalError({ error, reset }: RouteErrorBoundaryProps) {
   const pathname = usePathname();
 
   useEffect(() => {

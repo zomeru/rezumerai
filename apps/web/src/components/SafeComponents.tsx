@@ -17,7 +17,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
  * Fallback UI for failed resume cards.
  * Displays a minimal error state that doesn't break the grid layout.
  */
-function ResumeCardFallback(): React.JSX.Element {
+function ResumeCardFallback() {
   return (
     <div className="flex h-56 w-full items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50 p-6">
       <div className="text-center">
@@ -32,9 +32,9 @@ function ResumeCardFallback(): React.JSX.Element {
  * Fallback UI for failed PDF preview.
  * Provides retry action without breaking the builder layout.
  */
-function PDFPreviewFallback({ reset }: { reset: () => void }): React.JSX.Element {
+function PDFPreviewFallback({ reset }: { reset: () => void }) {
   return (
-    <div className="flex h-full min-h-[600px] w-full flex-col items-center justify-center rounded-lg border-2 border-red-200 bg-red-50 p-8">
+    <div className="flex h-full min-h-150 w-full flex-col items-center justify-center rounded-lg border-2 border-red-200 bg-red-50 p-8">
       <div className="text-center">
         <div className="mb-4 text-5xl">📄</div>
         <h3 className="mb-2 font-semibold text-lg text-red-900">PDF Preview Error</h3>
@@ -57,7 +57,7 @@ function PDFPreviewFallback({ reset }: { reset: () => void }): React.JSX.Element
  * Fallback UI for failed form sections.
  * Shows error without breaking the form flow.
  */
-function FormSectionFallback({ reset }: { reset: () => void }): React.JSX.Element {
+function FormSectionFallback({ reset }: { reset: () => void }) {
   return (
     <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-6">
       <div className="flex items-start gap-3">
@@ -84,7 +84,7 @@ function FormSectionFallback({ reset }: { reset: () => void }): React.JSX.Elemen
  * Fallback UI for failed modals.
  * Shows error in modal context without closing the modal.
  */
-function ModalFallback({ reset }: { reset: () => void }): React.JSX.Element {
+function ModalFallback({ reset }: { reset: () => void }) {
   return (
     <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6">
       <div className="text-center">
@@ -109,7 +109,7 @@ function ModalFallback({ reset }: { reset: () => void }): React.JSX.Element {
  * Safe wrapper for Resume Card components.
  * Catches errors during rendering, API calls, or user interactions.
  */
-export function SafeResumeCard({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function SafeResumeCard({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={<ResumeCardFallback />}
@@ -128,7 +128,7 @@ export function SafeResumeCard({ children }: { children: React.ReactNode }): Rea
  * Safe wrapper for PDF Preview component.
  * Catches errors from PDF.js, worker failures, or rendering issues.
  */
-export function SafePDFPreview({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function SafePDFPreview({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={(_error: Error, reset: () => void) => <PDFPreviewFallback reset={reset} />}
@@ -147,13 +147,7 @@ export function SafePDFPreview({ children }: { children: React.ReactNode }): Rea
  * Safe wrapper for form sections (Experience, Education, etc.).
  * Catches validation errors, state management failures, or rendering issues.
  */
-export function SafeFormSection({
-  children,
-  sectionName,
-}: {
-  children: React.ReactNode;
-  sectionName: string;
-}): React.JSX.Element {
+export function SafeFormSection({ children, sectionName }: { children: React.ReactNode; sectionName: string }) {
   return (
     <ErrorBoundary
       fallback={(_error: Error, reset: () => void) => <FormSectionFallback reset={reset} />}
@@ -173,7 +167,7 @@ export function SafeFormSection({
  * Safe wrapper for modal components.
  * Catches errors in modal rendering or form submission.
  */
-export function SafeModal({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function SafeModal({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={(_error: Error, reset: () => void) => <ModalFallback reset={reset} />}
@@ -192,7 +186,7 @@ export function SafeModal({ children }: { children: React.ReactNode }): React.JS
  * Safe wrapper for rich text editor.
  * Catches TipTap initialization failures or editor crashes.
  */
-export function SafeRichTextEditor({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function SafeRichTextEditor({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={(_error: Error, reset: () => void) => (
@@ -223,11 +217,11 @@ export function SafeRichTextEditor({ children }: { children: React.ReactNode }):
  * Safe wrapper for resume preview.
  * Catches template rendering failures or data transformation errors.
  */
-export function SafeResumePreview({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function SafeResumePreview({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
       fallback={(_error: Error, reset: () => void) => (
-        <div className="flex h-full min-h-[800px] items-center justify-center rounded-lg border-2 border-red-200 bg-red-50">
+        <div className="flex h-full min-h-200 items-center justify-center rounded-lg border-2 border-red-200 bg-red-50">
           <div className="text-center">
             <div className="mb-4 text-5xl">📋</div>
             <h3 className="mb-2 font-semibold text-lg text-red-900">Preview Error</h3>

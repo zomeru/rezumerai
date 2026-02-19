@@ -4,7 +4,7 @@ import { ResumeCardSkeletonGrid } from "@rezumerai/ui";
  * Loading state for workspace page.
  * Displays skeleton grid while fetching resume data.
  */
-export default function Loading(): React.JSX.Element {
+export default function Loading() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="mx-auto max-w-400 px-4 py-4 sm:px-6 lg:px-8">

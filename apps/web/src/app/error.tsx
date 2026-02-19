@@ -1,16 +1,11 @@
 "use client";
 
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
-
-interface ErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
+import { RouteErrorBoundary, type RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 
 /**
  * Root-level error boundary with retry and navigation actions.
  */
-export default function RootError({ error, reset }: ErrorProps): React.JSX.Element {
+export default function RootError({ error, reset }: RouteErrorBoundaryProps) {
   return (
     <RouteErrorBoundary
       error={error}

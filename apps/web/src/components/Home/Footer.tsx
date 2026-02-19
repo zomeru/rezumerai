@@ -5,7 +5,7 @@ import Logo from "../Logo";
 /**
  * Footer component for the homepage, containing the logo, a brief description, and copyright information.
  */
-export default function Footer(): React.JSX.Element {
+export default function Footer() {
   const year = new Date().getFullYear();
 
   return (

@@ -10,7 +10,7 @@ import type { TemplateProps } from "./types";
  * @param props - {@link TemplateProps}
  * @returns The classic-style resume layout
  */
-const ClassicTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
+const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 text-gray-800 leading-relaxed">
       {/* Header */}

@@ -1,4 +1,3 @@
-import type { StoreApi, UseBoundStore } from "zustand";
 import { create } from "zustand";
 import { dummyResumeData, type Resume } from "@/constants/dummy";
 
@@ -49,7 +48,7 @@ interface ResumeStore {
  * }
  * ```
  */
-export const useResumeStore: UseBoundStore<StoreApi<ResumeStore>> = create<ResumeStore>((set, get) => ({
+export const useResumeStore = create<ResumeStore>((set, get) => ({
   resumes: [],
   isLoading: false,
   hasFetched: false,
@@ -66,12 +65,12 @@ export const useResumeStore: UseBoundStore<StoreApi<ResumeStore>> = create<Resum
     }
   },
 
-  updateResume: (id: string, updates: Partial<Resume>): void =>
+  updateResume: (id: string, updates: Partial<Resume>) =>
     set((state) => ({
       resumes: state.resumes.map((resume) => (resume._id === id ? { ...resume, ...updates } : resume)),
     })),
 
-  deleteResume: (id: string): void =>
+  deleteResume: (id: string) =>
     set((state) => ({
       resumes: state.resumes.filter((resume) => resume._id !== id),
     })),

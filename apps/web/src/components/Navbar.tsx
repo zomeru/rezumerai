@@ -22,7 +22,7 @@ import Logo from "./Logo";
  * <Navbar />
  * ```
  */
-export default function Navbar(): React.JSX.Element {
+export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
 

@@ -26,12 +26,12 @@ export interface UploadResumeModalProps {
  * <UploadResumeModal onSubmit={(title, file) => upload(title, file)} onClose={close} />
  * ```
  */
-export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps): React.JSX.Element {
+export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps) {
   const inputId = useId();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  function handleSubmit(e: React.FormEvent): void {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (file) {
       onSubmit(title, file);
@@ -40,13 +40,13 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
     }
   }
 
-  function handleClose(): void {
+  function handleClose() {
     setTitle("");
     setFile(null);
     onClose();
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>): void {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = e.target.files?.[0] ?? null;
     setFile(selectedFile);
   }
@@ -61,7 +61,7 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
     >
       <input
         value={title}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setTitle(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"

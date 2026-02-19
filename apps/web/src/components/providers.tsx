@@ -29,7 +29,7 @@ export interface ProvidersProps {
  * </Providers>
  * ```
  */
-export function Providers({ children }: ProvidersProps): React.JSX.Element {
+export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -90,7 +90,7 @@ export function Providers({ children }: ProvidersProps): React.JSX.Element {
              * Global error handler for mutations.
              * Logs all mutation errors for monitoring.
              */
-            onError: (error: Error): void => {
+            onError: (error: Error) => {
               logError(error, "error", {
                 component: "ReactQuery",
                 action: "mutation_failed",

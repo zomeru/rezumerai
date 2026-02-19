@@ -7,7 +7,6 @@ import { UserService } from "./service";
  * User module — CRUD routes for users.
  * Public for now; add `.use(authPlugin)` to protect.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
   .get("/", async ({ db }) => {

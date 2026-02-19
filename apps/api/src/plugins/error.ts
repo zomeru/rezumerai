@@ -3,7 +3,6 @@ import Elysia from "elysia";
 /**
  * Error-handling plugin — provides centralized, consistent error responses.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "global" }, ({ code, error, set }) => {
   switch (code) {
     case "VALIDATION": {

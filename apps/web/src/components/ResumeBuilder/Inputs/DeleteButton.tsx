@@ -23,17 +23,13 @@ export interface DeleteButtonProps {
  * <DeleteButton onDelete={() => handleRemove(index)} ariaLabel="Remove experience" />
  * ```
  */
-export default function DeleteButton({
-  onDelete,
-  ariaLabel = "Delete item",
-  size = "md",
-}: DeleteButtonProps): React.JSX.Element {
-  const handleClick = (e: React.MouseEvent): void => {
+export default function DeleteButton({ onDelete, ariaLabel = "Delete item", size = "md" }: DeleteButtonProps) {
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.stopPropagation();
       onDelete();

@@ -20,7 +20,7 @@ interface TestProvidersProps {
   children: ReactNode;
 }
 
-function TestProviders({ children }: TestProvidersProps): React.JSX.Element {
+function TestProviders({ children }: TestProvidersProps) {
   const queryClient = createTestQueryClient();
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

@@ -1,4 +1,3 @@
-import type { StoreApi, UseBoundStore } from "zustand";
 import { create } from "zustand";
 import type { PreviewMode } from "@/hooks/usePdfGenerator";
 
@@ -55,16 +54,16 @@ interface BuilderStore {
  * }
  * ```
  */
-export const useBuilderStore: UseBoundStore<StoreApi<BuilderStore>> = create<BuilderStore>((set) => ({
+export const useBuilderStore = create<BuilderStore>((set) => ({
   activeSectionIndex: 0,
   removeBackground: false,
   isSaving: false,
   lastSaved: null,
   previewMode: "html",
 
-  setActiveSectionIndex: (activeSectionIndex: number): void => set({ activeSectionIndex }),
-  setRemoveBackground: (removeBackground: boolean): void => set({ removeBackground }),
-  setIsSaving: (isSaving: boolean): void => set({ isSaving }),
-  setLastSaved: (lastSaved: Date | null): void => set({ lastSaved }),
-  setPreviewMode: (previewMode: PreviewMode): void => set({ previewMode }),
+  setActiveSectionIndex: (activeSectionIndex: number) => set({ activeSectionIndex }),
+  setRemoveBackground: (removeBackground: boolean) => set({ removeBackground }),
+  setIsSaving: (isSaving: boolean) => set({ isSaving }),
+  setLastSaved: (lastSaved: Date | null) => set({ lastSaved }),
+  setPreviewMode: (previewMode: PreviewMode) => set({ previewMode }),
 }));

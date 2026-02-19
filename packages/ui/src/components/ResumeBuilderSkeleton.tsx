@@ -5,7 +5,7 @@ import Skeleton, { SkeletonText } from "./Skeleton";
  * Mirrors the two-column layout: left editor panel + right preview panel.
  * Only the data-dependent areas pulse; structural chrome (back link, headers) is omitted.
  */
-export default function ResumeBuilderSkeleton(): React.JSX.Element {
+export default function ResumeBuilderSkeleton() {
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
       {/* Left Panel – Editor skeleton */}

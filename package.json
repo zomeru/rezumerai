@@ -36,7 +36,7 @@
     "dev": "turbo dev",
     "start": "turbo start",
     "check": "bun run update:biome-configs && turbo check",
-    "biome": "bun run update:biome-configs && biome check --write .",
+    "biome": "bun run update:biome-configs && biome check --write  .",
     "update:biome-configs": "bun scripts/update-biome-config-version.ts",
     "check-types": "turbo check-types",
     "lint-staged": "lint-staged",

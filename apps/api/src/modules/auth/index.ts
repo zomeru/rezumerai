@@ -6,7 +6,6 @@ import { AuthService } from "./service";
 /**
  * Auth module — protected routes that require a valid NextAuth session.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const authModule = new Elysia({ prefix: "/auth" })
   .use(prismaPlugin)
   .use(authPlugin)

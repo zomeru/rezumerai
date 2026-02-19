@@ -73,7 +73,7 @@ const bottomCardsData: Array<CardData[][number] & { id: string }> = [...cards].r
 /**
  * How it works" marquee section showing Rezumer workflows.
  */
-export default function Testimonial(): React.JSX.Element {
+export default function Testimonial() {
   return (
     <>
       <style>{`
@@ -120,7 +120,7 @@ export default function Testimonial(): React.JSX.Element {
   );
 }
 
-const CreateCard = ({ card }: { card: CardData[][number] }): React.JSX.Element => (
+const CreateCard = ({ card }: { card: CardData[][number] }) => (
   <div className="mx-4 w-72 shrink-0 rounded-lg border border-slate-200 bg-white p-4 shadow transition-all duration-200 hover:shadow-lg">
     <div className="flex items-start gap-3">
       <div className="flex size-10 items-center justify-center rounded-full bg-primary-50">{card.icon}</div>

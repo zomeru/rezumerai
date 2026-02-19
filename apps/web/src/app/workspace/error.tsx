@@ -1,17 +1,12 @@
 "use client";
 
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
-
-interface ErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
+import { RouteErrorBoundary, type RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 
 /**
  * Error boundary for workspace routes.
  * Catches errors and provides a user-friendly interface to recover.
  */
-export default function WorkspaceError({ error, reset }: ErrorProps): React.JSX.Element {
+export default function WorkspaceError({ error, reset }: RouteErrorBoundaryProps) {
   return (
     <RouteErrorBoundary
       error={error}

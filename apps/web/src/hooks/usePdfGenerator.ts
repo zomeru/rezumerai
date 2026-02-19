@@ -44,7 +44,7 @@ interface UsePdfGeneratorProps {
  * @property downloadResume - Function to download resume as PDF file
  * @property dataHash - Hash of current resume data for change detection
  */
-interface UsePdfGeneratorReturn {
+interface UsePdfGeneratorReturnType {
   pdfBlob: Blob | null;
   isGeneratingPdf: boolean;
   isExporting: boolean;
@@ -131,7 +131,7 @@ export function usePdfGenerator({
   resumePreviewRef,
   fontSize,
   accentColor,
-}: UsePdfGeneratorProps): UsePdfGeneratorReturn {
+}: UsePdfGeneratorProps): UsePdfGeneratorReturnType {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isExporting, setIsExporting] = useState(false);

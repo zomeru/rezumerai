@@ -92,7 +92,7 @@ async function updateBiomeConfig(filePath: string, version: string): Promise<voi
 
   config.$schema = nextSchema;
 
-  await writeFile(filePath, JSON.stringify(config, null, 2) + "\n", "utf8");
+  await writeFile(filePath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 
   console.log(`✅ Updated ${filePath}`);
 }

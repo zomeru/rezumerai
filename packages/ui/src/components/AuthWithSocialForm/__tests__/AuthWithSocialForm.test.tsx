@@ -5,7 +5,7 @@ import AuthWithSocialForm from "../AuthWithSocialForm";
 
 describe("AuthContext", () => {
   // Test component that uses the context
-  function TestComponent(): React.JSX.Element {
+  function TestComponent() {
     const { state, setEmail, setPassword, setConfirmPassword, reset } = useAuthSocialForm();
     return (
       <div>
@@ -147,8 +147,7 @@ describe("AuthContext", () => {
     console.error = vi.fn();
 
     const mockSubmit = vi.fn().mockRejectedValue("string error");
-    const mockErrorHandler = vi.fn();
-    render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onError={mockErrorHandler} />);
+    render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
     const emailInput = screen.getByPlaceholderText("Enter your email");
     const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -159,11 +158,6 @@ describe("AuthContext", () => {
 
     await act(async () => {
       fireEvent.click(submitButton);
-    });
-
-    await waitFor(() => {
-      expect(mockErrorHandler).toHaveBeenCalledWith(expect.any(Error));
-      expect(mockErrorHandler.mock.calls[0][0].message).toBe("Unknown error occurred");
     });
 
     console.error = originalError;
@@ -276,8 +270,7 @@ describe("AuthWithSocialForm Component", () => {
 
       const mockError = new Error("Submission failed");
       const mockSubmit = vi.fn().mockRejectedValue(mockError);
-      const mockErrorHandler = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onError={mockErrorHandler} />);
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
       const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -288,10 +281,6 @@ describe("AuthWithSocialForm Component", () => {
 
       await act(async () => {
         fireEvent.click(submitButton);
-      });
-
-      await waitFor(() => {
-        expect(mockErrorHandler).toHaveBeenCalledWith(mockError);
       });
 
       console.error = originalError;
@@ -365,78 +354,110 @@ describe("AuthWithSocialForm Component", () => {
 
       expect(confirmInput).toHaveValue("password123");
     });
+
+    it("shows error with my-4 class in signup mode", async () => {
+      const originalError = console.error;
+      console.error = vi.fn();
+
+      const mockError = new Error("Email already in use");
+      const mockSubmit = vi.fn().mockRejectedValue(mockError);
+      render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
+
+      fireEvent.change(screen.getByPlaceholderText("Enter your email"), {
+        target: { value: "test@example.com" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("Enter your password"), {
+        target: { value: "password123" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("Confirm your password"), {
+        target: { value: "password123" },
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Sign Up" }));
+      });
+
+      await waitFor(() => {
+        const errorEl = screen.getByText("Email already in use");
+        expect(errorEl).toBeInTheDocument();
+        expect(errorEl).toHaveClass("my-4");
+      });
+
+      expect(mockSubmit).toHaveBeenCalled();
+      console.error = originalError;
+    });
   });
 
   describe("Social Authentication", () => {
-    it("renders Google button when googleAuth is provided", () => {
+    it("renders Google button when handleGoogleAuth is provided", () => {
       const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} />);
+      const mockhandleGoogleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGoogleAuth={mockhandleGoogleAuth} />);
 
       expect(screen.getByText("Continue with Google")).toBeInTheDocument();
     });
 
-    it("renders GitHub button when githubAuth is provided", () => {
+    it("renders GitHub button when handleGithubAuth is provided", () => {
       const mockSubmit = vi.fn();
-      const mockGitHubAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} githubAuth={mockGitHubAuth} />);
+      const mockhandleGithubAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGithubAuth={mockhandleGithubAuth} />);
 
       expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
     });
 
-    it("renders Apple button when appleAuth is provided", () => {
+    it("renders Apple button when handleAppleAuth is provided", () => {
       const mockSubmit = vi.fn();
-      const mockAppleAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} />);
+      const mockhandleAppleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleAppleAuth={mockhandleAppleAuth} />);
 
       expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
     });
 
-    it("calls googleAuth when Google button is clicked", () => {
+    it("calls handleGoogleAuth when Google button is clicked", () => {
       const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} />);
+      const mockhandleGoogleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGoogleAuth={mockhandleGoogleAuth} />);
 
       const googleButton = screen.getByText("Continue with Google");
       fireEvent.click(googleButton);
 
-      expect(mockGoogleAuth).toHaveBeenCalledTimes(1);
+      expect(mockhandleGoogleAuth).toHaveBeenCalledTimes(1);
     });
 
-    it("calls githubAuth when GitHub button is clicked", () => {
+    it("calls handleGithubAuth when GitHub button is clicked", () => {
       const mockSubmit = vi.fn();
-      const mockGitHubAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} githubAuth={mockGitHubAuth} />);
+      const mockhandleGithubAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGithubAuth={mockhandleGithubAuth} />);
 
       const githubButton = screen.getByText("Continue with GitHub");
       fireEvent.click(githubButton);
 
-      expect(mockGitHubAuth).toHaveBeenCalledTimes(1);
+      expect(mockhandleGithubAuth).toHaveBeenCalledTimes(1);
     });
 
-    it("calls appleAuth when Apple button is clicked", () => {
+    it("calls handleAppleAuth when Apple button is clicked", () => {
       const mockSubmit = vi.fn();
-      const mockAppleAuth = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} />);
+      const mockhandleAppleAuth = vi.fn();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleAppleAuth={mockhandleAppleAuth} />);
 
       const appleButton = screen.getByText("Continue with Apple");
       fireEvent.click(appleButton);
 
-      expect(mockAppleAuth).toHaveBeenCalledTimes(1);
+      expect(mockhandleAppleAuth).toHaveBeenCalledTimes(1);
     });
 
     it("renders all social auth buttons when all are provided", () => {
       const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      const mockGitHubAuth = vi.fn();
-      const mockAppleAuth = vi.fn();
+      const mockhandleGoogleAuth = vi.fn();
+      const mockhandleGithubAuth = vi.fn();
+      const mockhandleAppleAuth = vi.fn();
       render(
         <AuthWithSocialForm
           type="signin"
           onSubmit={mockSubmit}
-          googleAuth={mockGoogleAuth}
-          githubAuth={mockGitHubAuth}
-          appleAuth={mockAppleAuth}
+          handleGoogleAuth={mockhandleGoogleAuth}
+          handleGithubAuth={mockhandleGithubAuth}
+          handleAppleAuth={mockhandleAppleAuth}
         />,
       );
 
@@ -447,14 +468,14 @@ describe("AuthWithSocialForm Component", () => {
 
     it("renders only Google and GitHub buttons when both are provided", () => {
       const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      const mockGitHubAuth = vi.fn();
+      const mockhandleGoogleAuth = vi.fn();
+      const mockhandleGithubAuth = vi.fn();
       render(
         <AuthWithSocialForm
           type="signin"
           onSubmit={mockSubmit}
-          googleAuth={mockGoogleAuth}
-          githubAuth={mockGitHubAuth}
+          handleGoogleAuth={mockhandleGoogleAuth}
+          handleGithubAuth={mockhandleGithubAuth}
         />,
       );
 
@@ -465,14 +486,14 @@ describe("AuthWithSocialForm Component", () => {
 
     it("renders only GitHub and Apple buttons when both are provided", () => {
       const mockSubmit = vi.fn();
-      const mockGitHubAuth = vi.fn();
-      const mockAppleAuth = vi.fn();
+      const mockhandleGithubAuth = vi.fn();
+      const mockhandleAppleAuth = vi.fn();
       render(
         <AuthWithSocialForm
           type="signin"
           onSubmit={mockSubmit}
-          githubAuth={mockGitHubAuth}
-          appleAuth={mockAppleAuth}
+          handleGithubAuth={mockhandleGithubAuth}
+          handleAppleAuth={mockhandleAppleAuth}
         />,
       );
 

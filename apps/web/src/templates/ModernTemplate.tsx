@@ -10,7 +10,7 @@ import type { TemplateProps } from "./types";
  * @param props - {@link TemplateProps}
  * @returns The modern-style resume layout
  */
-const ModernTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
+const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
     <div className="mx-auto max-w-4xl bg-white text-gray-800">
       {/* Header */}

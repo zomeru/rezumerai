@@ -3,9 +3,10 @@
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import { type ErrorSeverity, logError } from "@/lib/errors";
+import type { ErrorWithDigest } from "./ErrorBoundary";
 
-interface RouteErrorBoundaryProps {
-  error: Error & { digest?: string };
+export interface RouteErrorBoundaryProps {
+  error: ErrorWithDigest;
   reset: () => void;
   icon?: string;
   title?: string;
@@ -32,7 +33,7 @@ export function RouteErrorBoundary({
   extraContent,
   logContext = {},
   severity = "error",
-}: RouteErrorBoundaryProps): React.JSX.Element {
+}: RouteErrorBoundaryProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -96,7 +97,7 @@ export function RouteErrorBoundary({
           {showHomeButton && (
             <button
               type="button"
-              onClick={(): void => router.push(homeRoute)}
+              onClick={() => router.push(homeRoute)}
               className="flex-1 rounded-lg border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
             >
               Go Home

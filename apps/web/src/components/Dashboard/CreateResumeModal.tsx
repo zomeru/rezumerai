@@ -26,16 +26,16 @@ export interface CreateResumeModalProps {
  * <CreateResumeModal onSubmit={(title) => create(title)} onClose={close} />
  * ```
  */
-export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps): React.JSX.Element {
+export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps) {
   const [title, setTitle] = useState("");
 
-  function handleSubmit(e: React.FormEvent): void {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     onSubmit(title);
     setTitle("");
   }
 
-  function handleClose(): void {
+  function handleClose() {
     setTitle("");
     onClose();
   }
@@ -50,7 +50,7 @@ export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeMod
     >
       <input
         value={title}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setTitle(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"

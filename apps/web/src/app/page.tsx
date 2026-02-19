@@ -1,17 +1,10 @@
 import { BannerWithTag } from "@rezumerai/ui";
-import type { Metadata } from "next";
 import { CallToAction, Feature, Footer, Hero, Testimonial } from "@/components/Home";
-
-export const metadata: Metadata = {
-  title: "Home",
-  description:
-    "Build professional, ATS-friendly resumes in minutes with AI-powered suggestions. Choose from multiple templates and customize your resume to stand out.",
-};
 
 /**
  * Home page component that renders the landing page sections including hero, features, testimonials, and call-to-action.
  */
-export default function Home(): React.JSX.Element {
+export default function Home() {
   return (
     <main>
       <BannerWithTag
