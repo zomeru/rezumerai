@@ -55,7 +55,7 @@
     "uuid": "^11.0.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.15",
+    "@biomejs/biome": "2.4.3",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/vitest-config": "workspace:*",
     "@testing-library/jest-dom": "^6.7.0",
