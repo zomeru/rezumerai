@@ -7,6 +7,33 @@ Before anything else, ensure MCP servers are activated on this project.
 - **Activate Serena** — Call `mcp_serena_activate_project` to activate Serena MCP server on this project every time before you start working.
 - **Use Context7** — Use `mcp_context7_query-docs` to get relevant documentation for project library and framework usage, ONLY if needed.
 
+## Agent Skills — Authoritative Skill Directory
+
+All AI agents working in this repository **must** consult `.agents/skills/` as the authoritative source for domain-specific skills before reasoning, planning, or generating code. Each skill folder contains a `SKILL.md` with a description, trigger conditions, rules, and examples.
+
+**Rule**: When a user prompt matches a skill's trigger conditions, read the corresponding `SKILL.md` (and referenced sub-files) before proceeding. Do not rely solely on general knowledge when a matching skill exists.
+
+| Skill | Path | Trigger Conditions |
+|-------|------|--------------------|
+| `elysiajs` | `.agents/skills/elysiajs/SKILL.md` | Creating/modifying Elysia routes, handlers, servers, plugins, JWT, CORS, OpenAPI, validation, WebSocket |
+| `better-auth-best-practices` | `.agents/skills/better-auth-best-practices/SKILL.md` | Setting up Better Auth, OAuth, magic links, passkeys, auth configuration |
+| `better-auth-security-best-practices` | `.agents/skills/better-auth-security-best-practices/SKILL.MD` | Rate limiting, CSRF protection, session security, trusted origins, secret management, OAuth security |
+| `create-auth-skill` | `.agents/skills/create-auth-skill/SKILL.md` | Adding auth to a new or existing app, auth layer setup |
+| `email-and-password-best-practices` | `.agents/skills/email-and-password-best-practices/SKILL.md` | Email verification, password auth, email/password sign-in/sign-up |
+| `organization-best-practices` | `.agents/skills/organization-best-practices/SKILL.md` | Multi-tenant organizations, teams, RBAC, Better Auth organization plugin |
+| `two-factor-authentication-best-practices` | `.agents/skills/two-factor-authentication-best-practices/SKILL.md` | 2FA, TOTP, two-factor auth, authenticator apps, Better Auth twoFactor plugin |
+| `prisma-cli` | `.agents/skills/prisma-cli/SKILL.md` | `prisma init`, `prisma generate`, `prisma migrate`, `prisma db`, `prisma studio` |
+| `prisma-client-api` | `.agents/skills/prisma-client-api/SKILL.md` | Prisma queries, `findMany`, `create`, `update`, `delete`, `$transaction`, CRUD, filtering |
+| `vercel-react-best-practices` | `.agents/skills/vercel-react-best-practices/SKILL.md` | React components, Next.js pages, data fetching, bundle optimization, performance improvements |
+| `vercel-composition-patterns` | `.agents/skills/vercel-composition-patterns/SKILL.md` | Compound components, render props, boolean prop proliferation, context providers, component architecture |
+| `web-design-guidelines` | `.agents/skills/web-design-guidelines/SKILL.md` | UI review, design audit, UX review, checking site against best practices |
+| `web-accessibility` | `.agents/skills/web-accessibility/SKILL.md` | Accessibility, a11y, WCAG, ARIA, screen reader support, keyboard navigation |
+| `mobile-responsiveness` | `.agents/skills/mobile-responsiveness/SKILL.md` | Responsive layouts, mobile-first design, breakpoints, touch events, viewport |
+| `owasp-security` | `.agents/skills/owasp-security/SKILL.md` | Security vulnerabilities, OWASP Top 10, XSS, SQL injection, CSRF, auth security |
+| `vitest` | `.agents/skills/vitest/SKILL.md` | Writing tests, mocking, coverage configuration, test filtering, fixtures |
+| `turborepo` | `.agents/skills/turborepo/SKILL.md` | `turbo.json`, task pipelines, caching, monorepo structure, `--filter`, `--affected`, CI optimization |
+| `bun` | `.agents/skills/bun/SKILL.md` | Bun runtime APIs, `bunx`, `bun serve`, `bun test`, Bun bundler, JavaScript runtime |
+
 ## Monorepo Architecture
 
 Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
