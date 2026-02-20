@@ -18,9 +18,13 @@ const argon2Options: Options = {
 };
 
 export const auth = betterAuth({
+  secret: serverEnv.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  account: {
+    encryptOAuthTokens: true, // Uses AES-256-GCM
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

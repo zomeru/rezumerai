@@ -77,34 +77,6 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
-// Zod schemas for validation
-/**
- * Zod validation schema for UserType.
- * Validates user data structure with email format checking.
- *
- * @returns Zod schema that validates against UserType
- *
- * @example
- * ```ts
- * const validUser = UserSchema.parse({
- *   id: "usr_123",
- *   name: "Jane",
- *   email: "jane@example.com"
- * }); // ✓ Valid
- *
- * const invalidUser = UserSchema.parse({
- *   id: "usr_123",
- *   name: "Jane",
- *   email: "invalid-email"
- * }); // ✗ Throws ZodError
- * ```
- */
-export const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.email(),
-});
-
 /**
  * Zod validation schema for ProjectType.
  * Validates project data structure including ownership reference.
