@@ -4,11 +4,16 @@ import { swagger } from "@elysiajs/swagger";
 import { formatDate } from "@rezumerai/utils/date";
 import { capitalize } from "@rezumerai/utils/string";
 import Elysia from "elysia";
+import { helmet } from "elysia-helmet";
+import { httpExceptionPlugin } from "elysia-http-exception";
+import { rateLimit } from "elysia-rate-limit";
+import { elysiaXSS } from "elysia-xss";
 import { env } from "./env";
 import { authModule } from "./modules/auth";
 import { userModule } from "./modules/user";
 import { errorPlugin } from "./plugins/error";
 import { loggerPlugin } from "./plugins/logger";
+import { modernCsrf } from "./plugins/modernCsrf";
 
 /**
  * Elysia application — single source of truth for the API.
@@ -25,13 +30,22 @@ export const app = new Elysia({ prefix: "/api" })
       origin: env.CORS_ORIGINS,
     }),
   )
+  .use(elysiaXSS())
+  .use(rateLimit())
+  .use(httpExceptionPlugin())
+  .use(helmet())
+  .use(
+    modernCsrf({
+      trustedOrigins: env.CORS_ORIGINS,
+    }),
+  )
   .use(swagger())
   .use(
     openapi({
       references: fromTypes(process.env.NODE_ENV === "production" ? "dist/index.d.ts" : "src/index.ts"),
     }),
   )
-  .use(loggerPlugin)
+  .use(loggerPlugin())
   .use(errorPlugin)
 
   // ── Health check (root) ─────────────────────────────────────────────────

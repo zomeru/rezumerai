@@ -1,14 +1,16 @@
 import Elysia from "elysia";
+import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { CreateUserSchema, UserParamsSchema } from "./model";
 import { UserService } from "./service";
 
 /**
  * User module — CRUD routes for users.
- * Public for now; add `.use(authPlugin)` to protect.
+ * Protected by authPlugin — requires a valid Better Auth session.
  */
 export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
+  .use(authPlugin)
   .get("/", async ({ db }) => {
     const service = new UserService(db);
     const users = await service.findAll();

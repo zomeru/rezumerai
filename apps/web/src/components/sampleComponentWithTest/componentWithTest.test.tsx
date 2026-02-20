@@ -109,8 +109,15 @@ describe("SampleComponentWithTest Page", () => {
     fireEvent.change(screen.getByPlaceholderText("Name"), { target: { value: "Bob Jones" } });
     fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "bob@example.com" } });
 
+    const input = screen.getByPlaceholderText("Name");
+    const form = input.closest("form");
+
+    if (!form) {
+      throw new Error("Form not found");
+    }
+
     await act(async () => {
-      fireEvent.submit(screen.getByPlaceholderText("Name").closest("form")!);
+      fireEvent.submit(form);
     });
 
     expect(mockUsersPost).toHaveBeenCalled();
