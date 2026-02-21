@@ -35,10 +35,10 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
-    "@prisma/client-runtime-utils": "7.4.0"
+    "@prisma/client-runtime-utils": "7.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.2",
+    "@biomejs/biome": "2.4.4",
     "@rezumerai/tsconfig": "workspace:*",
     "@rezumerai/types": "workspace:*",
     "@types/node": "^25.3.0",
