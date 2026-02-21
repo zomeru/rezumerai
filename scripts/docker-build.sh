@@ -22,8 +22,11 @@ fi
 REQUIRED_ENV_VARS=(
   "DATABASE_URL"
   "NEXT_PUBLIC_API_URL"
+  "NEXT_PUBLIC_SITE_URL"
   "BETTER_AUTH_URL"
   "BETTER_AUTH_SECRET"
+  "BETTER_AUTH_GITHUB_CLIENT_ID"
+  "BETTER_AUTH_GITHUB_CLIENT_SECRET"
   "API_PORT"
   "CORS_ORIGINS"
 )
@@ -50,8 +53,10 @@ docker build \
 echo "Building Web service..."
 docker build \
   --secret id=next_public_api_url,env=NEXT_PUBLIC_API_URL \
-  --secret id=BETTER_AUTH_URL,env=BETTER_AUTH_URL \
+  --secret id=next_public_site_url,env=NEXT_PUBLIC_SITE_URL \
   --secret id=BETTER_AUTH_SECRET,env=BETTER_AUTH_SECRET \
+  --secret id=BETTER_AUTH_GITHUB_CLIENT_ID,env=BETTER_AUTH_GITHUB_CLIENT_ID \
+  --secret id=BETTER_AUTH_GITHUB_CLIENT_SECRET,env=BETTER_AUTH_GITHUB_CLIENT_SECRET \
   -f apps/web/Dockerfile \
   -t rezumerai-web:latest \
   .

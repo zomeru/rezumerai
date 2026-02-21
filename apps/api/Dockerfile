@@ -9,7 +9,7 @@ WORKDIR /app
 FROM base AS builder
 COPY . .
 # Prune only the 'api' app for a minimal Docker context
-RUN bunx turbo@2.8.0 prune @rezumerai/api --docker
+RUN bunx turbo@2.8.10 prune @rezumerai/api --docker
 
 # ---- Install & Build ----
 FROM base AS installer
@@ -18,7 +18,9 @@ FROM base AS installer
 COPY --from=builder /app/out/json/ .
 
 # Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile
+RUN bun install prisma
+RUN bun install tsup
+RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile --production
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
@@ -31,7 +33,7 @@ RUN --mount=type=secret,id=api_port \
     export API_PORT="$(cat /run/secrets/api_port)" && \
     export CORS_ORIGINS="$(cat /run/secrets/cors_origins)" && \
     (cd packages/database && bun run build:docker) && \
-    bunx turbo@2.8.0 build --filter=@rezumerai/api
+    bunx turbo@2.8.10 build --filter=@rezumerai/api
 
 # ---- Runner ----
 FROM oven/bun:1-slim AS runner
@@ -45,7 +47,7 @@ WORKDIR /app
 USER bun
 
 # Copy only runtime artifacts (built API, database package)
-COPY --from=installer --chown=bun:bun /app/apps/api/dist ./apps/api/dist
+COPY --from=installer --chown=bun:bun /app/apps/api/server ./apps/api/server 
 COPY --from=installer --chown=bun:bun /app/apps/api/package.json ./apps/api/package.json
 COPY --from=installer --chown=bun:bun /app/packages/database/dist ./packages/database/dist
 COPY --from=installer --chown=bun:bun /app/packages/database/generated ./packages/database/generated
@@ -69,4 +71,4 @@ RUN find . -name "*.d.ts" -type f -delete && \
 
 EXPOSE 8080
 
-CMD ["bun", "run", "apps/api/dist/server.js"]
+CMD ["chmod", "+x", "./server", "&&", "./server"]

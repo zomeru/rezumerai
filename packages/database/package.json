@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "bun run with-env tsup --watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
-    "build:docker": "bun run clean:generated && bun run db:generate:prod && tsup",
+    "build:docker": "bun run db:generate:prod && tsup",
     "watch": "bun run db:generate && bun run with-env tsup --watch",
     "db:generate": "bun run with-env prisma generate",
     "db:generate:prod": "mkdir -p generated/prisma && prisma generate",

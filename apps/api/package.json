@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "bun run with-env bun --watch --no-clear-screen src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
-    "start": "bun run with-env bun dist/index.js",
+    "build": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile server src/index.ts",
+    "start": "bun run with-env ./server",
     "check-types": "tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",

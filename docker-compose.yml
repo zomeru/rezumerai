@@ -42,15 +42,23 @@ services:
       secrets:
         # Build-time secrets (for Next.js build)
         - next_public_api_url
-        - BETTER_AUTH_URL
-        - BETTER_AUTH_SECRET
+        - next_public_site_url
+        - better_auth_secret
+        - better_auth_url
+        - better_auth_github_client_id
+        - better_auth_github_client_secret
     restart: unless-stopped
     env_file:
       - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
     secrets:
       # Runtime secrets (available when container runs)
       - database_url
-      - BETTER_AUTH_SECRET
+      - better_auth_secret
+      - better_auth_url
+      - next_public_api_url
+      - next_public_site_url
+      - better_auth_github_client_id
+      - better_auth_github_client_secret
     ports:
       - "3000:3000"
     depends_on:
@@ -95,12 +103,18 @@ networks:
 secrets:
   database_url:
     environment: DATABASE_URL
-  BETTER_AUTH_SECRET:
+  better_auth_secret:
     environment: BETTER_AUTH_SECRET
   next_public_api_url:
     environment: NEXT_PUBLIC_API_URL
-  BETTER_AUTH_URL:
+  next_public_site_url:
+    environment: NEXT_PUBLIC_SITE_URL
+  better_auth_url:
     environment: BETTER_AUTH_URL
+  better_auth_github_client_id:
+    environment: BETTER_AUTH_GITHUB_CLIENT_ID
+  better_auth_github_client_secret:
+    environment: BETTER_AUTH_GITHUB_CLIENT_SECRET
   api_port:
     environment: API_PORT
   cors_origins:

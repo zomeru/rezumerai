@@ -77,3 +77,4 @@ tsup.config.bundled*
 .claude/worktrees
 .claude/settings.local.json
 apps/web/public/pdf-worker
+apps/api/server
