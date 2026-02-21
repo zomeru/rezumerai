@@ -67,9 +67,6 @@ Glob patterns for files to cache. **If omitted, nothing is cached.**
 // Next.js
 "outputs": [".next/**", "!.next/cache/**"]
 
-// Vite
-"outputs": ["dist/**"]
-
 // TypeScript (tsc)
 "outputs": ["dist/**", "*.tsbuildinfo"]
 
@@ -87,7 +84,7 @@ Files considered when calculating task hash. Defaults to all tracked files in pa
 {
   "tasks": {
     "test": {
-      "inputs": ["src/**", "tests/**", "vitest.config.ts"]
+      "inputs": ["src/**", "tests/**", "bunfig.toml"]
     }
   }
 }

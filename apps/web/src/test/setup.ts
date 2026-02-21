@@ -1,35 +1,38 @@
-import "@testing-library/jest-dom";
-import React from "react";
-import { vi } from "vitest";
+import { afterEach, expect, mock } from "bun:test";
+import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
 
-// Make React available globally for JSX
-globalThis.React = React;
+expect.extend(matchers);
+
+afterEach(() => {
+  cleanup();
+});
 
 // Mock Next.js router
-vi.mock("next/navigation", () => ({
+mock.module("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
+    push: mock(),
+    replace: mock(),
+    prefetch: mock(),
+    back: mock(),
+    forward: mock(),
+    refresh: mock(),
   }),
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => "/",
 }));
 
 // Mock client-side hooks to return fixed values for testing
-vi.mock("../hooks/use-client-date", () => ({
-  useClientDate: vi.fn(() => new Date("2025-10-13T00:00:00.000Z")),
-  useIsMounted: vi.fn(() => true),
+mock.module("../hooks/useClientDate", () => ({
+  useClientDate: mock(() => new Date("2025-10-13T00:00:00.000Z")),
+  useIsMounted: mock(() => true),
 }));
 
 // Mock the API module to prevent actual HTTP calls
-vi.mock("../lib/api", () => ({
+mock.module("@/lib/api", () => ({
   api: {
     getHealth: {
-      useQuery: vi.fn(() => ({
+      useQuery: mock(() => ({
         data: {
           status: 200,
           body: {
@@ -46,7 +49,7 @@ vi.mock("../lib/api", () => ({
       })),
     },
     getUsers: {
-      useQuery: vi.fn(() => ({
+      useQuery: mock(() => ({
         data: {
           status: 200,
           body: {
@@ -59,11 +62,11 @@ vi.mock("../lib/api", () => ({
         },
         isLoading: false,
         error: null,
-        refetch: vi.fn(),
+        refetch: mock(),
       })),
     },
     getUser: {
-      useQuery: vi.fn(() => ({
+      useQuery: mock(() => ({
         data: {
           status: 200,
           body: {
@@ -73,11 +76,11 @@ vi.mock("../lib/api", () => ({
         },
         isLoading: false,
         error: null,
-        refetch: vi.fn(),
+        refetch: mock(),
       })),
     },
     getProjects: {
-      useQuery: vi.fn(() => ({
+      useQuery: mock(() => ({
         data: {
           status: 200,
           body: {
@@ -103,8 +106,8 @@ vi.mock("../lib/api", () => ({
       })),
     },
     createUser: {
-      useMutation: vi.fn(() => ({
-        mutate: vi.fn(),
+      useMutation: mock(() => ({
+        mutate: mock(),
         isPending: false,
         isError: false,
         error: null,
@@ -112,6 +115,3 @@ vi.mock("../lib/api", () => ({
     },
   },
 }));
-
-// Set test environment using vi.stubEnv
-vi.stubEnv("NODE_ENV", "test");

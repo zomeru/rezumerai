@@ -28,7 +28,7 @@ Package tasks enable parallelization, individual caching, and filtering. Define 
   "scripts": {
     "build": "next build",
     "lint": "eslint .",
-    "test": "vitest",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   }
 }
@@ -38,7 +38,7 @@ Package tasks enable parallelization, individual caching, and filtering. Define 
   "scripts": {
     "build": "tsc",
     "lint": "eslint .",
-    "test": "vitest",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   }
 }
@@ -123,7 +123,7 @@ The `"extends": ["//"]` is required - it references the root configuration.
 
 **When to use Package Configurations:**
 
-- Framework-specific outputs (Next.js, Vite, etc.)
+- Framework-specific outputs (Next.js, etc.)
 - Package-specific env vars
 - Different caching rules for specific packages
 - Keeping framework config close to the framework code

@@ -1,15 +1,13 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/utils";
 import { UserFetcher } from "../user-fetcher";
 
-const { mockUsersGet } = vi.hoisted(() => ({
-  mockUsersGet: vi.fn(),
-}));
+const mockUsersGet = mock();
 
-vi.mock("@/lib/api", () => ({
+mock.module("@/lib/api", () => ({
   api: {
-    users: vi.fn().mockReturnValue({ get: mockUsersGet }),
+    users: mock().mockReturnValue({ get: mockUsersGet }),
   },
 }));
 

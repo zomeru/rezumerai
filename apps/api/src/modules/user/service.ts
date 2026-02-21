@@ -47,9 +47,11 @@ export abstract class UserService {
    * @param db - Prisma client instance
    * @param id - User ID to update
    * @param data - Partial user data to update (e.g. name, email)
-   * @returns The updated user record
+   * @returns The updated user record, or null if the user does not exist
    */
-  static async update(db: PrismaClient, id: string, data: Partial<User>): Promise<User> {
+  static async update(db: PrismaClient, id: string, data: Partial<User>): Promise<User | null> {
+    const exists = await db.user.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) return null;
     const user = await db.user.update({ where: { id }, data });
     return user;
   }

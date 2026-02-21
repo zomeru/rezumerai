@@ -3,6 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "postcss.config.mjs", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.*"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "postcss.config.mjs"],
+  "exclude": ["node_modules", "dist", "**/*.test.*", "src/test/**"]
 }

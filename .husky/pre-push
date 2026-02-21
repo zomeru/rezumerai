@@ -62,7 +62,7 @@ TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check-types --affected $TURB
 
 echo "🧪 Running tests..."
 # TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS
-bun run test:project # Always run tests on all files
+bun run test # Always run tests on all files
 
 echo "🏗️ Running builds..."
 TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run build --affected --cache=local:rw,remote:r

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { addDays, formatDate, formatFullDate, formatShortDate, isToday, parseYearMonth, timeAgo } from "../date";
 
 describe("date utilities", () => {
@@ -46,12 +46,11 @@ describe("date utilities", () => {
     beforeEach(() => {
       originalDate = global.Date;
       const mockDate = new Date("2024-01-15T12:00:00Z");
-      vi.useFakeTimers();
-      vi.setSystemTime(mockDate);
+      setSystemTime(mockDate);
     });
 
     afterEach(() => {
-      vi.useRealTimers();
+      setSystemTime();
       global.Date = originalDate;
     });
 
@@ -201,12 +200,11 @@ describe("date utilities", () => {
     beforeEach(() => {
       originalDate = global.Date;
       const mockDate = new Date("2024-01-15T12:00:00Z");
-      vi.useFakeTimers();
-      vi.setSystemTime(mockDate);
+      setSystemTime(mockDate);
     });
 
     afterEach(() => {
-      vi.useRealTimers();
+      setSystemTime();
       global.Date = originalDate;
     });
 

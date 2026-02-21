@@ -30,7 +30,6 @@ All AI agents working in this repository **must** consult `.agents/skills/` as t
 | `web-accessibility` | `.agents/skills/web-accessibility/SKILL.md` | Accessibility, a11y, WCAG, ARIA, screen reader support, keyboard navigation |
 | `mobile-responsiveness` | `.agents/skills/mobile-responsiveness/SKILL.md` | Responsive layouts, mobile-first design, breakpoints, touch events, viewport |
 | `owasp-security` | `.agents/skills/owasp-security/SKILL.md` | Security vulnerabilities, OWASP Top 10, XSS, SQL injection, CSRF, auth security |
-| `vitest` | `.agents/skills/vitest/SKILL.md` | Writing tests, mocking, coverage configuration, test filtering, fixtures |
 | `turborepo` | `.agents/skills/turborepo/SKILL.md` | `turbo.json`, task pipelines, caching, monorepo structure, `--filter`, `--affected`, CI optimization |
 | `bun` | `.agents/skills/bun/SKILL.md` | Bun runtime APIs, `bunx`, `bun serve`, `bun test`, Bun bundler, JavaScript runtime |
 
@@ -44,7 +43,6 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - `packages/types`: Shared TypeScript types and Zod schemas
 - `packages/utils`: Shared utility functions (date, string, styles/cn)
 - `packages/ui`: Shared UI components (shadcn/ui based — Button, Badge, Skeleton, etc.)
-- `packages/vitest-config`: Shared Vitest 4.x configurations (base, react, node)
 - `packages/tsconfig`: Shared TypeScript configs (base, next, database, types, ui, utils)
 
 ### Key Patterns & Structure
@@ -54,7 +52,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `App` type in `apps/api/src/app.ts`. This provides end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema in `packages/database/prisma/schema.prisma`. Prisma client generated to `packages/database/generated/prisma/`. Uses client engine type.
-- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`. **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
+- **Testing**: Bun test runner (`bun:test`) with Happy DOM for component tests. React tests use `@happy-dom/global-registrator` + React Testing Library. Test setup in `src/test/setup.ts` (DOM tests also preload `src/test/happydom.ts`). **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
 - **Linting/Formatting**: Biome 2.x+ is the only linter/formatter. Key rules: `useExplicitType: "error"`, `useSortedClasses`, `noUnusedImports: "warn"`, `noUnusedVariables: "error"`.
 - **State Management**: Zustand 5.x for client-side state (`useResumeStore`, `useBuilderStore`, `useDashboardStore`).
 - **Data Fetching**: TanStack React Query 5.x via `Providers` component with `QueryClientProvider`.
@@ -103,9 +101,8 @@ bun run docker:down    # Stop containers
 ### Testing
 
 ```sh
-bun run test           # Run all tests (Vitest)
+bun run test           # Run all tests (bun:test)
 bun run test:watch     # Run tests in watch mode
-bun run test:ui        # Open Vitest UI
 bun run test:coverage  # Run tests with coverage
 ```
 
@@ -255,7 +252,6 @@ packages/
 │   └── components/            # Badge, Skeleton, SectionTitle, BannerWithTag,
 │                              #   ResumeCardSkeleton, ResumeBuilderSkeleton,
 │                              #   AuthWithSocialForm/, types/
-└── vitest-config/src/         # base.ts, react.ts, node.ts
 ```
 
 ## Code Style & Conventions
@@ -264,7 +260,7 @@ packages/
 - **Explicit return types**: Required for all functions (Biome `useExplicitType: "error"`). Exception: Elysia modules/plugins use `biome-ignore` for Eden type inference.
 - **Formatting/Linting**: Biome 2.x+ only. 120 char line width, 2-space indent, double quotes, LF endings, sorted Tailwind classes.
 - **Naming**: PascalCase for components/types, camelCase for utilities/hooks, `use` prefix for hooks/stores, `Schema` suffix for Zod schemas, `Plugin` suffix for Elysia plugins.
-- **Testing**: Vitest 4.x with globals. React Testing Library + jsdom for components. Shared configs via `createReactConfig`/`createNodeConfig`. **Test Co-location**: Tests live in `__tests__` folders next to components: `components/ComponentName.tsx` → `components/__tests__/ComponentName.test.tsx`. Use relative imports (`../ComponentName`) in test files. Aim for 100% coverage on new components.
+- **Testing**: Bun test runner (`bun:test`) with Happy DOM. React Testing Library for components. **Test Co-location**: Tests live in `__tests__` folders next to components: `components/ComponentName.tsx` → `components/__tests__/ComponentName.test.tsx`. Use relative imports (`../ComponentName`) in test files. Aim for 100% coverage on new components.
 - **Styling**: Tailwind CSS 4.x only (no inline styles). Mobile-first. Global styles in `packages/ui/global.css`. Use `cn()` for class merging.
 - **Git Hooks**: Husky + lint-staged run `biome check --write` on commit.
 
@@ -309,7 +305,7 @@ packages/
 | Rich Text      | TipTap 3.x                                               |
 | PDF            | @react-pdf/renderer, jspdf, html2canvas-pro               |
 | Drag & Drop    | @dnd-kit/core + @dnd-kit/sortable                        |
-| Testing        | Vitest 4.x, React Testing Library                        |
+| Testing        | Bun Test, React Testing Library                          |
 | Build          | Turborepo, Turbopack, Bun                                |
 | Code Quality   | Biome 2.x+                                               |
 | Git Hooks      | Husky + lint-staged                                      |

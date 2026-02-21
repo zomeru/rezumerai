@@ -54,7 +54,6 @@ Turborepo automatically detects frameworks and includes their conventional env v
 | Framework        | Pattern             |
 | ---------------- | ------------------- |
 | Next.js          | `NEXT_PUBLIC_*`     |
-| Vite             | `VITE_*`            |
 | Create React App | `REACT_APP_*`       |
 | Gatsby           | `GATSBY_*`          |
 | Nuxt             | `NUXT_*`, `NITRO_*` |
@@ -64,7 +63,7 @@ Turborepo automatically detects frameworks and includes their conventional env v
 | Remix            | `REMIX_*`           |
 | Redwood          | `REDWOOD_ENV_*`     |
 | Sanity           | `SANITY_STUDIO_*`   |
-| Solid            | `VITE_*`            |
+| Solid            | `PUBLIC_*`          |
 
 ### Disabling Framework Inference
 

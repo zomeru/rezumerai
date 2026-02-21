@@ -24,10 +24,16 @@
     },
     "check": {},
     "check-types": {},
-    "test": {},
-    "test:watch": {},
-    "test:ui": {},
-    "test:coverage": {},
+    "test": {
+      "cache": false
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:coverage": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true,

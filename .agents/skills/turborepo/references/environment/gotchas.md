@@ -4,7 +4,7 @@ Common mistakes and how to fix them.
 
 ## .env Files Must Be in `inputs`
 
-Turbo does NOT read `.env` files. Your framework (Next.js, Vite, etc.) or `dotenv` loads them. But Turbo needs to know when they change.
+Turbo does NOT read `.env` files. Your framework (Next.js, etc.) or `dotenv` loads them. But Turbo needs to know when they change.
 
 **Wrong:**
 

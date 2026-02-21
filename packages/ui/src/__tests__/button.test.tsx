@@ -1,12 +1,13 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button } from "../button";
 
 describe("Button Component", () => {
-  let alertSpy: ReturnType<typeof vi.spyOn>;
+  // biome-ignore lint/suspicious/noExplicitAny: spy return type
+  let alertSpy: any;
 
   beforeEach(() => {
-    alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    alertSpy = spyOn(window, "alert").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -46,7 +47,7 @@ describe("Button Component", () => {
   });
 
   it("calls custom onClick handler after alert", () => {
-    const mockOnClick = vi.fn();
+    const mockOnClick = mock();
     render(
       <Button appName="TestApp" onClick={mockOnClick}>
         Click me
@@ -131,7 +132,7 @@ describe("Button Component", () => {
   });
 
   it("prevents click when disabled", () => {
-    const mockOnClick = vi.fn();
+    const mockOnClick = mock();
 
     render(
       <Button appName="test-app" disabled onClick={mockOnClick}>
@@ -162,7 +163,7 @@ describe("Button Component", () => {
   });
 
   it("receives click event in custom onClick handler", () => {
-    const mockOnClick = vi.fn();
+    const mockOnClick = mock();
 
     render(
       <Button appName="test-app" onClick={mockOnClick}>

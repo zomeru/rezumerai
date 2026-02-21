@@ -1,7 +1,7 @@
 # Fullstack Dev Server
 
 ## What It Is
-Bun 1.3 Fullstack Dev Server with HMR. React without bundler (no Vite/Webpack).
+Bun 1.3 Fullstack Dev Server with HMR. React without a separate bundler.
 
 Example: [elysia-fullstack-example](https://github.com/saltyaom/elysia-fullstack-example)
 

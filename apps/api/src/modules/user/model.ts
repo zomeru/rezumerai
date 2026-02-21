@@ -10,4 +10,5 @@ export const UserModels = {
   "user.byIdParams": GetUserByIdParamsSchema,
   "user.byEmailParams": GetUserByEmailParamsSchema,
   "user.record": UserSchema,
+  "user.update": UserSchema.partial(),
 } as const;

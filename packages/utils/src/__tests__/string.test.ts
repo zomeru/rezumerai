@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { capitalize, formatBytes, slugify, truncate } from "../string";
 
 describe("string utilities", () => {

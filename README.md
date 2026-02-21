@@ -20,7 +20,7 @@ A fullstack TypeScript monorepo for building AI-powered resume tools, managed wi
 | Rich Text      | TipTap 3.x                                               |
 | PDF            | @react-pdf/renderer, jspdf, html2canvas-pro               |
 | Drag & Drop    | @dnd-kit/core + @dnd-kit/sortable                        |
-| Testing        | Vitest 4.x, React Testing Library                        |
+| Testing        | Bun Test, React Testing Library                          |
 | Build          | Turborepo, Turbopack, Bun                                |
 | Code Quality   | Biome 2.x+                                               |
 | Git Hooks      | Husky + lint-staged                                      |
@@ -83,7 +83,6 @@ bun run --filter=@rezumerai/api dev    # API (Elysia) - http://localhost:8080
 | `bun run build` | Build all packages and apps |
 | `bun run test` | Run all tests |
 | `bun run test:watch` | Run tests in watch mode |
-| `bun run test:ui` | Open Vitest UI |
 | `bun run test:coverage` | Run tests with coverage |
 | `bun run code:check` | Run linting and type checking |
 | `bun run check` | Run Biome linting |
@@ -156,7 +155,6 @@ rezumerai/
 │   ├── types/                        # Shared TypeScript types & Zod schemas
 │   ├── ui/                           # Shared UI components (shadcn/ui based)
 │   ├── utils/                        # Shared utilities (date, string, styles/cn)
-│   ├── vitest-config/                # Shared Vitest configuration (base, react, node)
 │   └── tsconfig/                     # Shared TypeScript configs
 │
 ├── biome.json                        # Biome linter/formatter config
@@ -170,7 +168,7 @@ rezumerai/
 - **Package Manager**: Always use Bun (`bun install`, `bun run`, etc.) — never npm, yarn, or pnpm
 - **Code Style**: Biome handles all linting and formatting (120 char width, double quotes, sorted Tailwind classes)
 - **Type Safety**: TypeScript strict mode everywhere with explicit return types enforced
-- **Testing**: Write tests alongside your code using Vitest 4.x + React Testing Library. Tests are co-located with components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`. Use relative imports in test files. Aim for 100% coverage on new components.
+- **Testing**: Write tests alongside your code using Bun's built-in test runner (`bun:test`) + React Testing Library. Tests are co-located with components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`. Use relative imports in test files. Aim for 100% coverage on new components.
 - **State Management**: Zustand 5.x for client-side state, TanStack React Query 5.x for server state
 - **API**: Eden treaty for end-to-end type-safe API consumption (types inferred from Elysia)
 - **Routing**: Use `ROUTES` constants from `constants/routing.ts` — never hardcode route strings

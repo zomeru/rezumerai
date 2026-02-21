@@ -1,6 +1,6 @@
+import type { SessionUser } from "@rezumerai/types";
 import Elysia from "elysia";
 import { env } from "../env";
-import type { SessionUser } from "../modules/auth/model";
 
 /**
  * Auth plugin — validates the Better Auth session and injects the authenticated

@@ -99,7 +99,7 @@ jobs:
         run: bun run db:setup
 
       - name: Build packages
-        run: bun run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
+        run: bun run build --filter=@rezumerai/{database,types,ui,utils}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2

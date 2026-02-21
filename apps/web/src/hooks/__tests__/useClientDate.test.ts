@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
 import { useClientDate, useIsMounted } from "../useClientDate";
 
 describe("useClientDate", () => {

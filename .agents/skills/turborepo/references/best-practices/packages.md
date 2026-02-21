@@ -34,7 +34,7 @@ Export TypeScript directly. The consuming app's bundler compiles it.
 
 **When to use:**
 
-- Apps use modern bundlers (Turbopack, webpack, Vite)
+- Apps use modern bundlers (Turbopack, webpack)
 - You want minimal configuration
 - Build times are acceptable without caching
 

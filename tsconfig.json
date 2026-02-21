@@ -28,9 +28,7 @@
       "@rezumerai/database": ["./packages/database"],
       "@rezumerai/database/*": ["./packages/database/*"],
       "@rezumerai/tsconfig": ["./packages/tsconfig"],
-      "@rezumerai/tsconfig/*": ["./packages/tsconfig/*"],
-      "@rezumerai/vitest-config": ["./packages/vitest-config/src"],
-      "@rezumerai/vitest-config/*": ["./packages/vitest-config/src/*"]
+      "@rezumerai/tsconfig/*": ["./packages/tsconfig/*"]
     }
   },
   "exclude": ["node_modules", ".claude", ".agents", "dist", "build"]

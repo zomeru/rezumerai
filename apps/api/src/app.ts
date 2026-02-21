@@ -9,7 +9,6 @@ import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaXSS } from "elysia-xss";
 import { env } from "./env";
-import { authModule } from "./modules/auth";
 import { userModule } from "./modules/user";
 import { errorPlugin } from "./plugins/error";
 import { loggerPlugin } from "./plugins/logger";
@@ -67,7 +66,6 @@ export const app = new Elysia({ prefix: "/api" })
   })
 
   // ── Feature modules ─────────────────────────────────────────────────────
-  .use(authModule)
   .use(userModule);
 
 /** Export the app type for Eden treaty on the frontend. */

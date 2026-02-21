@@ -58,7 +58,7 @@ Key points:
   "scripts": {
     "build": "next build",
     "lint": "eslint .",
-    "test": "vitest",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   }
 }
@@ -68,7 +68,7 @@ Key points:
   "scripts": {
     "build": "tsc",
     "lint": "eslint .",
-    "test": "vitest",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   }
 }

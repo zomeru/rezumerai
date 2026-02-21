@@ -1,10 +1,10 @@
+import { describe, expect, it, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
 import { onKeyDown } from "../react";
 
 describe("onKeyDown", () => {
   it("stops propagation for Enter key", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const event = {
       key: "Enter",
       stopPropagation,
@@ -16,7 +16,7 @@ describe("onKeyDown", () => {
   });
 
   it("stops propagation for Space key", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const event = {
       key: " ",
       stopPropagation,
@@ -28,7 +28,7 @@ describe("onKeyDown", () => {
   });
 
   it("does not stop propagation for other keys", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const event = {
       key: "a",
       stopPropagation,
@@ -40,7 +40,7 @@ describe("onKeyDown", () => {
   });
 
   it("does not stop propagation for Tab key", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const event = {
       key: "Tab",
       stopPropagation,
@@ -52,7 +52,7 @@ describe("onKeyDown", () => {
   });
 
   it("does not stop propagation for Escape key", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const event = {
       key: "Escape",
       stopPropagation,
@@ -64,7 +64,7 @@ describe("onKeyDown", () => {
   });
 
   it("does not stop propagation for Arrow keys", () => {
-    const stopPropagation = vi.fn();
+    const stopPropagation = mock();
     const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
     for (const key of keys) {
