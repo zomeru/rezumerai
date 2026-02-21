@@ -59,7 +59,7 @@
     "docker:down": "docker compose down",
     "install-modules": "bun install && turbo run build --filter=./packages/*",
     "update-modules": "bun update --latest && bun update --interactive --recursive",
-    "clean": "turbo clean && rimraf node_modules .turbo tsconfig.tsbuildinfo .playwright-mcp",
+    "clean": "turbo clean && rimraf node_modules .turbo tsconfig.tsbuildinfo .playwright-mcp coverage",
     "clean:install": "turbo clean && rimraf node_modules .turbo bun.lock && bun install && turbo run build --filter=./packages/*",
     "outdated": "bun outdated",
     "security:audit": "bun audit --production",

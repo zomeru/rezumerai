@@ -17,10 +17,8 @@ FROM base AS installer
 # Copy pruned package manifests
 COPY --from=builder /app/out/json/ .
 
-# Install dependencies for the pruned workspace
-RUN bun install prisma
-RUN bun install tsup
-RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile --production
+# Install all dependencies (including devDeps needed for build: tailwindcss, postcss, prisma, tsup)
+RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .

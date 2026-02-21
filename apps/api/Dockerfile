@@ -17,10 +17,8 @@ FROM base AS installer
 # Copy pruned package manifests
 COPY --from=builder /app/out/json/ .
 
-# Install dependencies for the pruned workspace
-RUN bun install prisma
-RUN bun install tsup
-RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile --production
+# Install all dependencies (including devDeps needed for build: prisma, tsup)
+RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
@@ -46,9 +44,12 @@ WORKDIR /app
 # Use the built-in bun user (uid 1000)
 USER bun
 
-# Copy only runtime artifacts (built API, database package)
-COPY --from=installer --chown=bun:bun /app/apps/api/server ./apps/api/server 
-COPY --from=installer --chown=bun:bun /app/apps/api/package.json ./apps/api/package.json
+# Copy only runtime artifacts:
+# - The compiled standalone binary (bun build --compile bundles all JS)
+# - Prisma generated client (contains the native query engine binary)
+# - Prisma schema (needed for runtime schema validation)
+# - Compiled package dist outputs
+COPY --from=installer --chown=bun:bun /app/apps/api/server ./apps/api/server
 COPY --from=installer --chown=bun:bun /app/packages/database/dist ./packages/database/dist
 COPY --from=installer --chown=bun:bun /app/packages/database/generated ./packages/database/generated
 COPY --from=installer --chown=bun:bun /app/packages/database/package.json ./packages/database/package.json
@@ -57,18 +58,9 @@ COPY --from=installer --chown=bun:bun /app/packages/types/dist ./packages/types/
 COPY --from=installer --chown=bun:bun /app/packages/types/package.json ./packages/types/package.json
 COPY --from=installer --chown=bun:bun /app/packages/utils/dist ./packages/utils/dist
 COPY --from=installer --chown=bun:bun /app/packages/utils/package.json ./packages/utils/package.json
-COPY --from=installer --chown=bun:bun /app/package.json ./package.json
 
-# Copy node_modules from installer, then prune dev dependencies
-COPY --from=installer --chown=bun:bun /app/node_modules ./node_modules
-
-# Clean up unnecessary files from node_modules and dist folders
-RUN find . -name "*.d.ts" -type f -delete && \
-    find . -name "*.d.mts" -type f -delete && \
-    find . -name "*.map" -type f -delete && \
-    find ./node_modules -name "*.test.*" -type f -delete && \
-    find ./node_modules -name "*.spec.*" -type f -delete
+RUN chmod +x ./apps/api/server
 
 EXPOSE 8080
 
-CMD ["chmod", "+x", "./server", "&&", "./server"]
+CMD ["./apps/api/server"]
