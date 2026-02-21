@@ -1,5 +1,7 @@
 import type { TemplateType } from "@/templates";
 
+// TODO: Consider fetching template metadata from the server for dynamic updates without redeploying the frontend.
+
 /**
  * Available resume template configurations.
  * Defines metadata for all selectable resume templates.
@@ -27,7 +29,7 @@ export const TEMPLATES: { id: TemplateType; name: string; preview: string }[] = 
     preview: "A sleek, contemporary design featuring bold accents and clean font choices.",
   },
   {
-    id: "minimal-image",
+    id: "minimal_image",
     name: "Minimal with Image",
     preview: "A refined, minimal layout that highlights your profile image and key details.",
   },

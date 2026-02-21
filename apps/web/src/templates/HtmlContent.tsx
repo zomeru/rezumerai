@@ -16,7 +16,7 @@ interface HtmlContentProps {
  *
  * Security: Uses DOMPurify to sanitize HTML and prevent XSS attacks.
  */
-export default function HtmlContent({ html, className }: HtmlContentProps): React.JSX.Element | null {
+export default function HtmlContent({ html, className }: HtmlContentProps) {
   const sanitizedHtml = useMemo(() => {
     if (!html) return "";
 

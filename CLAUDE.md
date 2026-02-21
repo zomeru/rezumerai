@@ -7,6 +7,32 @@ Before anything else, ensure Serena MCP server is activated on this project.
 - **Activate Serena** — Call `mcp_serena_activate_project` to activate Serena MCP server on this project every time before you start working.
 - **Use Context7** — Use `mcp_context7_query-docs` to get relevant documentation for project library and framework usage, ONLY if needed.
 
+## Agent Skills — Authoritative Skill Directory
+
+All AI agents working in this repository **must** consult `.agents/skills/` as the authoritative source for domain-specific skills before reasoning, planning, or generating code. Each skill folder contains a `SKILL.md` with a description, trigger conditions, rules, and examples.
+
+**Rule**: When a user prompt matches a skill's trigger conditions, read the corresponding `SKILL.md` (and referenced sub-files) before proceeding. Do not rely solely on general knowledge when a matching skill exists.
+
+| Skill | Path | Trigger Conditions |
+|-------|------|--------------------|
+| `elysiajs` | `.agents/skills/elysiajs/SKILL.md` | Creating/modifying Elysia routes, handlers, servers, plugins, JWT, CORS, OpenAPI, validation, WebSocket |
+| `better-auth-best-practices` | `.agents/skills/better-auth-best-practices/SKILL.md` | Setting up Better Auth, OAuth, magic links, passkeys, auth configuration |
+| `better-auth-security-best-practices` | `.agents/skills/better-auth-security-best-practices/SKILL.MD` | Rate limiting, CSRF protection, session security, trusted origins, secret management, OAuth security |
+| `create-auth-skill` | `.agents/skills/create-auth-skill/SKILL.md` | Adding auth to a new or existing app, auth layer setup |
+| `email-and-password-best-practices` | `.agents/skills/email-and-password-best-practices/SKILL.md` | Email verification, password auth, email/password sign-in/sign-up |
+| `organization-best-practices` | `.agents/skills/organization-best-practices/SKILL.md` | Multi-tenant organizations, teams, RBAC, Better Auth organization plugin |
+| `two-factor-authentication-best-practices` | `.agents/skills/two-factor-authentication-best-practices/SKILL.md` | 2FA, TOTP, two-factor auth, authenticator apps, Better Auth twoFactor plugin |
+| `prisma-cli` | `.agents/skills/prisma-cli/SKILL.md` | `prisma init`, `prisma generate`, `prisma migrate`, `prisma db`, `prisma studio` |
+| `prisma-client-api` | `.agents/skills/prisma-client-api/SKILL.md` | Prisma queries, `findMany`, `create`, `update`, `delete`, `$transaction`, CRUD, filtering |
+| `vercel-react-best-practices` | `.agents/skills/vercel-react-best-practices/SKILL.md` | React components, Next.js pages, data fetching, bundle optimization, performance improvements |
+| `vercel-composition-patterns` | `.agents/skills/vercel-composition-patterns/SKILL.md` | Compound components, render props, boolean prop proliferation, context providers, component architecture |
+| `web-design-guidelines` | `.agents/skills/web-design-guidelines/SKILL.md` | UI review, design audit, UX review, checking site against best practices |
+| `web-accessibility` | `.agents/skills/web-accessibility/SKILL.md` | Accessibility, a11y, WCAG, ARIA, screen reader support, keyboard navigation |
+| `mobile-responsiveness` | `.agents/skills/mobile-responsiveness/SKILL.md` | Responsive layouts, mobile-first design, breakpoints, touch events, viewport |
+| `owasp-security` | `.agents/skills/owasp-security/SKILL.md` | Security vulnerabilities, OWASP Top 10, XSS, SQL injection, CSRF, auth security |
+| `turborepo` | `.agents/skills/turborepo/SKILL.md` | `turbo.json`, task pipelines, caching, monorepo structure, `--filter`, `--affected`, CI optimization |
+| `bun` | `.agents/skills/bun/SKILL.md` | Bun runtime APIs, `bunx`, `bun serve`, `bun test`, Bun bundler, JavaScript runtime |
+
 ## Monorepo Architecture
 
 Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
@@ -17,7 +43,6 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - `packages/types`: Shared TypeScript types and Zod schemas
 - `packages/utils`: Shared utility functions (date, string, styles/cn)
 - `packages/ui`: Shared UI components (shadcn/ui based — Button, Badge, Skeleton, etc.)
-- `packages/vitest-config`: Shared Vitest 4.x configurations (base, react, node)
 - `packages/tsconfig`: Shared TypeScript configs (base, next, database, types, ui, utils)
 
 ### Key Patterns & Structure
@@ -27,7 +52,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `App` type in `apps/api/src/app.ts`. This provides end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema in `packages/database/prisma/schema.prisma`. Prisma client generated to `packages/database/generated/prisma/`. Uses client engine type.
-- **Testing**: Vitest 4.x with shared configs from `packages/vitest-config`. React tests use jsdom + React Testing Library. Node tests use node environment. Test setup in `src/test/setup.ts`. **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
+- **Testing**: Bun test runner (`bun:test`) with Happy DOM for component tests. React tests use `@happy-dom/global-registrator` + React Testing Library. Node tests use the default bun:test environment. Test setup in `src/test/setup.ts` (DOM tests also have `src/test/happydom.ts` as a preload). **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
 - **Linting/Formatting**: Biome 2.x+ is the only linter/formatter. Key rules: `useExplicitType: "error"`, `useSortedClasses`, `noUnusedImports: "warn"`, `noUnusedVariables: "error"`.
 - **State Management**: Zustand 5.x for client-side state (`useResumeStore`, `useBuilderStore`, `useDashboardStore`).
 - **Data Fetching**: TanStack React Query 5.x via `Providers` component with `QueryClientProvider`.
@@ -76,9 +101,8 @@ bun run docker:down    # Stop containers
 ### Testing
 
 ```sh
-bun run test           # Run all tests (Vitest)
+bun run test           # Run all tests (bun:test)
 bun run test:watch     # Run tests in watch mode
-bun run test:ui        # Open Vitest UI
 bun run test:coverage  # Run tests with coverage
 ```
 
@@ -179,7 +203,7 @@ apps/web/src/
 apps/api/src/
 ├── app.ts                 # Elysia app (exports App type for Eden)
 ├── server.ts              # Bun server entrypoint
-├── env.ts                 # Zod-validated environment (API_PORT, DATABASE_URL, NEXTAUTH_SECRET, etc.)
+├── env.ts                 # Zod-validated environment (API_PORT, DATABASE_URL, BETTER_AUTH_SECRET, etc.)
 ├── modules/
 │   ├── auth/              # Auth module (protected routes)
 │   │   ├── index.ts       # Routes (/api/auth/me)
@@ -211,10 +235,6 @@ packages/
 │   ├── components/            # Shared components (Badge, Skeleton, SectionTitle, etc.)
 │   ├── button.tsx             # Button component
 │   └── index.tsx              # Barrel exports
-└── vitest-config/src/
-    ├── base.ts                # Base config (coverage, aliases)
-    ├── react.ts               # React config (jsdom, setup files)
-    └── node.ts                # Node config
 ```
 
 ## Code Style & Conventions
@@ -273,12 +293,11 @@ packages/
 
 ### Testing
 
-- Vitest 4.x with globals enabled
-- React Testing Library + jsdom for component tests
-- Shared configs via `packages/vitest-config` (`createReactConfig`, `createNodeConfig`)
+- Bun test runner (`bun:test`) with `@happy-dom/global-registrator` for component tests
+- React Testing Library for component tests; preload `happydom.ts` before `setup.ts` in `bunfig.toml`
 - **Test Co-location**: Tests live in `__tests__` folders next to components: `components/ComponentName.tsx` → `components/__tests__/ComponentName.test.tsx`
 - Use relative imports (`../ComponentName`) in test files
-- Coverage via `@vitest/coverage-v8`
+- Coverage via `bun:test --coverage`
 - Path alias `@/` resolves to `./src`
 - Aim for 100% coverage on new components
 
@@ -354,7 +373,7 @@ When assisting with this codebase:
 | Rich Text      | TipTap 3.x                                               |
 | PDF            | @react-pdf/renderer, jspdf, html2canvas-pro               |
 | Drag & Drop    | @dnd-kit/core + @dnd-kit/sortable                        |
-| Testing        | Vitest 4.x, React Testing Library                        |
+| Testing        | Bun Test, React Testing Library                          |
 | Build          | Turborepo, Turbopack, Bun                                |
 | Code Quality   | Biome 2.x+                                               |
 | Git Hooks      | Husky + lint-staged                                      |

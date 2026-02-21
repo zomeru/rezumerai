@@ -1,43 +1,50 @@
-import Elysia from "elysia";
+import Elysia, { status } from "elysia";
+import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { CreateUserSchema, UserParamsSchema } from "./model";
+import { UserModels } from "./model";
 import { UserService } from "./service";
+
+const userNotFound = () => status(404, { success: false, error: "User not found" });
 
 /**
  * User module — CRUD routes for users.
- * Public for now; add `.use(authPlugin)` to protect.
+ * Protected by authPlugin — requires a valid Better Auth session.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
+  .use(authPlugin)
+  .model(UserModels)
   .get("/", async ({ db }) => {
-    const service = new UserService(db);
-    const users = await service.findAll();
-
-    return { success: true, data: users };
+    const users = await UserService.findAll(db);
+    return { success: true as const, data: users };
   })
   .get(
     "/:id",
-    async ({ db, params, set }) => {
-      const service = new UserService(db);
-      const user = await service.findById(params.id);
-
-      if (!user) {
-        set.status = 404;
-        return { success: false, error: "User not found" };
-      }
-
-      return { success: true, data: user };
+    async ({ db, params }) => {
+      const user = await UserService.findById(db, params.id);
+      if (!user) return userNotFound();
+      return { success: true as const, data: user };
     },
-    { params: UserParamsSchema },
+    { params: "user.byIdParams" },
   )
-  .post(
-    "/",
-    async ({ db, body }) => {
-      const service = new UserService(db);
-      const user = await service.create(body);
-
-      return { success: true, data: user };
+  .get(
+    "/email/:email",
+    async ({ db, params }) => {
+      const user = await UserService.findByEmail(db, params.email);
+      if (!user) return userNotFound();
+      return { success: true as const, data: user };
     },
-    { body: CreateUserSchema },
+    { params: "user.byEmailParams" },
+  )
+  .patch(
+    "/:id",
+    async ({ db, params, body }) => {
+      const updatedUser = await UserService.update(db, params.id, body);
+      if (!updatedUser) return userNotFound();
+      return { success: true as const, data: updatedUser };
+    },
+    {
+      params: "user.byIdParams",
+      body: "user.update",
+    },
   );

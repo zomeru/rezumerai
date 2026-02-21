@@ -14,6 +14,7 @@ import {
   UploadResumeModal,
 } from "@/components/Dashboard";
 import { ROUTES } from "@/constants/routing";
+import { useSession } from "@/lib/auth-client";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useResumeStore } from "@/store/useResumeStore";
 
@@ -25,9 +26,11 @@ const RESUME_COLORS: `#${string}`[] = ["#9333ea", "#d97706", "#dc2626", "#0284c7
  * - useTransition for non-blocking search updates
  * - useDeferredValue to defer expensive filtering
  */
-export default function Dashboard(): React.JSX.Element {
+export default function Dashboard() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { data: session } = useSession();
+  console.log("Session data in Dashboard:", session);
 
   // Resume store
   const resumes = useResumeStore((state) => state.resumes);
@@ -54,42 +57,42 @@ export default function Dashboard(): React.JSX.Element {
   // Defer search query to prevent blocking UI updates
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  function handleSearchChange(value: string): void {
+  function handleSearchChange(value: string) {
     startTransition(() => {
       setSearchQuery(value);
     });
   }
 
-  function handleCreateResume(title: string): void {
+  function handleCreateResume(title: string) {
     if (!title.trim()) return;
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleUploadResume(title: string, file: File): void {
+  function handleUploadResume(title: string, file: File) {
     if (!title.trim() || !file) return;
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleEditTitle(newTitle: string): void {
+  function handleEditTitle(newTitle: string) {
     if (!newTitle.trim() || !modalState.resumeId) return;
     updateResume(modalState.resumeId, { title: newTitle });
     setModalState({ type: null });
   }
 
-  function handleDeleteResume(resumeId: string): void {
+  function handleDeleteResume(resumeId: string) {
     const confirmed = window.confirm("Are you sure you want to delete this resume?");
     if (confirmed) {
       deleteResume(resumeId);
     }
   }
 
-  function handleOpenResume(resumeId: string): void {
+  function handleOpenResume(resumeId: string) {
     router.push(`${ROUTES.BUILDER}/${resumeId}`);
   }
 
-  function handleOpenEditModal(resumeId: string, title: string): void {
+  function handleOpenEditModal(resumeId: string, title: string) {
     setEditingTitle(title);
     setModalState({ type: "edit", resumeId });
   }
@@ -98,7 +101,7 @@ export default function Dashboard(): React.JSX.Element {
     setModalState({ type: "download", resumeId });
   }
 
-  function handleCloseModal(): void {
+  function handleCloseModal() {
     setModalState({ type: null });
     setEditingTitle("");
   }
@@ -130,7 +133,7 @@ export default function Dashboard(): React.JSX.Element {
           <div className="flex flex-1 gap-3">
             <button
               type="button"
-              onClick={(): void => setModalState({ type: "create" })}
+              onClick={() => setModalState({ type: "create" })}
               className="flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
             >
               <Plus className="size-5" />
@@ -138,7 +141,7 @@ export default function Dashboard(): React.JSX.Element {
             </button>
             <button
               type="button"
-              onClick={(): void => setModalState({ type: "upload" })}
+              onClick={() => setModalState({ type: "upload" })}
               className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow active:scale-95"
             >
               <Upload className="size-5" />
@@ -154,7 +157,7 @@ export default function Dashboard(): React.JSX.Element {
                 type="search"
                 placeholder="Search resumes..."
                 value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => handleSearchChange(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-4 pl-10 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 aria-label="Search resumes"
               />
@@ -169,7 +172,7 @@ export default function Dashboard(): React.JSX.Element {
             <div className="flex rounded-xl border border-slate-300 bg-white p-1 shadow-sm">
               <button
                 type="button"
-                onClick={(): void => setViewMode("grid")}
+                onClick={() => setViewMode("grid")}
                 className={`rounded-lg p-2 transition-colors ${
                   viewMode === "grid" ? "bg-primary-100 text-primary-700" : "text-slate-600 hover:bg-slate-100"
                 }`}
@@ -179,7 +182,7 @@ export default function Dashboard(): React.JSX.Element {
               </button>
               <button
                 type="button"
-                onClick={(): void => setViewMode("list")}
+                onClick={() => setViewMode("list")}
                 className={`rounded-lg p-2 transition-colors ${
                   viewMode === "list" ? "bg-primary-100 text-primary-700" : "text-slate-600 hover:bg-slate-100"
                 }`}
@@ -212,9 +215,9 @@ export default function Dashboard(): React.JSX.Element {
                   key={key}
                   resume={resume}
                   color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-                  onOpen={(): void => handleOpenResume(resume._id)}
-                  onEdit={(): void => handleOpenEditModal(resume._id, resume.title)}
-                  onDelete={(): void => handleDeleteResume(resume._id)}
+                  onOpen={() => handleOpenResume(resume._id)}
+                  onEdit={() => handleOpenEditModal(resume._id, resume.title)}
+                  onDelete={() => handleDeleteResume(resume._id)}
                   onDownload={async (): Promise<void> => handleDownloadResume(resume._id)}
                 />
               );
@@ -236,7 +239,7 @@ export default function Dashboard(): React.JSX.Element {
             {!searchQuery && (
               <button
                 type="button"
-                onClick={(): void => setModalState({ type: "create" })}
+                onClick={() => setModalState({ type: "create" })}
                 className="flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95"
               >
                 <Plus className="size-5" />

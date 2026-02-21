@@ -1,18 +1,13 @@
 "use client";
 
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { RouteErrorBoundary, type RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 import { ROUTES } from "@/constants/routing";
-
-interface ErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
 
 /**
  * Resume preview error boundary.
  * Handles errors during resume preview rendering (PDF generation, template rendering, etc.).
  */
-export default function PreviewError({ error, reset }: ErrorProps): React.JSX.Element {
+export default function PreviewError({ error, reset }: RouteErrorBoundaryProps) {
   return (
     <RouteErrorBoundary
       error={error}

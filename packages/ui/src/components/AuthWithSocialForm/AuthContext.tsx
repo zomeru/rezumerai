@@ -90,22 +90,22 @@ export interface AuthProviderProps {
  * @param props - Provider props containing children
  * @returns Provider component wrapping children with auth context
  */
-export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  function setEmail(e: ChangeEvent<HTMLInputElement>): void {
+  function setEmail(e: ChangeEvent<HTMLInputElement>) {
     dispatch({ type: "SET_EMAIL", payload: e.target.value });
   }
 
-  function setPassword(e: ChangeEvent<HTMLInputElement>): void {
+  function setPassword(e: ChangeEvent<HTMLInputElement>) {
     dispatch({ type: "SET_PASSWORD", payload: e.target.value });
   }
 
-  function setConfirmPassword(e: ChangeEvent<HTMLInputElement>): void {
+  function setConfirmPassword(e: ChangeEvent<HTMLInputElement>) {
     dispatch({ type: "SET_CONFIRM_PASSWORD", payload: e.target.value });
   }
 
-  function reset(): void {
+  function reset() {
     dispatch({ type: "RESET" });
   }
 

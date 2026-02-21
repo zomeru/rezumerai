@@ -1,44 +1,53 @@
+import { Prisma } from "@rezumerai/database";
 import Elysia from "elysia";
+import { env } from "../env";
 
 /**
  * Error-handling plugin — provides centralized, consistent error responses.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
-export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "global" }, ({ code, error, set }) => {
+export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "global" }, ({ code, error, status }) => {
   switch (code) {
-    case "VALIDATION": {
-      set.status = 422;
-      return {
+    case "VALIDATION":
+      return status(422, {
         success: false,
         error: "Validation error",
         details: error.all,
-      };
-    }
-    case "NOT_FOUND": {
-      set.status = 404;
-      return {
+      });
+
+    case "NOT_FOUND":
+      return status(404, {
         success: false,
         error: "Not found",
-      };
-    }
-    case "PARSE": {
-      set.status = 400;
-      return {
+      });
+
+    case "PARSE":
+      return status(400, {
         success: false,
         error: "Invalid request body",
-      };
-    }
-    default: {
-      const status = (set.status as number) ?? 500;
-      set.status = status >= 400 ? status : 500;
+      });
 
-      const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    case "INVALID_COOKIE_SIGNATURE":
+      return status(400, {
+        success: false,
+        error: "Invalid cookie signature",
+      });
+
+    default: {
+      // Map Prisma "record not found" (P2025) to 404
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return status(404, {
+          success: false,
+          error: "Resource not found",
+        });
+      }
+
+      const isProd = env.NODE_ENV === "production";
       console.error(`[ERROR] ${code}:`, error);
 
-      return {
+      return status(500, {
         success: false,
-        error: errorMessage,
-      };
+        error: isProd ? "Internal server error" : error instanceof Error ? error.message : "Internal server error",
+      });
     }
   }
 });

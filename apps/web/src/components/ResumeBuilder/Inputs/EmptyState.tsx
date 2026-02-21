@@ -17,7 +17,7 @@ export interface EmptyStateProps {
  * {items.length === 0 && <EmptyState message="No experience entries yet" />}
  * ```
  */
-export default function EmptyState({ message }: EmptyStateProps): React.JSX.Element {
+export default function EmptyState({ message }: EmptyStateProps) {
   return (
     <div className="rounded-lg border-2 border-slate-300 border-dashed bg-slate-50 p-8 text-center">
       <p className="text-slate-500">{message}</p>

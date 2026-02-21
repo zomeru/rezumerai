@@ -9,7 +9,7 @@ WORKDIR /app
 FROM base AS builder
 COPY . .
 # Prune only the 'web' app for a minimal Docker context
-RUN bunx turbo@2.8.0 prune web --docker
+RUN bunx turbo@2.8.10 prune web --docker
 
 # ---- Install & Build ----
 FROM base AS installer
@@ -17,8 +17,8 @@ FROM base AS installer
 # Copy pruned package manifests
 COPY --from=builder /app/out/json/ .
 
-# Install dependencies for the pruned workspace
-RUN bun install --frozen-lockfile
+# Install all dependencies (including devDeps needed for build: tailwindcss, postcss, prisma, tsup)
+RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile
 
 # Copy full source needed for build
 COPY --from=builder /app/out/full/ .
@@ -36,14 +36,20 @@ COPY --from=builder /app/out/full/ .
 # Build the web app
 # Mount secrets for Next.js build configuration (DATABASE_URL uses placeholder for Prisma generation)
 RUN --mount=type=secret,id=next_public_api_url \
-    --mount=type=secret,id=nextauth_url \
-    --mount=type=secret,id=nextauth_secret \
+    --mount=type=secret,id=better_auth_url \
+    --mount=type=secret,id=better_auth_secret \
+    --mount=type=secret,id=next_public_site_url \
+    --mount=type=secret,id=better_auth_github_client_id \
+    --mount=type=secret,id=better_auth_github_client_secret \
     export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
     export NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" && \
-    export NEXTAUTH_URL="$(cat /run/secrets/nextauth_url)" && \
-    export NEXTAUTH_SECRET="$(cat /run/secrets/nextauth_secret)" && \
+    export BETTER_AUTH_URL="$(cat /run/secrets/better_auth_url)" && \
+    export BETTER_AUTH_SECRET="$(cat /run/secrets/better_auth_secret)" && \
+    export NEXT_PUBLIC_SITE_URL="$(cat /run/secrets/next_public_site_url)" && \
+    export BETTER_AUTH_GITHUB_CLIENT_ID="$(cat /run/secrets/better_auth_github_client_id)" && \
+    export BETTER_AUTH_GITHUB_CLIENT_SECRET="$(cat /run/secrets/better_auth_github_client_secret)" && \
     (cd packages/database && bun run build:docker) && \
-    bunx turbo@2.8.0 build --filter=web
+    bunx turbo@2.8.10 build --filter=web
 
 # ---- Runner ----
 FROM oven/bun:1-slim AS runner

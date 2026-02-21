@@ -27,19 +27,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   appName: string;
 }
 
-export const Button = ({ children, className, appName, onClick, ...props }: ButtonProps): React.JSX.Element => {
-  function handleClick(e: React.MouseEvent<HTMLButtonElement>): void {
-    alert(`Hello from your ${appName} app!`);
-    onClick?.(e);
-  }
-
+export const Button = ({ children, className, appName: _appName, onClick, ...props }: ButtonProps) => {
   return (
-    <button
-      type="button"
-      className={cn("rounded-md px-4 py-2 font-medium", className)}
-      onClick={handleClick}
-      {...props}
-    >
+    <button type="button" className={cn("rounded-md px-4 py-2 font-medium", className)} onClick={onClick} {...props}>
       {children}
     </button>
   );

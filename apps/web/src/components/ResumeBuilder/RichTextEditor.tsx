@@ -57,12 +57,7 @@ export interface RichTextEditorProps {
  * ```
  */
 
-export default function RichTextEditor({
-  content,
-  onChange,
-  placeholder,
-  className,
-}: RichTextEditorProps): React.JSX.Element | null {
+export default function RichTextEditor({ content, onChange, placeholder, className }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -87,7 +82,7 @@ export default function RichTextEditor({
       }),
     ],
     content,
-    onUpdate: ({ editor }: { editor: ReturnType<typeof useEditor> }): void => {
+    onUpdate: ({ editor }: { editor: ReturnType<typeof useEditor> }) => {
       onChange(editor.getHTML());
     },
     editorProps: {
@@ -107,7 +102,7 @@ export default function RichTextEditor({
     return null;
   }
 
-  const setLink = (): void => {
+  const setLink = () => {
     const url = window.prompt("Enter URL");
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();

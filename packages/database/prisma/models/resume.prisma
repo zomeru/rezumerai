@@ -1,0 +1,108 @@
+model Resume {
+  id                  String               @id @default(cuid())
+  userId              String
+  title               String
+  public              Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  professionalSummary String               @default("")
+  template            TemplateType         @default(classic)
+  accentColor         String               @default("#000000")
+  fontSize            FontSizePreset       @default(medium)
+  customFontSize      Float                @default(1)
+  website             String               @default("")
+  profession          String               @default("")
+  image               String               @default("")
+  skills              String[]             @default([])
+  education           Education[]
+  experience          Experience[]
+  personalInfo        PersonalInformation?
+  project             Project[]
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([public])
+  @@map("resume")
+}
+
+model PersonalInformation {
+  id         String @id @default(cuid())
+  resumeId   String @unique
+  fullName   String @default("")
+  email      String @default("")
+  phone      String @default("")
+  location   String @default("")
+  linkedin   String @default("")
+  website    String @default("")
+  profession String @default("")
+  image      String @default("")
+  resume     Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("personal_information")
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+  resumeId    String
+  company     String
+  position    String
+  startDate   String
+  endDate     String
+  description String   @default("")
+  isCurrent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("experience")
+}
+
+model Education {
+  id             String   @id @default(cuid())
+  resumeId       String
+  institution    String
+  degree         String
+  field          String   @default("")
+  graduationDate String
+  gpa            String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("education")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  resumeId    String
+  name        String
+  type        String   @default("")
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("projects")
+}
+
+enum TemplateType {
+  classic
+  modern
+  minimal
+  minimal_image
+
+  @@map("template_type")
+}
+
+enum FontSizePreset {
+  small
+  medium
+  large
+  custom
+
+  @@map("font_size_preset")
+}

@@ -1,57 +1,70 @@
-import type { PrismaClient } from "@rezumerai/database";
-import type { CreateUserInput, User } from "./model";
+import type { PrismaClient, User } from "@rezumerai/database";
 
 /**
  * User service — business logic only, no HTTP concerns.
- *
- * NOTE: Currently uses in-memory mock data matching the original Express
- * server. Replace with real Prisma queries when the User model is added
- * to the schema.
+ * Uses abstract class (no allocation needed) with static methods receiving db via parameter.
  */
-
-const mockUsers: User[] = [
-  { id: "1", name: "John Doe", email: "john@example.com" },
-  { id: "2", name: "Jane Smith", email: "jane@example.com" },
-];
-
-export class UserService {
-  constructor(readonly db: PrismaClient) {}
-
+// biome-ignore lint/complexity/noStaticOnlyClass: Pattern is intentional for service classes with only static methods.
+export abstract class UserService {
   /**
    * Retrieves all users.
    *
+   * @param db - Prisma client instance
    * @returns Array of all user records
    */
-  async findAll(): Promise<User[]> {
-    // TODO: return this.db.user.findMany();
-    return mockUsers;
+  static async findAll(db: PrismaClient): Promise<User[]> {
+    const users = await db.user.findMany();
+    return users;
   }
 
   /**
    * Finds a user by their unique identifier.
    *
+   * @param db - Prisma client instance
    * @param id - User ID to look up
    * @returns User record if found, null otherwise
    */
-  async findById(id: string): Promise<User | null> {
-    // TODO: return this.db.user.findUnique({ where: { id } });
-    return mockUsers.find((u): u is User => u.id === id) ?? null;
+  static async findById(db: PrismaClient, id: string): Promise<User | null> {
+    const user = await db.user.findUnique({ where: { id } });
+    return user;
+  }
+
+  /**
+   * Finds a user by their email address.
+   *
+   * @param db - Prisma client instance
+   * @param email - User email to look up
+   * @returns User record if found, null otherwise
+   */
+  static async findByEmail(db: PrismaClient, email: string): Promise<User | null> {
+    const user = await db.user.findUnique({ where: { email } });
+    return user;
+  }
+
+  /**
+   * Updates a user's information.
+   *
+   * @param db - Prisma client instance
+   * @param id - User ID to update
+   * @param data - Partial user data to update (e.g. name, email)
+   * @returns The updated user record, or null if the user does not exist
+   */
+  static async update(db: PrismaClient, id: string, data: Partial<User>): Promise<User | null> {
+    const exists = await db.user.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) return null;
+    const user = await db.user.update({ where: { id }, data });
+    return user;
   }
 
   /**
    * Creates a new user with the provided input data.
+   * NOTE: User creation is handled by Better Auth — implement only if needed for admin features.
    *
-   * @param input - User creation data (name, email)
-   * @returns Newly created user record
+   * @param db - Prisma client instance
+   * @param input - Data for the new user (name and email)
+   * @returns The created user record
    */
-  async create(input: CreateUserInput): Promise<User> {
-    // TODO: return this.db.user.create({ data: input });
-    const newUser: User = {
-      id: (mockUsers.length + 1).toString(),
-      name: input.name,
-      email: input.email,
-    };
-    mockUsers.push(newUser);
-    return newUser;
-  }
+  // static async create(db: PrismaClient, input: CreateUserInput): Promise<User> {
+  //   return db.user.create({ data: input });
+  // }
 }

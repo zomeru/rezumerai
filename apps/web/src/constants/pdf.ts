@@ -11,3 +11,7 @@ export const LETTER_WIDTH_PX = 816; // 8.5 * 96
  * Used for PDF generation and resume preview sizing.
  */
 export const LETTER_HEIGHT_PX = 1056; // 11 * 96
+
+// US Letter @ 72 DPI
+export const PAGE_WIDTH_PT = 8.5 * 72; // 612
+export const PAGE_HEIGHT_PT = 11 * 72; // 792

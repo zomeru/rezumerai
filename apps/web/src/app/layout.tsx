@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import { Providers } from "../components/providers";
 import "./globals.css";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
+import { clientEnv } from "@/env";
 
 const outfitSans: NextFontWithVariable = Outfit({
   variable: "--font-outfit",
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://rezumer.ai",
+    url: clientEnv.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     siteName: "Rezumer",
     title: "Rezumer - AI-Powered Resume Builder",
     description: "Create professional, ATS-friendly resumes with AI assistance.",
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
     title: "Rezumer - AI-Powered Resume Builder",
     description: "Create professional, ATS-friendly resumes with AI assistance.",
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(clientEnv.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
 };
 
 export const viewport: Viewport = {
@@ -64,11 +65,7 @@ export const viewport: Viewport = {
  * RootLayout is the main layout component for the application.
  * It sets up global styles, fonts, metadata, and wraps the application with necessary providers.
  */
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>): React.JSX.Element {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>

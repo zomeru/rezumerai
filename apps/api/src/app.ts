@@ -1,12 +1,18 @@
 import cors from "@elysiajs/cors";
+import { fromTypes, openapi } from "@elysiajs/openapi";
+import { swagger } from "@elysiajs/swagger";
 import { formatDate } from "@rezumerai/utils/date";
 import { capitalize } from "@rezumerai/utils/string";
 import Elysia from "elysia";
+import { helmet } from "elysia-helmet";
+import { httpExceptionPlugin } from "elysia-http-exception";
+import { rateLimit } from "elysia-rate-limit";
+import { elysiaXSS } from "elysia-xss";
 import { env } from "./env";
-import { authModule } from "./modules/auth";
 import { userModule } from "./modules/user";
 import { errorPlugin } from "./plugins/error";
 import { loggerPlugin } from "./plugins/logger";
+import { modernCsrf } from "./plugins/modernCsrf";
 
 /**
  * Elysia application — single source of truth for the API.
@@ -15,7 +21,6 @@ import { loggerPlugin } from "./plugins/logger";
  * The exported `App` type is consumed by Eden on the frontend
  * for end-to-end type safety.
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required for Eden
 export const app = new Elysia({ prefix: "/api" })
   // ── Cross-cutting plugins ───────────────────────────────────────────────
   .use(
@@ -24,7 +29,22 @@ export const app = new Elysia({ prefix: "/api" })
       origin: env.CORS_ORIGINS,
     }),
   )
-  .use(loggerPlugin)
+  .use(elysiaXSS())
+  .use(rateLimit())
+  .use(httpExceptionPlugin())
+  .use(helmet())
+  .use(
+    modernCsrf({
+      trustedOrigins: env.CORS_ORIGINS,
+    }),
+  )
+  .use(swagger())
+  .use(
+    openapi({
+      references: fromTypes(process.env.NODE_ENV === "production" ? "dist/index.d.ts" : "src/index.ts"),
+    }),
+  )
+  .use(loggerPlugin())
   .use(errorPlugin)
 
   // ── Health check (root) ─────────────────────────────────────────────────
@@ -46,7 +66,6 @@ export const app = new Elysia({ prefix: "/api" })
   })
 
   // ── Feature modules ─────────────────────────────────────────────────────
-  .use(authModule)
   .use(userModule);
 
 /** Export the app type for Eden treaty on the frontend. */

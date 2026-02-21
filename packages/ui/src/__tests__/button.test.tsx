@@ -1,18 +1,8 @@
+import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button } from "../button";
 
 describe("Button Component", () => {
-  let alertSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    alertSpy.mockRestore();
-  });
-
   it("renders correctly", () => {
     render(<Button appName="test-app">Click me</Button>);
     expect(screen.getByRole("button")).toBeInTheDocument();
@@ -36,17 +26,8 @@ describe("Button Component", () => {
     expect(button).toBeDisabled();
   });
 
-  it("shows alert with appName when clicked", () => {
-    render(<Button appName="TestApp">Click me</Button>);
-
-    const button = screen.getByRole("button");
-    fireEvent.click(button);
-
-    expect(alertSpy).toHaveBeenCalledWith("Hello from your TestApp app!");
-  });
-
-  it("calls custom onClick handler after alert", () => {
-    const mockOnClick = vi.fn();
+  it("calls custom onClick handler when clicked", () => {
+    const mockOnClick = mock();
     render(
       <Button appName="TestApp" onClick={mockOnClick}>
         Click me
@@ -56,7 +37,6 @@ describe("Button Component", () => {
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
-    expect(alertSpy).toHaveBeenCalled();
     expect(mockOnClick).toHaveBeenCalled();
   });
 
@@ -120,18 +100,27 @@ describe("Button Component", () => {
   });
 
   it("handles different appName values", () => {
-    const { rerender } = render(<Button appName="App1">Button</Button>);
+    const mockOnClick = mock();
+    const { rerender } = render(
+      <Button appName="App1" onClick={mockOnClick}>
+        Button
+      </Button>,
+    );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(alertSpy).toHaveBeenCalledWith("Hello from your App1 app!");
+    expect(mockOnClick).toHaveBeenCalledTimes(1);
 
-    rerender(<Button appName="App2">Button</Button>);
+    rerender(
+      <Button appName="App2" onClick={mockOnClick}>
+        Button
+      </Button>,
+    );
     fireEvent.click(screen.getByRole("button"));
-    expect(alertSpy).toHaveBeenCalledWith("Hello from your App2 app!");
+    expect(mockOnClick).toHaveBeenCalledTimes(2);
   });
 
   it("prevents click when disabled", () => {
-    const mockOnClick = vi.fn();
+    const mockOnClick = mock();
 
     render(
       <Button appName="test-app" disabled onClick={mockOnClick}>
@@ -143,7 +132,6 @@ describe("Button Component", () => {
     fireEvent.click(button);
 
     // Native disabled buttons don't fire click events
-    expect(alertSpy).not.toHaveBeenCalled();
     expect(mockOnClick).not.toHaveBeenCalled();
   });
 
@@ -156,13 +144,11 @@ describe("Button Component", () => {
   it("works without custom onClick handler", () => {
     render(<Button appName="test-app">No Custom Click</Button>);
     const button = screen.getByRole("button");
-    fireEvent.click(button);
-
-    expect(alertSpy).toHaveBeenCalledWith("Hello from your test-app app!");
+    expect(() => fireEvent.click(button)).not.toThrow();
   });
 
   it("receives click event in custom onClick handler", () => {
-    const mockOnClick = vi.fn();
+    const mockOnClick = mock();
 
     render(
       <Button appName="test-app" onClick={mockOnClick}>

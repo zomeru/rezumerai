@@ -13,6 +13,6 @@ import type React from "react";
  * </div>
  * ```
  */
-export function onKeyDown(e: React.KeyboardEvent): void {
+export function onKeyDown(e: React.KeyboardEvent) {
   if (e.key === "Enter" || e.key === " ") e.stopPropagation();
 }

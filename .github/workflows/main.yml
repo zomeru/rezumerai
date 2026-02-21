@@ -35,6 +35,14 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:${{ secrets.TEST_POSTGRES_PASSWORD }}@localhost:5432/test_db
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      BETTER_AUTH_GOOGLE_CLIENT_ID: ${{ secrets.BETTER_AUTH_GOOGLE_CLIENT_ID }}
+      BETTER_AUTH_GOOGLE_CLIENT_SECRET: ${{ secrets.BETTER_AUTH_GOOGLE_CLIENT_SECRET }}
+      BETTER_AUTH_GITHUB_CLIENT_ID: ${{ secrets.BETTER_AUTH_GITHUB_CLIENT_ID }}
+      BETTER_AUTH_GITHUB_CLIENT_SECRET: ${{ secrets.BETTER_AUTH_GITHUB_CLIENT_SECRET }}
 
     steps:
       - name: Checkout repo
@@ -71,7 +79,18 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Create .env file
-        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env.local
+        run: |
+          cat > .env.local << EOF
+          DATABASE_URL=${{ env.DATABASE_URL }}
+          BETTER_AUTH_SECRET=${{ env.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL=${{ env.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
+          BETTER_AUTH_GOOGLE_CLIENT_ID=${{ env.BETTER_AUTH_GOOGLE_CLIENT_ID }}
+          BETTER_AUTH_GOOGLE_CLIENT_SECRET=${{ env.BETTER_AUTH_GOOGLE_CLIENT_SECRET }}
+          BETTER_AUTH_GITHUB_CLIENT_ID=${{ env.BETTER_AUTH_GITHUB_CLIENT_ID }}
+          BETTER_AUTH_GITHUB_CLIENT_SECRET=${{ env.BETTER_AUTH_GITHUB_CLIENT_SECRET }}
+          EOF
 
       - name: Install dependencies
         run: bun install
@@ -80,7 +99,7 @@ jobs:
         run: bun run db:setup
 
       - name: Build packages
-        run: bun run build --filter=@rezumerai/{database,types,ui,utils,vitest-config}
+        run: bun run build --filter=@rezumerai/{database,types,ui,utils}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -94,7 +113,7 @@ jobs:
         run: bun run check-types
 
       - name: Run tests
-        run: bun run test:workspace
+        run: bun run test:project
 
       - name: Run build
         run: bun run build --filter={web,@rezumerai/api}

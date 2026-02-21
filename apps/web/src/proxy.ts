@@ -1,23 +1,58 @@
+import { headers } from "next/headers";
+
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { ROUTES } from "@/constants/routing";
+import { auth } from "@/lib/auth";
+
+/**
+ * Protected routes that require authentication.
+ * Users without a session will be redirected to the sign-in page.
+ */
+const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW];
 
 /**
  * Proxy for route protection and security headers.
  * Runs on every request matching the config.matcher patterns.
  */
-export function proxy(_request: NextRequest): NextResponse {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  // Check if the current route is protected
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+
+  // Redirect unauthenticated users from protected routes
+  if (isProtectedRoute && !session) {
+    const signInUrl = new URL(ROUTES.SIGNIN, request.url);
+    signInUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (session && (pathname === ROUTES.SIGNIN || pathname === ROUTES.SIGNUP)) {
+    return NextResponse.redirect(new URL(ROUTES.WORKSPACE, request.url));
+  }
+
   const response = NextResponse.next();
 
   // Build connect-src dynamically based on environment
   const connectSources = ["'self'", "https://api.rezumer.ai", "blob:"];
+
+  // Allow localhost in development for API and Vercel live reload
+  const scriptSources = ["'self'", "'unsafe-eval'", "'unsafe-inline'", "blob:"];
+
   if (process.env.NODE_ENV !== "production") {
     connectSources.push("http://localhost:8080");
+    scriptSources.push("https://vercel.live", "http://localhost:8080");
   }
 
   // Apply strict Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+    `script-src ${scriptSources.join(" ")}`,
     "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
     "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind

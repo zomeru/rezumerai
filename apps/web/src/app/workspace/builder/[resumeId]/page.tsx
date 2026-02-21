@@ -23,7 +23,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { type ComponentType, Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -37,7 +37,6 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import type { PDFPreviewProps } from "@/components/ResumeBuilder/PDFPreview";
 import { defaultResume, type Education, type Experience, type Project, type Resume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
@@ -46,7 +45,7 @@ import { useResumeStore } from "@/store/useResumeStore";
 import type { TemplateType } from "@/templates";
 
 // Dynamically import PDFPreview to avoid SSR issues with pdfjs
-const PDFPreview: ComponentType<PDFPreviewProps> = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
+const PDFPreview = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center">
@@ -70,7 +69,7 @@ const sections: SectionType[] = [
   { id: "skills", name: "Skills", icon: Sparkles },
 ];
 
-export default function ResumeBuilder(): React.JSX.Element {
+export default function ResumeBuilder() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
@@ -115,19 +114,19 @@ export default function ResumeBuilder(): React.JSX.Element {
     accentColor: resumeData.accentColor,
   });
 
-  function updateResumeData(data: Resume["personalInfo"]): void {
+  function updateResumeData(data: Resume["personalInfo"]) {
     updateResume(resumeId, { personalInfo: data });
   }
 
-  function handleTemplateChange(template: TemplateType): void {
+  function handleTemplateChange(template: TemplateType) {
     updateResume(resumeId, { template });
   }
 
-  function handleColorChange(color: string): void {
+  function handleColorChange(color: string) {
     updateResume(resumeId, { accentColor: color });
   }
 
-  function handleFontSizeChange(size: FontSizeValue): void {
+  function handleFontSizeChange(size: FontSizeValue) {
     if (typeof size === "number") {
       updateResume(resumeId, { fontSize: "custom", customFontSize: size });
     } else if (size !== "custom") {
@@ -137,27 +136,27 @@ export default function ResumeBuilder(): React.JSX.Element {
     }
   }
 
-  function handleSummaryChange(summary: string): void {
+  function handleSummaryChange(summary: string) {
     updateResume(resumeId, { professionalSummary: summary });
   }
 
-  function handleExperienceChange(experience: Experience[]): void {
+  function handleExperienceChange(experience: Experience[]) {
     updateResume(resumeId, { experience });
   }
 
-  function handleEducationChange(education: Education[]): void {
+  function handleEducationChange(education: Education[]) {
     updateResume(resumeId, { education });
   }
 
-  function handleProjectChange(project: Project[]): void {
+  function handleProjectChange(project: Project[]) {
     updateResume(resumeId, { project });
   }
 
-  function handleSkillsChange(skills: string[]): void {
+  function handleSkillsChange(skills: string[]) {
     updateResume(resumeId, { skills });
   }
 
-  function changeResumeVisibility(): void {
+  function changeResumeVisibility() {
     updateResume(resumeId, { public: !resumeData.public });
   }
 
@@ -186,9 +185,9 @@ export default function ResumeBuilder(): React.JSX.Element {
       });
     } catch (error) {
       // Silently handle cancellation or errors
-      // AbortError is thrown when user cancels the share dialog
+      // Only log if it's an actual error and not just user cancellation
       if (error instanceof Error && error.name !== "AbortError") {
-        console.error("Error sharing resume:", error);
+        console.debug("Share cancelled or failed:", error);
       }
     }
   }
@@ -287,11 +286,11 @@ export default function ResumeBuilder(): React.JSX.Element {
                       <div className="flex flex-wrap items-center gap-2">
                         <TemplateSelector
                           selectedTemplate={resumeData.template}
-                          onChange={(template: TemplateType): void => handleTemplateChange(template)}
+                          onChange={(template: TemplateType) => handleTemplateChange(template)}
                         />
                         <ColorPickerModal
                           selectedColor={resumeData.accentColor}
-                          onChange={(color: string): void => handleColorChange(color)}
+                          onChange={(color: string) => handleColorChange(color)}
                         />
                         <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
                       </div>
@@ -299,7 +298,7 @@ export default function ResumeBuilder(): React.JSX.Element {
                         {activeSectionIndex !== 0 && (
                           <button
                             type="button"
-                            onClick={(): void => {
+                            onClick={() => {
                               setActiveSectionIndex(Math.max(activeSectionIndex - 1, 0));
                             }}
                             className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
@@ -310,7 +309,7 @@ export default function ResumeBuilder(): React.JSX.Element {
                         {activeSectionIndex < sections.length - 1 && (
                           <button
                             type="button"
-                            onClick={(): void => {
+                            onClick={() => {
                               setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
                             }}
                             className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
@@ -336,7 +335,7 @@ export default function ResumeBuilder(): React.JSX.Element {
                       <button
                         key={section.id}
                         type="button"
-                        onClick={(): void => setActiveSectionIndex(index)}
+                        onClick={() => setActiveSectionIndex(index)}
                         className={cn(
                           "flex size-10 items-center justify-center rounded-xl font-semibold text-sm transition-all",
                           index === activeSectionIndex
@@ -400,7 +399,7 @@ export default function ResumeBuilder(): React.JSX.Element {
                   <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                     <button
                       type="button"
-                      onClick={(): void => setPreviewMode("html")}
+                      onClick={() => setPreviewMode("html")}
                       className={cn(
                         "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
                         previewMode === "html"
@@ -412,7 +411,7 @@ export default function ResumeBuilder(): React.JSX.Element {
                     </button>
                     <button
                       type="button"
-                      onClick={(): void => setPreviewMode("pdf")}
+                      onClick={() => setPreviewMode("pdf")}
                       className={cn(
                         "rounded-lg px-3 py-1.5 font-medium text-sm transition-all",
                         previewMode === "pdf"

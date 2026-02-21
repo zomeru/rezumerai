@@ -11,7 +11,7 @@ import { dummyResumeData, type Resume } from "@/constants/dummy";
 /**
  * Full-screen resume preview page for a single resume.
  */
-export default function Preview(): React.JSX.Element {
+export default function Preview() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
@@ -30,7 +30,7 @@ export default function Preview(): React.JSX.Element {
       }
     }, 1000);
 
-    return (): void => clearTimeout(timeout);
+    return () => clearTimeout(timeout);
   }, [resumeId]);
 
   if (isLoading) {

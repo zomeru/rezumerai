@@ -37,7 +37,7 @@ export default function SampleComponentWithTest() {
 
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
-    const { data } = await api.api.health.get();
+    const { data } = await api.health.get();
     if (data && "data" in data && data.data) {
       setHealthData(data.data as HealthData);
     }
@@ -46,7 +46,7 @@ export default function SampleComponentWithTest() {
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
-    const { data } = await api.api.users.get();
+    const { data } = await api.users.get();
     if (data && "data" in data) {
       setUsers((data.data ?? []) as UserType[]);
     }
@@ -59,18 +59,6 @@ export default function SampleComponentWithTest() {
     // Projects endpoint not yet migrated — clear loading
     setProjectsLoading(false);
   }, [fetchHealth, fetchUsers]);
-
-  const handleCreateUser = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    if (!newUserName || !newUserEmail) return;
-
-    setCreating(true);
-    await api.api.users.post({ name: newUserName, email: newUserEmail });
-    setCreating(false);
-    setNewUserName("");
-    setNewUserEmail("");
-    fetchUsers();
-  };
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -113,30 +101,6 @@ export default function SampleComponentWithTest() {
                 </div>
               ))}
             </div>
-
-            {/* Create User Form */}
-            <form onSubmit={handleCreateUser} className="space-y-2">
-              <h3 className="font-medium">Add New User</h3>
-              <input
-                type="text"
-                placeholder="Name"
-                value={newUserName}
-                onChange={(e) => setNewUserName(e.target.value)}
-                className="w-full rounded border p-2"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                className="w-full rounded border p-2"
-                required
-              />
-              <Button appName="Rezumer" type="submit" disabled={creating}>
-                {creating ? "Creating..." : "Create User"}
-              </Button>
-            </form>
           </div>
         )}
       </div>

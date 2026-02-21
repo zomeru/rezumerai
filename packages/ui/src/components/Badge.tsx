@@ -22,7 +22,7 @@ interface BadgeProps {
   svgStyle?: string;
 }
 
-export default function Badge({ title, style, svgStyle }: BadgeProps): React.JSX.Element {
+export default function Badge({ title, style, svgStyle }: BadgeProps) {
   return (
     <div
       className={cn(

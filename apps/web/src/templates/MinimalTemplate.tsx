@@ -9,7 +9,7 @@ import type { TemplateProps } from "./types";
  * @param props - {@link TemplateProps}
  * @returns The minimal-style resume layout
  */
-const MinimalTemplate = ({ data, accentColor }: TemplateProps): React.JSX.Element => {
+const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
   return (
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">
       {/* Header */}

@@ -49,27 +49,27 @@ export default function DatePicker({
   disabled,
   minDate,
   maxDate,
-}: DatePickerProps): React.JSX.Element {
+}: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent): void {
+    function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return (): void => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (date: Date | undefined): void => {
+  const handleSelect = (date: Date | undefined) => {
     onSelect(date);
     setIsOpen(false);
   };
 
-  const handleClear = (e: React.MouseEvent): void => {
+  const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect(undefined);
   };
@@ -78,7 +78,7 @@ export default function DatePicker({
     <div className="relative" ref={wrapperRef}>
       <button
         type="button"
-        onClick={(): void => {
+        onClick={() => {
           if (!disabled) {
             setIsOpen((prev) => !prev);
           }

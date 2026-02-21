@@ -13,10 +13,10 @@
  * Skeleton for PDFPreview component.
  * Matches the dimensions and layout of the actual PDF viewer.
  */
-export function PDFPreviewSkeleton(): React.JSX.Element {
+export function PDFPreviewSkeleton() {
   return (
     <output
-      className="flex h-full min-h-[600px] w-full flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50"
+      className="flex h-full min-h-150 w-full flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50"
       aria-label="Loading PDF preview"
     >
       <div className="flex flex-col items-center gap-4">
@@ -43,7 +43,7 @@ export function PDFPreviewSkeleton(): React.JSX.Element {
  * Skeleton for RichTextEditor component.
  * Matches the toolbar and editor layout.
  */
-export function RichTextEditorSkeleton(): React.JSX.Element {
+export function RichTextEditorSkeleton() {
   return (
     <output className="block w-full space-y-2" aria-label="Loading rich text editor">
       {/* Toolbar skeleton */}
@@ -55,7 +55,7 @@ export function RichTextEditorSkeleton(): React.JSX.Element {
       </div>
 
       {/* Editor content skeleton */}
-      <div className="min-h-[200px] rounded-lg border border-slate-200 bg-white p-4">
+      <div className="min-h-50 rounded-lg border border-slate-200 bg-white p-4">
         <div className="space-y-3">
           <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
           <div className="h-4 w-5/6 animate-pulse rounded bg-slate-200" />
@@ -75,7 +75,7 @@ export function RichTextEditorSkeleton(): React.JSX.Element {
  * Skeleton for ColorPickerModal component.
  * Shows a simple button skeleton.
  */
-export function ColorPickerSkeleton(): React.JSX.Element {
+export function ColorPickerSkeleton() {
   return (
     <output className="block h-10 w-10 animate-pulse rounded-lg bg-slate-300" aria-label="Loading color picker">
       <span className="sr-only">Loading color picker...</span>
@@ -87,7 +87,7 @@ export function ColorPickerSkeleton(): React.JSX.Element {
  * Skeleton for TemplateSelector component.
  * Shows a button skeleton matching the selector button.
  */
-export function TemplateSelectorSkeleton(): React.JSX.Element {
+export function TemplateSelectorSkeleton() {
   return (
     <output className="block h-10 w-28 animate-pulse rounded-lg bg-slate-300" aria-label="Loading template selector">
       <span className="sr-only">Loading template selector...</span>
@@ -99,7 +99,7 @@ export function TemplateSelectorSkeleton(): React.JSX.Element {
  * Generic skeleton for form sections.
  * Used as fallback for lazy-loaded form components.
  */
-export function FormSkeleton(): React.JSX.Element {
+export function FormSkeleton() {
   return (
     <output className="block space-y-4 rounded-lg border border-slate-200 bg-white p-6" aria-label="Loading form">
       <div className="space-y-2">
@@ -123,10 +123,10 @@ export function FormSkeleton(): React.JSX.Element {
  * Skeleton for resume preview.
  * Shows a document-like loading state.
  */
-export function ResumePreviewSkeleton(): React.JSX.Element {
+export function ResumePreviewSkeleton() {
   return (
     <output
-      className="flex h-full min-h-[800px] w-full items-center justify-center rounded-lg border-2 border-slate-300 border-dashed bg-slate-50"
+      className="flex h-full min-h-200 w-full items-center justify-center rounded-lg border-2 border-slate-300 border-dashed bg-slate-50"
       aria-label="Loading resume preview"
     >
       <div className="flex flex-col items-center gap-4 text-slate-400">

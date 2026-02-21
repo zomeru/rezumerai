@@ -30,7 +30,7 @@ export interface PDFPreviewProps {
  * ```
  */
 
-export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreviewProps): React.JSX.Element {
+export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreviewProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -51,7 +51,7 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
         const url = URL.createObjectURL(pdfBlob);
         setPdfUrl(url);
         setError(null);
-        return (): void => URL.revokeObjectURL(url);
+        return () => URL.revokeObjectURL(url);
       } catch (err) {
         console.error("Error creating PDF URL:", err);
         setError("Failed to load PDF");
@@ -66,32 +66,32 @@ export default function PDFPreview({ pdfBlob, isGenerating = false }: PDFPreview
   }, []);
 
   const onDocumentLoadError = useCallback((error: Error) => {
-    console.error("PDF load error:", error);
-    setError("Failed to load PDF document");
+    const errorMessage = error.message || "Failed to load PDF document";
+    setError(errorMessage);
   }, []);
 
-  const handleZoomIn = (): void => {
+  const handleZoomIn = () => {
     setScale((prev) => Math.min(prev + 0.25, 3.0));
     setFitMode("custom");
   };
 
-  const handleZoomOut = (): void => {
+  const handleZoomOut = () => {
     setScale((prev) => Math.max(prev - 0.25, 0.5));
     setFitMode("custom");
   };
 
-  const handleFitWidth = (): void => {
+  const handleFitWidth = () => {
     setScale(1.0);
     setFitMode("width");
   };
 
-  const handleFitPage = (): void => {
+  const handleFitPage = () => {
     setScale(0.85);
     setFitMode("page");
   };
 
-  const goToPrevPage = (): void => setPageNumber((prev) => Math.max(prev - 1, 1));
-  const goToNextPage = (): void => setPageNumber((prev) => Math.min(prev + 1, numPages));
+  const goToPrevPage = () => setPageNumber((prev) => Math.max(prev - 1, 1));
+  const goToNextPage = () => setPageNumber((prev) => Math.min(prev + 1, numPages));
 
   if (isGenerating) {
     return (

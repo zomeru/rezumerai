@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -15,7 +15,9 @@
       "!!**/node_modules",
       "!!**/coverage",
       "!!**/generated/prisma",
-      "!!**/public"
+      "!!**/public",
+      "!!**/.claude",
+      "!!**/.agents"
     ]
   },
   "formatter": {
@@ -50,8 +52,7 @@
           "options": {
             "functions": ["clsx", "cva", "cn"]
           }
-        },
-        "useExplicitType": "error"
+        }
       }
     }
   },

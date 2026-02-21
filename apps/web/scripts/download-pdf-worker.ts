@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { promisify } from "node:util";
 
-const execAsync: ReturnType<typeof promisify> = promisify(exec);
+const execAsync = promisify(exec);
 
 async function getPdfjsVersion(): Promise<unknown> {
   try {

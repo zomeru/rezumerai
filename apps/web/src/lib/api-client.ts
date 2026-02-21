@@ -14,7 +14,7 @@
  * import { apiWithRetry } from '@/lib/api-client';
  *
  * const result = await apiWithRetry(
- *   () => api.api.users.get(),
+ *   () => api.users.get(),
  *   { maxAttempts: 3 }
  * );
  * ```
@@ -42,7 +42,7 @@ export interface ApiResult<T> {
  * @example
  * ```ts
  * const result = await apiWithRetry(
- *   () => api.api.users({ id: '1' }).get(),
+ *   () => api.users({ id: '1' }).get(),
  *   { maxAttempts: 3, initialDelay: 1000 }
  * );
  *
@@ -64,7 +64,7 @@ export async function apiWithRetry<T>(
       initialDelay: 1000,
       maxDelay: 10000,
       ...retryOptions,
-      onRetry: (error: unknown, attempt: number, delay: number): void => {
+      onRetry: (error: unknown, attempt: number, delay: number) => {
         // Log retry attempts for monitoring
         logError(error instanceof Error ? error : new Error(String(error)), "warning", {
           component: "ApiClient",
@@ -151,7 +151,7 @@ function createTimeout(ms: number, signal?: AbortSignal): Promise<never> {
  * const abortController = new AbortController();
  *
  * const result = await apiWithTimeout(
- *   () => api.api.users.get(),
+ *   () => api.users.get(),
  *   10000, // 10 second timeout
  *   abortController.signal
  * );
@@ -209,7 +209,7 @@ export async function apiWithTimeout<T>(
  * @example
  * ```ts
  * const result = await apiWithRetryAndTimeout(
- *   () => api.api.users.get(),
+ *   () => api.users.get(),
  *   {
  *     maxAttempts: 3,
  *     timeoutMs: 10000,

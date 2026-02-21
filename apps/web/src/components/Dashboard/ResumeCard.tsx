@@ -42,14 +42,7 @@ export interface ResumeCardProps {
  * />
  * ```
  */
-export default function ResumeCard({
-  resume,
-  color,
-  onOpen,
-  onEdit,
-  onDelete,
-  onDownload,
-}: ResumeCardProps): React.JSX.Element {
+export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const formatDate = (date: string | Date): string => new Date(date).toLocaleDateString();
 
@@ -108,7 +101,7 @@ export default function ResumeCard({
             )}
             <button
               type="button"
-              onClick={(e: React.MouseEvent): void => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onEdit();
               }}
@@ -119,7 +112,7 @@ export default function ResumeCard({
             </button>
             <button
               type="button"
-              onClick={(e: React.MouseEvent): void => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onDelete();
               }}

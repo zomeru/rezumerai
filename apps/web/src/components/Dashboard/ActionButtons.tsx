@@ -24,7 +24,7 @@ export interface ActionButtonsProps {
  * <ActionButtons onCreateClick={openCreate} onUploadClick={openUpload} />
  * ```
  */
-export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps): React.JSX.Element {
+export default function ActionButtons({ onCreateClick, onUploadClick }: ActionButtonsProps) {
   return (
     <div className="flex gap-4">
       <button

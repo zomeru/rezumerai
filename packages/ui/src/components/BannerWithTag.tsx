@@ -30,7 +30,7 @@ interface BannerWithTagProps {
  * />
  * ```
  */
-export default function BannerWithTag({ tag, bannerStyle, textStyle }: BannerWithTagProps): React.JSX.Element {
+export default function BannerWithTag({ tag, bannerStyle, textStyle }: BannerWithTagProps) {
   return (
     <div
       className={cn(

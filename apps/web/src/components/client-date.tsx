@@ -36,7 +36,7 @@ export function ClientDate({
   prefix = "",
   fallback = "Loading...",
   className,
-}: ClientDateProps): React.JSX.Element {
+}: ClientDateProps) {
   const currentDate = useClientDate();
 
   return (

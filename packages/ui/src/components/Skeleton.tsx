@@ -14,13 +14,7 @@ interface SkeletonProps {
  * Renders a pulsing placeholder that can be customized in size and shape.
  * Includes proper ARIA attributes for accessibility.
  */
-export default function Skeleton({
-  width,
-  height,
-  borderRadius,
-  className = "",
-  style,
-}: SkeletonProps): React.JSX.Element {
+export default function Skeleton({ width, height, borderRadius, className = "", style }: SkeletonProps) {
   return (
     <output
       className={cn("animate-pulse bg-slate-200", className)}
@@ -63,7 +57,7 @@ interface SkeletonTextProps {
  * <SkeletonText className="my-2" />
  * ```
  */
-export function SkeletonText({ width = "100%", className = "" }: SkeletonTextProps): React.JSX.Element {
+export function SkeletonText({ width = "100%", className = "" }: SkeletonTextProps) {
   return <Skeleton width={width} height={14} borderRadius={6} className={className} />;
 }
 
@@ -91,7 +85,7 @@ interface SkeletonHeadingProps {
  * <SkeletonHeading className="mb-4" />
  * ```
  */
-export function SkeletonHeading({ width = "60%", className = "" }: SkeletonHeadingProps): React.JSX.Element {
+export function SkeletonHeading({ width = "60%", className = "" }: SkeletonHeadingProps) {
   return <Skeleton width={width} height={24} borderRadius={8} className={className} />;
 }
 
@@ -119,7 +113,7 @@ interface SkeletonCircleProps {
  * <SkeletonCircle className="mr-3" />
  * ```
  */
-export function SkeletonCircle({ size = 48, className = "" }: SkeletonCircleProps): React.JSX.Element {
+export function SkeletonCircle({ size = 48, className = "" }: SkeletonCircleProps) {
   return <Skeleton width={size} height={size} borderRadius="50%" className={className} />;
 }
 
@@ -147,6 +141,6 @@ interface SkeletonCardProps {
  * <SkeletonCard className="mb-4" />
  * ```
  */
-export function SkeletonCard({ height = 200, className = "" }: SkeletonCardProps): React.JSX.Element {
+export function SkeletonCard({ height = 200, className = "" }: SkeletonCardProps) {
   return <Skeleton width="100%" height={height} borderRadius={12} className={className} />;
 }

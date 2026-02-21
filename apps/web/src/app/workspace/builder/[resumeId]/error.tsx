@@ -1,19 +1,14 @@
 "use client";
 
-import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { RouteErrorBoundary, type RouteErrorBoundaryProps } from "@/components/RouteErrorBoundary";
 import { ROUTES } from "@/constants/routing";
-
-interface ErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
 
 /**
  * Resume builder error boundary.
  * Handles errors in the resume builder interface (form validation, autosave, etc.).
  * Provides data recovery guidance and navigation options.
  */
-export default function BuilderError({ error, reset }: ErrorProps): React.JSX.Element {
+export default function BuilderError({ error, reset }: RouteErrorBoundaryProps) {
   return (
     <RouteErrorBoundary
       error={error}

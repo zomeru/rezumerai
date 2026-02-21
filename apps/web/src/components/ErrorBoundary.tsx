@@ -24,6 +24,8 @@ import { useRouter } from "next/navigation";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { type ErrorContext, type ErrorSeverity, getUserFriendlyMessage, logError } from "@/lib/errors";
 
+export type ErrorWithDigest = Error & { digest?: string };
+
 export interface ErrorBoundaryProps {
   /** Child components to render */
   children: ReactNode;
@@ -66,7 +68,7 @@ function DefaultFallback({
   showRetry?: boolean;
   showDevDetails?: boolean;
   retryCount: number;
-}): React.JSX.Element {
+}) {
   const router = useRouter();
   const userMessage = getUserFriendlyMessage(error);
 
@@ -98,7 +100,7 @@ function DefaultFallback({
               </p>
               {"digest" in error && (
                 <p className="font-mono text-red-800 text-xs">
-                  <strong>Digest:</strong> {(error as Error & { digest?: string }).digest}
+                  <strong>Digest:</strong> {(error as ErrorWithDigest).digest}
                 </p>
               )}
               {error.stack && (
@@ -125,7 +127,7 @@ function DefaultFallback({
           )}
           <button
             type="button"
-            onClick={(): void => router.refresh()}
+            onClick={() => router.refresh()}
             className="flex-1 rounded-lg border border-red-300 bg-white px-6 py-3 font-semibold text-red-900 text-sm transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
           >
             Reload page
@@ -164,7 +166,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { severity = "error", context = {}, onError } = this.props;
 
     // Update state with error info
@@ -188,7 +190,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    * Resets error boundary state and attempts to re-render children.
    * Implements exponential backoff for retry attempts.
    */
-  private handleReset = (): void => {
+  private handleReset = () => {
     const { onReset } = this.props;
     const { retryCount } = this.state;
 
@@ -260,7 +262,7 @@ export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
   errorBoundaryProps: Omit<ErrorBoundaryProps, "children"> = {},
 ): React.ComponentType<P> {
-  const WrappedComponent = (props: P): React.JSX.Element => (
+  const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
       <Component {...props} />
     </ErrorBoundary>

@@ -29,7 +29,6 @@ import {
  * Heavy component due to react-pdf library and PDF.js worker.
  * Only loads when user navigates to preview section.
  */
-// biome-ignore lint/nursery/useExplicitType: Dynamic import type inference is preferred for Next.js components
 const PDFPreviewDynamic = dynamic(() => import("./PDFPreview"), {
   loading: () => <PDFPreviewSkeleton />,
   ssr: false, // Disable SSR due to PDF.js worker requirements
@@ -40,7 +39,6 @@ const PDFPreviewDynamic = dynamic(() => import("./PDFPreview"), {
  * Heavy component due to TipTap editor and extensions.
  * Only loads when user focuses on rich text fields.
  */
-// biome-ignore lint/nursery/useExplicitType: Dynamic import type inference is preferred for Next.js components
 const RichTextEditorDynamic = dynamic(() => import("./RichTextEditor"), {
   loading: () => <RichTextEditorSkeleton />,
   ssr: false, // Disable SSR for better hydration performance
@@ -51,7 +49,6 @@ const RichTextEditorDynamic = dynamic(() => import("./RichTextEditor"), {
  * Includes react-colorful library and portal rendering.
  * Only loads when color picker is opened.
  */
-// biome-ignore lint/nursery/useExplicitType: Dynamic import type inference is preferred for Next.js components
 const ColorPickerModalDynamic = dynamic(() => import("./ColorPickerModal"), {
   loading: () => <ColorPickerSkeleton />,
   ssr: false, // Disable SSR due to portal rendering
@@ -62,7 +59,6 @@ const ColorPickerModalDynamic = dynamic(() => import("./ColorPickerModal"), {
  * Includes template preview images and selection logic.
  * Loads immediately but can be deferred if needed.
  */
-// biome-ignore lint/nursery/useExplicitType: Dynamic import type inference is preferred for Next.js components
 const TemplateSelectorDynamic = dynamic(() => import("./TemplateSelector"), {
   loading: () => <TemplateSelectorSkeleton />,
 });
@@ -72,7 +68,7 @@ const TemplateSelectorDynamic = dynamic(() => import("./TemplateSelector"), {
  * These components provide automatic fallback to skeleton loaders.
  */
 
-export function LazyPDFPreview(props: React.ComponentProps<typeof PDFPreviewDynamic>): React.JSX.Element {
+export function LazyPDFPreview(props: React.ComponentProps<typeof PDFPreviewDynamic>) {
   return (
     <Suspense fallback={<PDFPreviewSkeleton />}>
       <PDFPreviewDynamic {...props} />
@@ -80,7 +76,7 @@ export function LazyPDFPreview(props: React.ComponentProps<typeof PDFPreviewDyna
   );
 }
 
-export function LazyRichTextEditor(props: React.ComponentProps<typeof RichTextEditorDynamic>): React.JSX.Element {
+export function LazyRichTextEditor(props: React.ComponentProps<typeof RichTextEditorDynamic>) {
   return (
     <Suspense fallback={<RichTextEditorSkeleton />}>
       <RichTextEditorDynamic {...props} />
@@ -88,7 +84,7 @@ export function LazyRichTextEditor(props: React.ComponentProps<typeof RichTextEd
   );
 }
 
-export function LazyColorPickerModal(props: React.ComponentProps<typeof ColorPickerModalDynamic>): React.JSX.Element {
+export function LazyColorPickerModal(props: React.ComponentProps<typeof ColorPickerModalDynamic>) {
   return (
     <Suspense fallback={<ColorPickerSkeleton />}>
       <ColorPickerModalDynamic {...props} />
@@ -96,7 +92,7 @@ export function LazyColorPickerModal(props: React.ComponentProps<typeof ColorPic
   );
 }
 
-export function LazyTemplateSelector(props: React.ComponentProps<typeof TemplateSelectorDynamic>): React.JSX.Element {
+export function LazyTemplateSelector(props: React.ComponentProps<typeof TemplateSelectorDynamic>) {
   return (
     <Suspense fallback={<TemplateSelectorSkeleton />}>
       <TemplateSelectorDynamic {...props} />

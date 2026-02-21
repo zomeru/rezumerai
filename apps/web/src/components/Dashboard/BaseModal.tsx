@@ -20,7 +20,7 @@ export interface BaseModalProps {
   title: string;
   children: ReactNode;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
   submitLabel?: string;
   isLoading?: boolean;
 }
@@ -51,14 +51,14 @@ export default function BaseModal({
   onSubmit,
   submitLabel = "Submit",
   isLoading = false,
-}: BaseModalProps): React.JSX.Element | null {
+}: BaseModalProps) {
   const modalRef = useFocusTrap<HTMLFormElement>(isOpen, onClose);
 
-  function handleModalClick(e: React.MouseEvent): void {
+  function handleModalClick(e: React.MouseEvent) {
     e.stopPropagation();
   }
 
-  function handleBackdropClick(e: React.MouseEvent): void {
+  function handleBackdropClick(e: React.MouseEvent) {
     // Only close if clicking the backdrop directly, not children
     if (e.target === e.currentTarget) {
       onClose();

@@ -31,7 +31,7 @@ export default function SectionHeader({
   onAdd,
   addButtonText = "Add",
   showAddButton = true,
-}: SectionHeaderProps): React.JSX.Element {
+}: SectionHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <h3 className="font-semibold text-lg text-slate-900">{title}</h3>

@@ -7,9 +7,7 @@
     "paths": {
       "@/*": ["./*"],
       "@rezumerai/types": ["../types/src"],
-      "@rezumerai/types/*": ["../types/src/*"],
-      "@rezumerai/vitest-config": ["../vitest-config/src"],
-      "@rezumerai/vitest-config/*": ["../vitest-config/src/*"]
+      "@rezumerai/types/*": ["../types/src/*"]
     },
     "allowJs": true,
     "skipLibCheck": true,

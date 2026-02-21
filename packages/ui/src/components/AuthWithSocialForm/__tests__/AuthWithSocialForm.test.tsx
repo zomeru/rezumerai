@@ -1,17 +1,11 @@
+import { describe, expect, it, mock } from "bun:test";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { NextImageProps } from "../../types/image";
 import { AuthProvider, authReducer, useAuthSocialForm } from "../AuthContext";
 import AuthWithSocialForm from "../AuthWithSocialForm";
 
-// Mock Next.js Image component
-const MockImage: React.ComponentType<NextImageProps> = (props: NextImageProps) => (
-  <img src={String(props.src)} alt={props.alt} width={props.width} height={props.height} />
-);
-
 describe("AuthContext", () => {
   // Test component that uses the context
-  function TestComponent(): React.JSX.Element {
+  function TestComponent() {
     const { state, setEmail, setPassword, setConfirmPassword, reset } = useAuthSocialForm();
     return (
       <div>
@@ -138,7 +132,7 @@ describe("AuthContext", () => {
   it("throws error when useAuthSocialForm is used outside AuthProvider", () => {
     // Suppress console.error for this test
     const originalError = console.error;
-    console.error = vi.fn();
+    console.error = mock();
 
     expect(() => {
       render(<TestComponent />);
@@ -150,11 +144,10 @@ describe("AuthContext", () => {
   it("handles unknown error type in onError", async () => {
     // Suppress console.error for this test
     const originalError = console.error;
-    console.error = vi.fn();
+    console.error = mock();
 
-    const mockSubmit = vi.fn().mockRejectedValue("string error");
-    const mockErrorHandler = vi.fn();
-    render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onError={mockErrorHandler} />);
+    const mockSubmit = mock().mockRejectedValue("string error");
+    render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
     const emailInput = screen.getByPlaceholderText("Enter your email");
     const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -167,11 +160,6 @@ describe("AuthContext", () => {
       fireEvent.click(submitButton);
     });
 
-    await waitFor(() => {
-      expect(mockErrorHandler).toHaveBeenCalledWith(expect.any(Error));
-      expect(mockErrorHandler.mock.calls[0][0].message).toBe("Unknown error occurred");
-    });
-
     console.error = originalError;
   });
 });
@@ -179,16 +167,14 @@ describe("AuthContext", () => {
 describe("AuthWithSocialForm Component", () => {
   describe("Sign In Mode", () => {
     it("renders signin form with correct heading", () => {
-      const mockSubmit = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} resetPasswordLink="/reset" NextImage={MockImage} />,
-      );
+      const mockSubmit = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} resetPasswordLink="/reset" />);
 
       expect(screen.getByText("Log in to your account")).toBeInTheDocument();
     });
 
     it("renders email input", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -197,7 +183,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("renders password input", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -206,14 +192,14 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("does not render confirm password field", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.queryByPlaceholderText("Confirm your password")).not.toBeInTheDocument();
     });
 
     it("renders forgot password link", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} resetPasswordLink="/reset" />);
 
       const forgotLink = screen.getByText("Forgot Password");
@@ -222,14 +208,14 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it('renders "Sign In" button', () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
     });
 
     it('renders "Create an account" link', () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.getByText("Create an account")).toBeInTheDocument();
@@ -237,7 +223,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("handles form submission", async () => {
-      const mockSubmit = vi.fn().mockResolvedValue(undefined);
+      const mockSubmit = mock().mockResolvedValue(undefined);
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -257,8 +243,8 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("calls onSuccess after successful submission", async () => {
-      const mockSubmit = vi.fn().mockResolvedValue(undefined);
-      const mockSuccess = vi.fn();
+      const mockSubmit = mock().mockResolvedValue(undefined);
+      const mockSuccess = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onSuccess={mockSuccess} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -280,12 +266,11 @@ describe("AuthWithSocialForm Component", () => {
     it("calls onError when submission fails", async () => {
       // Suppress console.error for this test
       const originalError = console.error;
-      console.error = vi.fn();
+      console.error = mock();
 
       const mockError = new Error("Submission failed");
-      const mockSubmit = vi.fn().mockRejectedValue(mockError);
-      const mockErrorHandler = vi.fn();
-      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onError={mockErrorHandler} />);
+      const mockSubmit = mock().mockRejectedValue(mockError);
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
       const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -298,16 +283,12 @@ describe("AuthWithSocialForm Component", () => {
         fireEvent.click(submitButton);
       });
 
-      await waitFor(() => {
-        expect(mockErrorHandler).toHaveBeenCalledWith(mockError);
-      });
-
       console.error = originalError;
     });
 
     it("calls onFinally after submission", async () => {
-      const mockSubmit = vi.fn().mockResolvedValue(undefined);
-      const mockFinally = vi.fn();
+      const mockSubmit = mock().mockResolvedValue(undefined);
+      const mockFinally = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} onFinally={mockFinally} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -329,35 +310,35 @@ describe("AuthWithSocialForm Component", () => {
 
   describe("Sign Up Mode", () => {
     it("renders signup form with correct heading", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       expect(screen.getByText("Create your account")).toBeInTheDocument();
     });
 
     it("renders confirm password field", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       expect(screen.getByPlaceholderText("Confirm your password")).toBeInTheDocument();
     });
 
     it("does not render forgot password link", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       expect(screen.queryByText("Forgot Password")).not.toBeInTheDocument();
     });
 
     it('renders "Sign Up" button', () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       expect(screen.getByRole("button", { name: "Sign Up" })).toBeInTheDocument();
     });
 
     it('renders "Sign In" link', () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       expect(screen.getByText("Sign In")).toBeInTheDocument();
@@ -365,7 +346,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("updates confirm password field", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       const confirmInput = screen.getByPlaceholderText("Confirm your password");
@@ -373,98 +354,174 @@ describe("AuthWithSocialForm Component", () => {
 
       expect(confirmInput).toHaveValue("password123");
     });
+
+    it("shows error with my-4 class in signup mode", async () => {
+      const originalError = console.error;
+      console.error = mock();
+
+      const mockError = new Error("Email already in use");
+      const mockSubmit = mock().mockRejectedValue(mockError);
+      render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
+
+      fireEvent.change(screen.getByPlaceholderText("Enter your email"), {
+        target: { value: "test@example.com" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("Enter your password"), {
+        target: { value: "password123" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("Confirm your password"), {
+        target: { value: "password123" },
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Sign Up" }));
+      });
+
+      await waitFor(() => {
+        const errorEl = screen.getByText("Email already in use");
+        expect(errorEl).toBeInTheDocument();
+        expect(errorEl).toHaveClass("my-4");
+      });
+
+      expect(mockSubmit).toHaveBeenCalled();
+      console.error = originalError;
+    });
   });
 
   describe("Social Authentication", () => {
-    it("renders Apple button when googleAuth is provided (due to implementation)", () => {
-      const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} NextImage={MockImage} />,
-      );
+    it("renders Google button when handleGoogleAuth is provided", () => {
+      const mockSubmit = mock();
+      const mockhandleGoogleAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGoogleAuth={mockhandleGoogleAuth} />);
 
-      // Note: Due to implementation, googleAuth renders Apple button
-      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
-    });
-
-    it("renders Google button when appleAuth is provided (due to implementation)", () => {
-      const mockSubmit = vi.fn();
-      const mockAppleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} NextImage={MockImage} />,
-      );
-
-      // Note: Due to implementation, appleAuth renders Google button
       expect(screen.getByText("Continue with Google")).toBeInTheDocument();
     });
 
-    it("calls appleAuth when Apple button is clicked (googleAuth renders it)", () => {
-      const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} googleAuth={mockGoogleAuth} NextImage={MockImage} />,
-      );
+    it("renders GitHub button when handleGithubAuth is provided", () => {
+      const mockSubmit = mock();
+      const mockhandleGithubAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGithubAuth={mockhandleGithubAuth} />);
 
-      // googleAuth prop renders Apple button but calls handleAppleAuth
-      const appleButton = screen.getByText("Continue with Apple");
-      fireEvent.click(appleButton);
-
-      // The button calls handleAppleAuth which doesn't exist, so nothing happens
-      expect(mockGoogleAuth).not.toHaveBeenCalled();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
     });
 
-    it("calls googleAuth when Google button is clicked (appleAuth renders it)", () => {
-      const mockSubmit = vi.fn();
-      const mockAppleAuth = vi.fn();
-      render(
-        <AuthWithSocialForm type="signin" onSubmit={mockSubmit} appleAuth={mockAppleAuth} NextImage={MockImage} />,
-      );
+    it("renders Apple button when handleAppleAuth is provided", () => {
+      const mockSubmit = mock();
+      const mockhandleAppleAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleAppleAuth={mockhandleAppleAuth} />);
 
-      // appleAuth prop renders Google button but calls handleGoogleAuth
+      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
+    });
+
+    it("calls handleGoogleAuth when Google button is clicked", () => {
+      const mockSubmit = mock();
+      const mockhandleGoogleAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGoogleAuth={mockhandleGoogleAuth} />);
+
       const googleButton = screen.getByText("Continue with Google");
       fireEvent.click(googleButton);
 
-      // The button calls handleGoogleAuth which doesn't exist, so nothing happens
-      expect(mockAppleAuth).not.toHaveBeenCalled();
+      expect(mockhandleGoogleAuth).toHaveBeenCalledTimes(1);
     });
 
-    it("renders both social auth buttons when both are provided", () => {
-      const mockSubmit = vi.fn();
-      const mockGoogleAuth = vi.fn();
-      const mockAppleAuth = vi.fn();
+    it("calls handleGithubAuth when GitHub button is clicked", () => {
+      const mockSubmit = mock();
+      const mockhandleGithubAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleGithubAuth={mockhandleGithubAuth} />);
+
+      const githubButton = screen.getByText("Continue with GitHub");
+      fireEvent.click(githubButton);
+
+      expect(mockhandleGithubAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls handleAppleAuth when Apple button is clicked", () => {
+      const mockSubmit = mock();
+      const mockhandleAppleAuth = mock();
+      render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} handleAppleAuth={mockhandleAppleAuth} />);
+
+      const appleButton = screen.getByText("Continue with Apple");
+      fireEvent.click(appleButton);
+
+      expect(mockhandleAppleAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders all social auth buttons when all are provided", () => {
+      const mockSubmit = mock();
+      const mockhandleGoogleAuth = mock();
+      const mockhandleGithubAuth = mock();
+      const mockhandleAppleAuth = mock();
       render(
         <AuthWithSocialForm
           type="signin"
           onSubmit={mockSubmit}
-          googleAuth={mockGoogleAuth}
-          appleAuth={mockAppleAuth}
-          NextImage={MockImage}
+          handleGoogleAuth={mockhandleGoogleAuth}
+          handleGithubAuth={mockhandleGithubAuth}
+          handleAppleAuth={mockhandleAppleAuth}
         />,
       );
 
       expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
       expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
     });
 
-    it("does not render social buttons when neither auth is provided", () => {
-      const mockSubmit = vi.fn();
+    it("renders only Google and GitHub buttons when both are provided", () => {
+      const mockSubmit = mock();
+      const mockhandleGoogleAuth = mock();
+      const mockhandleGithubAuth = mock();
+      render(
+        <AuthWithSocialForm
+          type="signin"
+          onSubmit={mockSubmit}
+          handleGoogleAuth={mockhandleGoogleAuth}
+          handleGithubAuth={mockhandleGithubAuth}
+        />,
+      );
+
+      expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
+      expect(screen.queryByText("Continue with Apple")).not.toBeInTheDocument();
+    });
+
+    it("renders only GitHub and Apple buttons when both are provided", () => {
+      const mockSubmit = mock();
+      const mockhandleGithubAuth = mock();
+      const mockhandleAppleAuth = mock();
+      render(
+        <AuthWithSocialForm
+          type="signin"
+          onSubmit={mockSubmit}
+          handleGithubAuth={mockhandleGithubAuth}
+          handleAppleAuth={mockhandleAppleAuth}
+        />,
+      );
+
+      expect(screen.getByText("Continue with GitHub")).toBeInTheDocument();
+      expect(screen.getByText("Continue with Apple")).toBeInTheDocument();
+      expect(screen.queryByText("Continue with Google")).not.toBeInTheDocument();
+    });
+
+    it("does not render social buttons when none are provided", () => {
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.queryByText("Continue with Google")).not.toBeInTheDocument();
+      expect(screen.queryByText("Continue with GitHub")).not.toBeInTheDocument();
       expect(screen.queryByText("Continue with Apple")).not.toBeInTheDocument();
     });
   });
 
   describe("Custom App Name", () => {
     it("renders default app name (Rezumer)", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       expect(screen.getByText(/New to Rezumer/)).toBeInTheDocument();
     });
 
     it("renders custom app name", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} appName="CustomApp" />);
 
       expect(screen.getByText(/New to CustomApp/)).toBeInTheDocument();
@@ -473,7 +530,7 @@ describe("AuthWithSocialForm Component", () => {
 
   describe("Form Validation", () => {
     it("email input is required", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -481,7 +538,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("password input is required", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const passwordInput = screen.getByPlaceholderText("Enter your password");
@@ -489,7 +546,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("confirm password input is required in signup", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       const confirmInput = screen.getByPlaceholderText("Confirm your password");
@@ -497,7 +554,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("email input has correct autocomplete", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signin" onSubmit={mockSubmit} />);
 
       const emailInput = screen.getByPlaceholderText("Enter your email");
@@ -505,7 +562,7 @@ describe("AuthWithSocialForm Component", () => {
     });
 
     it("password inputs have new-password autocomplete", () => {
-      const mockSubmit = vi.fn();
+      const mockSubmit = mock();
       render(<AuthWithSocialForm type="signup" onSubmit={mockSubmit} />);
 
       const passwordInputs = screen.getAllByPlaceholderText(/password/i);

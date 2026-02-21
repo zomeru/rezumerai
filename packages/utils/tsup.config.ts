@@ -1,12 +1,15 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: {
-    index: "src/index.ts",
-    styles: "src/styles.ts",
-    string: "src/string.ts",
-    date: "src/date.ts",
-  },
+  entry: [
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx",
+    "!src/**/__tests__/**",
+    "!src/test/**",
+  ],
   format: ["esm"],
   dts: process.env.NODE_ENV === "development" ? { resolve: true } : false,
   splitting: false,

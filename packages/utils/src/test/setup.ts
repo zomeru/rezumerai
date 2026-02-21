@@ -1,5 +1,9 @@
-import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+import { afterEach, expect } from "bun:test";
+import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
 
-// Set test environment using vi.stubEnv
-vi.stubEnv("NODE_ENV", "test");
+expect.extend(matchers);
+
+afterEach(() => {
+  cleanup();
+});

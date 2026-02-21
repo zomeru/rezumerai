@@ -29,7 +29,7 @@ export interface UserFetcherProps {
  * <UserFetcher className="mt-4" />
  * ```
  */
-export function UserFetcher({ className }: UserFetcherProps): React.JSX.Element {
+export function UserFetcher({ className }: UserFetcherProps) {
   const [userId, setUserId] = useState<string>("1");
   const userIdInputId = useId();
   const [userData, setUserData] = useState<UserType | null>(null);
@@ -41,7 +41,7 @@ export function UserFetcher({ className }: UserFetcherProps): React.JSX.Element 
     setUserError(null);
     setUserData(null);
 
-    const { data, error } = await api.api.users({ id: userId }).get();
+    const { data, error } = await api.users({ id: userId }).get();
 
     setUserLoading(false);
     if (error) {
@@ -110,7 +110,7 @@ interface UserCardProps {
  * @param props - UserCard configuration
  * @returns User information card
  */
-function UserCard({ user }: UserCardProps): React.JSX.Element {
+function UserCard({ user }: UserCardProps) {
   return (
     <div className="rounded border bg-white p-4 shadow-sm">
       <h3 className="mb-2 font-semibold text-lg">User Details</h3>

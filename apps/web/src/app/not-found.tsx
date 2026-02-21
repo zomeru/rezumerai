@@ -1,11 +1,10 @@
 import Link from "next/link";
-import type React from "react";
 import { ROUTES } from "@/constants/routing";
 
 /**
  * Custom 404 Not Found page with a link back to the homepage.
  */
-export default function NotFound(): React.JSX.Element {
+export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 px-4">
       <div className="text-center">

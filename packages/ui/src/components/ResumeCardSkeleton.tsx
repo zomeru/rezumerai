@@ -5,7 +5,7 @@ import Skeleton, { SkeletonText } from "./Skeleton";
  * Renders the same h-56 rounded card with pulsing placeholders
  * for the icon, title, date, and action area.
  */
-export default function ResumeCardSkeleton(): React.JSX.Element {
+export default function ResumeCardSkeleton() {
   return (
     <div className="relative flex h-56 w-full flex-col overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white p-6 shadow-sm">
       {/* Icon placeholder */}
@@ -49,7 +49,7 @@ interface ResumeCardSkeletonGridProps {
  * <ResumeCardSkeletonGrid /> // defaults to 5 cards
  * ```
  */
-export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProps): React.JSX.Element {
+export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProps) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {Array.from({ length: count }, (_, i) => (
@@ -82,7 +82,7 @@ interface ResumeCardSkeletonListProps {
  * <ResumeCardSkeletonList /> // defaults to 5 cards
  * ```
  */
-export function ResumeCardSkeletonList({ count = 5 }: ResumeCardSkeletonListProps): React.JSX.Element {
+export function ResumeCardSkeletonList({ count = 5 }: ResumeCardSkeletonListProps) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }, (_, i) => (

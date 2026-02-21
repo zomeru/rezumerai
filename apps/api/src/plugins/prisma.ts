@@ -8,5 +8,4 @@ import Elysia from "elysia";
  * Usage in modules:
  *   .get('/items', ({ db }) => db.sampleTable.findMany())
  */
-// biome-ignore lint/nursery/useExplicitType: Elysia type inference required
 export const prismaPlugin = new Elysia({ name: "plugin/prisma" }).decorate("db", prisma);

@@ -25,7 +25,7 @@ export interface LogoProps {
  * <Logo className="text-white" />
  * ```
  */
-export default function Logo({ className }: LogoProps): React.JSX.Element {
+export default function Logo({ className }: LogoProps) {
   return (
     <Link href={ROUTES.HOME} className="inline-block">
       <h1

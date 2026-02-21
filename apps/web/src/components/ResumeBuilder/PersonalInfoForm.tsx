@@ -52,21 +52,21 @@ export default function PersonalInfoForm({
   onChangeAction,
   removeBackground,
   setRemoveBackgroundAction,
-}: PersonalInfoFormProps): React.JSX.Element {
+}: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleImageChange(field: keyof Resume["personalInfo"], value: string): void {
+  function handleImageChange(field: keyof Resume["personalInfo"], value: string) {
     onChangeAction({
       ...data,
       [field]: value,
     });
   }
 
-  function handleClickUpload(): void {
+  function handleClickUpload() {
     fileInputRef.current?.click();
   }
 
-  function onInputChange(e: React.ChangeEvent<HTMLInputElement>): void {
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const imageUrl = e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : "";
     handleImageChange("image", imageUrl);
   }
@@ -113,7 +113,7 @@ export default function PersonalInfoForm({
                 type="checkbox"
                 className="peer sr-only"
                 checked={removeBackground}
-                onChange={(): void => setRemoveBackgroundAction(!removeBackground)}
+                onChange={() => setRemoveBackgroundAction(!removeBackground)}
               />
               <div className="peer h-5 w-9 rounded-full bg-slate-300 transition-colors duration-200 peer-checked:bg-primary-600"></div>
               <span className="dot absolute top-1 left-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
@@ -135,7 +135,7 @@ export default function PersonalInfoForm({
               type={type}
               value={data[key]}
               required={required}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => handleImageChange(key, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageChange(key, e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
               placeholder={`Enter your ${label.toLowerCase()}`}
             />
