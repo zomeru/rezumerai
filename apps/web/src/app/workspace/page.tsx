@@ -5,7 +5,7 @@ import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDeferredValue, useEffect, useTransition } from "react";
+import { useCallback, useDeferredValue, useEffect, useTransition } from "react";
 import {
   CreateResumeModal,
   DownloadResumeModal,
@@ -32,6 +32,8 @@ export default function Dashboard() {
   const { data: session } = useSession();
   console.log("Session data in Dashboard:", session);
 
+  // useResumeStore.getState().fetchResumes();
+
   // Resume store
   const resumes = useResumeStore((state) => state.resumes);
   const isLoading = useResumeStore((state) => state.isLoading);
@@ -42,7 +44,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchResumes();
-  }, [fetchResumes]);
+  }, []);
+
+  console.log("Resumes in Dashboard:", resumes);
 
   // Dashboard UI store
   const modalState = useDashboardStore((state) => state.modalState);
@@ -81,21 +85,27 @@ export default function Dashboard() {
     setModalState({ type: null });
   }
 
-  function handleDeleteResume(resumeId: string) {
+  const handleDeleteResume = useCallback((resumeId: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this resume?");
     if (confirmed) {
       deleteResume(resumeId);
     }
-  }
+  }, []);
 
-  function handleOpenResume(resumeId: string) {
-    router.push(`${ROUTES.BUILDER}/${resumeId}`);
-  }
+  const handleOpenResume = useCallback(
+    (resumeId: string) => {
+      router.push(`${ROUTES.BUILDER}/${resumeId}`);
+    },
+    [router],
+  );
 
-  function handleOpenEditModal(resumeId: string, title: string) {
-    setEditingTitle(title);
-    setModalState({ type: "edit", resumeId });
-  }
+  const handleOpenEditModal = useCallback(
+    (resumeId: string, title: string) => {
+      setEditingTitle(title);
+      setModalState({ type: "edit", resumeId });
+    },
+    [setEditingTitle, setModalState],
+  );
 
   async function handleDownloadResume(resumeId: string): Promise<void> {
     setModalState({ type: "download", resumeId });
@@ -109,7 +119,7 @@ export default function Dashboard() {
   // Get the resume for download modal
   const downloadResume =
     modalState.type === "download" && modalState.resumeId
-      ? resumes.find((r) => r._id === modalState.resumeId)
+      ? resumes.find((r) => r.id === modalState.resumeId)
       : undefined;
 
   // Filter resumes based on deferred search query for smoother UX
@@ -208,17 +218,17 @@ export default function Dashboard() {
             }
           >
             {filteredResumes.map((resume, index) => {
-              const key = generateUuidKey(resume._id);
+              const key = generateUuidKey(resume.id);
 
               return (
                 <ResumeCard
                   key={key}
                   resume={resume}
                   color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-                  onOpen={() => handleOpenResume(resume._id)}
-                  onEdit={() => handleOpenEditModal(resume._id, resume.title)}
-                  onDelete={() => handleDeleteResume(resume._id)}
-                  onDownload={async (): Promise<void> => handleDownloadResume(resume._id)}
+                  onOpen={() => handleOpenResume(resume.id)}
+                  onEdit={() => handleOpenEditModal(resume.id, resume.title)}
+                  onDelete={() => handleDeleteResume(resume.id)}
+                  onDownload={async (): Promise<void> => handleDownloadResume(resume.id)}
                 />
               );
             })}

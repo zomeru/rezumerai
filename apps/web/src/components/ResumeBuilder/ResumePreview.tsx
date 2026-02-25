@@ -1,10 +1,10 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type React from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import type { Resume } from "@/constants/dummy";
 import { LETTER_HEIGHT_PX, LETTER_WIDTH_PX } from "@/constants/pdf";
 import type { PreviewMode } from "@/hooks/usePdfGenerator";
 import { ClassicTemplate, MinimalImageTemplate, MinimalTemplate, ModernTemplate, type TemplateType } from "@/templates";
@@ -21,7 +21,7 @@ import { type FontSizeValue, getFontScale } from "./FontSizeSelector";
  * @property previewMode - Current preview mode ("html" or "pdf")
  */
 export interface ResumePreviewProps {
-  data: Resume;
+  data: ResumeResponse;
   template: TemplateType;
   accentColor: string;
   className?: string;
@@ -39,7 +39,7 @@ export interface ResumePreviewProps {
  */
 export interface RenderTemplateProps {
   template: TemplateType;
-  data: Resume;
+  data: ResumeResponse;
   accentColor: string;
   fontSize?: FontSizeValue;
 }

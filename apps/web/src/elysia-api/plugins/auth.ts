@@ -1,6 +1,6 @@
 import type { SessionUser } from "@rezumerai/types";
 import Elysia from "elysia";
-import { env } from "../env";
+import { serverEnv } from "@/env";
 
 /**
  * Auth plugin — validates the Better Auth session and injects the authenticated
@@ -25,9 +25,12 @@ async function resolveSession(request: Request): Promise<SessionUser | null> {
   if (!cookie) return null;
 
   try {
-    const res = await fetch(`${env.BETTER_AUTH_URL}/api/auth/get-session`, {
-      headers: { cookie },
-    });
+    const res = await fetch(
+      `${serverEnv?.BETTER_AUTH_URL}/api/auth/get-session`,
+      {
+        headers: { cookie },
+      },
+    );
 
     if (!res.ok) return null;
 

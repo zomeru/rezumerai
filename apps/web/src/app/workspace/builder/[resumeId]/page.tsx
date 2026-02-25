@@ -1,6 +1,7 @@
 // Resume builder page with multi-step form, live preview, and PDF export.
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { ResumeBuilderSkeleton } from "@rezumerai/ui";
 import { cn } from "@rezumerai/utils/styles";
 import {
@@ -37,7 +38,7 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import { defaultResume, type Education, type Experience, type Project, type Resume } from "@/constants/dummy";
+import { defaultResume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
 import { useBuilderStore } from "@/store/useBuilderStore";
@@ -81,7 +82,7 @@ export default function ResumeBuilder() {
   const hasFetched = useResumeStore((state) => state.hasFetched);
   const fetchResumes = useResumeStore((state) => state.fetchResumes);
   const resumes = useResumeStore((state) => state.resumes);
-  const foundResume = resumes.find((r) => r._id === resumeId);
+  const foundResume = resumes.find((r) => r.id === resumeId);
   const resumeData = foundResume ?? defaultResume;
   const resumeNotFound = hasFetched && !foundResume;
   const updateResume = useResumeStore((state) => state.updateResume);
@@ -114,7 +115,7 @@ export default function ResumeBuilder() {
     accentColor: resumeData.accentColor,
   });
 
-  function updateResumeData(data: Resume["personalInfo"]) {
+  function updateResumeData(data: ResumeResponse["personalInfo"]) {
     updateResume(resumeId, { personalInfo: data });
   }
 
@@ -140,15 +141,15 @@ export default function ResumeBuilder() {
     updateResume(resumeId, { professionalSummary: summary });
   }
 
-  function handleExperienceChange(experience: Experience[]) {
+  function handleExperienceChange(experience: ResumeResponse["experience"]) {
     updateResume(resumeId, { experience });
   }
 
-  function handleEducationChange(education: Education[]) {
+  function handleEducationChange(education: ResumeResponse["education"]) {
     updateResume(resumeId, { education });
   }
 
-  function handleProjectChange(project: Project[]) {
+  function handleProjectChange(project: ResumeResponse["project"]) {
     updateResume(resumeId, { project });
   }
 
@@ -175,7 +176,7 @@ export default function ResumeBuilder() {
 
   async function handleShareResume(): Promise<void> {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${resumeData._id}`;
+    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${resumeData.id}`;
 
     try {
       await navigator.share({

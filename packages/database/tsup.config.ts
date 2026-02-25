@@ -1,7 +1,13 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["index.ts", "generated/prisma/**/*.ts", "!generated/prisma/**/*.test.ts", "!generated/prisma/**/*.spec.ts"],
+  entry: [
+    "index.ts",
+    "generated/prisma/**/*.ts",
+    "generated/prismabox/**/*.ts",
+    "!generated/prisma/**/*.test.ts",
+    "!generated/prisma/**/*.spec.ts",
+  ],
   format: ["esm"],
   dts: true,
   splitting: false,

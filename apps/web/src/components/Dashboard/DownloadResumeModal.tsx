@@ -1,9 +1,9 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ResumePreview } from "@/components/ResumeBuilder";
-import type { Resume } from "@/constants/dummy";
 import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
 
 /**
@@ -14,7 +14,7 @@ import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
  * @property onClose - Callback to close the modal after download completes
  */
 export interface DownloadResumeModalProps {
-  resume: Resume;
+  resume: ResumeResponse;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -71,7 +71,7 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
         }
 
         // Generate filename and download
-        const fileName = resume.personalInfo.fullName
+        const fileName = resume.personalInfo?.fullName
           ? `Resume_${resume.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
           : `Resume_${resume.title.replace(/\s+/g, "_")}.pdf`;
 

@@ -1,5 +1,6 @@
+import type { ResumeResponse } from "@rezumerai/types";
 import { create } from "zustand";
-import { dummyResumeData, type Resume } from "@/constants/dummy";
+import { api } from "@/lib/api";
 
 /**
  * Zustand store state and actions for resume CRUD operations.
@@ -12,11 +13,11 @@ import { dummyResumeData, type Resume } from "@/constants/dummy";
  * @property deleteResume - Removes a resume by ID
  */
 interface ResumeStore {
-  resumes: Resume[];
+  resumes: ResumeResponse[];
   isLoading: boolean;
   hasFetched: boolean;
   fetchResumes: () => Promise<void>;
-  updateResume: (id: string, updates: Partial<Resume>) => void;
+  updateResume: (id: string, updates: Partial<ResumeResponse>) => void;
   deleteResume: (id: string) => void;
 }
 
@@ -57,21 +58,25 @@ export const useResumeStore = create<ResumeStore>((set, get) => ({
     if (get().hasFetched) return;
     set({ isLoading: true });
     try {
-      // TODO: Replace with actual API call
-      set({ resumes: dummyResumeData, hasFetched: true });
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const { data } = await api.resumes.get();
+      if (data && "data" in data && data.data) {
+        const myResumes = data.data;
+        set({ resumes: myResumes, hasFetched: true });
+      }
     } finally {
       set({ isLoading: false });
     }
   },
 
-  updateResume: (id: string, updates: Partial<Resume>) =>
+  updateResume: (id: string, updates: Partial<ResumeResponse>) =>
     set((state) => ({
-      resumes: state.resumes.map((resume) => (resume._id === id ? { ...resume, ...updates } : resume)),
+      resumes: state.resumes.map((resume) =>
+        resume.id === id ? { ...resume, ...updates } : resume,
+      ),
     })),
 
   deleteResume: (id: string) =>
     set((state) => ({
-      resumes: state.resumes.filter((resume) => resume._id !== id),
+      resumes: state.resumes.filter((resume) => resume.id !== id),
     })),
 }));

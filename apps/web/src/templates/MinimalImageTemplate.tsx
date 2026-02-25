@@ -17,10 +17,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
       <div className="grid grid-cols-3">
         <div className="col-span-1 py-10">
           {/* Image */}
-          {data.personalInfo.image && typeof data.personalInfo.image === "string" ? (
+          {data.personalInfo?.image && typeof data.personalInfo?.image === "string" ? (
             <div className="mb-6">
               <Image
-                src={data.personalInfo.image}
+                src={data.personalInfo?.image}
                 alt="Profile"
                 className="mx-auto rounded-full object-cover"
                 style={{ background: `${accentColor}70` }}
@@ -28,10 +28,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                 height={130}
               />
             </div>
-          ) : data.personalInfo.image && typeof data.personalInfo.image === "object" ? (
+          ) : data.personalInfo?.image && typeof data.personalInfo?.image === "object" ? (
             <div className="mb-6">
               <Image
-                // src={URL.createObjectURL(data.personalInfo.image)}
+                // src={URL.createObjectURL(data.personalInfo?.image)}
                 src=""
                 alt="Profile"
                 className="mx-auto rounded-full object-cover"
@@ -45,10 +45,10 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
         {/* Name + Title */}
         <div className="col-span-2 flex flex-col justify-center px-8 py-10">
           <h1 className="font-bold text-[2.25em] text-zinc-700 tracking-widest">
-            {data.personalInfo.fullName || "Your Name"}
+            {data.personalInfo?.fullName || "Your Name"}
           </h1>
           <p className="font-medium text-[0.875em] text-zinc-600 uppercase tracking-widest">
-            {data.personalInfo.profession || "Profession"}
+            {data.personalInfo?.profession || "Profession"}
           </p>
         </div>
 
@@ -58,22 +58,22 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
           <section className="mb-8">
             <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">CONTACT</h2>
             <div className="space-y-2 text-[0.875em]">
-              {data.personalInfo.phone && (
+              {data.personalInfo?.phone && (
                 <div className="flex items-center gap-2">
                   <Phone size={14} style={{ color: accentColor }} />
-                  <span>{data.personalInfo.phone}</span>
+                  <span>{data.personalInfo?.phone}</span>
                 </div>
               )}
-              {data.personalInfo.email && (
+              {data.personalInfo?.email && (
                 <div className="flex items-center gap-2">
                   <Mail size={14} style={{ color: accentColor }} />
-                  <span>{data.personalInfo.email}</span>
+                  <span>{data.personalInfo?.email}</span>
                 </div>
               )}
-              {data.personalInfo.location && (
+              {data.personalInfo?.location && (
                 <div className="flex items-center gap-2">
                   <MapPin size={14} style={{ color: accentColor }} />
-                  <span>{data.personalInfo.location}</span>
+                  <span>{data.personalInfo?.location}</span>
                 </div>
               )}
             </div>

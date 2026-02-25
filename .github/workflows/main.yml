@@ -99,7 +99,7 @@ jobs:
         run: bun run db:setup
 
       - name: Build packages
-        run: bun run build --filter=@rezumerai/{database,types,ui,utils}
+        run: bun run build --filter=./packages/*
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -116,4 +116,4 @@ jobs:
         run: bun run test:project
 
       - name: Run build
-        run: bun run build --filter={web,@rezumerai/api}
+        run: bun run build --filter=web

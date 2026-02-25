@@ -14,14 +14,6 @@
     "isolatedModules": false,
     "ignoreDeprecations": "5.0",
     "baseUrl": ".",
-    "paths": {
-      "@rezumerai/types": ["../types/src"],
-      "@rezumerai/types/*": ["../types/src/*"],
-      "@rezumerai/utils": ["../utils/src"],
-      "@rezumerai/utils/*": ["../utils/src/*"],
-      "@rezumerai/ui": ["../ui/src"],
-      "@rezumerai/ui/*": ["../ui/src/*"]
-    }
   },
   "exclude": ["node_modules"]
 }

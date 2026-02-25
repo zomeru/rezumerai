@@ -4,7 +4,8 @@ import { prismaPlugin } from "../../plugins/prisma";
 import { UserModels } from "./model";
 import { UserService } from "./service";
 
-const userNotFound = () => status(404, { success: false, error: "User not found" });
+const userNotFound = () =>
+  status(404, { success: false, error: "User not found" });
 
 /**
  * User module — CRUD routes for users.

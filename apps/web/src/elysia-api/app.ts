@@ -1,5 +1,5 @@
 import cors from "@elysiajs/cors";
-import { fromTypes, openapi } from "@elysiajs/openapi";
+import { openapi } from "@elysiajs/openapi";
 import { swagger } from "@elysiajs/swagger";
 import { formatDate } from "@rezumerai/utils/date";
 import { capitalize } from "@rezumerai/utils/string";
@@ -8,11 +8,10 @@ import { helmet } from "elysia-helmet";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaXSS } from "elysia-xss";
-import { env } from "./env";
-import { userModule } from "./modules/user";
-import { errorPlugin } from "./plugins/error";
-import { loggerPlugin } from "./plugins/logger";
-import { modernCsrf } from "./plugins/modernCsrf";
+import { serverEnv } from "@/env";
+import { auth } from "@/lib/auth";
+import { resumeModule, userModule } from "./modules";
+import { errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from "./plugins";
 
 /**
  * Elysia application — single source of truth for the API.
@@ -21,52 +20,59 @@ import { modernCsrf } from "./plugins/modernCsrf";
  * The exported `App` type is consumed by Eden on the frontend
  * for end-to-end type safety.
  */
-export const app = new Elysia({ prefix: "/api" })
+
+export const elysiaApp = new Elysia({ prefix: "/api" })
   // ── Cross-cutting plugins ───────────────────────────────────────────────
-  .use(
-    cors({
-      credentials: true,
-      origin: env.CORS_ORIGINS,
-    }),
-  )
+  .use(cors())
   .use(elysiaXSS())
-  .use(rateLimit())
+  .use(serverEnv?.NODE_ENV !== "development" ? rateLimit() : (app) => app) // Disable rate limiting in development for easier testing
   .use(httpExceptionPlugin())
   .use(helmet())
-  .use(
-    modernCsrf({
-      trustedOrigins: env.CORS_ORIGINS,
-    }),
-  )
+  .use(modernCsrf())
   .use(swagger())
-  .use(
-    openapi({
-      references: fromTypes(process.env.NODE_ENV === "production" ? "dist/index.d.ts" : "src/index.ts"),
-    }),
-  )
+  .use(openapi())
   .use(loggerPlugin())
   .use(errorPlugin)
+  .use(prismaPlugin)
+  .get("/", "Hello Nextjs")
 
   // ── Health check (root) ─────────────────────────────────────────────────
-  .get("/health", () => {
-    const message = capitalize("hello from elysia!");
+  .get("/health", async ({ db }) => {
+    const message = capitalize("Health check successful!");
     const timestamp = formatDate(new Date(), {
       dateStyle: "short",
       timeStyle: "short",
     });
 
-    return {
-      success: true,
-      data: {
-        message,
-        timestamp,
-        server: "Rezumer API (Elysia + Bun)",
-      },
-    };
+    try {
+      const sampleDbData = await db.sampleTable.findFirst({
+        select: { id: true },
+      });
+
+      return {
+        success: true,
+        data: {
+          message,
+          timestamp,
+          server: "Rezumer API",
+          sampleDbData,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: {
+          message,
+          timestamp,
+          server: "Rezumer API",
+        },
+      };
+    }
   })
 
   // ── Feature modules ─────────────────────────────────────────────────────
-  .use(userModule);
+  .use(userModule)
+  .use(resumeModule);
 
 /** Export the app type for Eden treaty on the frontend. */
-export type App = typeof app;

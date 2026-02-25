@@ -14,14 +14,14 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
     <div className="mx-auto max-w-4xl bg-white p-8 font-light text-gray-900">
       {/* Header */}
       <header className="mb-10">
-        <h1 className="mb-4 font-thin text-[2.25em] tracking-wide">{data.personalInfo.fullName || "Your Name"}</h1>
+        <h1 className="mb-4 font-thin text-[2.25em] tracking-wide">{data.personalInfo?.fullName || "Your Name"}</h1>
 
         <div className="flex flex-wrap gap-6 text-[0.875em] text-gray-600">
-          {data.personalInfo.email && <span>{data.personalInfo.email}</span>}
-          {data.personalInfo.phone && <span>{data.personalInfo.phone}</span>}
-          {data.personalInfo.location && <span>{data.personalInfo.location}</span>}
-          {data.personalInfo.linkedin && <span className="break-all">{data.personalInfo.linkedin}</span>}
-          {data.personalInfo.website && <span className="break-all">{data.personalInfo.website}</span>}
+          {data.personalInfo?.email && <span>{data.personalInfo?.email}</span>}
+          {data.personalInfo?.phone && <span>{data.personalInfo?.phone}</span>}
+          {data.personalInfo?.location && <span>{data.personalInfo?.location}</span>}
+          {data.personalInfo?.linkedin && <span className="break-all">{data.personalInfo?.linkedin}</span>}
+          {data.personalInfo?.website && <span className="break-all">{data.personalInfo?.website}</span>}
         </div>
       </header>
 

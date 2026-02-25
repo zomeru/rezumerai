@@ -1,6 +1,6 @@
 # Rezumer
 
-A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**.
+A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**. The Elysia API is embedded inside the Next.js web app and served through a catch-all API route.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ A fullstack TypeScript monorepo for building AI-powered resume tools, managed wi
 | ---------------- | --------------------------------------------------------- |
 | Frontend         | Next.js 16+, React 19, React Compiler, TypeScript 5.x+   |
 | Styling          | Tailwind CSS 4.x (PostCSS)                               |
-| Backend          | Elysia 1.x+, Bun 1.x+, TypeScript                       |
+| Backend          | Elysia 1.x+ (embedded in Next.js), Bun 1.x+, TypeScript |
 | Auth             | Better Auth 1.x+                                         |
 | Database         | PostgreSQL 18 with Prisma 7.x ORM                        |
 | State            | Zustand 5.x                                              |
@@ -50,7 +50,7 @@ cp .env.example .env.local
 Edit `.env.local` with your values:
 
 ```env
-# PostgreSQL (Docker)
+# PostgreSQL
 POSTGRES_DB=rezumerai
 POSTGRES_USER=your_username
 POSTGRES_PASSWORD=your_password
@@ -66,16 +66,21 @@ BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_GITHUB_CLIENT_ID=your_github_client_id
 BETTER_AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
 
-# API
-NEXT_PUBLIC_API_URL=http://localhost:8080
-API_PORT=8080
-CORS_ORIGINS=http://localhost:3000
+# Site URL (used by Eden treaty client to reach the embedded API)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### 4. Start the Database
 
+Set up a PostgreSQL 18 instance. You can use Docker:
+
 ```sh
-bun run docker:db
+docker run -d --name rezumerai-db \
+  -e POSTGRES_DB=rezumerai \
+  -e POSTGRES_USER=your_username \
+  -e POSTGRES_PASSWORD=your_password \
+  -p 5432:5432 \
+  postgres:18-alpine
 ```
 
 ### 5. Set Up the Database Schema
@@ -94,7 +99,6 @@ Or run individually:
 
 ```sh
 bun run --filter=web dev            # Next.js — http://localhost:3000
-bun run --filter=@rezumerai/api dev # Elysia API — http://localhost:8080
 ```
 
 ## Available Scripts
@@ -112,8 +116,6 @@ bun run --filter=@rezumerai/api dev # Elysia API — http://localhost:8080
 |--------|-------------|
 | `bun run build` | Build all packages and apps |
 | `bun run build:production` | Production build with `NODE_ENV=production` |
-| `bun run build:web` | Build web app only |
-| `bun run build:api` | Build API only |
 | `bun run build:packages` | Build all shared packages |
 
 ### Testing
@@ -123,7 +125,6 @@ bun run --filter=@rezumerai/api dev # Elysia API — http://localhost:8080
 | `bun run test` | Run all tests |
 | `bun run test:watch` | Run tests in watch mode |
 | `bun run test:coverage` | Run tests with coverage |
-| `bun run test:project` | Build packages, then run all tests |
 
 ### Code Quality
 
@@ -138,7 +139,6 @@ bun run --filter=@rezumerai/api dev # Elysia API — http://localhost:8080
 
 | Script | Description |
 |--------|-------------|
-| `bun run docker:db` | Start PostgreSQL container |
 | `bun run db:setup` | Push schema and generate Prisma client |
 | `bun run db:studio` | Open Prisma Studio (http://localhost:5556) |
 | `bun run db:reset` | Reset database — **destroys all data** |
@@ -161,7 +161,7 @@ bun run --filter=@rezumerai/api dev # Elysia API — http://localhost:8080
 
 ## Running with Docker
 
-Docker Compose orchestrates three services: PostgreSQL, the web app, and the API. Sensitive values are passed via Docker secrets from your `.env.local`.
+Docker Compose orchestrates the web app (with the embedded Elysia API). Sensitive values are passed via Docker secrets from your `.env.local`.
 
 ```sh
 bun run docker:build
@@ -169,8 +169,7 @@ bun run docker:build
 
 | Service       | URL                        |
 |---------------|----------------------------|
-| Web app       | http://localhost:3000      |
-| API           | http://localhost:8080      |
+| Web app + API | http://localhost:3000      |
 | PostgreSQL    | localhost:5432             |
 | Prisma Studio | http://localhost:5556      |
 
@@ -183,27 +182,25 @@ bun run docker:down
 ```
 rezumerai/
 ├── apps/
-│   ├── web/                          # Next.js 16+ frontend
-│   │   └── src/
-│   │       ├── app/                  # App Router (pages, layouts, error boundaries)
-│   │       │   └── api/auth/         # Better Auth handler (Next.js route)
-│   │       ├── components/           # React components (Home, Dashboard, ResumeBuilder)
-│   │       ├── hooks/                # Custom hooks (useClickOutside, useClientDate, useFocusTrap, usePdfGenerator)
-│   │       ├── lib/                  # Client utilities (api, api-client, auth, auth-client, errors, pdfUtils, retry)
-│   │       ├── store/                # Zustand stores (useResumeStore, useBuilderStore, useDashboardStore)
-│   │       ├── templates/            # Resume templates (Classic, Modern, Minimal, MinimalImage)
-│   │       ├── constants/            # App constants (routing, dummy data, PDF, templates)
-│   │       ├── types/                # App-local TypeScript types
-│   │       ├── env.ts                # Zod-validated environment variables
-│   │       └── proxy.ts              # Security middleware (CSP, HSTS, X-Frame-Options)
-│   │
-│   └── api/                          # Elysia API (Bun-native)
+│   └── web/                          # Next.js 16+ frontend with embedded Elysia API
 │       └── src/
-│           ├── index.ts              # Bun server entrypoint
-│           ├── app.ts                # Elysia app (exports App type for Eden)
-│           ├── env.ts                # Zod-validated env (API_PORT, DATABASE_URL, etc.)
-│           ├── modules/              # Feature modules (resume, user)
-│           └── plugins/              # Plugins (prisma, auth, error, logger, modernCsrf)
+│           ├── app/                  # App Router (pages, layouts, error boundaries)
+│           │   ├── api/auth/         # Better Auth handler (Next.js route)
+│           │   └── api/[[...slugs]]/ # Catch-all API route → Elysia app
+│           ├── elysia-api/           # Embedded Elysia API
+│           │   ├── app.ts            # Elysia app (exports type for Eden)
+│           │   ├── plugins/          # Plugins (prisma, auth, error, logger, modernCsrf)
+│           │   └── modules/          # Feature modules (resume, user)
+│           ├── components/           # React components (Home, Dashboard, ResumeBuilder,
+│           │                         #   ErrorBoundary, SafeComponents, RouteErrorBoundary, client-date)
+│           ├── hooks/                # Custom hooks (useClickOutside, useClientDate, useFocusTrap, usePdfGenerator)
+│           ├── lib/                  # Client utilities (api, api-client, auth, auth-client, errors, pdfUtils, retry)
+│           ├── store/                # Zustand stores (useResumeStore, useBuilderStore, useDashboardStore)
+│           ├── templates/            # Resume templates (Classic, Modern, Minimal, MinimalImage)
+│           ├── constants/            # App constants (routing, dummy data, PDF, templates)
+│           ├── types/                # App-local TypeScript types
+│           ├── env.ts                # Zod-validated environment variables
+│           └── proxy.ts              # Security middleware (CSP, HSTS, X-Frame-Options)
 │
 ├── packages/
 │   ├── database/                     # Prisma 7.x ORM (PrismaPg adapter)
@@ -212,7 +209,7 @@ rezumerai/
 │   │   └── index.ts                  # Prisma singleton export
 │   ├── types/                        # Shared TypeScript types & Zod schemas
 │   ├── ui/                           # Shared UI components (shadcn/ui based)
-│   ├── utils/                        # Shared utilities (date, string, styles/cn)
+│   ├── utils/                        # Shared utilities (date, string, styles/cn, uuid, react)
 │   └── tsconfig/                     # Shared TypeScript configs
 │
 ├── scripts/                          # Docker and config helper scripts
@@ -228,7 +225,7 @@ rezumerai/
 - **Code Style**: Biome handles all linting and formatting (120 char width, double quotes, sorted Tailwind classes)
 - **Type Safety**: TypeScript strict mode everywhere with explicit return types enforced
 - **Auth**: Better Auth handles authentication; the Elysia `auth` plugin validates sessions and injects `user` into context; the Next.js `app/api/auth` route handles auth endpoints
-- **API**: Eden treaty provides end-to-end type-safe API calls (types inferred from the Elysia `App` export)
+- **API**: The Elysia API is embedded in `apps/web/src/elysia-api/app.ts` and served via a Next.js catch-all route. Eden treaty provides end-to-end type-safe API calls (types inferred from the Elysia `App` export in `apps/web/src/elysia-api/app.ts`)
 - **State Management**: Zustand 5.x for client-side state, TanStack React Query 5.x for server state
 - **Routing**: Use `ROUTES` constants from `constants/routing.ts` — never hardcode route strings
 - **Styling**: Tailwind CSS 4.x only — no inline styles; use `cn()` for class merging

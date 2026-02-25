@@ -18,6 +18,8 @@ const argon2Options: Options = {
 };
 
 export const auth = betterAuth({
+  basePath: "/api/auth",
+  baseURL: serverEnv.BETTER_AUTH_URL,
   secret: serverEnv.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -31,7 +33,8 @@ export const auth = betterAuth({
     maxPasswordLength: 32,
     password: {
       hash: (password) => hash(password, argon2Options),
-      verify: ({ password, hash: storedHash }) => verify(storedHash, password, argon2Options),
+      verify: ({ password, hash: storedHash }) =>
+        verify(storedHash, password, argon2Options),
     },
   },
   socialProviders: {

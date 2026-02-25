@@ -37,8 +37,7 @@ All AI agents working in this repository **must** consult `.agents/skills/` as t
 
 Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript monorepo managed with Turborepo and Bun. It consists of:
 
-- `apps/web`: Next.js 16+ frontend (App Router, React 19, React Compiler, Turbopack, TypeScript, Tailwind CSS 4.x)
-- `apps/api`: Elysia API (Bun-native, TypeScript, Zod 4.x validation, Eden type safety)
+- `apps/web`: Next.js 16+ frontend (App Router, React 19, React Compiler, Turbopack, TypeScript, Tailwind CSS 4.x) with embedded Elysia API via catch-all API route
 - `packages/database`: Prisma 7.x schema, migration scripts, and DB utilities (PostgreSQL 18)
 - `packages/types`: Shared TypeScript types and Zod schemas
 - `packages/utils`: Shared utility functions (date, string, styles/cn)
@@ -49,7 +48,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 
 - **Bun workspaces**: All dependency management and scripts use Bun (v1.x+). Never use npm, yarn, or pnpm.
 - **TypeScript everywhere**: Types are centralized in `packages/types` and shared across all apps/packages. Prioritize type safety, readability, and maintainability.
-- **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `App` type in `apps/api/src/app.ts`. This provides end-to-end type safety for all API calls.
+- **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `elysiaApp` type in `apps/web/src/elysia-api/app.ts`. The client points to `NEXT_PUBLIC_SITE_URL` (the Next.js app itself), providing end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
 - **Prisma**: Database schema in `packages/database/prisma/schema.prisma`. Prisma client generated to `packages/database/generated/prisma/`. Uses client engine type.
 - **Testing**: Bun test runner (`bun:test`) with Happy DOM for component tests. React tests use `@happy-dom/global-registrator` + React Testing Library. Test setup in `src/test/setup.ts` (DOM tests also preload `src/test/happydom.ts`). **Test Organization**: Component tests are co-located with their components in `__tests__` folders (e.g., `components/Badge.tsx` → `components/__tests__/Badge.test.tsx`). Root-level components keep tests in `src/__tests__`.
@@ -78,7 +77,6 @@ bun install
 bun run dev
 # or individually:
 bun run --filter=web dev            # Next.js on http://localhost:3000 (Turbopack)
-bun run --filter=@rezumerai/api dev # Elysia on http://localhost:8080
 ```
 
 ### Database operations
@@ -161,6 +159,7 @@ apps/web/src/
 │   │           ├── loading.tsx
 │   │           └── error.tsx
 │   ├── preview/[resumeId]/ # Resume preview (page.tsx, error.tsx)
+│   ├── api/[[...slugs]]/  # Catch-all API route → Elysia app
 │   └── testsite/          # Test page
 ├── components/
 │   ├── Home/              # Homepage: Hero, Feature, Testimonial, Footer, CallToAction
@@ -195,14 +194,20 @@ apps/web/src/
 │   ├── useClientDate.ts    # Client-side date formatting
 │   ├── useFocusTrap.ts     # Focus trap for modals/dialogs
 │   └── usePdfGenerator.ts  # PDF generation hook
+├── elysia-api/            # Embedded Elysia API (served via catch-all route)
+│   ├── app.ts             # Elysia app (exports elysiaApp type for Eden)
+│   ├── plugins/           # auth.ts, prisma.ts, error.ts, logger.ts, csrf.ts
+│   └── modules/           # user/, resume/ (index.ts, service.ts, model.ts each)
 ├── lib/
 │   ├── api.ts             # Eden treaty client (type-safe API)
+│   ├── auth.ts            # Better Auth server config
+│   ├── auth-client.ts     # Better Auth client
 │   ├── api-client.ts      # API client with retry/error handling
 │   ├── errors.ts          # Error logging, severity levels, monitoring
 │   ├── retry.ts           # Exponential backoff retry logic
 │   ├── pdfUtils.ts        # PDF generation utilities
 │   └── utils.ts           # General utilities
-├── env.ts                 # Zod-validated env vars (NEXT_PUBLIC_API_URL, etc.)
+├── env.ts                 # Zod-validated env vars (NEXT_PUBLIC_SITE_URL, etc.)
 ├── proxy.ts               # Security middleware (CSP, HSTS, X-Frame-Options)
 ├── store/
 │   ├── useResumeStore.ts   # Resume CRUD state
@@ -224,26 +229,11 @@ apps/web/src/
 │   └── index.ts            # APP_NAME, LOGO_TEXT
 └── test/                  # Test utilities
 
-apps/api/src/
-├── app.ts                 # Elysia app (exports App type for Eden)
-├── server.ts              # Bun server entrypoint
-├── env.ts                 # Zod-validated env (API_PORT, DATABASE_URL, BETTER_AUTH_SECRET, CORS_ORIGINS)
-├── modules/
-│   ├── auth/              # Auth module (index.ts, service.ts, model.ts)
-│   └── user/              # User module (index.ts, service.ts, model.ts)
-├── plugins/
-│   ├── prisma.ts          # Decorates context with `db` (Prisma client)
-│   ├── auth.ts            # Validates NextAuth session, injects `user`
-│   ├── error.ts           # Centralized error responses (422, 404, 400, 500)
-│   └── logger.ts          # Request logging (method, path, status, duration)
-└── test/                  # API tests
-
 packages/
 ├── database/
 │   ├── prisma/schema.prisma   # Prisma schema (PostgreSQL, client engine)
 │   ├── generated/prisma/      # Generated Prisma client
-│   ├── index.ts               # Exports prisma singleton (PrismaPg adapter)
-│   └── scripts/migrate-dev.sh # Migration script
+│   └── index.ts               # Exports prisma singleton (PrismaPg adapter)
 ├── types/src/index.ts         # UserType, ProjectType, ApiResponse<T>, Zod schemas
 ├── utils/src/                 # date.ts (formatDate), string.ts (capitalize), styles.ts (cn)
 ├── ui/src/
@@ -266,10 +256,10 @@ packages/
 
 ## API Development
 
-- **Elysia Backend**: Bun-native HTTP framework in `apps/api`
-- **Type Safety**: `App` type exported from `app.ts` → consumed by Eden treaty on frontend
+- **Elysia Backend**: Embedded in Next.js via `apps/web/src/elysia-api/`, served through catch-all API route at `apps/web/src/app/api/[[...slugs]]/route.ts`
+- **Type Safety**: `elysiaApp` type exported from `apps/web/src/elysia-api/app.ts` → consumed by Eden treaty on frontend
 - **Modules**: Feature-based with `index.ts` (routes), `service.ts` (business logic), `model.ts` (Zod schemas)
-- **Auth**: NextAuth is the authority; Elysia auth plugin forwards cookies to NextAuth session endpoint
+- **Auth**: Better Auth is the authority; Elysia auth plugin forwards cookies to Better Auth session endpoint
 - **Error Handling**: Centralized `errorPlugin` with consistent JSON responses (`{ success, data?, error? }`)
 - **Validation**: Zod 4.x schemas plugged into Elysia route validation
 - **Database**: `prismaPlugin` decorates context with `db` (Prisma client)
@@ -279,7 +269,7 @@ packages/
 - **Prisma 7.x**: Schema-first approach with client engine
 - **PostgreSQL 18**: Running via Docker (port 5432)
 - Table mapping: `@@map("snake_case")` convention
-- Run migrations via `packages/database/scripts/migrate-dev.sh`
+- Run migrations via `cd packages/database && bun run db:migrate:dev`
 
 ## Do Not
 

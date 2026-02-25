@@ -27,8 +27,6 @@ REQUIRED_ENV_VARS=(
   "BETTER_AUTH_SECRET"
   "BETTER_AUTH_GITHUB_CLIENT_ID"
   "BETTER_AUTH_GITHUB_CLIENT_SECRET"
-  "API_PORT"
-  "CORS_ORIGINS"
 )
 
 for var in "${REQUIRED_ENV_VARS[@]}"; do
@@ -40,15 +38,6 @@ done
 
 echo "All required environment variables validated successfully"
 
-# Build API
-echo "Building API service..."
-docker build \
-  --secret id=api_port,env=API_PORT \
-  --secret id=cors_origins,env=CORS_ORIGINS \
-  -f apps/api/Dockerfile \
-  -t rezumerai-api:latest \
-  .
-
 # Build Web
 echo "Building Web service..."
 docker build \
@@ -57,6 +46,7 @@ docker build \
   --secret id=BETTER_AUTH_SECRET,env=BETTER_AUTH_SECRET \
   --secret id=BETTER_AUTH_GITHUB_CLIENT_ID,env=BETTER_AUTH_GITHUB_CLIENT_ID \
   --secret id=BETTER_AUTH_GITHUB_CLIENT_SECRET,env=BETTER_AUTH_GITHUB_CLIENT_SECRET \
+  --secret id=database_url,env=DATABASE_URL \
   -f apps/web/Dockerfile \
   -t rezumerai-web:latest \
   .

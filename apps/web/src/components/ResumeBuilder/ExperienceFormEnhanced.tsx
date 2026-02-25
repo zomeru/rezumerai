@@ -1,13 +1,15 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
-import type { Experience } from "@/constants/dummy";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
+
+type Experience = ResumeResponse["experience"];
 
 /**
  * Props for the ExperienceFormEnhanced component.
@@ -16,8 +18,8 @@ import RichTextEditor from "./RichTextEditor";
  * @property onChange - Callback with updated experience array
  */
 export interface ExperienceFormEnhancedProps {
-  experience: Experience[];
-  onChange: (experience: Experience[]) => void;
+  experience: Experience;
+  onChange: (experience: Experience) => void;
 }
 
 /**
@@ -33,8 +35,9 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
-    const newExperience: Experience = {
-      _id: generateUuidKey(),
+    const newExperience: Experience[number] = {
+      id: generateUuidKey(),
+      resumeId: experience[0]?.resumeId || "",
       company: "",
       position: "",
       startDate: "",
@@ -54,7 +57,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Experience, value: string | boolean) => {
+  const handleUpdate = (index: number, field: keyof Experience[number], value: string | boolean) => {
     const updated = experience.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp));
     onChange(updated);
   };
@@ -66,8 +69,8 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
       <DraggableList
         items={experience}
         onReorder={onChange}
-        getItemId={(item: Experience): string => item._id}
-        renderItem={(exp: Experience, index: number) => (
+        getItemId={(item: Experience[number]): string => item.id}
+        renderItem={(exp: Experience[number], index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
@@ -132,7 +135,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id={`current-${exp._id}`}
+                    id={`current-${exp.id}`}
                     checked={exp.isCurrent}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       handleUpdate(index, "isCurrent", e.target.checked);
@@ -142,7 +145,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                     }}
                     className="size-4 rounded border-slate-300 text-primary-500 focus:ring-2 focus:ring-primary-500/20"
                   />
-                  <label htmlFor={`current-${exp._id}`} className="text-slate-700 text-sm">
+                  <label htmlFor={`current-${exp.id}`} className="text-slate-700 text-sm">
                     I currently work here
                   </label>
                 </div>

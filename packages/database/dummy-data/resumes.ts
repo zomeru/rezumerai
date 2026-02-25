@@ -5,7 +5,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 1 ------------------------------------------------------
     user: {
       connect: {
-        id: "cmlmajxkm0000dvjw2b3b2mvu",
+        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
       },
     },
     personalInfo: {
@@ -109,7 +109,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 2 ------------------------------------------------------
     user: {
       connect: {
-        id: "cmlmajxkm0000dvjw2b3b2mvu",
+        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
       },
     },
     personalInfo: {
@@ -207,7 +207,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 3 ------------------------------------------------------
     user: {
       connect: {
-        id: "cmlmajxkm0000dvjw2b3b2mvu",
+        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
       },
     },
     personalInfo: {
@@ -226,7 +226,18 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     public: true,
     professionalSummary:
       "Dedicated Backend Developer with 7+ years of experience building secure, high-performance APIs and microservices using Node.js, Python, and PostgreSQL. Passionate about scalability, automation, and clean architecture.",
-    skills: ["Node.js", "Python", "PostgreSQL", "MongoDB", "Docker", "Kubernetes", "CI/CD", "Redis", "GraphQL", "AWS"],
+    skills: [
+      "Node.js",
+      "Python",
+      "PostgreSQL",
+      "MongoDB",
+      "Docker",
+      "Kubernetes",
+      "CI/CD",
+      "Redis",
+      "GraphQL",
+      "AWS",
+    ],
     experience: {
       create: [
         {

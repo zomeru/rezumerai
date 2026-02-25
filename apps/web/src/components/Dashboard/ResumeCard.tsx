@@ -1,9 +1,9 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { onKeyDown } from "@rezumerai/utils";
 import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
-import type { Resume } from "@/constants/dummy";
+import { memo, useState } from "react";
 
 /**
  * Props for the {@link ResumeCard} component.
@@ -16,7 +16,7 @@ import type { Resume } from "@/constants/dummy";
  * @property onDownload - Optional async callback to download the resume as PDF
  */
 export interface ResumeCardProps {
-  resume: Resume;
+  resume: ResumeResponse;
   color: string;
   onOpen: () => void;
   onEdit: () => void;
@@ -42,7 +42,7 @@ export interface ResumeCardProps {
  * />
  * ```
  */
-export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
+function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: ResumeCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const formatDate = (date: string | Date): string => new Date(date).toLocaleDateString();
 
@@ -142,3 +142,5 @@ export default function ResumeCard({ resume, color, onOpen, onEdit, onDelete, on
     </div>
   );
 }
+
+export default memo(ResumeCard);

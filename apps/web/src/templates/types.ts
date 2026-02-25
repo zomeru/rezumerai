@@ -1,4 +1,4 @@
-import type { Resume } from "@/constants/dummy";
+import type { ResumeResponse } from "@rezumerai/types";
 
 /**
  * Props interface for resume template components.
@@ -16,7 +16,7 @@ import type { Resume } from "@/constants/dummy";
  * ```
  */
 export interface TemplateProps {
-  data: Resume;
+  data: ResumeResponse;
   accentColor: string;
 }
 

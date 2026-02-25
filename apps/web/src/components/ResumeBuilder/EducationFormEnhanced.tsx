@@ -1,12 +1,14 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
-import type { Education } from "@/constants/dummy";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
+
+type Education = ResumeResponse["education"];
 
 /**
  * Props for the EducationFormEnhanced component.
@@ -15,8 +17,8 @@ import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
  * @property onChange - Callback with updated education array
  */
 export interface EducationFormEnhancedProps {
-  education: Education[];
-  onChange: (education: Education[]) => void;
+  education: Education;
+  onChange: (education: Education) => void;
 }
 
 /**
@@ -32,8 +34,9 @@ export default function EducationFormEnhanced({ education, onChange }: Education
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
-    const newEducation: Education = {
-      _id: generateUuidKey(),
+    const newEducation: Education[number] = {
+      id: generateUuidKey(),
+      resumeId: education[0]?.resumeId || "",
       institution: "",
       degree: "",
       field: "",
@@ -52,7 +55,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Education, value: string) => {
+  const handleUpdate = (index: number, field: keyof Education[number], value: string) => {
     const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
     onChange(updated);
   };
@@ -64,8 +67,8 @@ export default function EducationFormEnhanced({ education, onChange }: Education
       <DraggableList
         items={education}
         onReorder={onChange}
-        getItemId={(item: Education): string => item._id}
-        renderItem={(edu: Education, index: number) => (
+        getItemId={(item: Education[number]): string => item.id}
+        renderItem={(edu: Education[number], index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"

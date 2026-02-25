@@ -1,9 +1,9 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { BriefcaseBusiness, Globe, Linkedin, Mail, MapPin, Phone, User } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
-import type { Resume } from "@/constants/dummy";
 
 /**
  * Props for the PersonalInfoForm component.

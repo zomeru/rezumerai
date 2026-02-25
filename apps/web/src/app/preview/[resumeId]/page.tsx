@@ -1,12 +1,13 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader } from "@/components";
 import { ResumePreview } from "@/components/ResumeBuilder";
-import { dummyResumeData, type Resume } from "@/constants/dummy";
+import { dummyResumeData } from "@/constants/dummy";
 
 /**
  * Full-screen resume preview page for a single resume.
@@ -15,13 +16,13 @@ export default function Preview() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
-  const [resumeData, setResumeData] = useState<Resume | null>(null);
+  const [resumeData, setResumeData] = useState<ResumeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       try {
-        const resume = dummyResumeData.find((r) => r._id === resumeId) || null;
+        const resume = dummyResumeData.find((r) => r.id === resumeId) || null;
         setResumeData(resume);
       } catch (error) {
         console.error("Error fetching resume data:", error);

@@ -1,53 +1,6 @@
 import { z } from "zod";
 
 /**
- * Represents a user entity in the system.
- *
- * @property id - Unique identifier for the user
- * @property name - User's display name
- * @property email - User's email address
- *
- * @example
- * ```ts
- * const user: UserType = {
- *   id: "usr_123",
- *   name: "Jane Smith",
- *   email: "jane@example.com"
- * };
- * ```
- */
-export interface UserType {
-  id: string;
-  name: string;
-  email: string;
-}
-
-/**
- * Represents a project entity with ownership information.
- *
- * @property id - Unique identifier for the project
- * @property title - Project title
- * @property description - Project description text
- * @property userId - ID of the user who owns this project
- *
- * @example
- * ```ts
- * const project: ProjectType = {
- *   id: "proj_456",
- *   title: "Software Engineer Resume",
- *   description: "Tech-focused resume for 2026 job applications",
- *   userId: "usr_123"
- * };
- * ```
- */
-export interface ProjectType {
-  id: string;
-  title: string;
-  description: string;
-  userId: string;
-}
-
-/**
  * Standardized API response wrapper for all endpoints.
  * Provides consistent structure for success/error handling across the application.
  *
@@ -76,35 +29,6 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
 }
-
-/**
- * Zod validation schema for ProjectType.
- * Validates project data structure including ownership reference.
- *
- * @returns Zod schema that validates against ProjectType
- *
- * @example
- * ```ts
- * const validProject = ProjectSchema.parse({
- *   id: "proj_456",
- *   title: "Resume",
- *   description: "My professional resume",
- *   userId: "usr_123"
- * }); // ✓ Valid
- *
- * const invalidProject = ProjectSchema.parse({
- *   id: "proj_456",
- *   title: "", // Empty title might pass but could fail business rules
- *   userId: "usr_123"
- * }); // ✗ Missing required 'description' field
- * ```
- */
-export const ProjectSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  userId: z.string(),
-});
 
 /**
  * Factory function that creates a Zod schema for ApiResponse with typed data payload.
@@ -140,7 +64,9 @@ export const ApiResponseSchema: <
   }>,
 >(
   dataSchema: T,
-) => z.ZodType<ApiResponse<z.infer<T>>> = <T extends z.ZodTypeAny>(dataSchema: T) =>
+) => z.ZodType<ApiResponse<z.infer<T>>> = <T extends z.ZodTypeAny>(
+  dataSchema: T,
+) =>
   z.object({
     success: z.boolean(),
     data: dataSchema.optional(),

@@ -1,4 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { env } from "prisma/config";
 import { PrismaClient } from "./generated/prisma/client";
 
 export * from "./generated/prisma/client";
@@ -12,11 +13,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
- * PostgreSQL adapter for Prisma using the native pg driver.
+ * PostgreSQL adapter for Prisma using the Neon adapter, which is compatible with serverless environments.
  * Reads the connection string from the DATABASE_URL environment variable.
  */
+
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL ?? env("DATABASE_URL"),
 });
 
 /**
@@ -34,7 +36,10 @@ export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

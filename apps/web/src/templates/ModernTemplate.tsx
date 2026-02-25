@@ -15,44 +15,44 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
     <div className="mx-auto max-w-4xl bg-white text-gray-800">
       {/* Header */}
       <header className="p-8 text-white" style={{ backgroundColor: accentColor }}>
-        <h1 className="mb-3 font-light text-[2.25em]">{data.personalInfo.fullName || "Your Name"}</h1>
+        <h1 className="mb-3 font-light text-[2.25em]">{data.personalInfo?.fullName || "Your Name"}</h1>
 
         <div className="grid grid-cols-1 gap-2 text-[0.875em] sm:grid-cols-2">
-          {data.personalInfo.email && (
+          {data.personalInfo?.email && (
             <div className="flex items-center gap-2">
               <Mail className="size-4" />
-              <span>{data.personalInfo.email}</span>
+              <span>{data.personalInfo?.email}</span>
             </div>
           )}
-          {data.personalInfo.phone && (
+          {data.personalInfo?.phone && (
             <div className="flex items-center gap-2">
               <Phone className="size-4" />
-              <span>{data.personalInfo.phone}</span>
+              <span>{data.personalInfo?.phone}</span>
             </div>
           )}
-          {data.personalInfo.location && (
+          {data.personalInfo?.location && (
             <div className="flex items-center gap-2">
               <MapPin className="size-4" />
-              <span>{data.personalInfo.location}</span>
+              <span>{data.personalInfo?.location}</span>
             </div>
           )}
-          {data.personalInfo.linkedin && (
-            <a target="_blank" href={data.personalInfo.linkedin} className="flex items-center gap-2">
+          {data.personalInfo?.linkedin && (
+            <a target="_blank" href={data.personalInfo?.linkedin} className="flex items-center gap-2">
               <Linkedin className="size-4" />
               <span className="break-all text-[0.75em]">
-                {data.personalInfo.linkedin.split("https://www.")[1]
-                  ? data.personalInfo.linkedin.split("https://www.")[1]
-                  : data.personalInfo.linkedin}
+                {data.personalInfo?.linkedin.split("https://www.")[1]
+                  ? data.personalInfo?.linkedin.split("https://www.")[1]
+                  : data.personalInfo?.linkedin}
               </span>
             </a>
           )}
-          {data.personalInfo.website && (
-            <a target="_blank" href={data.personalInfo.website} className="flex items-center gap-2">
+          {data.personalInfo?.website && (
+            <a target="_blank" href={data.personalInfo?.website} className="flex items-center gap-2">
               <Globe className="size-4" />
               <span className="break-all text-[0.75em]">
-                {data.personalInfo.website.split("https://")[1]
-                  ? data.personalInfo.website.split("https://")[1]
-                  : data.personalInfo.website}
+                {data.personalInfo?.website.split("https://")[1]
+                  ? data.personalInfo?.website.split("https://")[1]
+                  : data.personalInfo?.website}
               </span>
             </a>
           )}
