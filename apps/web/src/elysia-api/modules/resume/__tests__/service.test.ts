@@ -84,3 +84,60 @@ describe("ResumeService.findById", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("ResumeService.update", () => {
+  it("returns null when resume not found or not owned", async () => {
+    const db = makeMockDb();
+    (db.resume.findFirst as ReturnType<typeof mock>).mockResolvedValue(null);
+
+    const result = await ResumeService.update(db, USER_ID, RESUME_ID, {
+      title: "New Title",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns updated resume when ownership check passes", async () => {
+    const db = makeMockDb();
+    (db.resume.findFirst as ReturnType<typeof mock>).mockResolvedValue({
+      id: RESUME_ID,
+    });
+
+    const updatedResume = { ...RESUME_WITH_RELATIONS, title: "New Title" };
+
+    (db.$transaction as ReturnType<typeof mock>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        resume: {
+          update: mock().mockResolvedValue(undefined),
+          findUniqueOrThrow: mock().mockResolvedValue(updatedResume),
+        },
+        personalInformation: { upsert: mock() },
+        experience: {
+          findMany: mock().mockResolvedValue([]),
+          update: mock(),
+          create: mock(),
+          deleteMany: mock(),
+        },
+        education: {
+          findMany: mock().mockResolvedValue([]),
+          update: mock(),
+          create: mock(),
+          deleteMany: mock(),
+        },
+        project: {
+          findMany: mock().mockResolvedValue([]),
+          update: mock(),
+          create: mock(),
+          deleteMany: mock(),
+        },
+      };
+      return fn(tx);
+    });
+
+    const result = await ResumeService.update(db, USER_ID, RESUME_ID, {
+      title: "New Title",
+    });
+
+    expect(result).toEqual(updatedResume);
+  });
+});

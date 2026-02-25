@@ -1,11 +1,10 @@
 import type { PrismaClient } from "@rezumerai/database";
 import type {
-  EducationInputUpdate,
-  ExperienceInputUpdate,
+  EducationUpdateItem,
+  ExperienceUpdateItem,
   FullResumeInputCreate,
-  PersonalInfoInputUpdate,
-  ProjectInputUpdate,
-  ResumeInputUpdate,
+  ProjectUpdateItem,
+  ResumeUpdateBody,
   ResumeWithRelations,
 } from "@rezumerai/types";
 
@@ -88,20 +87,61 @@ export abstract class ResumeService {
     return newResume;
   }
 
-  // Updates Resume table only
-  static async updateResume(db: PrismaClient, userId: string, data: ResumeInputUpdate) {
-    const { id, ...updateData } = data;
+  /**
+   * Updates a resume's scalar fields and/or nested relation arrays in a single transaction.
+   * For relation arrays: items with an id are updated; items without an id are created;
+   * existing items not present in the input are deleted.
+   *
+   * @param db - Prisma client instance
+   * @param userId - Authenticated user ID (ownership check)
+   * @param resumeId - Resume to update
+   * @param data - Partial scalar fields + optional relation arrays
+   * @returns Updated resume with all relations, or null if not found / not owned
+   */
+  static async update(
+    db: PrismaClient,
+    userId: string,
+    resumeId: string,
+    data: ResumeUpdateBody,
+  ): Promise<ResumeWithRelations | null> {
+    const existing = await db.resume.findFirst({
+      where: { id: resumeId, userId },
+      select: { id: true },
+    });
+    if (!existing) return null;
 
-    try {
-      return await db.resume.update({
-        where: {
-          id,
-          userId,
-        },
-        data: {
-          ...updateData,
-          project: {},
-        },
+    const { personalInfo, experience, education, project, ...scalarFields } = data;
+
+    return db.$transaction(async (tx) => {
+      if (Object.keys(scalarFields).length > 0) {
+        await tx.resume.update({
+          where: { id: resumeId },
+          data: scalarFields,
+        });
+      }
+
+      if (personalInfo !== undefined) {
+        await tx.personalInformation.upsert({
+          where: { resumeId },
+          update: personalInfo,
+          create: { ...personalInfo, resumeId },
+        });
+      }
+
+      if (experience !== undefined) {
+        await ResumeService._syncRelation(tx.experience, resumeId, experience);
+      }
+
+      if (education !== undefined) {
+        await ResumeService._syncRelation(tx.education, resumeId, education);
+      }
+
+      if (project !== undefined) {
+        await ResumeService._syncRelation(tx.project, resumeId, project);
+      }
+
+      return tx.resume.findUniqueOrThrow({
+        where: { id: resumeId },
         include: {
           education: true,
           experience: true,
@@ -109,55 +149,41 @@ export abstract class ResumeService {
           personalInfo: true,
         },
       });
-    } catch {
-      throw new Error("Resume not found or does not belong to user");
-    }
+    });
   }
 
-  // Update personal info, experience, education, and project tables by resumeId
-  static async updateResumeRelations(
-    db: PrismaClient,
-    _userId: string,
-    resumeId: string,
-    data: {
-      personalInfo?: PersonalInfoInputUpdate;
-      experience?: ExperienceInputUpdate[];
-      education?: EducationInputUpdate[];
-      project?: ProjectInputUpdate[];
+  /**
+   * Syncs a relation array against DB: deletes removed, updates existing (by id), creates new (no id).
+   */
+  static async _syncRelation(
+    relation: {
+      findMany: (args: { where: { resumeId: string }; select: { id: true } }) => Promise<{ id: string }[]>;
+      deleteMany: (args: { where: { id: { in: string[] } } }) => Promise<unknown>;
+      update: (args: { where: { id: string }; data: unknown }) => Promise<unknown>;
+      create: (args: { data: unknown }) => Promise<unknown>;
     },
-  ) {
-    const { personalInfo, experience, education: _education, project: _project } = data;
+    resumeId: string,
+    items: Array<ExperienceUpdateItem | EducationUpdateItem | ProjectUpdateItem>,
+  ): Promise<void> {
+    const existing = await relation.findMany({
+      where: { resumeId },
+      select: { id: true },
+    });
+    const existingIds = existing.map((r) => r.id);
+    const incomingIds = items.filter((i) => i.id).map((i) => i.id as string);
+    const toDelete = existingIds.filter((id) => !incomingIds.includes(id));
 
-    // Update personal info, then
-    // Update or Create experience, education, and project entries based on presence of id in input
+    if (toDelete.length > 0) {
+      await relation.deleteMany({ where: { id: { in: toDelete } } });
+    }
 
-    try {
-      if (personalInfo) {
-        await db.personalInformation.upsert({
-          where: { resumeId },
-          update: personalInfo,
-          create: { ...personalInfo, resumeId },
-        });
+    for (const item of items) {
+      const { id, ...rest } = item;
+      if (id) {
+        await relation.update({ where: { id }, data: rest });
+      } else {
+        await relation.create({ data: { ...rest, resumeId } });
       }
-
-      if (experience) {
-        for (const item of experience) {
-          const { id, resumeId, ...rest } = item;
-          if (id) {
-            await db.experience.update({
-              where: { id },
-              data: rest,
-            });
-          } else {
-            await db.experience.create({
-              // data: { ...rest, resumeId },
-              data: { ...rest, resume: { connect: { id: resumeId } } },
-            });
-          }
-        }
-      }
-    } catch (_error) {
-      throw new Error("Failed to update personal information");
     }
   }
 }
