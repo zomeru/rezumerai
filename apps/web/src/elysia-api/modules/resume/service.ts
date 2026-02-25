@@ -1,12 +1,5 @@
 import type { PrismaClient } from "@rezumerai/database";
-import type {
-  EducationUpdateItem,
-  ExperienceUpdateItem,
-  FullResumeInputCreate,
-  ProjectUpdateItem,
-  ResumeUpdateBody,
-  ResumeWithRelations,
-} from "@rezumerai/types";
+import type { FullResumeInputCreate, ResumeUpdateBody, ResumeWithRelations } from "@rezumerai/types";
 
 /**
  * Resume service — business logic only, no HTTP concerns.
@@ -129,15 +122,63 @@ export abstract class ResumeService {
       }
 
       if (experience !== undefined) {
-        await ResumeService._syncRelation(tx.experience, resumeId, experience);
+        const existingExp = await tx.experience.findMany({
+          where: { resumeId },
+          select: { id: true },
+        });
+        const keepExpIds = experience.filter((i) => i.id).map((i) => i.id as string);
+        const deleteExpIds = existingExp.map((e) => e.id).filter((id) => !keepExpIds.includes(id));
+        if (deleteExpIds.length > 0) {
+          await tx.experience.deleteMany({ where: { id: { in: deleteExpIds } } });
+        }
+        for (const item of experience) {
+          const { id, ...rest } = item;
+          if (id) {
+            await tx.experience.update({ where: { id }, data: rest });
+          } else {
+            await tx.experience.create({ data: { ...rest, resumeId } });
+          }
+        }
       }
 
       if (education !== undefined) {
-        await ResumeService._syncRelation(tx.education, resumeId, education);
+        const existingEdu = await tx.education.findMany({
+          where: { resumeId },
+          select: { id: true },
+        });
+        const keepEduIds = education.filter((i) => i.id).map((i) => i.id as string);
+        const deleteEduIds = existingEdu.map((e) => e.id).filter((id) => !keepEduIds.includes(id));
+        if (deleteEduIds.length > 0) {
+          await tx.education.deleteMany({ where: { id: { in: deleteEduIds } } });
+        }
+        for (const item of education) {
+          const { id, ...rest } = item;
+          if (id) {
+            await tx.education.update({ where: { id }, data: rest });
+          } else {
+            await tx.education.create({ data: { ...rest, resumeId } });
+          }
+        }
       }
 
       if (project !== undefined) {
-        await ResumeService._syncRelation(tx.project, resumeId, project);
+        const existingProj = await tx.project.findMany({
+          where: { resumeId },
+          select: { id: true },
+        });
+        const keepProjIds = project.filter((i) => i.id).map((i) => i.id as string);
+        const deleteProjIds = existingProj.map((e) => e.id).filter((id) => !keepProjIds.includes(id));
+        if (deleteProjIds.length > 0) {
+          await tx.project.deleteMany({ where: { id: { in: deleteProjIds } } });
+        }
+        for (const item of project) {
+          const { id, ...rest } = item;
+          if (id) {
+            await tx.project.update({ where: { id }, data: rest });
+          } else {
+            await tx.project.create({ data: { ...rest, resumeId } });
+          }
+        }
       }
 
       return tx.resume.findUniqueOrThrow({
@@ -150,40 +191,5 @@ export abstract class ResumeService {
         },
       });
     });
-  }
-
-  /**
-   * Syncs a relation array against DB: deletes removed, updates existing (by id), creates new (no id).
-   */
-  static async _syncRelation(
-    relation: {
-      findMany: (args: { where: { resumeId: string }; select: { id: true } }) => Promise<{ id: string }[]>;
-      deleteMany: (args: { where: { id: { in: string[] } } }) => Promise<unknown>;
-      update: (args: { where: { id: string }; data: unknown }) => Promise<unknown>;
-      create: (args: { data: unknown }) => Promise<unknown>;
-    },
-    resumeId: string,
-    items: Array<ExperienceUpdateItem | EducationUpdateItem | ProjectUpdateItem>,
-  ): Promise<void> {
-    const existing = await relation.findMany({
-      where: { resumeId },
-      select: { id: true },
-    });
-    const existingIds = existing.map((r) => r.id);
-    const incomingIds = items.filter((i) => i.id).map((i) => i.id as string);
-    const toDelete = existingIds.filter((id) => !incomingIds.includes(id));
-
-    if (toDelete.length > 0) {
-      await relation.deleteMany({ where: { id: { in: toDelete } } });
-    }
-
-    for (const item of items) {
-      const { id, ...rest } = item;
-      if (id) {
-        await relation.update({ where: { id }, data: rest });
-      } else {
-        await relation.create({ data: { ...rest, resumeId } });
-      }
-    }
   }
 }
