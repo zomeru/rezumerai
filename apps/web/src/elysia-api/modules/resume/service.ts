@@ -1,5 +1,23 @@
 import type { PrismaClient } from "@rezumerai/database";
-import type { FullResumeInputCreate, ResumeUpdateBody, ResumeWithRelations } from "@rezumerai/types";
+import type {
+  EducationUpdateItem,
+  ExperienceUpdateItem,
+  FullResumeInputCreate,
+  ProjectUpdateItem,
+  ResumeUpdateBody,
+  ResumeWithRelations,
+} from "@rezumerai/types";
+
+/**
+ * Minimal structural type that any Prisma relation delegate must satisfy
+ * for the diff-sync helper. Cast the concrete delegate at the call site.
+ */
+type SyncableRelation = {
+  findMany(args: { where: { resumeId: string }; select: { id: true } }): Promise<{ id: string }[]>;
+  deleteMany(args: { where: { id: { in: string[] } } }): Promise<unknown>;
+  update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+};
 
 /**
  * Resume service — business logic only, no HTTP concerns.
@@ -8,7 +26,7 @@ import type { FullResumeInputCreate, ResumeUpdateBody, ResumeWithRelations } fro
 // biome-ignore lint/complexity/noStaticOnlyClass: Pattern is intentional for service classes with only static methods.
 export abstract class ResumeService {
   /**
-   * Retrieves all users.
+   * Retrieves all resumes for a given user.
    *
    * @param db - Prisma client instance
    * @param userId - ID of the user whose resumes to retrieve
@@ -122,63 +140,15 @@ export abstract class ResumeService {
       }
 
       if (experience !== undefined) {
-        const existingExp = await tx.experience.findMany({
-          where: { resumeId },
-          select: { id: true },
-        });
-        const keepExpIds = experience.filter((i) => i.id).map((i) => i.id as string);
-        const deleteExpIds = existingExp.map((e) => e.id).filter((id) => !keepExpIds.includes(id));
-        if (deleteExpIds.length > 0) {
-          await tx.experience.deleteMany({ where: { id: { in: deleteExpIds } } });
-        }
-        for (const item of experience) {
-          const { id, ...rest } = item;
-          if (id) {
-            await tx.experience.update({ where: { id }, data: rest });
-          } else {
-            await tx.experience.create({ data: { ...rest, resumeId } });
-          }
-        }
+        await ResumeService._syncRelation(tx.experience as unknown as SyncableRelation, resumeId, experience);
       }
 
       if (education !== undefined) {
-        const existingEdu = await tx.education.findMany({
-          where: { resumeId },
-          select: { id: true },
-        });
-        const keepEduIds = education.filter((i) => i.id).map((i) => i.id as string);
-        const deleteEduIds = existingEdu.map((e) => e.id).filter((id) => !keepEduIds.includes(id));
-        if (deleteEduIds.length > 0) {
-          await tx.education.deleteMany({ where: { id: { in: deleteEduIds } } });
-        }
-        for (const item of education) {
-          const { id, ...rest } = item;
-          if (id) {
-            await tx.education.update({ where: { id }, data: rest });
-          } else {
-            await tx.education.create({ data: { ...rest, resumeId } });
-          }
-        }
+        await ResumeService._syncRelation(tx.education as unknown as SyncableRelation, resumeId, education);
       }
 
       if (project !== undefined) {
-        const existingProj = await tx.project.findMany({
-          where: { resumeId },
-          select: { id: true },
-        });
-        const keepProjIds = project.filter((i) => i.id).map((i) => i.id as string);
-        const deleteProjIds = existingProj.map((e) => e.id).filter((id) => !keepProjIds.includes(id));
-        if (deleteProjIds.length > 0) {
-          await tx.project.deleteMany({ where: { id: { in: deleteProjIds } } });
-        }
-        for (const item of project) {
-          const { id, ...rest } = item;
-          if (id) {
-            await tx.project.update({ where: { id }, data: rest });
-          } else {
-            await tx.project.create({ data: { ...rest, resumeId } });
-          }
-        }
+        await ResumeService._syncRelation(tx.project as unknown as SyncableRelation, resumeId, project);
       }
 
       return tx.resume.findUniqueOrThrow({
@@ -207,5 +177,38 @@ export abstract class ResumeService {
       where: { id: resumeId, userId },
     });
     return result.count > 0;
+  }
+
+  /**
+   * Syncs a relation array against the database:
+   * - Deletes records not present in `items`
+   * - Updates records that have an `id`
+   * - Creates records that have no `id`
+   *
+   * @param relation - Prisma delegate cast to SyncableRelation
+   * @param resumeId - Resume ID used as the foreign key for new records
+   * @param items - Incoming items; id present = update, id absent = create
+   */
+  private static async _syncRelation(
+    relation: SyncableRelation,
+    resumeId: string,
+    items: Array<ExperienceUpdateItem | EducationUpdateItem | ProjectUpdateItem>,
+  ): Promise<void> {
+    const existing = await relation.findMany({ where: { resumeId }, select: { id: true } });
+    const keepIds = items.filter((i) => i.id).map((i) => i.id as string);
+    const toDelete = existing.map((e) => e.id).filter((id) => !keepIds.includes(id));
+
+    if (toDelete.length > 0) {
+      await relation.deleteMany({ where: { id: { in: toDelete } } });
+    }
+
+    for (const item of items) {
+      const { id, ...rest } = item;
+      if (id) {
+        await relation.update({ where: { id }, data: rest as Record<string, unknown> });
+      } else {
+        await relation.create({ data: { ...rest, resumeId } as Record<string, unknown> });
+      }
+    }
   }
 }
