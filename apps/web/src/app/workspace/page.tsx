@@ -93,10 +93,11 @@ export default function Dashboard() {
       education: [],
       project: [],
     });
-    if (error || !data?.success || !data.data) return;
-    addResume(data.data as ResumeResponse);
+    if (error || !data || !("data" in data) || !data.data) return;
+    const newResume = data.data as ResumeResponse;
+    addResume(newResume);
     setModalState({ type: null });
-    router.push(`${ROUTES.BUILDER}/${data.data.id}`);
+    router.push(`${ROUTES.BUILDER}/${newResume.id}`);
   }
 
   function handleUploadResume(title: string, file: File) {

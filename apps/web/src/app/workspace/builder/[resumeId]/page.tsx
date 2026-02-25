@@ -209,7 +209,10 @@ export default function ResumeBuilder() {
       {
         id: "summary",
         render: () => (
-          <ProfessionalSummaryFormEnhanced summary={resumeData.professionalSummary} onChange={handleSummaryChange} />
+          <ProfessionalSummaryFormEnhanced
+            summary={resumeData.professionalSummary ?? ""}
+            onChange={handleSummaryChange}
+          />
         ),
       },
       {
