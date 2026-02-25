@@ -8,75 +8,51 @@ import { api } from "@/lib/api";
  * @property resumes - Array of all user resumes
  * @property isLoading - Whether resumes are currently being fetched
  * @property hasFetched - Whether initial fetch has completed (prevents refetch)
- * @property fetchResumes - Fetches all user resumes from API
- * @property updateResume - Updates a specific resume by ID
- * @property deleteResume - Removes a resume by ID
+ * @property fetchResumes - Fetches all user resumes from API; pass force=true to bypass cache
+ * @property addResume - Appends a new resume to the list (use after successful create)
+ * @property updateResume - Updates a specific resume by ID (client-side optimistic update)
+ * @property deleteResume - Deletes a resume via API then removes it from the store
  */
 interface ResumeStore {
   resumes: ResumeResponse[];
   isLoading: boolean;
   hasFetched: boolean;
-  fetchResumes: () => Promise<void>;
+  fetchResumes: (force?: boolean) => Promise<void>;
+  addResume: (resume: ResumeResponse) => void;
   updateResume: (id: string, updates: Partial<ResumeResponse>) => void;
-  deleteResume: (id: string) => void;
+  deleteResume: (id: string) => Promise<void>;
 }
 
-/**
- * Global Zustand store for managing resume data.
- * Handles CRUD operations for resume documents across the application.
- *
- * @example
- * ```tsx
- * function MyComponent() {
- *   const { resumes, fetchResumes, updateResume, deleteResume } = useResumeStore();
- *
- *   useEffect(() => {
- *     fetchResumes();
- *   }, [fetchResumes]);
- *
- *   return (
- *     <>
- *       {resumes.map(resume => (
- *         <ResumeCard
- *           key={resume._id}
- *           resume={resume}
- *           onUpdate={(updates) => updateResume(resume._id, updates)}
- *           onDelete={() => deleteResume(resume._id)}
- *         />
- *       ))}
- *     </>
- *   );
- * }
- * ```
- */
 export const useResumeStore = create<ResumeStore>((set, get) => ({
   resumes: [],
   isLoading: false,
   hasFetched: false,
 
-  fetchResumes: async (): Promise<void> => {
-    if (get().hasFetched) return;
+  fetchResumes: async (force = false): Promise<void> => {
+    if (get().hasFetched && !force) return;
     set({ isLoading: true });
     try {
       const { data } = await api.resumes.get();
       if (data && "data" in data && data.data) {
-        const myResumes = data.data;
-        set({ resumes: myResumes, hasFetched: true });
+        set({ resumes: data.data as ResumeResponse[], hasFetched: true });
       }
     } finally {
       set({ isLoading: false });
     }
   },
 
-  updateResume: (id: string, updates: Partial<ResumeResponse>) =>
+  addResume: (resume: ResumeResponse): void => set((state) => ({ resumes: [...state.resumes, resume] })),
+
+  updateResume: (id: string, updates: Partial<ResumeResponse>): void =>
     set((state) => ({
-      resumes: state.resumes.map((resume) =>
-        resume.id === id ? { ...resume, ...updates } : resume,
-      ),
+      resumes: state.resumes.map((resume) => (resume.id === id ? { ...resume, ...updates } : resume)),
     })),
 
-  deleteResume: (id: string) =>
+  deleteResume: async (id: string): Promise<void> => {
+    const { data, error } = await api.resumes({ id }).delete();
+    if (error || !data?.success) return;
     set((state) => ({
       resumes: state.resumes.filter((resume) => resume.id !== id),
-    })),
+    }));
+  },
 }));
