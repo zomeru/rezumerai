@@ -1,6 +1,7 @@
 // Dashboard page for managing resumes (create, edit, delete, download).
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
@@ -14,6 +15,7 @@ import {
   UploadResumeModal,
 } from "@/components/Dashboard";
 import { ROUTES } from "@/constants/routing";
+import { api } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -41,6 +43,7 @@ export default function Dashboard() {
   const fetchResumes = useResumeStore((state) => state.fetchResumes);
   const updateResume = useResumeStore((state) => state.updateResume);
   const deleteResume = useResumeStore((state) => state.deleteResume);
+  const addResume = useResumeStore((state) => state.addResume);
 
   useEffect(() => {
     fetchResumes();
@@ -67,10 +70,33 @@ export default function Dashboard() {
     });
   }
 
-  function handleCreateResume(title: string) {
+  async function handleCreateResume(title: string): Promise<void> {
     if (!title.trim()) return;
+    const { data, error } = await api.resumes.post({
+      title,
+      public: false,
+      template: "classic",
+      accentColor: "#000000",
+      fontSize: "medium",
+      skills: [],
+      personalInfo: {
+        fullName: "",
+        email: "",
+        phone: "",
+        location: "",
+        linkedin: "",
+        website: "",
+        profession: "",
+        image: "",
+      },
+      experience: [],
+      education: [],
+      project: [],
+    });
+    if (error || !data?.success || !data.data) return;
+    addResume(data.data as ResumeResponse);
     setModalState({ type: null });
-    router.push(`${ROUTES.BUILDER}/123`);
+    router.push(`${ROUTES.BUILDER}/${data.data.id}`);
   }
 
   function handleUploadResume(title: string, file: File) {
@@ -79,18 +105,25 @@ export default function Dashboard() {
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleEditTitle(newTitle: string) {
+  async function handleEditTitle(newTitle: string): Promise<void> {
     if (!newTitle.trim() || !modalState.resumeId) return;
+    const { data, error } = await api.resumes({ id: modalState.resumeId }).patch({
+      title: newTitle,
+    });
+    if (error || !data?.success) return;
     updateResume(modalState.resumeId, { title: newTitle });
     setModalState({ type: null });
   }
 
-  const handleDeleteResume = useCallback((resumeId: string) => {
-    const confirmed = window.confirm("Are you sure you want to delete this resume?");
-    if (confirmed) {
-      deleteResume(resumeId);
-    }
-  }, []);
+  const handleDeleteResume = useCallback(
+    async (resumeId: string): Promise<void> => {
+      const confirmed = window.confirm("Are you sure you want to delete this resume?");
+      if (confirmed) {
+        await deleteResume(resumeId);
+      }
+    },
+    [deleteResume],
+  );
 
   const handleOpenResume = useCallback(
     (resumeId: string) => {
