@@ -141,3 +141,30 @@ describe("ResumeService.update", () => {
     expect(result).toEqual(updatedResume);
   });
 });
+
+describe("ResumeService.deleteResume", () => {
+  it("returns true when resume is found and deleted", async () => {
+    const db = makeMockDb();
+    (db.resume.deleteMany as ReturnType<typeof mock>).mockResolvedValue({
+      count: 1,
+    });
+
+    const result = await ResumeService.deleteResume(db, USER_ID, RESUME_ID);
+
+    expect(result).toBe(true);
+    expect(db.resume.deleteMany).toHaveBeenCalledWith({
+      where: { id: RESUME_ID, userId: USER_ID },
+    });
+  });
+
+  it("returns false when resume is not found or not owned", async () => {
+    const db = makeMockDb();
+    (db.resume.deleteMany as ReturnType<typeof mock>).mockResolvedValue({
+      count: 0,
+    });
+
+    const result = await ResumeService.deleteResume(db, USER_ID, RESUME_ID);
+
+    expect(result).toBe(false);
+  });
+});

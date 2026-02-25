@@ -192,4 +192,20 @@ export abstract class ResumeService {
       });
     });
   }
+
+  /**
+   * Deletes a resume owned by the specified user.
+   * Prisma cascades the delete to all related tables.
+   *
+   * @param db - Prisma client instance
+   * @param userId - Authenticated user ID (ownership check)
+   * @param resumeId - Resume to delete
+   * @returns true if deleted, false if not found or not owned
+   */
+  static async deleteResume(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
+    const result = await db.resume.deleteMany({
+      where: { id: resumeId, userId },
+    });
+    return result.count > 0;
+  }
 }
