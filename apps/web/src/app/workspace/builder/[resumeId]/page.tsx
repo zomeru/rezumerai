@@ -41,6 +41,7 @@ import {
 import { defaultResume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
+import { api } from "@/lib/api";
 import { useBuilderStore } from "@/store/useBuilderStore";
 import { useResumeStore } from "@/store/useResumeStore";
 import type { TemplateType } from "@/templates";
@@ -164,11 +165,24 @@ export default function ResumeBuilder() {
   async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
-      // Simulated save — will connect to backend later
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error("Failed to save resume:", error);
+      const { data, error } = await api.resumes({ id: resumeId }).patch({
+        title: resumeData.title,
+        public: resumeData.public,
+        professionalSummary: resumeData.professionalSummary,
+        template: resumeData.template as TemplateType,
+        accentColor: resumeData.accentColor,
+        fontSize: resumeData.fontSize,
+        customFontSize: resumeData.customFontSize,
+        skills: resumeData.skills,
+        personalInfo: resumeData.personalInfo ?? undefined,
+        experience: resumeData.experience,
+        education: resumeData.education,
+        project: resumeData.project,
+      });
+      if (!error && data && "data" in data && data.data) {
+        updateResume(resumeId, data.data as Partial<ResumeResponse>);
+        setLastSaved(new Date());
+      }
     } finally {
       setIsSaving(false);
     }
