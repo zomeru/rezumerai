@@ -5,12 +5,7 @@ import { z } from "zod";
 /* Enums                              */
 /* ---------------------------------- */
 
-export const TEMPLATE_VALUES = [
-  "classic",
-  "modern",
-  "minimal",
-  "minimal_image",
-] as const;
+export const TEMPLATE_VALUES = ["classic", "modern", "minimal", "minimal_image"] as const;
 
 export const FONT_SIZE_VALUES = ["small", "medium", "large", "custom"] as const;
 
@@ -118,16 +113,12 @@ export const ResumeSchema = ResumeObjectSchema.extend({
   personalInfo: PersonalInformationSchema.nullable(),
   experience: ExperienceSchema,
   education: EducationSchema,
-  projects: ProjectSchema,
+  project: ProjectSchema,
 })
-  .refine(
-    (data) =>
-      data.fontSize !== "custom" || typeof data.customFontSize === "number",
-    {
-      message: "customFontSize is required when fontSize is 'custom'",
-      path: ["customFontSize"],
-    },
-  )
+  .refine((data) => data.fontSize !== "custom" || typeof data.customFontSize === "number", {
+    message: "customFontSize is required when fontSize is 'custom'",
+    path: ["customFontSize"],
+  })
   .strict();
 
 // export const ResumeSchema = z
@@ -174,14 +165,10 @@ export const ResumeInputCreateSchema = z
     customFontSize: z.number().optional(),
     skills: z.array(z.string()),
   })
-  .refine(
-    (data) =>
-      data.fontSize !== "custom" || typeof data.customFontSize === "number",
-    {
-      message: "customFontSize is required when fontSize is 'custom'",
-      path: ["customFontSize"],
-    },
-  )
+  .refine((data) => data.fontSize !== "custom" || typeof data.customFontSize === "number", {
+    message: "customFontSize is required when fontSize is 'custom'",
+    path: ["customFontSize"],
+  })
   .strict();
 
 export type ResumeResponse = z.infer<typeof ResumeSchema>;
@@ -227,12 +214,8 @@ export const ResumeInputUpdateSchema = ResumeObjectSchema.omit({
   .strict();
 
 export type ResumeInputUpdate = z.infer<typeof ResumeInputUpdateSchema>;
-export type PersonalInfoInputUpdate = Partial<
-  z.infer<typeof PersonalInformationSchema>
->;
-export type ExperienceInputUpdate = Partial<
-  z.infer<typeof ExperienceItemSchema>
->;
+export type PersonalInfoInputUpdate = Partial<z.infer<typeof PersonalInformationSchema>>;
+export type ExperienceInputUpdate = Partial<z.infer<typeof ExperienceItemSchema>>;
 export type EducationInputUpdate = Partial<z.infer<typeof EducationItemSchema>>;
 export type ProjectInputUpdate = Partial<z.infer<typeof ProjectItemSchema>>;
 
@@ -242,6 +225,43 @@ export type ResumeWithRelations = Prisma.ResumeGetPayload<{
     experience: true;
     project: true;
     personalInfo: true;
-    user: true;
   };
 }>;
+
+// ── Update schemas for PATCH /resumes/:id ─────────────────────────────────
+
+/** Scalar resume fields for partial update (no id, userId, or timestamps) */
+export const ResumeScalarUpdateSchema = ResumeObjectSchema.omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+}).partial();
+
+/** Experience item for update — id is optional (omit for new items) */
+export const ExperienceUpdateItemSchema = ExperienceItemSchema.omit({
+  resumeId: true,
+}).extend({ id: z.string().optional() });
+
+/** Education item for update — id is optional (omit for new items) */
+export const EducationUpdateItemSchema = EducationItemSchema.omit({
+  resumeId: true,
+}).extend({ id: z.string().optional() });
+
+/** Project item for update — id is optional (omit for new items) */
+export const ProjectUpdateItemSchema = ProjectItemSchema.omit({
+  resumeId: true,
+}).extend({ id: z.string().optional() });
+
+/** Full PATCH body: any scalar fields + optional relation arrays */
+export const ResumeUpdateBodySchema = ResumeScalarUpdateSchema.extend({
+  personalInfo: PersonalInfoInputCreate.partial().optional(),
+  experience: z.array(ExperienceUpdateItemSchema).optional(),
+  education: z.array(EducationUpdateItemSchema).optional(),
+  project: z.array(ProjectUpdateItemSchema).optional(),
+});
+
+export type ResumeUpdateBody = z.infer<typeof ResumeUpdateBodySchema>;
+export type ExperienceUpdateItem = z.infer<typeof ExperienceUpdateItemSchema>;
+export type EducationUpdateItem = z.infer<typeof EducationUpdateItemSchema>;
+export type ProjectUpdateItem = z.infer<typeof ProjectUpdateItemSchema>;
