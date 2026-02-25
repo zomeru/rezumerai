@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { act, renderHook } from "@testing-library/react";
 
 const mockResumesGet = mock();
 const mockResumesPost = mock();
@@ -49,14 +48,12 @@ beforeEach(() => {
 
 describe("useResumeStore.addResume", () => {
   it("appends a resume to the list", () => {
-    const { result } = renderHook(() => useResumeStore());
+    const { addResume } = useResumeStore.getState();
+    addResume(MOCK_RESUME);
 
-    act(() => {
-      result.current.addResume(MOCK_RESUME);
-    });
-
-    expect(result.current.resumes).toHaveLength(1);
-    expect(result.current.resumes[0]?.id).toBe("res_1");
+    const { resumes } = useResumeStore.getState();
+    expect(resumes).toHaveLength(1);
+    expect(resumes[0]?.id).toBe("res_1");
   });
 });
 
@@ -65,13 +62,10 @@ describe("useResumeStore.deleteResume", () => {
     useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
     mockResumesByIdDelete.mockResolvedValue({ data: { success: true }, error: null });
 
-    const { result } = renderHook(() => useResumeStore());
+    await useResumeStore.getState().deleteResume("res_1");
 
-    await act(async () => {
-      await result.current.deleteResume("res_1");
-    });
-
-    expect(result.current.resumes).toHaveLength(0);
+    const { resumes } = useResumeStore.getState();
+    expect(resumes).toHaveLength(0);
     expect(mockResumeById).toHaveBeenCalledWith({ id: "res_1" });
   });
 
@@ -82,13 +76,10 @@ describe("useResumeStore.deleteResume", () => {
       error: { error: "Not found" },
     });
 
-    const { result } = renderHook(() => useResumeStore());
+    await useResumeStore.getState().deleteResume("res_1");
 
-    await act(async () => {
-      await result.current.deleteResume("res_1");
-    });
-
-    expect(result.current.resumes).toHaveLength(1);
+    const { resumes } = useResumeStore.getState();
+    expect(resumes).toHaveLength(1);
   });
 });
 
@@ -97,11 +88,7 @@ describe("useResumeStore.fetchResumes", () => {
     useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
     mockResumesGet.mockResolvedValue({ data: { data: [] }, error: null });
 
-    const { result } = renderHook(() => useResumeStore());
-
-    await act(async () => {
-      await result.current.fetchResumes();
-    });
+    await useResumeStore.getState().fetchResumes();
 
     expect(mockResumesGet).not.toHaveBeenCalled();
   });
@@ -110,11 +97,7 @@ describe("useResumeStore.fetchResumes", () => {
     useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
     mockResumesGet.mockResolvedValue({ data: { data: [MOCK_RESUME] }, error: null });
 
-    const { result } = renderHook(() => useResumeStore());
-
-    await act(async () => {
-      await result.current.fetchResumes(true);
-    });
+    await useResumeStore.getState().fetchResumes(true);
 
     expect(mockResumesGet).toHaveBeenCalledTimes(1);
   });
