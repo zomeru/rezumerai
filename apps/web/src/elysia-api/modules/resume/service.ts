@@ -22,10 +22,7 @@ export abstract class ResumeService {
    * @param userId - ID of the user whose resumes to retrieve
    * @returns Array of all resumes for the specified user
    */
-  static async findAll(
-    db: PrismaClient,
-    userId: string,
-  ): Promise<ResumeWithRelations[]> {
+  static async findAll(db: PrismaClient, userId: string): Promise<ResumeWithRelations[]> {
     const resumes = await db.resume.findMany({
       where: { userId },
       include: {
@@ -33,17 +30,33 @@ export abstract class ResumeService {
         experience: true,
         project: true,
         personalInfo: true,
-        user: true,
       },
     });
     return resumes;
   }
 
-  static async create(
-    db: PrismaClient,
-    userId: string,
-    data: FullResumeInputCreate,
-  ): Promise<ResumeWithRelations> {
+  /**
+   * Finds a single resume by ID, scoped to the authenticated user.
+   *
+   * @param db - Prisma client instance
+   * @param userId - ID of the authenticated user (ownership check)
+   * @param resumeId - ID of the resume to retrieve
+   * @returns Resume with all relations, or null if not found / not owned
+   */
+  static async findById(db: PrismaClient, userId: string, resumeId: string): Promise<ResumeWithRelations | null> {
+    const resume = await db.resume.findFirst({
+      where: { id: resumeId, userId },
+      include: {
+        education: true,
+        experience: true,
+        project: true,
+        personalInfo: true,
+      },
+    });
+    return resume;
+  }
+
+  static async create(db: PrismaClient, userId: string, data: FullResumeInputCreate): Promise<ResumeWithRelations> {
     const { personalInfo, project, experience, education, ...rest } = data;
     const newResume = await db.resume.create({
       data: {
@@ -69,7 +82,6 @@ export abstract class ResumeService {
         experience: true,
         project: true,
         personalInfo: true,
-        user: true,
       },
     });
 
@@ -77,11 +89,7 @@ export abstract class ResumeService {
   }
 
   // Updates Resume table only
-  static async updateResume(
-    db: PrismaClient,
-    userId: string,
-    data: ResumeInputUpdate,
-  ) {
+  static async updateResume(db: PrismaClient, userId: string, data: ResumeInputUpdate) {
     const { id, ...updateData } = data;
 
     try {
@@ -99,7 +107,6 @@ export abstract class ResumeService {
           experience: true,
           project: true,
           personalInfo: true,
-          user: true,
         },
       });
     } catch {
@@ -110,7 +117,7 @@ export abstract class ResumeService {
   // Update personal info, experience, education, and project tables by resumeId
   static async updateResumeRelations(
     db: PrismaClient,
-    userId: string,
+    _userId: string,
     resumeId: string,
     data: {
       personalInfo?: PersonalInfoInputUpdate;
@@ -119,7 +126,7 @@ export abstract class ResumeService {
       project?: ProjectInputUpdate[];
     },
   ) {
-    const { personalInfo, experience, education, project } = data;
+    const { personalInfo, experience, education: _education, project: _project } = data;
 
     // Update personal info, then
     // Update or Create experience, education, and project entries based on presence of id in input
@@ -149,7 +156,7 @@ export abstract class ResumeService {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       throw new Error("Failed to update personal information");
     }
   }
