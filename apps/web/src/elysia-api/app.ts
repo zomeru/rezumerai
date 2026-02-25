@@ -9,7 +9,6 @@ import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaXSS } from "elysia-xss";
 import { serverEnv } from "@/env";
-import { auth } from "@/lib/auth";
 import { resumeModule, userModule } from "./modules";
 import { errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from "./plugins";
 

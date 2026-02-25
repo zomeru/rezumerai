@@ -1,11 +1,13 @@
 "use client";
 
+import type { ResumeResponse } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { useState } from "react";
-import type { Project } from "@/constants/dummy";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
+
+type Project = ResumeResponse["project"];
 
 /**
  * Props for the ProjectFormEnhanced component.
@@ -14,8 +16,8 @@ import RichTextEditor from "./RichTextEditor";
  * @property onChange - Callback with updated project array
  */
 export interface ProjectFormEnhancedProps {
-  project: Project[];
-  onChange: (project: Project[]) => void;
+  project: Project;
+  onChange: (project: Project) => void;
 }
 
 /**
@@ -31,8 +33,9 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
-    const newProject: Project = {
-      _id: generateUuidKey(),
+    const newProject: Project[number] = {
+      id: generateUuidKey(),
+      resumeId: project[0]?.resumeId || "",
       name: "",
       type: "",
       description: "",
@@ -49,7 +52,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Project, value: string) => {
+  const handleUpdate = (index: number, field: keyof Project[number], value: string) => {
     const updated = project.map((proj, i) => (i === index ? { ...proj, [field]: value } : proj));
     onChange(updated);
   };
@@ -61,8 +64,8 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
       <DraggableList
         items={project}
         onReorder={onChange}
-        getItemId={(item: Project): string => item._id}
-        renderItem={(proj: Project, index: number) => (
+        getItemId={(item: Project[number]): string => item.id}
+        renderItem={(proj: Project[number], index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"

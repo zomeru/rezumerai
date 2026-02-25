@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { UserType } from "@rezumerai/types";
+import type { SessionUser } from "@rezumerai/types";
 import { Button } from "@rezumerai/ui";
 import { useId, useState } from "react";
 import { api } from "@/lib/api";
@@ -32,7 +32,7 @@ export interface UserFetcherProps {
 export function UserFetcher({ className }: UserFetcherProps) {
   const [userId, setUserId] = useState<string>("1");
   const userIdInputId = useId();
-  const [userData, setUserData] = useState<UserType | null>(null);
+  const [userData, setUserData] = useState<SessionUser | null>(null);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ export function UserFetcher({ className }: UserFetcherProps) {
         typeof error === "object" && "error" in error ? (error as { error: string }).error : "User not found",
       );
     } else if (data && "data" in data && data.data) {
-      setUserData(data.data as UserType);
+      setUserData(data.data as SessionUser);
     }
   };
 
@@ -100,7 +100,7 @@ export function UserFetcher({ className }: UserFetcherProps) {
  * @property user - User data to display
  */
 interface UserCardProps {
-  user: UserType;
+  user: SessionUser;
 }
 
 /**

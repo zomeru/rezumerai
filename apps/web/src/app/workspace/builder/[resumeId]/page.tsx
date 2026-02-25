@@ -105,7 +105,7 @@ export default function ResumeBuilder() {
   const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
 
   const effectiveFontSize: FontSizeValue =
-    resumeData.fontSize === "custom" ? resumeData.customFontSize : resumeData.fontSize;
+    resumeData.fontSize === "custom" ? (resumeData.customFontSize ?? 1) : resumeData.fontSize;
 
   // PDF generation hook
   const { pdfBlob, isGeneratingPdf, isExporting, downloadResume } = usePdfGenerator({
@@ -116,7 +116,7 @@ export default function ResumeBuilder() {
     accentColor: resumeData.accentColor,
   });
 
-  function updateResumeData(data: ResumeResponse["personalInfo"]) {
+  function updateResumeData(data: NonNullable<ResumeResponse["personalInfo"]>) {
     updateResume(resumeId, { personalInfo: data });
   }
 
@@ -213,7 +213,9 @@ export default function ResumeBuilder() {
         id: "personal",
         render: () => (
           <PersonalInfoForm
-            data={resumeData.personalInfo}
+            data={
+              resumeData.personalInfo ?? (defaultResume.personalInfo as NonNullable<ResumeResponse["personalInfo"]>)
+            }
             onChangeAction={updateResumeData}
             removeBackground={removeBackground}
             setRemoveBackgroundAction={setRemoveBackground}

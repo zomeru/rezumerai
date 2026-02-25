@@ -5,6 +5,9 @@ import { BriefcaseBusiness, Globe, Linkedin, Mail, MapPin, Phone, User } from "l
 import Image from "next/image";
 import { useRef } from "react";
 
+/** Non-nullable personal information type derived from ResumeResponse. */
+type PersonalInfo = NonNullable<ResumeResponse["personalInfo"]>;
+
 /**
  * Props for the PersonalInfoForm component.
  *
@@ -14,8 +17,8 @@ import { useRef } from "react";
  * @property setRemoveBackgroundAction - Callback to toggle background removal
  */
 export interface PersonalInfoFormProps {
-  data: Resume["personalInfo"];
-  onChangeAction: (data: Resume["personalInfo"]) => void;
+  data: PersonalInfo;
+  onChangeAction: (data: PersonalInfo) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean) => void;
 }
@@ -24,7 +27,7 @@ export interface PersonalInfoFormProps {
  * Field configuration for personal info form inputs.
  */
 const FIELDS: {
-  key: keyof Resume["personalInfo"];
+  key: keyof PersonalInfo;
   label: string;
   icon: typeof User;
   type: string;
@@ -55,7 +58,7 @@ export default function PersonalInfoForm({
 }: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleImageChange(field: keyof Resume["personalInfo"], value: string) {
+  function handleImageChange(field: keyof PersonalInfo, value: string) {
     onChangeAction({
       ...data,
       [field]: value,

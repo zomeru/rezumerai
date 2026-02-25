@@ -3,7 +3,7 @@
 
 "use client";
 
-import type { UserType } from "@rezumerai/types";
+import type { SessionUser } from "@rezumerai/types";
 import { Button } from "@rezumerai/ui";
 import { capitalize } from "@rezumerai/utils/string";
 import { useCallback, useEffect, useState } from "react";
@@ -26,7 +26,7 @@ export default function SampleComponentWithTest() {
   const [healthLoading, setHealthLoading] = useState(true);
 
   // Users state
-  const [users, setUsers] = useState<UserType[]>([]);
+  const [users, setUsers] = useState<SessionUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
 
   // Projects state (endpoint removed in Elysia migration — placeholder)
@@ -48,7 +48,7 @@ export default function SampleComponentWithTest() {
     setUsersLoading(true);
     const { data } = await api.users.get();
     if (data && "data" in data) {
-      setUsers((data.data ?? []) as UserType[]);
+      setUsers((data.data ?? []) as SessionUser[]);
     }
     setUsersLoading(false);
   }, []);
@@ -94,7 +94,7 @@ export default function SampleComponentWithTest() {
         ) : (
           <div>
             <div className="mb-4 grid gap-2">
-              {users.map((user: UserType) => (
+              {users.map((user: SessionUser) => (
                 <div key={user.id} className="rounded border bg-white p-2">
                   <p className="font-medium">{user.name}</p>
                   <p className="text-gray-600 text-sm">{user.email}</p>

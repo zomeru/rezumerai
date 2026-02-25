@@ -1,9 +1,12 @@
 "use client";
 
+import type { FONT_SIZE_VALUES } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Type } from "lucide-react";
 import { useState } from "react";
-import type { FontSizePreset } from "@/constants/dummy";
+
+export type FontSizePreset = (typeof FONT_SIZE_VALUES)[number];
+
 import { useClickOutside } from "@/hooks/useClickOutside";
 
 /**
