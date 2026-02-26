@@ -171,7 +171,7 @@ export const ResumeInputCreateSchema = z
   })
   .strict();
 
-export type ResumeResponse = z.infer<typeof ResumeSchema>;
+// export type ResumeWithRelations = z.infer<typeof ResumeSchema>;
 
 export const PersonalInfoInputCreate = PersonalInformationSchema.omit({
   id: true,
@@ -238,30 +238,55 @@ export const ResumeScalarUpdateSchema = ResumeObjectSchema.omit({
   updatedAt: true,
 }).partial();
 
-/** Experience item for update — id is optional (omit for new items) */
+/** Experience item for update — id is optional (omit for new items); strips Prisma's resumeId */
 export const ExperienceUpdateItemSchema = ExperienceItemSchema.omit({
   resumeId: true,
-}).extend({ id: z.string().optional() });
+})
+  .extend({ id: z.string().optional() })
+  .strip();
 
-/** Education item for update — id is optional (omit for new items) */
+/** Education item for update — id is optional (omit for new items); strips Prisma's resumeId */
 export const EducationUpdateItemSchema = EducationItemSchema.omit({
   resumeId: true,
-}).extend({ id: z.string().optional() });
+})
+  .extend({ id: z.string().optional() })
+  .strip();
 
-/** Project item for update — id is optional (omit for new items) */
+/** Project item for update — id is optional (omit for new items); strips Prisma's resumeId */
 export const ProjectUpdateItemSchema = ProjectItemSchema.omit({
   resumeId: true,
-}).extend({ id: z.string().optional() });
+})
+  .extend({ id: z.string().optional() })
+  .strip();
 
-/** Full PATCH body: any scalar fields + optional relation arrays */
+/**
+ * PersonalInfo for PATCH — strips Prisma fields (id, resumeId) and accepts empty strings
+ * so users can save before every field is filled in.
+ */
+export const PersonalInfoUpdateSchema = z.object({
+  fullName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  location: z.string(),
+  linkedin: z.string(),
+  website: z.string(),
+  profession: z.string(),
+  image: z.string(),
+});
+
+/**
+ * Full PATCH body: any scalar fields + optional relation arrays.
+ * All relation fields are optional so callers can do partial updates (e.g. title-only).
+ */
 export const ResumeUpdateBodySchema = ResumeScalarUpdateSchema.extend({
-  personalInfo: PersonalInfoInputCreate.partial().optional(),
+  personalInfo: PersonalInfoUpdateSchema.nullable().optional(),
   experience: z.array(ExperienceUpdateItemSchema).optional(),
   education: z.array(EducationUpdateItemSchema).optional(),
   project: z.array(ProjectUpdateItemSchema).optional(),
 });
 
 export type ResumeUpdateBody = z.infer<typeof ResumeUpdateBodySchema>;
+export type PersonalInfoUpdate = z.infer<typeof PersonalInfoUpdateSchema>;
 export type ExperienceUpdateItem = z.infer<typeof ExperienceUpdateItemSchema>;
 export type EducationUpdateItem = z.infer<typeof EducationUpdateItemSchema>;
 export type ProjectUpdateItem = z.infer<typeof ProjectUpdateItemSchema>;

@@ -131,7 +131,7 @@ export abstract class ResumeService {
         });
       }
 
-      if (personalInfo !== undefined) {
+      if (personalInfo !== undefined && personalInfo !== null) {
         await tx.personalInformation.upsert({
           where: { resumeId },
           update: personalInfo,
@@ -139,15 +139,15 @@ export abstract class ResumeService {
         });
       }
 
-      if (experience !== undefined) {
+      if (experience) {
         await ResumeService._syncRelation(tx.experience as unknown as SyncableRelation, resumeId, experience);
       }
 
-      if (education !== undefined) {
+      if (education) {
         await ResumeService._syncRelation(tx.education as unknown as SyncableRelation, resumeId, education);
       }
 
-      if (project !== undefined) {
+      if (project) {
         await ResumeService._syncRelation(tx.project as unknown as SyncableRelation, resumeId, project);
       }
 
@@ -194,7 +194,10 @@ export abstract class ResumeService {
     resumeId: string,
     items: Array<ExperienceUpdateItem | EducationUpdateItem | ProjectUpdateItem>,
   ): Promise<void> {
-    const existing = await relation.findMany({ where: { resumeId }, select: { id: true } });
+    const existing = await relation.findMany({
+      where: { resumeId },
+      select: { id: true },
+    });
     const keepIds = items.filter((i) => i.id).map((i) => i.id as string);
     const toDelete = existing.map((e) => e.id).filter((id) => !keepIds.includes(id));
 
@@ -205,9 +208,14 @@ export abstract class ResumeService {
     for (const item of items) {
       const { id, ...rest } = item;
       if (id) {
-        await relation.update({ where: { id }, data: rest as Record<string, unknown> });
+        await relation.update({
+          where: { id },
+          data: rest as Record<string, unknown>,
+        });
       } else {
-        await relation.create({ data: { ...rest, resumeId } as Record<string, unknown> });
+        await relation.create({
+          data: { ...rest, resumeId } as Record<string, unknown>,
+        });
       }
     }
   }
