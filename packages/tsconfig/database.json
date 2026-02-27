@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "isolatedModules": false,
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
+    "baseUrl": "."
   },
   "exclude": ["node_modules"]
 }

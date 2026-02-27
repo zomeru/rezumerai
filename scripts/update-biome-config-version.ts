@@ -37,9 +37,7 @@ async function findBiomeConfigs(baseDir: string): Promise<string[]> {
   try {
     const entries = await readdir(baseDir, { withFileTypes: true });
 
-    return entries
-      .filter((e) => e.isDirectory())
-      .map((e) => `${baseDir}/${e.name}/biome.json`);
+    return entries.filter((e) => e.isDirectory()).map((e) => `${baseDir}/${e.name}/biome.json`);
   } catch {
     return [];
   }
@@ -49,11 +47,7 @@ async function findBiomeConfigs(baseDir: string): Promise<string[]> {
  * Collect all biome.json targets dynamically
  */
 async function getBiomeTargets(): Promise<string[]> {
-  return [
-    "biome.json",
-    ...(await findBiomeConfigs("apps")),
-    ...(await findBiomeConfigs("packages")),
-  ];
+  return ["biome.json", ...(await findBiomeConfigs("apps")), ...(await findBiomeConfigs("packages"))];
 }
 
 /**
