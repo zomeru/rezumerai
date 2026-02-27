@@ -11,27 +11,17 @@ Before anything else, ensure Serena MCP server is activated on this project.
 
 All AI agents working in this repository **must** consult `.agents/skills/` as the authoritative source for domain-specific skills before reasoning, planning, or generating code. Each skill folder contains a `SKILL.md` with a description, trigger conditions, rules, and examples.
 
-**Rule**: When a user prompt matches a skill's trigger conditions, read the corresponding `SKILL.md` (and referenced sub-files) before proceeding. Do not rely solely on general knowledge when a matching skill exists.
+**Rule**: Before starting any task, list `.agents/skills/` to discover available skills, then read the `SKILL.md` of any that match the task. Do not rely solely on general knowledge when a matching skill exists.
 
-| Skill | Path | Trigger Conditions |
-|-------|------|--------------------|
-| `elysiajs` | `.agents/skills/elysiajs/SKILL.md` | Creating/modifying Elysia routes, handlers, servers, plugins, JWT, CORS, OpenAPI, validation, WebSocket |
-| `better-auth-best-practices` | `.agents/skills/better-auth-best-practices/SKILL.md` | Setting up Better Auth, OAuth, magic links, passkeys, auth configuration |
-| `better-auth-security-best-practices` | `.agents/skills/better-auth-security-best-practices/SKILL.MD` | Rate limiting, CSRF protection, session security, trusted origins, secret management, OAuth security |
-| `create-auth-skill` | `.agents/skills/create-auth-skill/SKILL.md` | Adding auth to a new or existing app, auth layer setup |
-| `email-and-password-best-practices` | `.agents/skills/email-and-password-best-practices/SKILL.md` | Email verification, password auth, email/password sign-in/sign-up |
-| `organization-best-practices` | `.agents/skills/organization-best-practices/SKILL.md` | Multi-tenant organizations, teams, RBAC, Better Auth organization plugin |
-| `two-factor-authentication-best-practices` | `.agents/skills/two-factor-authentication-best-practices/SKILL.md` | 2FA, TOTP, two-factor auth, authenticator apps, Better Auth twoFactor plugin |
-| `prisma-cli` | `.agents/skills/prisma-cli/SKILL.md` | `prisma init`, `prisma generate`, `prisma migrate`, `prisma db`, `prisma studio` |
-| `prisma-client-api` | `.agents/skills/prisma-client-api/SKILL.md` | Prisma queries, `findMany`, `create`, `update`, `delete`, `$transaction`, CRUD, filtering |
-| `vercel-react-best-practices` | `.agents/skills/vercel-react-best-practices/SKILL.md` | React components, Next.js pages, data fetching, bundle optimization, performance improvements |
-| `vercel-composition-patterns` | `.agents/skills/vercel-composition-patterns/SKILL.md` | Compound components, render props, boolean prop proliferation, context providers, component architecture |
-| `web-design-guidelines` | `.agents/skills/web-design-guidelines/SKILL.md` | UI review, design audit, UX review, checking site against best practices |
-| `web-accessibility` | `.agents/skills/web-accessibility/SKILL.md` | Accessibility, a11y, WCAG, ARIA, screen reader support, keyboard navigation |
-| `mobile-responsiveness` | `.agents/skills/mobile-responsiveness/SKILL.md` | Responsive layouts, mobile-first design, breakpoints, touch events, viewport |
-| `owasp-security` | `.agents/skills/owasp-security/SKILL.md` | Security vulnerabilities, OWASP Top 10, XSS, SQL injection, CSRF, auth security |
-| `turborepo` | `.agents/skills/turborepo/SKILL.md` | `turbo.json`, task pipelines, caching, monorepo structure, `--filter`, `--affected`, CI optimization |
-| `bun` | `.agents/skills/bun/SKILL.md` | Bun runtime APIs, `bunx`, `bun serve`, `bun test`, Bun bundler, JavaScript runtime |
+```bash
+ls .agents/skills/
+```
+
+Once you identify a relevant skill folder, read its `SKILL.md`:
+
+```bash
+cat .agents/skills/<skill-name>/SKILL.md
+```
 
 ## Monorepo Architecture
 
@@ -47,6 +37,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 ### Key Patterns & Structure
 
 - **Bun workspaces**: All dependency management and scripts use Bun (v1.x+). Never use npm, yarn, or pnpm.
+- **predev hook**: `bun run dev` auto-runs `turbo build --filter=@rezumerai/database` first — the database package is always built before the dev server starts.
 - **TypeScript everywhere**: Types are centralized in `packages/types` and shared across all apps/packages. Prioritize type safety, readability, and maintainability.
 - **Eden treaty**: `apps/web/src/lib/api.ts` creates a type-safe Eden client from the exported `elysiaApp` type in `apps/web/src/elysia-api/app.ts`. The client points to `NEXT_PUBLIC_SITE_URL` (the Next.js app itself), providing end-to-end type safety for all API calls.
 - **Routing**: All routes are centralized in `apps/web/src/constants/routing.ts`. Always import and use `ROUTES` constants instead of hardcoding route strings (e.g., use `ROUTES.WORKSPACE` instead of `"/workspace"`).
@@ -61,7 +52,7 @@ Rezumer (Rezumerai) is an AI-powered resume builder — a fullstack TypeScript m
 - **PDF Generation**: `@react-pdf/renderer`, `jspdf`, `html2canvas-pro`.
 - **Drag & Drop**: `@dnd-kit/core` + `@dnd-kit/sortable` for section reordering.
 - **Shared UI**: Use and extend components in `packages/ui/src/components`.
-- **Utilities**: Use helpers from `packages/utils/src` (`formatDate`, `capitalize`, `cn`).
+- **Utilities**: Use helpers from `packages/utils/src` (`formatDate`, `capitalize`, `cn`, `uuid`, React utilities).
 
 ## Developer Workflows
 
@@ -82,16 +73,17 @@ bun run --filter=web dev            # Next.js on http://localhost:3000 (Turbopac
 ### Database operations
 
 ```sh
-bun run docker:db      # Start PostgreSQL container (port 5432)
 bun run db:setup       # Push schema and generate Prisma client
 bun run db:studio      # Open Prisma Studio (port 5556)
 bun run db:reset       # Reset database (destroys data)
+cd packages/database && bun run db:seed        # Seed the database
+cd packages/database && bun run db:migrate:dev # Run a new migration (dev)
 ```
 
 ### Run with Docker
 
 ```sh
-bun run docker:build   # Build and start all containers
+bun run docker:build   # Build and start all containers (includes PostgreSQL)
 bun run docker:up      # Start containers
 bun run docker:down    # Stop containers
 ```
@@ -117,6 +109,7 @@ bun run code:check     # Run both linting and type checking
 ```sh
 bun run build              # Build all packages and apps
 bun run build:production   # Production build
+bun run code:verify        # Full pre-PR check: lint + types + tests + build
 ```
 
 ### Clean
@@ -143,29 +136,40 @@ apps/web/src/
 │   ├── page.tsx           # Homepage
 │   ├── not-found.tsx      # 404 page
 │   ├── globals.css        # Global styles
+│   ├── error.tsx          # Segment error boundary
+│   ├── global-error.tsx   # Root-level error boundary
 │   ├── api/[[...slugs]]/  # Catch-all API route → Elysia app
-│   ├── signin/            # Sign in page
-│   ├── signup/            # Sign up page
+│   ├── api/auth/[...all]/ # Better Auth handler
+│   ├── signin/            # Sign in page (page.tsx, error.tsx)
+│   ├── signup/            # Sign up page (page.tsx, error.tsx)
 │   ├── workspace/         # Dashboard + builder
 │   │   ├── page.tsx       # Dashboard
 │   │   ├── layout.tsx     # Workspace layout
-│   │   └── builder/[resumeId]/  # Resume builder (dynamic)
+│   │   ├── loading.tsx    # Workspace loading state
+│   │   ├── error.tsx      # Workspace error boundary
+│   │   └── builder/       # Builder routes
+│   │       ├── page.tsx   # Builder index
+│   │       └── [resumeId]/ # Resume builder (dynamic, page.tsx, loading.tsx, error.tsx)
 │   ├── preview/[resumeId]/ # Resume preview (dynamic)
 │   └── testsite/          # Test page
 ├── elysia-api/              # Embedded Elysia API
 │   ├── app.ts               # Elysia app (exports type for Eden)
 │   ├── plugins/             # auth, prisma, error, logger, csrf
+│   │   ├── index.ts         # Barrel exports
 │   │   ├── auth.ts          # Validates Better Auth session, injects user
 │   │   ├── prisma.ts        # Decorates context with db (Prisma client)
 │   │   ├── error.ts         # Centralized error responses
 │   │   ├── logger.ts        # Request logging
 │   │   └── modernCsrf.ts    # CSRF protection
 │   └── modules/             # Feature modules
+│       ├── index.ts         # Barrel exports
 │       ├── user/            # User CRUD (index.ts, service.ts, model.ts)
 │       └── resume/          # Resume CRUD (index.ts, service.ts, model.ts)
 ├── components/
+│   ├── index.tsx          # Barrel exports
 │   ├── Home/              # Homepage components
-│   ├── Dashboard/         # Dashboard components
+│   ├── Dashboard/         # ActionButtons, BaseModal, CreateResumeModal,
+│   │                      #   DownloadResumeModal, EditResumeModal, ResumeCard, UploadResumeModal
 │   ├── ResumeBuilder/     # Resume builder (forms, preview, DnD, rich text, PDF, templates, color picker)
 │   │   ├── Inputs/        # Form input components
 │   │   ├── PersonalInfoForm.tsx
@@ -181,7 +185,9 @@ apps/web/src/
 │   │   ├── ColorPickerModal.tsx
 │   │   ├── DraggableList.tsx
 │   │   ├── FontSizeSelector.tsx
-│   │   └── DatePicker.tsx
+│   │   ├── DatePicker.tsx
+│   │   ├── LazyComponents.tsx    # Lazy-loaded component wrappers
+│   │   └── LoadingSkeletons.tsx  # Builder loading states
 │   ├── Navbar.tsx, Logo.tsx, Loader.tsx
 │   ├── ErrorBoundary.tsx
 │   ├── SafeComponents.tsx
@@ -207,6 +213,7 @@ apps/web/src/
 │   ├── useBuilderStore.ts  # Builder UI state
 │   └── useDashboardStore.ts
 ├── templates/
+│   ├── index.tsx          # Templates barrel
 │   ├── ClassicTemplate.tsx
 │   ├── ModernTemplate.tsx
 │   ├── MinimalTemplate.tsx
@@ -219,22 +226,51 @@ apps/web/src/
 │   ├── pdf.ts              # PDF constants
 │   ├── templates.ts        # Template constants
 │   └── index.ts            # APP_NAME, LOGO_TEXT
-└── test/                  # Test utilities
+├── env.ts                 # Environment variable validation
+├── proxy.ts               # Proxy configuration
+└── test/                  # Test utilities (setup.ts, happydom.ts, utils.tsx)
 
 packages/
 ├── database/
-│   ├── prisma/schema.prisma   # Prisma schema (PostgreSQL, client engine)
-│   ├── generated/prisma/      # Generated Prisma client
-│   └── index.ts               # Exports prisma client
-├── types/src/index.ts         # UserType, ProjectType, ApiResponse<T>, Zod schemas
+│   ├── prisma/
+│   │   ├── schema.prisma          # Root Prisma schema (PostgreSQL, client engine)
+│   │   ├── models/                # Split schema models
+│   │   │   ├── resume.prisma      # Resume, Education, Experience, Project, PersonalInformation
+│   │   │   └── user.prisma        # User, Account, Session, Verification, SampleTable
+│   │   └── migrations/            # Migration history
+│   ├── generated/
+│   │   ├── prisma/                # Generated Prisma client
+│   │   └── prismabox/             # Generated Prismabox Zod schemas (per-model)
+│   ├── scripts/seed.ts            # Database seeder
+│   ├── dummy-data/resumes.ts      # Dummy resume data for seeding
+│   ├── prisma.config.ts           # Prisma config (adapter, migrations path)
+│   ├── tsup.config.ts             # tsup bundler config
+│   └── index.ts                   # Exports prisma client
+├── types/src/
+│   ├── index.ts                   # Barrel exports
+│   ├── schema.ts                  # Shared Zod schemas / types
+│   ├── helpers.ts                 # Type helpers
+│   ├── resume/schema.ts           # Resume-specific schemas
+│   └── user/schema.ts             # User-specific schemas
 ├── utils/src/
 │   ├── date.ts                # formatDate()
 │   ├── string.ts              # capitalize()
-│   └── styles.ts              # cn() class merging
+│   ├── styles.ts              # cn() class merging
+│   ├── uuid.ts                # UUID utilities
+│   ├── react.ts               # React utilities
+│   └── index.ts               # Barrel exports
 ├── ui/src/
-│   ├── components/            # Shared components (Badge, Skeleton, SectionTitle, etc.)
 │   ├── button.tsx             # Button component
-│   └── index.tsx              # Barrel exports
+│   ├── index.tsx              # Barrel exports
+│   └── components/            # Shared components
+│       ├── index.tsx          # Components barrel
+│       ├── Badge.tsx
+│       ├── Skeleton.tsx
+│       ├── SectionTitle.tsx
+│       ├── BannerWithTag.tsx
+│       ├── ResumeBuilderSkeleton.tsx
+│       ├── ResumeCardSkeleton.tsx
+│       └── AuthWithSocialForm/ # Social auth form (AuthWithSocialForm.tsx, AuthContext.tsx)
 ```
 
 ## Code Style & Conventions
