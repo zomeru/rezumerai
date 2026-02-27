@@ -1,4 +1,4 @@
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FontSizeValue } from "@/components/ResumeBuilder";
 import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
@@ -27,7 +27,7 @@ export type PreviewMode = "html" | "pdf";
  * @property accentColor - Optional accent color for theming
  */
 interface UsePdfGeneratorProps {
-  resumeData: ResumeResponse;
+  resumeData: ResumeWithRelations;
   previewMode: PreviewMode;
   resumePreviewRef: React.RefObject<HTMLDivElement | null>;
   fontSize: FontSizeValue;
@@ -72,11 +72,7 @@ interface UsePdfGeneratorReturnType {
  * console.log(hash1 === hash3); // => false (changed data = different hash)
  * ```
  */
-function generateDataHash(
-  resumeData: ResumeResponse,
-  fontSize: FontSizeValue,
-  accentColor?: string,
-): string {
+function generateDataHash(resumeData: ResumeWithRelations, fontSize: FontSizeValue, accentColor?: string): string {
   const hashData = JSON.stringify({
     personalInfo: resumeData.personalInfo,
     professionalSummary: resumeData.professionalSummary,
@@ -199,12 +195,7 @@ export function usePdfGenerator({
   // Regenerate PDF when resume data actually changes (detected via hash)
   useEffect(() => {
     // Only regenerate if we're in PDF mode, have a cached PDF, and hash has changed
-    if (
-      previewMode === "pdf" &&
-      pdfBlob &&
-      !isGeneratingPdf &&
-      lastHashRef.current !== dataHash
-    ) {
+    if (previewMode === "pdf" && pdfBlob && !isGeneratingPdf && lastHashRef.current !== dataHash) {
       const timeoutId = setTimeout(() => {
         lastHashRef.current = dataHash;
         setIsGeneratingPdf(true);

@@ -9,11 +9,7 @@ import { auth } from "@/lib/auth";
  * Protected routes that require authentication.
  * Users without a session will be redirected to the sign-in page.
  */
-const PROTECTED_ROUTES: string[] = [
-  ROUTES.WORKSPACE,
-  ROUTES.BUILDER,
-  ROUTES.PREVIEW,
-];
+const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW];
 
 /**
  * Proxy for route protection and security headers.
@@ -26,9 +22,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   });
 
   // Check if the current route is protected
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route),
-  );
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
   // Redirect unauthenticated users from protected routes
   if (isProtectedRoute && !session) {

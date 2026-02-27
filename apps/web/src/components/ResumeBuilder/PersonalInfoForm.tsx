@@ -1,12 +1,12 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { BriefcaseBusiness, Globe, Linkedin, Mail, MapPin, Phone, User } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
 
-/** Non-nullable personal information type derived from ResumeResponse. */
-type PersonalInfo = NonNullable<ResumeResponse["personalInfo"]>;
+/** Non-nullable personal information type derived from ResumeWithRelations. */
+type PersonalInfo = NonNullable<ResumeWithRelations["personalInfo"]>;
 
 /**
  * Props for the PersonalInfoForm component.

@@ -25,12 +25,9 @@ async function resolveSession(request: Request): Promise<SessionUser | null> {
   if (!cookie) return null;
 
   try {
-    const res = await fetch(
-      `${serverEnv?.BETTER_AUTH_URL}/api/auth/get-session`,
-      {
-        headers: { cookie },
-      },
-    );
+    const res = await fetch(`${serverEnv?.BETTER_AUTH_URL}/api/auth/get-session`, {
+      headers: { cookie },
+    });
 
     if (!res.ok) return null;
 

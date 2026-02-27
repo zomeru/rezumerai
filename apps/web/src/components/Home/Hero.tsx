@@ -4,6 +4,7 @@ import { FileText, Sparkles, Target } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
+import { useSession } from "@/lib/auth-client";
 import Logo from "../Logo";
 
 interface MenuItem {
@@ -28,6 +29,8 @@ const samplePreviewHref = `${ROUTES.PREVIEW}/${SAMPLE_PREVIEW_RESUME_ID}`;
  */
 export default function Hero() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session } = useSession();
+
   return (
     <div>
       {/* Navbar */}
@@ -43,18 +46,29 @@ export default function Hero() {
         </div>
 
         <div className="flex gap-2">
-          <Link
-            href={ROUTES.SIGNUP}
-            className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
-          >
-            Get started
-          </Link>
-          <Link
-            href={ROUTES.SIGNIN}
-            className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
-          >
-            Login
-          </Link>
+          {session ? (
+            <Link
+              href={ROUTES.WORKSPACE}
+              className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
+            >
+              Workspace
+            </Link>
+          ) : (
+            <>
+              <Link
+                href={ROUTES.SIGNUP}
+                className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
+              >
+                Get started
+              </Link>
+              <Link
+                href={ROUTES.SIGNIN}
+                className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
+              >
+                Login
+              </Link>
+            </>
+          )}
         </div>
 
         <button

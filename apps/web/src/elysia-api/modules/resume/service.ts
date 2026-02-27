@@ -198,8 +198,14 @@ export abstract class ResumeService {
       where: { resumeId },
       select: { id: true },
     });
-    const keepIds = items.filter((i) => i.id).map((i) => i.id as string);
-    const toDelete = existing.map((e) => e.id).filter((id) => !keepIds.includes(id));
+
+    // ids from items not present in existing = to create; ids from existing not present in items = to delete; ids in both = to update
+    const itemIds = items.map((i) => i.id).filter((id): id is string => !!id);
+    const existingIds = existing.map((e) => e.id);
+    const toDelete = existingIds.filter((id) => !itemIds.includes(id));
+
+    // // const keepIds = items.filter((i) => i.id).map((i) => i.id as string);
+    // // const toDelete = existing.map((e) => e.id).filter((id) => !keepIds.includes(id));
 
     if (toDelete.length > 0) {
       await relation.deleteMany({ where: { id: { in: toDelete } } });
@@ -207,9 +213,11 @@ export abstract class ResumeService {
 
     for (const item of items) {
       const { id, ...rest } = item;
-      if (id) {
+      // id is always present, but not created ones is generated from the client, so check if id exists in the existing records to determine whether to update or create
+      const exists = existingIds.includes(id as string);
+      if (exists) {
         await relation.update({
-          where: { id },
+          where: { id: id as string },
           data: rest as Record<string, unknown>,
         });
       } else {
@@ -217,6 +225,17 @@ export abstract class ResumeService {
           data: { ...rest, resumeId } as Record<string, unknown>,
         });
       }
+
+      // if (id) {
+      //   await relation.update({
+      //     where: { id },
+      //     data: rest as Record<string, unknown>,
+      //   });
+      // } else {
+      //   await relation.create({
+      //     data: { ...rest, resumeId } as Record<string, unknown>,
+      //   });
+      // }
     }
   }
 }

@@ -64,9 +64,7 @@ export const ApiResponseSchema: <
   }>,
 >(
   dataSchema: T,
-) => z.ZodType<ApiResponse<z.infer<T>>> = <T extends z.ZodTypeAny>(
-  dataSchema: T,
-) =>
+) => z.ZodType<ApiResponse<z.infer<T>>> = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
     success: z.boolean(),
     data: dataSchema.optional(),

@@ -1,7 +1,7 @@
 // Dashboard page for managing resumes (create, edit, delete, download).
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
@@ -94,7 +94,7 @@ export default function Dashboard() {
       project: [],
     });
     if (error || !data || !("data" in data) || !data.data) return;
-    const newResume = data.data as ResumeResponse;
+    const newResume = data.data as ResumeWithRelations;
     addResume(newResume);
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/${newResume.id}`);

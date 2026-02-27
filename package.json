@@ -38,7 +38,7 @@
     "check-types": "turbo check-types",
     "lint-staged": "lint-staged",
     "code:check": "bun run check && bun run check-types",
-    "code:verify": "bun run code:check && bun run test:project && bun run build",
+    "code:verify": "bun run code:check && bun run test && bun run build",
     "test": "turbo test",
     "test:watch": "turbo test:watch",
     "test:coverage": "turbo test:coverage",

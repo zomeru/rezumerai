@@ -1,35 +1,15 @@
----
-title: Do not wrap a simple expression with a primitive result type in useMemo
-impact: LOW-MEDIUM
-impactDescription: wasted computation on every render
-tags: rerender, useMemo, optimization
----
+# Rule Summary
 
-## Do not wrap a simple expression with a primitive result type in useMemo
+**Title:** Do not wrap a simple expression with a primitive result type in useMemo
 
-When an expression is simple (few logical or arithmetical operators) and has a primitive result type (boolean, number, string), do not wrap it in `useMemo`.
-Calling `useMemo` and comparing hook dependencies may consume more resources than the expression itself.
+**Impact:** LOW-MEDIUM (wasted computation on every render)
 
-**Incorrect:**
+**Key Principle:** When dealing with straightforward expressions that return primitive types (boolean, number, string), avoid wrapping them in `useMemo`. The overhead of the hook and dependency comparison typically outweighs any performance benefit.
 
-```tsx
-function Header({ user, notifications }: Props) {
-  const isLoading = useMemo(() => {
-    return user.isLoading || notifications.isLoading
-  }, [user.isLoading, notifications.isLoading])
+**The Problem:**
+The example shows an unnecessary `useMemo` wrapping a simple boolean OR operation. "Calling `useMemo` and comparing hook dependencies may consume more resources than" performing the simple calculation itself.
 
-  if (isLoading) return <Skeleton />
-  // return some markup
-}
-```
+**The Solution:**
+Compute the value directly without memoization. In the corrected example, `isLoading` is assigned the result of `user.isLoading || notifications.isLoading` without any hook wrapper.
 
-**Correct:**
-
-```tsx
-function Header({ user, notifications }: Props) {
-  const isLoading = user.isLoading || notifications.isLoading
-
-  if (isLoading) return <Skeleton />
-  // return some markup
-}
-```
+**Tags:** rerender, useMemo, optimization

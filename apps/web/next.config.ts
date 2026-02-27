@@ -73,16 +73,12 @@ const nextConfig: NextConfig = {
 
   // Compiler options for React 19
   compiler: {
-    removeConsole:
-      process.env.NODE_ENV === "production"
-        ? { exclude: ["error", "warn"] }
-        : false,
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
 };
 
-const withBundleAnalyzer: (config: typeof nextConfig) => typeof nextConfig =
-  require("@next/bundle-analyzer")({
-    enabled: process.env.ANALYZE === "true",
-  });
+const withBundleAnalyzer: (config: typeof nextConfig) => typeof nextConfig = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
 
 export default withBundleAnalyzer(nextConfig);

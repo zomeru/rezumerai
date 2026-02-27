@@ -1,4 +1,4 @@
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 
 /**
  * Props interface for resume template components.
@@ -16,7 +16,7 @@ import type { ResumeResponse } from "@rezumerai/types";
  * ```
  */
 export interface TemplateProps {
-  data: ResumeResponse;
+  data: ResumeWithRelations;
   accentColor: string;
 }
 

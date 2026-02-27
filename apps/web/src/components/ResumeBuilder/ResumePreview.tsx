@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type React from "react";
@@ -21,7 +21,7 @@ import { type FontSizeValue, getFontScale } from "./FontSizeSelector";
  * @property previewMode - Current preview mode ("html" or "pdf")
  */
 export interface ResumePreviewProps {
-  data: ResumeResponse;
+  data: ResumeWithRelations;
   template: TemplateType;
   accentColor: string;
   className?: string;
@@ -39,7 +39,7 @@ export interface ResumePreviewProps {
  */
 export interface RenderTemplateProps {
   template: TemplateType;
-  data: ResumeResponse;
+  data: ResumeWithRelations;
   accentColor: string;
   fontSize?: FontSizeValue;
 }

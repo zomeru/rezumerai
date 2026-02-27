@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -16,7 +16,7 @@ export default function Preview() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
-  const [resumeData, setResumeData] = useState<ResumeResponse | null>(null);
+  const [resumeData, setResumeData] = useState<ResumeWithRelations | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

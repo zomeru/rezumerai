@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ResumePreview } from "@/components/ResumeBuilder";
@@ -14,7 +14,7 @@ import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
  * @property onClose - Callback to close the modal after download completes
  */
 export interface DownloadResumeModalProps {
-  resume: ResumeResponse;
+  resume: ResumeWithRelations;
   isOpen: boolean;
   onClose: () => void;
 }

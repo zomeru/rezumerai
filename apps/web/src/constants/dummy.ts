@@ -1,12 +1,12 @@
 // @ts-nocheck
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 
 /**
  * Sample resume data for testing and demonstration purposes.
  * Contains multiple pre-filled resume examples with complete data.
  */
-export const dummyResumeData: ResumeResponse[] = [
+export const dummyResumeData: ResumeWithRelations[] = [
   {
     // ----------------------------------------------------- Resume 1 ------------------------------------------------------
     id: "68d2a31a1c4dd38875bb037e",
@@ -219,18 +219,7 @@ export const dummyResumeData: ResumeResponse[] = [
     public: true,
     professionalSummary:
       "Dedicated Backend Developer with 7+ years of experience building secure, high-performance APIs and microservices using Node.js, Python, and PostgreSQL. Passionate about scalability, automation, and clean architecture.",
-    skills: [
-      "Node.js",
-      "Python",
-      "PostgreSQL",
-      "MongoDB",
-      "Docker",
-      "Kubernetes",
-      "CI/CD",
-      "Redis",
-      "GraphQL",
-      "AWS",
-    ],
+    skills: ["Node.js", "Python", "PostgreSQL", "MongoDB", "Docker", "Kubernetes", "CI/CD", "Redis", "GraphQL", "AWS"],
     experience: [
       {
         company: "DataNest Solutions",
@@ -301,7 +290,7 @@ export const dummyResumeData: ResumeResponse[] = [
  * Used as the base structure for creating new resumes.
  * All string fields are empty, arrays contain single empty entries.
  */
-export const defaultResume: ResumeResponse = {
+export const defaultResume: ResumeWithRelations = {
   id: "",
   userId: "",
   title: "",

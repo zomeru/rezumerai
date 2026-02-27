@@ -1,7 +1,7 @@
 // Resume builder page with multi-step form, live preview, and PDF export.
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeUpdateBody, ResumeWithRelations } from "@rezumerai/types";
 import { ResumeBuilderSkeleton } from "@rezumerai/ui";
 import { cn } from "@rezumerai/utils/styles";
 import {
@@ -116,7 +116,7 @@ export default function ResumeBuilder() {
     accentColor: resumeData.accentColor,
   });
 
-  function updateResumeData(data: NonNullable<ResumeResponse["personalInfo"]>) {
+  function updateResumeData(data: NonNullable<ResumeWithRelations["personalInfo"]>) {
     updateResume(resumeId, { personalInfo: data });
   }
 
@@ -142,15 +142,15 @@ export default function ResumeBuilder() {
     updateResume(resumeId, { professionalSummary: summary });
   }
 
-  function handleExperienceChange(experience: ResumeResponse["experience"]) {
+  function handleExperienceChange(experience: ResumeWithRelations["experience"]) {
     updateResume(resumeId, { experience });
   }
 
-  function handleEducationChange(education: ResumeResponse["education"]) {
+  function handleEducationChange(education: ResumeWithRelations["education"]) {
     updateResume(resumeId, { education });
   }
 
-  function handleProjectChange(project: ResumeResponse["project"]) {
+  function handleProjectChange(project: ResumeWithRelations["project"]) {
     updateResume(resumeId, { project });
   }
 
@@ -165,7 +165,7 @@ export default function ResumeBuilder() {
   async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
-      const { data, error } = await api.resumes({ id: resumeId }).patch({
+      const payload: ResumeUpdateBody = {
         title: resumeData.title,
         public: resumeData.public,
         professionalSummary: resumeData.professionalSummary,
@@ -174,13 +174,17 @@ export default function ResumeBuilder() {
         fontSize: resumeData.fontSize,
         customFontSize: resumeData.customFontSize,
         skills: resumeData.skills,
-        personalInfo: resumeData.personalInfo ?? undefined,
+        personalInfo: resumeData.personalInfo ?? null,
         experience: resumeData.experience,
         education: resumeData.education,
         project: resumeData.project,
-      });
+      };
+
+      const { data, error } = await api.resumes({ id: resumeId }).patch(payload);
+      console.log("Save response:", { data, error });
+
       if (!error && data && "data" in data && data.data) {
-        updateResume(resumeId, data.data as Partial<ResumeResponse>);
+        updateResume(resumeId, data.data as Partial<ResumeWithRelations>);
         setLastSaved(new Date());
       }
     } finally {
@@ -214,7 +218,8 @@ export default function ResumeBuilder() {
         render: () => (
           <PersonalInfoForm
             data={
-              resumeData.personalInfo ?? (defaultResume.personalInfo as NonNullable<ResumeResponse["personalInfo"]>)
+              resumeData.personalInfo ??
+              (defaultResume.personalInfo as NonNullable<ResumeWithRelations["personalInfo"]>)
             }
             onChangeAction={updateResumeData}
             removeBackground={removeBackground}

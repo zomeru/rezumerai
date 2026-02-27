@@ -1,65 +1,34 @@
----
-title: Avoid Duplicate Serialization in RSC Props
-impact: LOW
-impactDescription: reduces network payload by avoiding duplicate serialization
-tags: server, rsc, serialization, props, client-components
----
+# Avoid Duplicate Serialization in RSC Props
 
-## Avoid Duplicate Serialization in RSC Props
+**Impact: LOW** – This pattern reduces network payload by preventing duplicate serialization.
 
-**Impact: LOW (reduces network payload by avoiding duplicate serialization)**
+## Key Principle
 
-RSC→client serialization deduplicates by object reference, not value. Same reference = serialized once; new reference = serialized again. Do transformations (`.toSorted()`, `.filter()`, `.map()`) in client, not server.
+React Server Components deduplicate data based on object reference, not value. When you pass the same reference twice, it serializes once. Creating a new reference (through transformations) causes full re-serialization.
 
-**Incorrect (duplicates array):**
+## The Problem
 
-```tsx
-// RSC: sends 6 strings (2 arrays × 3 items)
-<ClientList usernames={usernames} usernamesOrdered={usernames.toSorted()} />
-```
+Transforming arrays or objects on the server before passing to client components creates duplicate serialization:
 
-**Correct (sends 3 strings):**
+> "RSC→client serialization deduplicates by object reference, not value. Same reference = serialized once"
 
-```tsx
-// RSC: send once
-<ClientList usernames={usernames} />
+When you call `.toSorted()`, `.filter()`, or `.map()` on server-side data, you're creating new array/object references that must be serialized separately.
 
-// Client: transform there
-'use client'
-const sorted = useMemo(() => [...usernames].sort(), [usernames])
-```
+## The Solution
 
-**Nested deduplication behavior:**
+Move transformations to the client using `useMemo`:
 
-Deduplication works recursively. Impact varies by data type:
+- Server: send the original data once
+- Client: apply sorting, filtering, or mapping as needed
 
-- `string[]`, `number[]`, `boolean[]`: **HIGH impact** - array + all primitives fully duplicated
-- `object[]`: **LOW impact** - array duplicated, but nested objects deduplicated by reference
+## Impact Varies by Data Type
 
-```tsx
-// string[] - duplicates everything
-usernames={['a','b']} sorted={usernames.toSorted()} // sends 4 strings
+**High impact:** Primitive arrays (`string[]`, `number[]`) duplicate the entire array and all elements
 
-// object[] - duplicates array structure only
-users={[{id:1},{id:2}]} sorted={users.toSorted()} // sends 2 arrays + 2 unique objects (not 4)
-```
+**Low impact:** Object arrays duplicate only the array structure; individual objects remain deduplicated by reference
 
-**Operations breaking deduplication (create new references):**
+## Operations That Break Deduplication
 
-- Arrays: `.toSorted()`, `.filter()`, `.map()`, `.slice()`, `[...arr]`
-- Objects: `{...obj}`, `Object.assign()`, `structuredClone()`, `JSON.parse(JSON.stringify())`
+Array methods (`.toSorted()`, `.filter()`, `.map()`, `.slice()`, spread syntax) and object spreading (`{...obj}`, `Object.assign()`) all create new references and trigger re-serialization.
 
-**More examples:**
-
-```tsx
-// ❌ Bad
-<C users={users} active={users.filter(u => u.active)} />
-<C product={product} productName={product.name} />
-
-// ✅ Good
-<C users={users} />
-<C product={product} />
-// Do filtering/destructuring in client
-```
-
-**Exception:** Pass derived data when transformation is expensive or client doesn't need original.
+**Exception:** Pass derived data when transformations are computationally expensive or unnecessary for the client.

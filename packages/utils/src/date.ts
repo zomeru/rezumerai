@@ -127,32 +127,62 @@ export function isToday(date: Date | string): boolean {
  * formatShortDate('')           // => ''
  * ```
  */
-export function formatShortDate(date: string): string {
-  if (!date) return "";
+export function formatShortDate(dateInput: string | Date): string {
+  if (!dateInput) return "";
 
-  const parts = date.split("-");
-  const yearNum = Number(parts[0]);
-  const monthNum = Number(parts[1]);
+  let dateObj: Date;
 
-  if (Number.isNaN(yearNum) || Number.isNaN(monthNum)) return "";
+  if (dateInput instanceof Date) {
+    dateObj = dateInput;
+  } else if (typeof dateInput === "string") {
+    const parts = dateInput.split("-").map((p) => Number(p));
+    const [year, month, day] = parts;
 
-  // Full date format: YYYY-MM-DD
-  if (parts.length >= 3 && parts[2]) {
-    const dayNum = Number(parts[2]);
-    if (!Number.isNaN(dayNum)) {
-      return new Date(yearNum, monthNum - 1, dayNum).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+    if (!Number.isInteger(year)) return "";
+
+    if (parts.length === 1) {
+      dateObj = new Date(year, 0, 1);
+    } else if (parts.length === 2 && Number.isInteger(month) && month >= 1 && month <= 12) {
+      dateObj = new Date(year, month - 1, 1);
+    } else if (
+      parts.length >= 3 &&
+      Number.isInteger(month) &&
+      month >= 1 &&
+      month <= 12 &&
+      Number.isInteger(day) &&
+      day >= 1 &&
+      day <= 31
+    ) {
+      dateObj = new Date(year, month - 1, day);
+      // Validate JS date overflow
+      if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+        return "";
+      }
+    } else {
+      return "";
     }
+  } else {
+    return "";
   }
 
-  // Legacy format: YYYY-MM
-  return new Date(yearNum, monthNum - 1).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
+  // Format the date
+  if (dateObj.getDate() === 1 && dateObj.getMonth() === 0) {
+    // Only year
+    return dateObj.toLocaleDateString("en-US", { year: "numeric" });
+  } else if (dateObj.getDate() === 1) {
+    // Year + Month
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  } else {
+    // Full date
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
 }
 
 /**
@@ -169,22 +199,44 @@ export function formatShortDate(date: string): string {
  * ```
  */
 export function parseYearMonth(dateStr: string): Date | undefined {
-  if (!dateStr) return undefined;
+  if (!dateStr || typeof dateStr !== "string") return undefined;
 
-  const parts = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map((p) => Number(p));
+
   const [year, month, day] = parts;
 
-  if (year === undefined || month === undefined || Number.isNaN(year) || Number.isNaN(month)) {
-    return undefined;
+  // Year is mandatory
+  if (!Number.isInteger(year)) return undefined;
+
+  // YYYY
+  if (parts.length === 1) {
+    return new Date(year, 0, 1);
   }
 
-  // Full date format: YYYY-MM-DD
-  if (day !== undefined && !Number.isNaN(day)) {
-    return new Date(year, month - 1, day);
+  // YYYY-MM
+  if (parts.length === 2 && Number.isInteger(month) && month >= 1 && month <= 12) {
+    return new Date(year, month - 1, 1);
   }
 
-  // Legacy format: YYYY-MM
-  return new Date(year, month - 1);
+  // YYYY-MM-DD
+  if (
+    parts.length === 3 &&
+    Number.isInteger(month) &&
+    Number.isInteger(day) &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= 31
+  ) {
+    const date = new Date(year, month - 1, day);
+
+    // Guard against JS date overflow (e.g. 2024-02-31)
+    if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+      return date;
+    }
+  }
+
+  return undefined;
 }
 
 /**

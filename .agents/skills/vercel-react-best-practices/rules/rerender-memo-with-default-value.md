@@ -1,31 +1,30 @@
----
+# Extract Default Non-primitive Parameter Value from Memoized Component to Constant
 
-title: Extract Default Non-primitive Parameter Value from Memoized Component to Constant
-impact: MEDIUM
-impactDescription: restores memoization by using a constant for default value
-tags: rerender, memo, optimization
+**Impact:** MEDIUM
+**Impact Description:** Restores memoization by using a constant for default value
+**Tags:** rerender, memo, optimization
 
----
+## Summary
 
-## Extract Default Non-primitive Parameter Value from Memoized Component to Constant
+When a memoized component has a default value for a non-primitive optional parameter (array, function, or object), omitting that parameter breaks memoization. This occurs because new instances are created on each render cycle and fail strict equality checks in `memo()`.
 
-When memoized component has a default value for some non-primitive optional parameter, such as an array, function, or object, calling the component without that parameter results in broken memoization. This is because new value instances are created on every rerender, and they do not pass strict equality comparison in `memo()`.
+## Solution
 
-To address this issue, extract the default value into a constant.
+Move the default value outside the component definition as a constant to ensure stability across renders.
 
-**Incorrect (`onClick` has different values on every rerender):**
-
+### Problematic Pattern
 ```tsx
 const UserAvatar = memo(function UserAvatar({ onClick = () => {} }: { onClick?: () => void }) {
   // ...
 })
 
-// Used without optional onClick
+// Calling without the optional parameter
 <UserAvatar />
 ```
 
-**Correct (stable default value):**
+The inline function creates a new reference on every render, defeating memoization benefits.
 
+### Recommended Approach
 ```tsx
 const NOOP = () => {};
 
@@ -33,6 +32,8 @@ const UserAvatar = memo(function UserAvatar({ onClick = NOOP }: { onClick?: () =
   // ...
 })
 
-// Used without optional onClick
+// Calling without the optional parameter
 <UserAvatar />
 ```
+
+By extracting the default into a module-level constant, the same reference persists across renders, preserving memoization effectiveness.

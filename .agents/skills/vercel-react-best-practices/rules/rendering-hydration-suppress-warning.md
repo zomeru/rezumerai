@@ -1,24 +1,28 @@
----
-title: Suppress Expected Hydration Mismatches
-impact: LOW-MEDIUM
-impactDescription: avoids noisy hydration warnings for known differences
-tags: rendering, hydration, ssr, nextjs
----
+# Suppress Expected Hydration Mismatches
 
-## Suppress Expected Hydration Mismatches
+**Metadata:**
+- Impact: LOW-MEDIUM
+- Impact Description: avoids noisy hydration warnings for known differences
+- Tags: rendering, hydration, ssr, nextjs
 
-In SSR frameworks (e.g., Next.js), some values are intentionally different on server vs client (random IDs, dates, locale/timezone formatting). For these *expected* mismatches, wrap the dynamic text in an element with `suppressHydrationWarning` to prevent noisy warnings. Do not use this to hide real bugs. Don’t overuse it.
+**Overview:**
 
-**Incorrect (known mismatch warnings):**
+In Server-Side Rendering frameworks like Next.js, certain values naturally differ between server and client environments—such as random IDs, timestamps, and locale-specific formatting. The `suppressHydrationWarning` attribute should wrap elements containing these expected differences to eliminate console warnings.
 
+**Key Guidance:**
+
+The rule emphasizes: "Do not use this to hide real bugs. Don't overuse it." This tool targets *known, intentional* mismatches only, not legitimate hydration problems.
+
+**Examples:**
+
+*Problematic approach:*
 ```tsx
 function Timestamp() {
   return <span>{new Date().toLocaleString()}</span>
 }
 ```
 
-**Correct (suppress expected mismatch only):**
-
+*Recommended approach:*
 ```tsx
 function Timestamp() {
   return (
@@ -28,3 +32,5 @@ function Timestamp() {
   )
 }
 ```
+
+The corrected version uses the `suppressHydrationWarning` attribute to acknowledge the intentional server-client difference without generating warnings.

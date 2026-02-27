@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
 import { useState } from "react";
@@ -8,7 +8,7 @@ import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 
-type Education = ResumeResponse["education"];
+type Education = ResumeWithRelations["education"];
 
 /**
  * Props for the EducationFormEnhanced component.

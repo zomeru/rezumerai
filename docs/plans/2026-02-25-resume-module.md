@@ -37,7 +37,7 @@ Biome rules to follow (will fail `bun run biome` otherwise):
 
 **Context:**
 - `ResumeSchema` currently has `projects: ProjectSchema` but Prisma, templates, builder all use `project` (singular). This causes TypeScript errors in the builder page.
-- `ResumeWithRelations` currently includes the `user` relation — remove it so the type is assignable to `ResumeResponse[]` in the store without casting.
+- `ResumeWithRelations` currently includes the `user` relation — remove it so the type is assignable to `ResumeWithRelations[]` in the store without casting.
 - Add `ResumeUpdateBodySchema` and `ResumeUpdateBody` type for the PATCH endpoint.
 
 **Step 1: Edit `packages/types/src/resume/schema.ts`**
@@ -917,17 +917,17 @@ Expected: FAIL — `addResume is not a function` and related failures
 Replace the file content:
 
 ```typescript
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { create } from "zustand";
 import { api } from "@/lib/api";
 
 interface ResumeStore {
-  resumes: ResumeResponse[];
+  resumes: ResumeWithRelations[];
   isLoading: boolean;
   hasFetched: boolean;
   fetchResumes: (force?: boolean) => Promise<void>;
-  addResume: (resume: ResumeResponse) => void;
-  updateResume: (id: string, updates: Partial<ResumeResponse>) => void;
+  addResume: (resume: ResumeWithRelations) => void;
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>) => void;
   deleteResume: (id: string) => Promise<void>;
 }
 
@@ -942,17 +942,17 @@ export const useResumeStore = create<ResumeStore>((set, get) => ({
     try {
       const { data } = await api.resumes.get();
       if (data && "data" in data && data.data) {
-        set({ resumes: data.data as ResumeResponse[], hasFetched: true });
+        set({ resumes: data.data as ResumeWithRelations[], hasFetched: true });
       }
     } finally {
       set({ isLoading: false });
     }
   },
 
-  addResume: (resume: ResumeResponse): void =>
+  addResume: (resume: ResumeWithRelations): void =>
     set((state) => ({ resumes: [...state.resumes, resume] })),
 
-  updateResume: (id: string, updates: Partial<ResumeResponse>): void =>
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>): void =>
     set((state) => ({
       resumes: state.resumes.map((resume) =>
         resume.id === id ? { ...resume, ...updates } : resume,
@@ -1049,7 +1049,7 @@ async function handleCreateResume(title: string): Promise<void> {
     project: [],
   });
   if (error || !data?.success || !data.data) return;
-  addResume(data.data as ResumeResponse);
+  addResume(data.data as ResumeWithRelations);
   setModalState({ type: null });
   router.push(`${ROUTES.BUILDER}/${data.data.id}`);
 }
@@ -1081,9 +1081,9 @@ Add `api` import at the top of the file:
 import { api } from "@/lib/api";
 ```
 
-Add `ResumeResponse` to existing type imports if not already present:
+Add `ResumeWithRelations` to existing type imports if not already present:
 ```typescript
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 ```
 
 **Step 2: Run biome check**
@@ -1138,7 +1138,7 @@ async function handleSaveResume(): Promise<void> {
       project: resumeData.project,
     });
     if (!error && data?.success && data.data) {
-      updateResume(resumeId, data.data as Partial<ResumeResponse>);
+      updateResume(resumeId, data.data as Partial<ResumeWithRelations>);
       setLastSaved(new Date());
     }
   } catch {

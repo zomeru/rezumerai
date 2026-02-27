@@ -1,4 +1,4 @@
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { create } from "zustand";
 import { api } from "@/lib/api";
 
@@ -14,12 +14,12 @@ import { api } from "@/lib/api";
  * @property deleteResume - Deletes a resume via API then removes it from the store
  */
 interface ResumeStore {
-  resumes: ResumeResponse[];
+  resumes: ResumeWithRelations[];
   isLoading: boolean;
   hasFetched: boolean;
   fetchResumes: (force?: boolean) => Promise<void>;
-  addResume: (resume: ResumeResponse) => void;
-  updateResume: (id: string, updates: Partial<ResumeResponse>) => void;
+  addResume: (resume: ResumeWithRelations) => void;
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>) => void;
   deleteResume: (id: string) => Promise<void>;
 }
 
@@ -34,16 +34,16 @@ export const useResumeStore = create<ResumeStore>((set, get) => ({
     try {
       const { data } = await api.resumes.get();
       if (data && "data" in data && data.data) {
-        set({ resumes: data.data as ResumeResponse[], hasFetched: true });
+        set({ resumes: data.data as ResumeWithRelations[], hasFetched: true });
       }
     } finally {
       set({ isLoading: false });
     }
   },
 
-  addResume: (resume: ResumeResponse): void => set((state) => ({ resumes: [...state.resumes, resume] })),
+  addResume: (resume: ResumeWithRelations): void => set((state) => ({ resumes: [...state.resumes, resume] })),
 
-  updateResume: (id: string, updates: Partial<ResumeResponse>): void =>
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>): void =>
     set((state) => ({
       resumes: state.resumes.map((resume) => (resume.id === id ? { ...resume, ...updates } : resume)),
     })),

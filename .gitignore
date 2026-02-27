@@ -81,7 +81,6 @@ next-env.d.ts
 # Tooling / AI / MCP
 ####################################
 .serena
-.mcp.json
 .playwright-mcp
 .agent-files/feature-requests
 .claude/worktrees

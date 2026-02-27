@@ -13,21 +13,14 @@ async function downloadPdfWorker(): Promise<void> {
   const version = await getPdfjsVersion();
   console.log(`📥 Downloading PDF worker for pdfjs-dist@${version}...`);
 
-  const res = await fetch(
-    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`,
-  );
+  const res = await fetch(`https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`);
 
   if (!res.ok) {
     throw new Error(`Failed to download PDF worker: ${res.statusText}`);
   }
 
-  console.log(
-    "💾 Saving PDF worker to public/pdf-worker/pdf.worker.min.mjs...",
-  );
-  await Bun.write(
-    new URL("../public/pdf-worker/pdf.worker.min.mjs", import.meta.url),
-    res,
-  );
+  console.log("💾 Saving PDF worker to public/pdf-worker/pdf.worker.min.mjs...");
+  await Bun.write(new URL("../public/pdf-worker/pdf.worker.min.mjs", import.meta.url), res);
 }
 
 downloadPdfWorker().catch((err) => {

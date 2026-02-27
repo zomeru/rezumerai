@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "skills": {
+    "Bun Bundler": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "c5cc9aef8069e07db1c9dca3b0f99add19c187e254205d0b475a9b89caaf1a9c"
+    },
+    "Bun Next.js": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "27373d0b866ff1d38b7f35481be35ffffa521d86fcd2822d98ad0d7f9d7d106c"
+    },
+    "api-authentication": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "f606790afd53a442a2f701748b27093deb3e0e1a5c7aa5a1a7978d7c7d87fb7a"
+    },
+    "api-error-handling": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "dc82c03aa59f51525cb26c12514a165a26f6c6d68c68a7c3014a6a555d4a4655"
+    },
+    "api-filtering-sorting": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "032d37166ed7c9343791455b86491b95f26e383b7aa4479158ea5ea26ea5b122"
+    },
+    "api-pagination": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "367229e3423ea7fe557045640aeeb04b16813d007d86444d2a1ff537e86eabe7"
+    },
+    "api-rate-limiting": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "69e54ee86fed194bdc942d72bd2c39415a41bf78fe504d47f1143d7c0b415cc2"
+    },
+    "api-reference-documentation": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "ee948058e9f1f06a29f5367d1b81bbe52c1b24f43cac9f9e45b087a679613bb2"
+    },
+    "api-response-optimization": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "8480f7b0698bad1d674970476c5577192fc2ebf7d6692f6e7136a5f50f5813ad"
+    },
+    "api-security-hardening": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "ddfc46495c098199afed06b85cca20092912e7b29a095cd7f989e3f0dc2ff471"
+    },
+    "architecture-patterns": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "84d959fabf294f77a3cb87f499fb36b86229a81e23cf6b148de3194510d4cef2"
+    },
+    "better-auth": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "dbf750eb5f48f712c2a5c01473ccbb23b5d19c2d4cac932470ae8e333e733e5c"
+    },
+    "csrf-protection": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "8b20d60ecd523b86e13afdb98092bde8abe17dbb4b5dafe1b639050731e40ed0"
+    },
+    "database-schema-design": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "c6610fe36f64adaf22a24eee2d9f0f12ba4f5424233da816890a1dfe0ba32c33"
+    },
+    "database-sharding": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "5c8ec3416f3e6e51276365bd2e5eecfc7b3fa57b2b6ac63ebb97e5562d83e468"
+    },
+    "nextjs-senior-dev": {
+      "source": "georgekhananaev/claude-skills-vault",
+      "sourceType": "github",
+      "computedHash": "6d0d06ee81e089ed853b28b801a360dd8976e8eb0b23acc0301d069c71fbebe1"
+    },
+    "playwright": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "073a6b405e6050d945c1b579fab087507d986d740378c1cbc6f5b96f696c4b5a"
+    },
+    "prisma-expert": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "69ba606f9cd359c5f83ee538da620a452f2b70b3f76d2fe86c44305030b0ab5e"
+    },
+    "react": {
+      "source": "lobehub/lobehub",
+      "sourceType": "github",
+      "computedHash": "ec98a32434475c4bd1826b8aa9c62efda8c38030bb9f1450cfd2d736f3af99e6"
+    },
+    "react-best-practices": {
+      "source": "georgekhananaev/claude-skills-vault",
+      "sourceType": "github",
+      "computedHash": "62725197020ed323d333c69c3d93313f90c968cf001a4b32f883a9d6f247cd39"
+    },
+    "react-composition-patterns": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "81fcf95a63235527f54afbe21b48764fae0ccf3a784980e7d2e4f49bf4740619"
+    },
+    "react-dev": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "4ce3a30e2ad46fdb79f01e0e44701f961c055da7f25f9418af0283a7ad54b791"
+    },
+    "react-expert": {
+      "source": "reactjs/react.dev",
+      "sourceType": "github",
+      "computedHash": "e53cc1a286987b7f28ba5cdd29e8ebacdde0d5822d40e938652fec8c47f33efa"
+    },
+    "senior-backend": {
+      "source": "georgekhananaev/claude-skills-vault",
+      "sourceType": "github",
+      "computedHash": "487ffa9f11a2496285d1097bbd2959475bc700db73b4a1931acc19c1e66eb857"
+    },
+    "store-data-structures": {
+      "source": "lobehub/lobehub",
+      "sourceType": "github",
+      "computedHash": "df2b5007084cd015ea70d2318be20e4b6c104b807ac856dff07a3a4fe072951d"
+    },
+    "system-architect": {
+      "source": "georgekhananaev/claude-skills-vault",
+      "sourceType": "github",
+      "computedHash": "566ba5c25546aeec23927b111f973110ea3b0719f2d39bbb37b82dd6d69bbd0a"
+    },
+    "tailwind-v4-shadcn": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "dedaff41ff3331cfe9734eee4203a1e85c6a013eec46df83d9c00e3d36e421f9"
+    },
+    "token-optimizer": {
+      "source": "georgekhananaev/claude-skills-vault",
+      "sourceType": "github",
+      "computedHash": "ee8991b4e732efa583907a4caa70d18ab57675d209efed2ce1fec266d6ea85db"
+    },
+    "typescript": {
+      "source": "lobehub/lobehub",
+      "sourceType": "github",
+      "computedHash": "7f33161bce3aeebc7ab66d385865b79cacfe63d2bdbbb8059c4f17ec653c078c"
+    },
+    "typescript-review": {
+      "source": "metabase/metabase",
+      "sourceType": "github",
+      "computedHash": "5eb0f472b8fcf1a350b78943ef92f665790db138f956680285adfa5003abc4c7"
+    },
+    "typescript-write": {
+      "source": "metabase/metabase",
+      "sourceType": "github",
+      "computedHash": "0ea3c2b9be8387f9143c07b73652b36cf3116fa03167f44ca4eb8b9679d33c63"
+    },
+    "vercel-react-best-practices": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "f813d80f7cf4455e1de92473eb39c38c6d1be1a84928820454f6f79960852054"
+    },
+    "web-performance-optimization": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "d85021dde0473e2a66be6de89878c84951c06247893e626bcdba5e9ba971626e"
+    },
+    "zod": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "df8b575c28f7f93fbd7d7971d785d47b84055063654a05ddbebf8ebd3536b2c4"
+    },
+    "zustand": {
+      "source": "lobehub/lobehub",
+      "sourceType": "github",
+      "computedHash": "ef9a6e8dea1837804918bc6533e52b6e05b4589dbe9c26af692111413328a13c"
+    }
+  }
+}

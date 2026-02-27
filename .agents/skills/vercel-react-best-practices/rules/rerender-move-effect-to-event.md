@@ -1,45 +1,18 @@
----
-title: Put Interaction Logic in Event Handlers
-impact: MEDIUM
-impactDescription: avoids effect re-runs and duplicate side effects
-tags: rerender, useEffect, events, side-effects, dependencies
----
+# Put Interaction Logic in Event Handlers
 
-## Put Interaction Logic in Event Handlers
+**Rule Summary:**
+Place side effects triggered by user actions (submit, click, drag) directly in event handlers rather than modeling them as state combined with useEffect. This prevents unnecessary effect re-runs and eliminates duplicate side effects.
 
-If a side effect is triggered by a specific user action (submit, click, drag), run it in that event handler. Do not model the action as state + effect; it makes effects re-run on unrelated changes and can duplicate the action.
+**Key Problem:**
+The incorrect pattern creates a dependency on state that causes effects to re-execute whenever unrelated dependencies change, potentially duplicating actions.
 
-**Incorrect (event modeled as state + effect):**
+**The Fix:**
+Execute the side effect logic directly within the event handler function instead of using state as a mediator.
 
-```tsx
-function Form() {
-  const [submitted, setSubmitted] = useState(false)
-  const theme = useContext(ThemeContext)
+**Example Transformation:**
+- **Before:** Button click sets `submitted` state → useEffect watches `submitted` → runs side effect
+- **After:** Button click directly calls handler → side effect runs once per interaction
 
-  useEffect(() => {
-    if (submitted) {
-      post('/api/register')
-      showToast('Registered', theme)
-    }
-  }, [submitted, theme])
+**Reference:** React documentation on [removing effect dependencies](https://react.dev/learn/removing-effect-dependencies#should-this-code-move-to-an-event-handler)
 
-  return <button onClick={() => setSubmitted(true)}>Submit</button>
-}
-```
-
-**Correct (do it in the handler):**
-
-```tsx
-function Form() {
-  const theme = useContext(ThemeContext)
-
-  function handleSubmit() {
-    post('/api/register')
-    showToast('Registered', theme)
-  }
-
-  return <button onClick={handleSubmit}>Submit</button>
-}
-```
-
-Reference: [Should this code move to an event handler?](https://react.dev/learn/removing-effect-dependencies#should-this-code-move-to-an-event-handler)
+**Impact:** Medium - Reduces unnecessary re-renders and prevents side effect duplication

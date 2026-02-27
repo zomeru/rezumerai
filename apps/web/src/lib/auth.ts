@@ -33,8 +33,7 @@ export const auth = betterAuth({
     maxPasswordLength: 32,
     password: {
       hash: (password) => hash(password, argon2Options),
-      verify: ({ password, hash: storedHash }) =>
-        verify(storedHash, password, argon2Options),
+      verify: ({ password, hash: storedHash }) => verify(storedHash, password, argon2Options),
     },
   },
   socialProviders: {

@@ -1,13 +1,13 @@
 "use client";
 
-import type { ResumeResponse } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { useState } from "react";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
 import RichTextEditor from "./RichTextEditor";
 
-type Project = ResumeResponse["project"];
+type Project = ResumeWithRelations["project"];
 
 /**
  * Props for the ProjectFormEnhanced component.
