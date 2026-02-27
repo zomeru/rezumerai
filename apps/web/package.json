@@ -8,7 +8,7 @@
     "dev": "bun run with-env next dev",
     "build": "bun run with-env next build",
     "start": "next start",
-    "check-types": "tsc --noEmit",
+    "check:types": "tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",

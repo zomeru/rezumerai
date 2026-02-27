@@ -24,7 +24,7 @@
     "db:studio": "bun run with-env prisma studio --port 5556",
     "db:pull": "bun run with-env prisma db pull",
     "db:seed": "bun run db:pull && bun run with-env bun ./scripts/seed.ts",
-    "check-types": "bun run db:generate && tsc --noEmit",
+    "check:types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
     "format": "bun run with-env prisma format",
     "clean:generated": "rimraf generated/",

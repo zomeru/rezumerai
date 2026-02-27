@@ -103,7 +103,7 @@ Root Tasks (`//#taskname`) are ONLY for tasks that truly cannot exist in package
 ```
 Configure a task?
 ├─ Define task dependencies → references/configuration/tasks.md
-├─ Lint/check-types (parallel + caching) → Use Transit Nodes pattern (see below)
+├─ Lint/check:types (parallel + caching) → Use Transit Nodes pattern (see below)
 ├─ Specify build outputs → references/configuration/tasks.md#outputs
 ├─ Handle environment variables → references/environment/RULE.md
 ├─ Set up dev/watch tasks → references/configuration/tasks.md#persistent

@@ -100,7 +100,7 @@ bun run test:coverage  # Run tests with coverage
 
 ```sh
 bun run check          # Run Biome linting with auto-fix
-bun run check-types    # Run TypeScript type checking
+bun run check:types    # Run TypeScript type checking
 bun run code:check     # Run both linting and type checking
 ```
 

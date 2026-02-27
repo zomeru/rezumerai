@@ -1187,7 +1187,7 @@ Expected: no errors (auto-fix applied if needed, then re-run)
 **Step 3: Run TypeScript type check**
 
 ```bash
-bun run check-types
+bun run check:types
 ```
 
 Expected: no errors. If `apps/web/src/constants/dummy.ts` has type errors, the `// @ts-nocheck` comment at the top of that file suppresses them — leave it as-is.

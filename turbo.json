@@ -24,7 +24,7 @@
       "outputs": []
     },
     "check": {},
-    "check-types": {},
+    "check:types": {},
     "test": {
       "cache": false
     },

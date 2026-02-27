@@ -58,7 +58,7 @@ echo "📝 Running biome (formatting and linting) ..."
 bun run biome # Always run biome on all files
 
 echo "📝 Running type checks..."
-TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check-types --affected $TURBO_FLAGS
+TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run check:types --affected $TURBO_FLAGS
 
 echo "🧪 Running tests..."
 # TURBO_SCM_BASE="$SCM_BASE_BRANCH" bun run turbo run test --affected $TURBO_FLAGS

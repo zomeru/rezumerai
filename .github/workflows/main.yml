@@ -110,7 +110,7 @@ jobs:
         run: biome ci .
 
       - name: Type check
-        run: bun run check-types
+        run: bun run check:types
 
       - name: Run tests
         run: bun run test:project

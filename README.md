@@ -131,7 +131,7 @@ bun run --filter=web dev            # Next.js — http://localhost:3000
 | Script | Description |
 |--------|-------------|
 | `bun run check` | Run Biome linting with auto-fix |
-| `bun run check-types` | TypeScript type checking |
+| `bun run check:types` | TypeScript type checking |
 | `bun run code:check` | Lint + type checking |
 | `bun run code:verify` | Lint + types + tests + build |
 
