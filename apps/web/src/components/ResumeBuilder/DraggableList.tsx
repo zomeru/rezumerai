@@ -95,7 +95,11 @@ export interface DraggableListProps<T> {
 
 export default function DraggableList<T>({ items, onReorder, renderItem, getItemId }: DraggableListProps<T>) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

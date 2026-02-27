@@ -2,7 +2,7 @@
 
 import type { ResumeWithRelations } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { useState } from "react";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
@@ -40,8 +40,8 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
       resumeId: experience[0]?.resumeId || "",
       company: "",
       position: "",
-      startDate: "",
-      endDate: "",
+      startDate: new Date(),
+      endDate: null,
       description: "",
       isCurrent: false,
     };
@@ -57,7 +57,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Experience[number], value: string | boolean) => {
+  const handleUpdate = (index: number, field: keyof Experience[number], value: string | boolean | Date | null) => {
     const updated = experience.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp));
     onChange(updated);
   };
@@ -81,11 +81,7 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                 <p className="font-medium text-slate-900">
                   {exp.position || "Position"} {exp.company && `at ${exp.company}`}
                 </p>
-                <p className="text-slate-500 text-sm">
-                  {exp.startDate && formatShortDate(exp.startDate)}
-                  {exp.startDate && " - "}
-                  {exp.isCurrent ? "Present" : exp.endDate && formatShortDate(exp.endDate)}
-                </p>
+                <p className="text-slate-500 text-sm">{formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}</p>
               </div>
               <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${exp.position || "experience"}`} />
             </button>
@@ -115,37 +111,40 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
                     <DatePicker
-                      selected={parseYearMonth(exp.startDate)}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", formatFullDate(date))}
+                      selected={exp.startDate ?? undefined}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", date ?? new Date())}
                       placeholder="Select start date"
                     />
                   </div>
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">End Date</p>
                     <DatePicker
-                      selected={parseYearMonth(exp.endDate)}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "endDate", formatFullDate(date))}
+                      selected={exp.endDate ?? undefined}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "endDate", date ?? null)}
                       placeholder="Select end date"
                       disabled={exp.isCurrent}
-                      minDate={parseYearMonth(exp.startDate)}
+                      minDate={exp.startDate ?? undefined}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     id={`current-${exp.id}`}
                     checked={exp.isCurrent}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      handleUpdate(index, "isCurrent", e.target.checked);
-                      if (e.target.checked) {
-                        handleUpdate(index, "endDate", "");
-                      }
+                    onChange={() => {
+                      const newValue = !exp.isCurrent;
+                      const updated = experience.map((expItem, i) =>
+                        i === index
+                          ? { ...expItem, isCurrent: newValue, endDate: newValue ? null : expItem.endDate }
+                          : expItem,
+                      );
+                      onChange(updated);
                     }}
-                    className="size-4 rounded border-slate-300 text-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-primary-600"
                   />
-                  <label htmlFor={`current-${exp.id}`} className="text-slate-700 text-sm">
+                  <label htmlFor={`current-${exp.id}`} className="cursor-pointer text-slate-700 text-sm">
                     I currently work here
                   </label>
                 </div>

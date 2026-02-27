@@ -5,7 +5,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 1 ------------------------------------------------------
     user: {
       connect: {
-        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
+        id: "",
       },
     },
     personalInfo: {
@@ -40,8 +40,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "Example Technologies.",
           position: "Senior Full Stack Developer",
-          startDate: "2023-06",
-          endDate: "Present",
+          startDate: new Date(2023, 5, 1),
+          endDate: null,
           description:
             "Architected, developed, and deployed innovative full-stack applications at Example Technologies.\ncreating robust back-end systems and intuitive front- end interfaces to deliver meaningful digital experiences ",
           isCurrent: true,
@@ -49,8 +49,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "Example Technologies.",
           position: "Full Stack Developer",
-          startDate: "2019-08",
-          endDate: "2023-05",
+          startDate: new Date(2019, 7, 1),
+          endDate: new Date(2023, 4, 1),
           description:
             "Engineered and deployed scalable full-stack web applications for Example Technologies, translating complex requirements into robust front-end interfaces and efficient back-end services.",
           isCurrent: false,
@@ -63,21 +63,21 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           institution: "Example Institute of Technology",
           degree: "B.TECH",
           field: "CSE",
-          graduationDate: "2023-05",
+          graduationDate: new Date(2023, 4, 1),
           gpa: "8.7",
         },
         {
           institution: "Example Public School",
           degree: "HIGHER SECONDARY",
           field: "PCM",
-          graduationDate: "2019-03",
+          graduationDate: new Date(2019, 2, 1),
           gpa: "",
         },
         {
           institution: "Example Academy",
           degree: "SECONDARY SCHOOL",
           field: "",
-          graduationDate: "2017-03",
+          graduationDate: new Date(2017, 2, 1),
           gpa: "",
         },
       ],
@@ -109,7 +109,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 2 ------------------------------------------------------
     user: {
       connect: {
-        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
+        id: "",
       },
     },
     personalInfo: {
@@ -145,8 +145,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "TechSpark Inc.",
           position: "Lead Frontend Engineer",
-          startDate: "2022-02",
-          endDate: "Present",
+          startDate: new Date(2022, 1, 1),
+          endDate: null,
           description:
             "Leading a team of frontend developers to build accessible and scalable user interfaces. Collaborated with UX teams to implement design systems and improve frontend performance.",
           isCurrent: true,
@@ -154,8 +154,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "PixelForge Labs",
           position: "Frontend Developer",
-          startDate: "2018-09",
-          endDate: "2022-01",
+          startDate: new Date(2018, 8, 1),
+          endDate: new Date(2022, 0, 1),
           description:
             "Developed reusable UI components using React and Vue.js. Worked closely with backend teams to integrate REST APIs and optimize SPA performance.",
           isCurrent: false,
@@ -168,14 +168,14 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           institution: "University of Digital Arts",
           degree: "B.Sc.",
           field: "Computer Science",
-          graduationDate: "2018-06",
+          graduationDate: new Date(2018, 5, 1),
           gpa: "3.8",
         },
         {
           institution: "Lincoln High School",
           degree: "High School Diploma",
           field: "Science",
-          graduationDate: "2014-05",
+          graduationDate: new Date(2014, 4, 1),
           gpa: "",
         },
       ],
@@ -207,7 +207,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     // ----------------------------------------------------- Resume 3 ------------------------------------------------------
     user: {
       connect: {
-        id: "niPb4PdaB6wc5LHrCIbk2oUiHUQ7DN4s",
+        id: "",
       },
     },
     personalInfo: {
@@ -232,8 +232,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "DataNest Solutions",
           position: "Senior Backend Engineer",
-          startDate: "2021-03",
-          endDate: "Present",
+          startDate: new Date(2021, 2, 1),
+          endDate: null,
           description:
             "Developed distributed microservices using Node.js and Docker. Implemented API rate limiting, authentication, and background job processing using Redis and Bull.",
           isCurrent: true,
@@ -241,8 +241,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
         {
           company: "CloudCore Systems",
           position: "Backend Developer",
-          startDate: "2016-07",
-          endDate: "2021-02",
+          startDate: new Date(2016, 6, 1),
+          endDate: new Date(2021, 1, 1),
           description:
             "Maintained and scaled backend systems built on Python and PostgreSQL. Automated deployments with GitLab CI/CD and improved API response time by 35%.",
           isCurrent: false,
@@ -255,14 +255,14 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           institution: "Texas Institute of Technology",
           degree: "B.E.",
           field: "Information Technology",
-          graduationDate: "2016-05",
+          graduationDate: new Date(2016, 4, 1),
           gpa: "3.9",
         },
         {
           institution: "Central High School",
           degree: "High School Diploma",
           field: "Science",
-          graduationDate: "2012-04",
+          graduationDate: new Date(2012, 3, 1),
           gpa: "",
         },
       ],
@@ -291,3 +291,14 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
     createdAt: new Date("2025-09-25T15:26:49.652Z"),
   },
 ];
+
+export const generateDummyData = (userId: string): Prisma.ResumeCreateInput[] => {
+  return dummyResumeData.map((resume) => ({
+    ...resume,
+    user: {
+      connect: {
+        id: userId,
+      },
+    },
+  }));
+};

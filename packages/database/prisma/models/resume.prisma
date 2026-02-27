@@ -1,7 +1,7 @@
 model Resume {
   id                  String               @id @default(cuid())
   userId              String
-  title               String
+  title               String               @default("")
   public              Boolean              @default(false)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -40,29 +40,29 @@ model PersonalInformation {
 }
 
 model Experience {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   resumeId    String
-  company     String
-  position    String
-  startDate   String
-  endDate     String
-  description String  @default("")
-  isCurrent   Boolean @default(false)
-  resume      Resume  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  company     String    @default("")
+  position    String    @default("")
+  description String    @default("")
+  isCurrent   Boolean   @default(false)
+  startDate   DateTime
+  endDate     DateTime?
+  resume      Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
   @@map("experience")
 }
 
 model Education {
-  id             String @id @default(cuid())
+  id             String   @id @default(cuid())
   resumeId       String
-  institution    String
-  degree         String
-  field          String @default("")
-  graduationDate String
-  gpa            String @default("")
-  resume         Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  institution    String   @default("")
+  degree         String   @default("")
+  field          String   @default("")
+  gpa            String   @default("")
+  graduationDate DateTime
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
   @@map("education")
@@ -71,7 +71,7 @@ model Education {
 model Project {
   id          String @id @default(cuid())
   resumeId    String
-  name        String
+  name        String @default("")
   type        String @default("")
   description String @default("")
   resume      Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)

@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 
@@ -47,7 +47,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                   <div className="mb-1 flex items-baseline justify-between">
                     <h3 className="font-medium text-[1.125em]">{exp.position}</h3>
                     <span className="text-[0.875em] text-gray-500">
-                      {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
+                      {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
                     </span>
                   </div>
                   <p className="mb-2 text-gray-600">{exp.company}</p>

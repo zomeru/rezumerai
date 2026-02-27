@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
@@ -86,7 +86,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                         </p>
                       </div>
                       <div className="rounded bg-gray-100 px-3 py-1 text-[0.875em] text-gray-500">
-                        {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
+                        {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
                       </div>
                     </div>
                     {exp.description && (

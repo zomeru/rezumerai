@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import HtmlContent from "./HtmlContent";
@@ -141,7 +141,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-zinc-900">{exp.position}</h3>
                         <span className="text-[0.75em] text-zinc-500">
-                          {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
+                          {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
                         </span>
                       </div>
                       <p className="mb-2 text-[0.875em]" style={{ color: accentColor }}>

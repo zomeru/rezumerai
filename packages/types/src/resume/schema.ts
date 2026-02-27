@@ -24,14 +24,14 @@ export const PersonalInformationSchema = z
   .object({
     id: z.string(),
     resumeId: z.string(),
-    fullName: z.string().min(1),
-    email: z.email(),
-    phone: z.string().min(7),
+    fullName: z.string(),
+    email: z.string(),
+    phone: z.string(),
     location: z.string(),
-    linkedin: z.url(),
-    website: z.url(),
+    linkedin: z.string(),
+    website: z.string(),
     profession: z.string(),
-    image: z.url(),
+    image: z.string(),
   })
   .strict();
 
@@ -45,8 +45,8 @@ export const ExperienceItemSchema = z
     resumeId: z.string(),
     company: z.string(),
     position: z.string(),
-    startDate: z.string(),
-    endDate: z.string(),
+    startDate: z.date(),
+    endDate: z.date().nullable(),
     description: z.string(),
     isCurrent: z.boolean(),
   })
@@ -65,7 +65,7 @@ export const EducationItemSchema = z
     institution: z.string(),
     degree: z.string(),
     field: z.string(),
-    graduationDate: z.string(),
+    graduationDate: z.date(),
     gpa: z.string(),
   })
   .strict();
@@ -85,6 +85,12 @@ export const ProjectItemSchema = z
     description: z.string(),
   })
   .strict();
+
+export const ProjectInputCreate = z.object({
+  name: z.string(),
+  type: z.string(),
+  description: z.string(),
+});
 
 export const ProjectSchema = z.array(ProjectItemSchema);
 
@@ -173,21 +179,30 @@ export const ResumeInputCreateSchema = z
 
 // export type ResumeWithRelations = z.infer<typeof ResumeSchema>;
 
-export const PersonalInfoInputCreate = PersonalInformationSchema.omit({
-  id: true,
-  resumeId: true,
+export const PersonalInfoInputCreate = z.object({
+  fullName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  location: z.string(),
+  linkedin: z.string(),
+  website: z.string(),
+  profession: z.string(),
+  image: z.string(),
 });
-export const ExperienceInputCreate = ExperienceSchema.element.omit({
-  id: true,
-  resumeId: true,
+export const ExperienceInputCreate = z.object({
+  company: z.string(),
+  position: z.string(),
+  startDate: z.date(),
+  endDate: z.date().nullable(),
+  description: z.string(),
+  isCurrent: z.boolean(),
 });
-export const EducationInputCreate = EducationSchema.element.omit({
-  id: true,
-  resumeId: true,
-});
-export const ProjectInputCreate = ProjectSchema.element.omit({
-  id: true,
-  resumeId: true,
+export const EducationInputCreate = z.object({
+  institution: z.string(),
+  degree: z.string(),
+  field: z.string(),
+  graduationDate: z.date(),
+  gpa: z.string(),
 });
 
 export const FullResumeInputCreate = ResumeInputCreateSchema.merge(
@@ -246,10 +261,15 @@ export const ExperienceUpdateItemSchema = ExperienceItemSchema.omit({
   .strip();
 
 /** Education item for update — id is optional (omit for new items); strips Prisma's resumeId */
-export const EducationUpdateItemSchema = EducationItemSchema.omit({
-  resumeId: true,
-})
-  .extend({ id: z.string().optional() })
+export const EducationUpdateItemSchema = z
+  .object({
+    id: z.string().optional(),
+    institution: z.string(),
+    degree: z.string(),
+    field: z.string(),
+    graduationDate: z.date(),
+    gpa: z.string(),
+  })
   .strip();
 
 /** Project item for update — id is optional (omit for new items); strips Prisma's resumeId */
@@ -264,14 +284,14 @@ export const ProjectUpdateItemSchema = ProjectItemSchema.omit({
  * so users can save before every field is filled in.
  */
 export const PersonalInfoUpdateSchema = z.object({
-  fullName: z.string(),
-  email: z.string(),
-  phone: z.string(),
-  location: z.string(),
-  linkedin: z.string(),
-  website: z.string(),
-  profession: z.string(),
-  image: z.string(),
+  fullName: z.string().default(""),
+  email: z.string().default(""),
+  phone: z.string().default(""),
+  location: z.string().default(""),
+  linkedin: z.string().default(""),
+  website: z.string().default(""),
+  profession: z.string().default(""),
+  image: z.string().default(""),
 });
 
 /**
