@@ -1,12 +1,14 @@
-import type { PrismaClient } from "@rezumerai/database";
+import type { Prisma, PrismaClient } from "@rezumerai/database";
 import type {
   EducationUpdateItem,
   ExperienceUpdateItem,
   FullResumeInputCreate,
   ProjectUpdateItem,
-  ResumeUpdateBody,
   ResumeWithRelations,
 } from "@rezumerai/types";
+import type { CustomResumeWithRelationInputUpdate } from "./model";
+
+type SyncPromiseReturn = Prisma.PrismaPromise<unknown>;
 
 /**
  * Minimal structural type that any Prisma relation delegate must satisfy
@@ -14,9 +16,9 @@ import type {
  */
 type SyncableRelation = {
   findMany(args: { where: { resumeId: string }; select: { id: true } }): Promise<{ id: string }[]>;
-  deleteMany(args: { where: { id: { in: string[] } } }): Promise<unknown>;
-  update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
-  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+  deleteMany(args: { where: { id: { in: string[] } } }): SyncPromiseReturn;
+  update(args: { where: { id: string }; data: Record<string, unknown> }): SyncPromiseReturn;
+  create(args: { data: Record<string, unknown> }): SyncPromiseReturn;
 };
 
 /**
@@ -32,7 +34,7 @@ export abstract class ResumeService {
    * @param userId - ID of the user whose resumes to retrieve
    * @returns Array of all resumes for the specified user
    */
-  static async findAll(db: PrismaClient, userId: string): Promise<ResumeWithRelations[]> {
+  static async findMany(db: PrismaClient, userId: string): Promise<ResumeWithRelations[]> {
     const resumes = await db.resume.findMany({
       where: { userId },
       include: {
@@ -113,44 +115,52 @@ export abstract class ResumeService {
     db: PrismaClient,
     userId: string,
     resumeId: string,
-    data: ResumeUpdateBody,
+    data: typeof CustomResumeWithRelationInputUpdate.static,
   ): Promise<ResumeWithRelations | null> {
+    // ownership check
     const existing = await db.resume.findFirst({
       where: { id: resumeId, userId },
       select: { id: true },
     });
     if (!existing) return null;
 
-    const { personalInfo, experience, education, project, ...scalarFields } = data;
+    const { education, experience, project, personalInfo, ...scalarFields } = data;
 
     return db.$transaction(async (tx) => {
+      // 1. Update scalar fields if any
+      const updateOps: Prisma.PrismaPromise<unknown>[] = [];
       if (Object.keys(scalarFields).length > 0) {
-        await tx.resume.update({
-          where: { id: resumeId },
-          data: scalarFields,
-        });
+        updateOps.push(
+          tx.resume.update({
+            where: { id: resumeId },
+            data: scalarFields,
+          }),
+        );
       }
 
-      if (personalInfo !== undefined && personalInfo !== null) {
-        await tx.personalInformation.upsert({
-          where: { resumeId },
-          update: personalInfo,
-          create: { ...personalInfo, resumeId },
-        });
+      // 2. Upsert personal info
+      if (personalInfo) {
+        updateOps.push(
+          tx.personalInformation.upsert({
+            where: { resumeId },
+            update: personalInfo,
+            create: { ...personalInfo, resumeId },
+          }),
+        );
       }
 
-      if (experience) {
-        await ResumeService._syncRelation(tx.experience as unknown as SyncableRelation, resumeId, experience);
-      }
+      // 3. Sync relation arrays in parallel
+      const [experienceOps, educationOps, projectOps] = await Promise.all([
+        ResumeService._syncRelation(tx.experience as unknown as SyncableRelation, resumeId, experience),
+        ResumeService._syncRelation(tx.education as unknown as SyncableRelation, resumeId, education),
+        ResumeService._syncRelation(tx.project as unknown as SyncableRelation, resumeId, project),
+      ]);
+      updateOps.push(...experienceOps, ...educationOps, ...projectOps);
 
-      if (education) {
-        await ResumeService._syncRelation(tx.education as unknown as SyncableRelation, resumeId, education);
-      }
+      // 4. Execute all updates
+      await Promise.all(updateOps);
 
-      if (project) {
-        await ResumeService._syncRelation(tx.project as unknown as SyncableRelation, resumeId, project);
-      }
-
+      // 5. Return updated resume
       return tx.resume.findUniqueOrThrow({
         where: { id: resumeId },
         include: {
@@ -172,11 +182,11 @@ export abstract class ResumeService {
    * @param resumeId - Resume to delete
    * @returns true if deleted, false if not found or not owned
    */
-  static async deleteResume(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
-    const result = await db.resume.deleteMany({
+  static async delete(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
+    const result = await db.resume.delete({
       where: { id: resumeId, userId },
     });
-    return result.count > 0;
+    return !!result;
   }
 
   /**
@@ -193,49 +203,44 @@ export abstract class ResumeService {
     relation: SyncableRelation,
     resumeId: string,
     items: Array<ExperienceUpdateItem | EducationUpdateItem | ProjectUpdateItem>,
-  ): Promise<void> {
+  ): Promise<Prisma.PrismaPromise<unknown>[]> {
+    if (!items) return [];
+
     const existing = await relation.findMany({
       where: { resumeId },
       select: { id: true },
     });
 
     // ids from items not present in existing = to create; ids from existing not present in items = to delete; ids in both = to update
-    const itemIds = items.map((i) => i.id).filter((id): id is string => !!id);
     const existingIds = existing.map((e) => e.id);
+    const itemIds = items.map((i) => i.id).filter((id): id is string => !!id);
+
     const toDelete = existingIds.filter((id) => !itemIds.includes(id));
-
-    // // const keepIds = items.filter((i) => i.id).map((i) => i.id as string);
-    // // const toDelete = existing.map((e) => e.id).filter((id) => !keepIds.includes(id));
-
     if (toDelete.length > 0) {
       await relation.deleteMany({ where: { id: { in: toDelete } } });
     }
 
-    for (const item of items) {
-      const { id, ...rest } = item;
-      // id is always present, but not created ones is generated from the client, so check if id exists in the existing records to determine whether to update or create
-      const exists = existingIds.includes(id as string);
-      if (exists) {
-        await relation.update({
-          where: { id: id as string },
-          data: rest as Record<string, unknown>,
-        });
-      } else {
-        await relation.create({
-          data: { ...rest, resumeId } as Record<string, unknown>,
-        });
-      }
+    const createOrUpdateOps: Prisma.PrismaPromise<unknown>[] = [];
 
-      // if (id) {
-      //   await relation.update({
-      //     where: { id },
-      //     data: rest as Record<string, unknown>,
-      //   });
-      // } else {
-      //   await relation.create({
-      //     data: { ...rest, resumeId } as Record<string, unknown>,
-      //   });
-      // }
-    }
+    items.forEach((item) => {
+      const { id, ...rest } = item;
+
+      if (id && existingIds.includes(id)) {
+        createOrUpdateOps.push(
+          relation.update({
+            where: { id },
+            data: rest,
+          }),
+        );
+      } else {
+        createOrUpdateOps.push(
+          relation.create({
+            data: { ...rest, resumeId },
+          }),
+        );
+      }
+    });
+
+    return createOrUpdateOps;
   }
 }

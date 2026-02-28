@@ -1,4 +1,5 @@
 import path from "node:path";
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -81,4 +82,4 @@ const withBundleAnalyzer: (config: typeof nextConfig) => typeof nextConfig = req
   enabled: process.env.ANALYZE === "true",
 });
 
-export default withBundleAnalyzer(nextConfig);
+export default withBotId(withBundleAnalyzer(nextConfig));

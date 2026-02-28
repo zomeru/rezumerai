@@ -1,4 +1,4 @@
-import type { Prisma } from "@rezumerai/database";
+import type { Resume } from "@rezumerai/database/generated/prismabox/Resume";
 import { z } from "zod";
 
 /* ---------------------------------- */
@@ -234,14 +234,7 @@ export type ExperienceInputUpdate = Partial<z.infer<typeof ExperienceItemSchema>
 export type EducationInputUpdate = Partial<z.infer<typeof EducationItemSchema>>;
 export type ProjectInputUpdate = Partial<z.infer<typeof ProjectItemSchema>>;
 
-export type ResumeWithRelations = Prisma.ResumeGetPayload<{
-  include: {
-    education: true;
-    experience: true;
-    project: true;
-    personalInfo: true;
-  };
-}>;
+export type ResumeWithRelations = Omit<(typeof Resume)["static"], "user">;
 
 // ── Update schemas for PATCH /resumes/:id ─────────────────────────────────
 

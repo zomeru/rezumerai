@@ -1,10 +1,10 @@
-import Elysia, { status } from "elysia";
+import Elysia, { status, t } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { ResumeModels } from "./model";
+import { ResumeModel, ResumeWithoutUser } from "./model";
 import { ResumeService } from "./service";
 
-const resumeNotFound = () => status(404, { success: false as const, error: "Resume not found" });
+const resumeNotFound = () => status(404, "Resume not found");
 
 /**
  * Resume module — CRUD routes for resumes.
@@ -13,12 +13,22 @@ const resumeNotFound = () => status(404, { success: false as const, error: "Resu
 export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(prismaPlugin)
   .use(authPlugin)
-  .model(ResumeModels)
+  .use(ResumeModel)
+  .prefix("model", "resume.")
   // ── GET /resumes ───────────────────────────────────────────────────────────
-  .get("/", async ({ db, user }) => {
-    const resumes = await ResumeService.findAll(db, user.id);
-    return { success: true as const, data: resumes };
-  })
+  .get(
+    "/",
+    async ({ db, user }) => {
+      const resumes = await ResumeService.findMany(db, user.id);
+
+      return status(200, resumes);
+    },
+    {
+      response: {
+        200: t.Array(ResumeWithoutUser),
+      },
+    },
+  )
   // ── POST /resumes ──────────────────────────────────────────────────────────
   .post(
     "/",
@@ -26,38 +36,55 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       const newResume = await ResumeService.create(db, user.id, body);
       return { success: true as const, data: newResume };
     },
-    { body: "resume.create" },
+    { body: "resume.Create" },
   )
   // ── GET /resumes/:id ───────────────────────────────────────────────────────
   .get(
     "/:id",
-    async ({ db, user, params }) => {
+    async ({ db, user, params, status }) => {
       const resume = await ResumeService.findById(db, user.id, params.id);
-      if (!resume) return resumeNotFound();
-      return { success: true as const, data: resume };
+
+      if (!resume) {
+        return resumeNotFound();
+      }
+
+      return status(200, resume);
     },
-    { params: "resume.byIdParams" },
+    {
+      params: "resume.ById",
+      response: {
+        200: ResumeWithoutUser,
+        404: t.String(),
+      },
+    },
   )
   // ── PATCH /resumes/:id ─────────────────────────────────────────────────────
   .patch(
     "/:id",
     async ({ db, user, params, body }) => {
-      const updated = await ResumeService.update(db, user.id, params.id, body);
-      if (!updated) return resumeNotFound();
-      return { success: true as const, data: updated };
+      const updatedResume = await ResumeService.update(db, user.id, params.id, body);
+      if (!updatedResume) return resumeNotFound();
+      return status(200, updatedResume);
     },
     {
-      params: "resume.byIdParams",
-      body: "resume.update",
+      params: "resume.ById",
+      body: "resume.Update",
+      response: {
+        200: ResumeWithoutUser,
+        404: t.String(),
+      },
     },
   )
   // ── DELETE /resumes/:id ────────────────────────────────────────────────────
   .delete(
     "/:id",
     async ({ db, user, params }) => {
-      const deleted = await ResumeService.deleteResume(db, user.id, params.id);
+      const deleted = await ResumeService.delete(db, user.id, params.id);
       if (!deleted) return resumeNotFound();
-      return { success: true as const, data: { id: params.id } };
+      return status(204, true);
     },
-    { params: "resume.byIdParams" },
+    {
+      params: "resume.ById",
+      response: { 204: t.Literal(true), 404: t.String() },
+    },
   );

@@ -4,10 +4,10 @@ import type { ResumeWithRelations } from "@rezumerai/types";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Loader } from "@/components";
 import { ResumePreview } from "@/components/ResumeBuilder";
-import { dummyResumeData } from "@/constants/dummy";
+import { DUMMY_RESUME_DATA_ID, DUMMY_RESUME_PREVIEW_DATA } from "@/constants/dummy";
+import { useResumeById } from "@/hooks/useResume";
 
 /**
  * Full-screen resume preview page for a single resume.
@@ -16,25 +16,13 @@ export default function Preview() {
   const { resumeId } = useParams<{
     resumeId: string;
   }>();
-  const [resumeData, setResumeData] = useState<ResumeWithRelations | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const isDummyData = resumeId === DUMMY_RESUME_DATA_ID;
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      try {
-        const resume = dummyResumeData.find((r) => r.id === resumeId) || null;
-        setResumeData(resume);
-      } catch (error) {
-        console.error("Error fetching resume data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
+  const { data, isFetching } = useResumeById(resumeId);
 
-    return () => clearTimeout(timeout);
-  }, [resumeId]);
+  const resumeData: ResumeWithRelations | null = isDummyData ? DUMMY_RESUME_PREVIEW_DATA : (data ?? null);
 
-  if (isLoading) {
+  if (isFetching) {
     return <Loader />;
   }
 

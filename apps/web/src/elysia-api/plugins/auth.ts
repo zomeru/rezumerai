@@ -1,65 +1,39 @@
-import type { SessionUser } from "@rezumerai/types";
+import type { User } from "better-auth";
 import Elysia from "elysia";
-import { serverEnv } from "@/env";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 
 /**
  * Auth plugin — validates the Better Auth session and injects the authenticated
- * user into the Elysia request context.
+ * user into the Elysia request context. Protected routes should `.use(authPlugin)`.
  *
- * Strategy:
- *  1. Read the session cookie from the incoming request.
- *  2. Forward it to the Better Auth session endpoint on the Next.js app.
- *  3. Attach `user` to context so downstream handlers can access it.
- *
- * Public routes should NOT use this plugin.
- * Protected routes `.use(authPlugin)` to require authentication.
  */
+async function resolveSession(): Promise<User | null> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-/**
- * Resolves the current session by forwarding cookies to the Better Auth
- * session endpoint. Keeps auth logic centralised in the Next.js app.
- */
-async function resolveSession(request: Request): Promise<SessionUser | null> {
-  // Strategy 1: Forward cookies to NextAuth session endpoint
-  const cookie = request.headers.get("cookie");
-  if (!cookie) return null;
+  if (!session?.user) return null;
 
-  try {
-    const res = await fetch(`${serverEnv?.BETTER_AUTH_URL}/api/auth/get-session`, {
-      headers: { cookie },
-    });
-
-    if (!res.ok) return null;
-
-    const session = (await res.json()) as { user?: SessionUser };
-    if (!session?.user?.id) return null;
-
-    return session.user;
-  } catch {
-    return null;
-  }
+  return session.user;
 }
 
 export const authPlugin = new Elysia({ name: "plugin/auth" })
-  .derive({ as: "scoped" }, async ({ request, set }) => {
-    const user = await resolveSession(request);
+  .derive({ as: "scoped" }, async ({ set }) => {
+    const user = await resolveSession();
 
     if (!user) {
       set.status = 401;
       return {
-        user: null as unknown as SessionUser,
+        user: null as unknown as User,
         __unauthorized: true as const,
       };
     }
 
     return { user, __unauthorized: false as const };
   })
-  .onBeforeHandle({ as: "scoped" }, ({ set, __unauthorized }) => {
+  .onBeforeHandle({ as: "scoped" }, ({ __unauthorized, status }) => {
     if (__unauthorized) {
-      set.status = 401;
-      return {
-        success: false,
-        error: "Unauthorized — valid session required",
-      };
+      return status(401, "Unauthorized - valid session required");
     }
   });

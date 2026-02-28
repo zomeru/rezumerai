@@ -10,7 +10,7 @@ import { rateLimit } from "elysia-rate-limit";
 import { elysiaXSS } from "elysia-xss";
 import { serverEnv } from "@/env";
 import { resumeModule, userModule } from "./modules";
-import { errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from "./plugins";
+import { authPlugin, errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from "./plugins";
 
 /**
  * Elysia application — single source of truth for the API.
@@ -36,6 +36,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .get("/", "Hello Nextjs")
 
   // ── Health check (root) ─────────────────────────────────────────────────
+  .use(authPlugin)
   .get("/health", async ({ db }) => {
     const message = capitalize("Health check successful!");
     const timestamp = formatDate(new Date(), {
@@ -43,31 +44,16 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
       timeStyle: "short",
     });
 
-    try {
-      const sampleDbData = await db.sampleTable.findFirst({
-        select: { id: true },
-      });
+    const sampleDbData = await db.sampleTable.findFirst({
+      select: { id: true },
+    });
 
-      return {
-        success: true,
-        data: {
-          message,
-          timestamp,
-          server: "Rezumer API",
-          sampleDbData,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        data: {
-          message,
-          timestamp,
-          server: "Rezumer API",
-        },
-      };
-    }
+    return {
+      message,
+      timestamp,
+      server: "Rezumer API",
+      sampleDbData,
+    };
   })
 
   // ── Feature modules ─────────────────────────────────────────────────────

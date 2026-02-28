@@ -113,7 +113,7 @@ jobs:
         run: bun run check:types
 
       - name: Run tests
-        run: bun run test:project
+        run: bun run test
 
       - name: Run build
         run: bun run build --filter=web
