@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
 import BaseModal from "./BaseModal";
 
 /**
@@ -11,7 +10,9 @@ import BaseModal from "./BaseModal";
  * @property onClose - Callback to close the modal
  */
 export interface CreateResumeModalProps {
-  onSubmit: (title: string) => void;
+  title: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (title: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -23,34 +24,26 @@ export interface CreateResumeModalProps {
  *
  * @example
  * ```tsx
- * <CreateResumeModal onSubmit={(title) => create(title)} onClose={close} />
+ * <CreateResumeModal title="My Resume" onChange={handleChange} onSubmit={create} onClose={close} />
  * ```
  */
-export default function CreateResumeModal({ onSubmit, onClose }: CreateResumeModalProps) {
-  const [title, setTitle] = useState("");
-
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+export default function CreateResumeModal({ title, onChange, onSubmit, onClose }: CreateResumeModalProps) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    onSubmit(title);
-    setTitle("");
-  }
-
-  function handleClose() {
-    setTitle("");
-    onClose();
+    await onSubmit(title);
   }
 
   return (
     <BaseModal
       isOpen={true}
       title="Create a resume"
-      onClose={handleClose}
+      onClose={onClose}
       onSubmit={handleSubmit}
       submitLabel="Create resume"
     >
       <input
         value={title}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+        onChange={onChange}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"

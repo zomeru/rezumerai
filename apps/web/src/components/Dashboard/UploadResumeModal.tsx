@@ -11,7 +11,9 @@ import BaseModal from "./BaseModal";
  * @property onClose - Callback to close the modal
  */
 export interface UploadResumeModalProps {
-  onSubmit: (title: string, file: File) => void;
+  title: string;
+  onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (title: string, file: File) => Promise<void>;
   onClose: () => void;
 }
 
@@ -26,22 +28,20 @@ export interface UploadResumeModalProps {
  * <UploadResumeModal onSubmit={(title, file) => upload(title, file)} onClose={close} />
  * ```
  */
-export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeModalProps) {
+export default function UploadResumeModal({ title, onTitleChange, onSubmit, onClose }: UploadResumeModalProps) {
   const inputId = useId();
-  const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (file) {
-      onSubmit(title, file);
-      setTitle("");
+      await onSubmit(title, file);
       setFile(null);
     }
   }
 
   function handleClose() {
-    setTitle("");
     setFile(null);
     onClose();
   }
@@ -61,7 +61,7 @@ export default function UploadResumeModal({ onSubmit, onClose }: UploadResumeMod
     >
       <input
         value={title}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+        onChange={onTitleChange}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"

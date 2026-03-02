@@ -1,20 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const mockResumesGet = mock();
-const mockResumesPost = mock();
-const mockResumesByIdDelete = mock();
-const mockResumeById = mock().mockReturnValue({
-  delete: mockResumesByIdDelete,
-});
-
-mock.module("@/lib/api", () => ({
-  api: {
-    resumes: Object.assign(mockResumeById, {
-      get: mockResumesGet,
-      post: mockResumesPost,
-    }),
-  },
-}));
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const { useResumeStore } = await import("../useResumeStore");
 
@@ -39,11 +23,18 @@ const MOCK_RESUME = {
 
 beforeEach(() => {
   useResumeStore.setState({ resumes: [], isLoading: false, hasFetched: false });
-  mockResumesGet.mockReset();
-  mockResumesPost.mockReset();
-  mockResumesByIdDelete.mockReset();
-  mockResumeById.mockReset();
-  mockResumeById.mockReturnValue({ delete: mockResumesByIdDelete });
+});
+
+describe("useResumeStore.setResumes", () => {
+  it("sets the resume list and marks hasFetched as true", () => {
+    const { setResumes } = useResumeStore.getState();
+    setResumes([MOCK_RESUME]);
+
+    const { resumes, hasFetched } = useResumeStore.getState();
+    expect(resumes).toHaveLength(1);
+    expect(resumes[0]?.id).toBe("res_1");
+    expect(hasFetched).toBe(true);
+  });
 });
 
 describe("useResumeStore.addResume", () => {
@@ -57,48 +48,39 @@ describe("useResumeStore.addResume", () => {
   });
 });
 
-describe("useResumeStore.deleteResume", () => {
-  it("removes resume from store when API call succeeds", async () => {
-    useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
-    mockResumesByIdDelete.mockResolvedValue({ data: { success: true }, error: null });
+describe("useResumeStore.updateResume", () => {
+  it("updates a resume in the list", () => {
+    useResumeStore.setState({ resumes: [MOCK_RESUME] });
 
-    await useResumeStore.getState().deleteResume("res_1");
-
-    const { resumes } = useResumeStore.getState();
-    expect(resumes).toHaveLength(0);
-    expect(mockResumeById).toHaveBeenCalledWith({ id: "res_1" });
-  });
-
-  it("keeps resume in store when API call fails", async () => {
-    useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
-    mockResumesByIdDelete.mockResolvedValue({
-      data: null,
-      error: { error: "Not found" },
-    });
-
-    await useResumeStore.getState().deleteResume("res_1");
+    const { updateResume } = useResumeStore.getState();
+    updateResume("res_1", { title: "Updated Resume" });
 
     const { resumes } = useResumeStore.getState();
     expect(resumes).toHaveLength(1);
+    expect(resumes[0]?.title).toBe("Updated Resume");
+  });
+
+  it("does not modify list if id not found", () => {
+    useResumeStore.setState({ resumes: [MOCK_RESUME] });
+
+    const { updateResume } = useResumeStore.getState();
+    updateResume("non_existent", { title: "Updated Resume" });
+
+    const { resumes } = useResumeStore.getState();
+    expect(resumes).toHaveLength(1);
+    expect(resumes[0]?.title).toBe("My Resume");
   });
 });
 
-describe("useResumeStore.fetchResumes", () => {
-  it("does not re-fetch when hasFetched is true and force is not set", async () => {
+describe("useResumeStore.clearResumes", () => {
+  it("clears the resume list and resets hasFetched", () => {
     useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
-    mockResumesGet.mockResolvedValue({ data: { data: [] }, error: null });
 
-    await useResumeStore.getState().fetchResumes();
+    const { clearResumes } = useResumeStore.getState();
+    clearResumes();
 
-    expect(mockResumesGet).not.toHaveBeenCalled();
-  });
-
-  it("re-fetches when force is true even if hasFetched is true", async () => {
-    useResumeStore.setState({ resumes: [MOCK_RESUME], hasFetched: true });
-    mockResumesGet.mockResolvedValue({ data: { data: [MOCK_RESUME] }, error: null });
-
-    await useResumeStore.getState().fetchResumes(true);
-
-    expect(mockResumesGet).toHaveBeenCalledTimes(1);
+    const { resumes, hasFetched } = useResumeStore.getState();
+    expect(resumes).toHaveLength(0);
+    expect(hasFetched).toBe(false);
   });
 });

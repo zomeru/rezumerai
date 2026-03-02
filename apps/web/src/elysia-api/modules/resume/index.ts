@@ -62,13 +62,17 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .patch(
     "/:id",
     async ({ db, user, params, body }) => {
-      const updatedResume = await ResumeService.update(db, user.id, params.id, body);
+      const updatedResume = await ResumeService.update(
+        db,
+        user.id,
+        params.id,
+        body as Parameters<typeof ResumeService.update>[3],
+      );
       if (!updatedResume) return resumeNotFound();
       return status(200, updatedResume);
     },
     {
       params: "resume.ById",
-      body: "resume.Update",
       response: {
         200: ResumeWithoutUser,
         404: t.String(),
@@ -81,10 +85,10 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
     async ({ db, user, params }) => {
       const deleted = await ResumeService.delete(db, user.id, params.id);
       if (!deleted) return resumeNotFound();
-      return status(204, true);
+      return status(200, deleted);
     },
     {
       params: "resume.ById",
-      response: { 204: t.Literal(true), 404: t.String() },
+      response: { 404: t.String(), 200: t.Boolean() },
     },
   );

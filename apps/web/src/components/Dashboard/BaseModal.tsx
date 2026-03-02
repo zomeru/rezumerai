@@ -20,7 +20,7 @@ export interface BaseModalProps {
   title: string;
   children: ReactNode;
   onClose: () => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => Promise<void>;
   submitLabel?: string;
   isLoading?: boolean;
 }
@@ -54,8 +54,13 @@ export default function BaseModal({
 }: BaseModalProps) {
   const modalRef = useFocusTrap<HTMLFormElement>(isOpen, onClose);
 
-  function handleModalClick(e: React.MouseEvent) {
-    e.stopPropagation();
+  async function onSubmitWrapper(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (isLoading) {
+      return;
+    }
+    await onSubmit(e);
   }
 
   function handleBackdropClick(e: React.MouseEvent) {
@@ -74,11 +79,9 @@ export default function BaseModal({
       onClick={handleBackdropClick}
       role="presentation"
     >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Form has focus trap that handles all keyboard navigation */}
       <form
         ref={modalRef}
-        onSubmit={onSubmit}
-        onClick={handleModalClick}
+        onSubmit={onSubmitWrapper}
         className="relative w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-6 shadow-lg"
         role="dialog"
         aria-modal="true"

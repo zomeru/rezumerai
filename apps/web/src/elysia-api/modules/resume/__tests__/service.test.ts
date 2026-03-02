@@ -31,6 +31,7 @@ function makeMockDb(): PrismaClient {
       findMany: mock(),
       update: mock(),
       create: mock(),
+      delete: mock(),
       deleteMany: mock(),
     },
     personalInformation: { upsert: mock() },
@@ -142,29 +143,19 @@ describe("ResumeService.update", () => {
   });
 });
 
-describe("ResumeService.deleteResume", () => {
+describe("ResumeService.delete", () => {
   it("returns true when resume is found and deleted", async () => {
     const db = makeMockDb();
-    (db.resume.deleteMany as ReturnType<typeof mock>).mockResolvedValue({
-      count: 1,
+    (db.resume.delete as ReturnType<typeof mock>).mockResolvedValue({
+      id: RESUME_ID,
+      userId: USER_ID,
     });
 
-    const result = await ResumeService.deleteResume(db, USER_ID, RESUME_ID);
+    const result = await ResumeService.delete(db, USER_ID, RESUME_ID);
 
     expect(result).toBe(true);
-    expect(db.resume.deleteMany).toHaveBeenCalledWith({
+    expect(db.resume.delete).toHaveBeenCalledWith({
       where: { id: RESUME_ID, userId: USER_ID },
     });
-  });
-
-  it("returns false when resume is not found or not owned", async () => {
-    const db = makeMockDb();
-    (db.resume.deleteMany as ReturnType<typeof mock>).mockResolvedValue({
-      count: 0,
-    });
-
-    const result = await ResumeService.deleteResume(db, USER_ID, RESUME_ID);
-
-    expect(result).toBe(false);
   });
 });

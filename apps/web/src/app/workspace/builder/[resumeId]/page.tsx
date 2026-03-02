@@ -1,7 +1,7 @@
 // Resume builder page with multi-step form, live preview, and PDF export.
 "use client";
 
-import type { ResumeUpdateBody, ResumeWithRelations } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { ResumeBuilderSkeleton } from "@rezumerai/ui";
 import { cn } from "@rezumerai/utils/styles";
 import {
@@ -24,7 +24,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -38,10 +38,10 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
-import { defaultResume } from "@/constants/dummy";
+import { initialResume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
-import { api } from "@/lib/api";
+import { useResumeById, useUpdateResume } from "@/hooks/useResume";
 import { useBuilderStore } from "@/store/useBuilderStore";
 import { useResumeStore } from "@/store/useResumeStore";
 import type { TemplateType } from "@/templates";
@@ -78,19 +78,31 @@ export default function ResumeBuilder() {
 
   const resumePreviewRef = useRef<HTMLDivElement>(null);
 
-  // Resume store
-  const isLoading = useResumeStore((state) => state.isLoading);
-  const hasFetched = useResumeStore((state) => state.hasFetched);
-  const fetchResumes = useResumeStore((state) => state.fetchResumes);
+  // React Query for fetching resume
+  const { data: serverResume, isLoading, error } = useResumeById(resumeId);
+
+  // Local draft state from Zustand (synced from server data)
   const resumes = useResumeStore((state) => state.resumes);
-  const foundResume = resumes.find((r) => r.id === resumeId);
-  const resumeData = foundResume ?? defaultResume;
-  const resumeNotFound = hasFetched && !foundResume;
+  const setResumes = useResumeStore((state) => state.setResumes);
   const updateResume = useResumeStore((state) => state.updateResume);
 
-  useEffect(() => {
-    fetchResumes();
-  }, [fetchResumes]);
+  // Sync server data to local state when fetched
+  const resumeData = useMemo(() => {
+    if (serverResume) {
+      // Sync to Zustand for local draft state
+      const existing = resumes.find((r) => r.id === resumeId);
+      if (!existing) {
+        setResumes([serverResume]);
+      }
+      return serverResume;
+    }
+    return initialResume;
+  }, [serverResume, resumeId, resumes, setResumes]);
+
+  const resumeNotFound = !isLoading && error;
+
+  // Use React Query mutation for saving
+  const updateResumeMutation = useUpdateResume();
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -165,28 +177,25 @@ export default function ResumeBuilder() {
   async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
-      const payload: ResumeUpdateBody = {
+      const updates = {
         title: resumeData.title,
         public: resumeData.public,
         professionalSummary: resumeData.professionalSummary,
-        template: resumeData.template as TemplateType,
+        template: resumeData.template,
         accentColor: resumeData.accentColor,
         fontSize: resumeData.fontSize,
         customFontSize: resumeData.customFontSize,
         skills: resumeData.skills,
-        personalInfo: resumeData.personalInfo ?? null,
+        personalInfo: resumeData.personalInfo ?? undefined,
         experience: resumeData.experience,
         education: resumeData.education,
         project: resumeData.project,
       };
 
-      const { data, error } = await api.resumes({ id: resumeId }).patch(payload);
-      console.log("Save response:", { data, error });
-
-      if (!error && data && "data" in data && data.data) {
-        updateResume(resumeId, data.data as Partial<ResumeWithRelations>);
-        setLastSaved(new Date());
-      }
+      await updateResumeMutation.mutateAsync({ id: resumeId, updates });
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error("Failed to save resume:", error);
     } finally {
       setIsSaving(false);
     }
@@ -219,7 +228,7 @@ export default function ResumeBuilder() {
           <PersonalInfoForm
             data={
               resumeData.personalInfo ??
-              (defaultResume.personalInfo as NonNullable<ResumeWithRelations["personalInfo"]>)
+              (initialResume.personalInfo as NonNullable<ResumeWithRelations["personalInfo"]>)
             }
             onChangeAction={updateResumeData}
             removeBackground={removeBackground}
@@ -283,7 +292,7 @@ export default function ResumeBuilder() {
 
       {/* Main Content - Completely Redesigned */}
       <div className="mx-auto w-full max-w-400 flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        {isLoading || !hasFetched ? (
+        {isLoading ? (
           <ResumeBuilderSkeleton />
         ) : resumeNotFound ? (
           <div className="flex min-h-[60vh] flex-col items-center justify-center">
