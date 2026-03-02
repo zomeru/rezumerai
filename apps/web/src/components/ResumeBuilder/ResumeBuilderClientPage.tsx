@@ -1,4 +1,3 @@
-// Resume builder client component with React Query for mutations
 "use client";
 
 import type { ResumeWithRelations } from "@rezumerai/types";
@@ -24,7 +23,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Activity as ReactActivity, useEffect, useMemo, useRef, useState } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -81,15 +80,16 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
     initialData: serverResume,
   });
 
-  // Local draft state - initialized from server data, separate from React Query cache
-  const [draftResume, setDraftResume] = useState<ResumeWithRelations>(serverResume);
+  // Draft state is stored in Zustand to keep it available across builder UI boundaries
+  const storedDraftResume = useBuilderStore((state) => state.draftResume);
+  const setDraftResume = useBuilderStore((state) => state.setDraftResume);
+  const updateDraftResume = useBuilderStore((state) => state.updateDraftResume);
+  const draftResume = storedDraftResume ?? serverResume;
 
-  // Sync with fresh server data if available
+  // Sync store with server/fresh data
   useEffect(() => {
-    if (freshResume) {
-      setDraftResume(freshResume);
-    }
-  }, [freshResume]);
+    setDraftResume(freshResume ?? serverResume);
+  }, [freshResume, serverResume, setDraftResume]);
 
   // Use React Query mutation for saving
   const updateResumeMutation = useUpdateResume();
@@ -107,23 +107,21 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   const previewMode = useBuilderStore((state) => state.previewMode);
   const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
 
-  const resumeData = draftResume;
-
   const effectiveFontSize: FontSizeValue =
-    resumeData.fontSize === "custom" ? (resumeData.customFontSize ?? 1) : resumeData.fontSize;
+    draftResume.fontSize === "custom" ? (draftResume.customFontSize ?? 1) : draftResume.fontSize;
 
   // PDF generation hook
   const { pdfBlob, isGeneratingPdf, isExporting, downloadResume } = usePdfGenerator({
-    resumeData,
+    resumeData: draftResume,
     previewMode,
     resumePreviewRef,
     fontSize: effectiveFontSize,
-    accentColor: resumeData.accentColor,
+    accentColor: draftResume.accentColor,
   });
 
   // Immutable update helper for draft state
   function updateDraft(updates: Partial<ResumeWithRelations>): void {
-    setDraftResume((prev) => ({ ...prev, ...updates }));
+    updateDraftResume(updates);
   }
 
   function updateResumeData(data: NonNullable<ResumeWithRelations["personalInfo"]>) {
@@ -169,25 +167,25 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   }
 
   function changeResumeVisibility() {
-    updateDraft({ public: !resumeData.public });
+    updateDraft({ public: !draftResume.public });
   }
 
   async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
       const updates = {
-        title: resumeData.title,
-        public: resumeData.public,
-        professionalSummary: resumeData.professionalSummary,
-        template: resumeData.template,
-        accentColor: resumeData.accentColor,
-        fontSize: resumeData.fontSize,
-        customFontSize: resumeData.customFontSize,
-        skills: resumeData.skills,
-        personalInfo: resumeData.personalInfo ?? undefined,
-        experience: resumeData.experience,
-        education: resumeData.education,
-        project: resumeData.project,
+        title: draftResume.title,
+        public: draftResume.public,
+        professionalSummary: draftResume.professionalSummary,
+        template: draftResume.template,
+        accentColor: draftResume.accentColor,
+        fontSize: draftResume.fontSize,
+        customFontSize: draftResume.customFontSize,
+        skills: draftResume.skills,
+        personalInfo: draftResume.personalInfo ?? undefined,
+        experience: draftResume.experience,
+        education: draftResume.education,
+        project: draftResume.project,
       };
 
       // Validate update payload with Zod
@@ -210,7 +208,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
 
   async function handleShareResume(): Promise<void> {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${resumeData.id}`;
+    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${draftResume.id}`;
 
     try {
       await navigator.share({
@@ -232,7 +230,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
         render: () => (
           <PersonalInfoForm
             data={
-              resumeData.personalInfo ??
+              draftResume.personalInfo ??
               ({
                 id: "",
                 resumeId: "",
@@ -256,31 +254,31 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
         id: "summary",
         render: () => (
           <ProfessionalSummaryFormEnhanced
-            summary={resumeData.professionalSummary ?? ""}
+            summary={draftResume.professionalSummary ?? ""}
             onChange={handleSummaryChange}
           />
         ),
       },
       {
         id: "experience",
-        render: () => <ExperienceFormEnhanced experience={resumeData.experience} onChange={handleExperienceChange} />,
+        render: () => <ExperienceFormEnhanced experience={draftResume.experience} onChange={handleExperienceChange} />,
       },
       {
         id: "education",
-        render: () => <EducationFormEnhanced education={resumeData.education} onChange={handleEducationChange} />,
+        render: () => <EducationFormEnhanced education={draftResume.education} onChange={handleEducationChange} />,
       },
       {
         id: "projects",
-        render: () => <ProjectFormEnhanced project={resumeData.project} onChange={handleProjectChange} />,
+        render: () => <ProjectFormEnhanced project={draftResume.project} onChange={handleProjectChange} />,
       },
       {
         id: "skills",
-        render: () => <SkillsFormEnhanced skills={resumeData.skills} onChange={handleSkillsChange} />,
+        render: () => <SkillsFormEnhanced skills={draftResume.skills} onChange={handleSkillsChange} />,
       },
     ] as const;
 
     return _sections;
-  }, [resumeData, removeBackground]);
+  }, [draftResume, removeBackground]);
 
   const activeSection = sections[activeSectionIndex];
   const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
@@ -318,11 +316,11 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <TemplateSelector
-                        selectedTemplate={resumeData.template}
+                        selectedTemplate={draftResume.template}
                         onChange={(template: TemplateType) => handleTemplateChange(template)}
                       />
                       <ColorPickerModal
-                        selectedColor={resumeData.accentColor}
+                        selectedColor={draftResume.accentColor}
                         onChange={(color: string) => handleColorChange(color)}
                       />
                       <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
@@ -457,7 +455,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {resumeData.public && (
+                  {draftResume.public && (
                     <button
                       type="button"
                       className="flex items-center gap-2 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 font-medium text-secondary-700 text-sm shadow-sm transition-all hover:bg-secondary-50 hover:shadow active:scale-95"
@@ -471,8 +469,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                     className="flex items-center gap-2 rounded-xl border border-accent-200 bg-white px-4 py-2.5 font-medium text-accent-700 text-sm shadow-sm transition-all hover:bg-accent-50 hover:shadow active:scale-95"
                     onClick={changeResumeVisibility}
                   >
-                    {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-                    {resumeData.public ? "Public" : "Private"}
+                    {draftResume.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                    {draftResume.public ? "Public" : "Private"}
                   </button>
                   <button
                     type="button"
@@ -504,9 +502,9 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                 >
                   <ResumePreview
                     ref={resumePreviewRef}
-                    data={resumeData}
-                    accentColor={resumeData.accentColor}
-                    template={resumeData.template}
+                    data={draftResume}
+                    accentColor={draftResume.accentColor}
+                    template={draftResume.template}
                     fontSize={effectiveFontSize}
                     previewMode={previewMode}
                   />
