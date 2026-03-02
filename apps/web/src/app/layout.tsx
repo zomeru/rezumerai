@@ -3,7 +3,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
 import { clientEnv } from "@/env";
-import { ReactQueryProvider } from "@/provider";
+import { ReactQueryProvider } from "@/providers";
 
 const outfitSans: NextFontWithVariable = Outfit({
   variable: "--font-outfit",

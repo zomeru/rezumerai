@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@rezumerai/tsconfig": "workspace:*",
-    "@swc/core": "^1.15.13",
+    "@swc/core": "^1.15.18",
     "@types/bun": "^1.3.9",
     "tsup": "8.5.1",
     "typescript": "^5.9.3"

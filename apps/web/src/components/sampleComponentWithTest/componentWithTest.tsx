@@ -8,8 +8,8 @@ import { Button } from "@rezumerai/ui";
 import { capitalize } from "@rezumerai/utils/string";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { ClientDate } from "../client-date";
-import { UserFetcher } from "../user-fetcher";
+import { ClientDate } from "./client-date";
+import { UserFetcher } from "./user-fetcher";
 
 interface HealthData {
   message: string;

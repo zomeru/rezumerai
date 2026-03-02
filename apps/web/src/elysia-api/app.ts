@@ -7,7 +7,7 @@ import Elysia from "elysia";
 import { helmet } from "elysia-helmet";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
-import { elysiaXSS } from "elysia-xss";
+// import { elysiaXSS } from 'elysia-xss'
 import { serverEnv } from "@/env";
 import { resumeModule, userModule } from "./modules";
 import { authPlugin, errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from "./plugins";
@@ -23,7 +23,7 @@ import { authPlugin, errorPlugin, loggerPlugin, modernCsrf, prismaPlugin } from 
 export const elysiaApp = new Elysia({ prefix: "/api" })
   // ── Cross-cutting plugins ───────────────────────────────────────────────
   .use(cors())
-  .use(elysiaXSS())
+  // .use(elysiaXSS())
   .use(serverEnv?.NODE_ENV !== "development" ? rateLimit() : (app) => app) // Disable rate limiting in development for easier testing
   .use(httpExceptionPlugin())
   .use(helmet())

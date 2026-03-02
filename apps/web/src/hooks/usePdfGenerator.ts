@@ -1,7 +1,7 @@
 import type { ResumeWithRelations } from "@rezumerai/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FontSizeValue } from "@/components/ResumeBuilder";
-import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
+import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdf-utils";
 
 /**
  * Preview mode for resume display.

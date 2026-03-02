@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate } from "@rezumerai/utils/date";
-import { useClientDate } from "../hooks/useClientDate";
+import { useClientDate } from "../../hooks/useClientDate";
 
 /**
  * Props for ClientDate component.

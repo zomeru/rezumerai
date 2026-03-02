@@ -4,7 +4,7 @@ import type { ResumeWithRelations } from "@rezumerai/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ResumePreview } from "@/components/ResumeBuilder";
-import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
+import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdf-utils";
 
 /**
  * Props for the {@link DownloadResumeModal} component.
