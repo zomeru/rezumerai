@@ -24,10 +24,6 @@ export const CustomResumeInputCreate = t.Composite([
   t.Partial(CustomResumeRelationsInputCreate),
 ]);
 
-// const asdad = t.Partial(PersonalInformationPlainInputCreate);
-
-// type asdadasd = typeof asdad.static;
-
 export const CustomResumeRelationsInputUpdate = t.Partial(t.Omit(ResumeRelations, ["user"]));
 
 export const CustomResumeWithRelationInputUpdate = t.Composite([

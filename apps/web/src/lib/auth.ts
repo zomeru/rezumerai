@@ -24,6 +24,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
   account: {
     encryptOAuthTokens: true, // Uses AES-256-GCM
   },

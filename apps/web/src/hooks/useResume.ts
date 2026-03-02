@@ -1,11 +1,14 @@
 import type { ResumeWithRelations } from "@rezumerai/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DUMMY_RESUME_DATA_ID } from "@/constants/dummy";
 import { api } from "@/lib/api";
 
 export type CreateResumeInput = Parameters<typeof api.resumes.post>[0];
 
-export function useResumeById(id: string) {
+export function useResumeById(
+  id: string,
+  options?: Omit<QueryOptions<ResumeWithRelations>, "queryKey" | "queryFn" | "enabled">,
+) {
   return useQuery({
     queryKey: ["resumesById", id],
     queryFn: async () => {
@@ -22,6 +25,7 @@ export function useResumeById(id: string) {
       return data;
     },
     enabled: !!id && id !== DUMMY_RESUME_DATA_ID,
+    ...options,
   });
 }
 
@@ -89,7 +93,6 @@ export function useUpdateResume() {
       return data as ResumeWithRelations;
     },
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
       void queryClient.invalidateQueries({
         queryKey: ["resumesById", variables.id],
       });
