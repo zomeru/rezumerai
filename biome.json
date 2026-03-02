@@ -17,7 +17,8 @@
       "!!**/generated/prisma",
       "!!**/public",
       "!!**/.claude",
-      "!!**/.agents"
+      "!!**/.agents",
+      "!!**/.github"
     ]
   },
   "formatter": {

@@ -1,9 +1,8 @@
-
 # Run pre-commit checks
 echo "🔍 Running pre-commit checks..."
 
 # Lint and format staged files only
 echo "📝 Linting and formatting staged files..."
-bun run lint-staged
+bun lint-staged
 
 echo "✅ Pre-commit checks passed!"

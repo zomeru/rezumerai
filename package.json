@@ -12,11 +12,6 @@
     "turbo": "^2.8.10",
     "typescript": "^5.9.3"
   },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
-  },
   "overrides": {
     "body-parser": "^2.2.1",
     "hono": "^4.10.3",
@@ -36,7 +31,6 @@
     "biome": "bun run update:biome-configs && biome check --write  .",
     "update:biome-configs": "bun scripts/update-biome-config-version.ts",
     "check:types": "turbo check:types",
-    "lint-staged": "lint-staged",
     "code:check": "bun run check && bun run check:types",
     "code:verify": "bun run code:check && bun run test && bun run build",
     "test": "turbo test",
@@ -66,6 +60,14 @@
     "security:audit": "bun audit --production",
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
+      "biome check --write --staged"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "trustedDependencies": [
     "@prisma/client",
