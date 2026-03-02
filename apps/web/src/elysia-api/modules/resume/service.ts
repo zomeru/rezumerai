@@ -26,15 +26,30 @@ export abstract class ResumeService {
   /**
    * Retrieves all resumes for a given user.
    */
-  static async findMany(db: PrismaClient, userId: string): Promise<ResumeWithRelations[]> {
+  static async search(
+    db: PrismaClient,
+    userId: string,
+    query: {
+      search?: string;
+    },
+  ): Promise<ResumeWithRelations[]> {
+    const where: Prisma.ResumeWhereInput = {
+      userId,
+    };
+
+    if (query.search?.trim()) {
+      where.AND = [{ title: { contains: query.search.trim(), mode: "insensitive" } }];
+    }
+
     const resumes = await db.resume.findMany({
-      where: { userId },
+      where,
       include: {
         education: true,
         experience: true,
         project: true,
         personalInfo: true,
       },
+      orderBy: { updatedAt: "desc" },
     });
     return resumes;
   }

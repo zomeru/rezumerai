@@ -18,12 +18,17 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   // ── GET /resumes ───────────────────────────────────────────────────────────
   .get(
     "/",
-    async ({ db, user }) => {
-      const resumes = await ResumeService.findMany(db, user.id);
+    async ({ db, user, query }) => {
+      const resumes = await ResumeService.search(db, user.id, {
+        search: query.search,
+      });
 
       return status(200, resumes);
     },
     {
+      query: t.Object({
+        search: t.Optional(t.String()),
+      }),
       response: {
         200: t.Array(ResumeWithoutUser),
       },

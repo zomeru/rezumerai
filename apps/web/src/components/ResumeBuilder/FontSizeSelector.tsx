@@ -1,11 +1,11 @@
 "use client";
 
-import type { FONT_SIZE_VALUES } from "@rezumerai/types";
+import type { FontSizePreset as FontSizePresetType } from "@rezumerai/database/generated/prismabox/FontSizePreset";
 import { cn } from "@rezumerai/utils/styles";
 import { Check, Type } from "lucide-react";
 import { useState } from "react";
 
-export type FontSizePreset = (typeof FONT_SIZE_VALUES)[number];
+export type FontSizePreset = typeof FontSizePresetType.static;
 
 import { useClickOutside } from "@/hooks/useClickOutside";
 

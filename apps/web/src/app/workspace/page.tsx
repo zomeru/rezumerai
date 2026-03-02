@@ -14,6 +14,7 @@ import {
 } from "@/components/Dashboard";
 import { initialResume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   type CreateResumeInput,
   useCreateResume,
@@ -29,8 +30,6 @@ export default function Dashboard() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const { data: resumes = [], isLoading, error } = useResumeList();
-
   const createResume = useCreateResume();
   const updateResume = useUpdateResume();
   const deleteResume = useDeleteResume();
@@ -45,6 +44,9 @@ export default function Dashboard() {
   const setSearchQuery = useDashboardStore((state) => state.setSearchQuery);
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const debouncedSearchQuery = useDebounce(deferredSearchQuery, 300);
+
+  const { data: resumes = [], isLoading, error } = useResumeList(debouncedSearchQuery);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setResumeTitle(e.target.value);
@@ -132,16 +134,10 @@ export default function Dashboard() {
     setResumeTitle("");
   }
 
-  // Get the resume for download modal
   const downloadResume =
     modalState.type === "download" && modalState.resumeId
       ? resumes.find((r) => r.id === modalState.resumeId)
       : undefined;
-
-  // Filter resumes based on deferred search query for smoother UX
-  const filteredResumes = resumes.filter((resume) =>
-    resume.title.toLowerCase().includes(deferredSearchQuery.toLowerCase()),
-  );
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
@@ -238,13 +234,13 @@ export default function Dashboard() {
           ) : (
             <ResumeCardSkeletonList count={5} />
           )
-        ) : filteredResumes.length > 0 ? (
+        ) : resumes.length > 0 ? (
           <div
             className={
               viewMode === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" : "space-y-3"
             }
           >
-            {filteredResumes.map((resume, index) => {
+            {resumes.map((resume, index) => {
               const key = generateUuidKey(resume.id);
 
               return (

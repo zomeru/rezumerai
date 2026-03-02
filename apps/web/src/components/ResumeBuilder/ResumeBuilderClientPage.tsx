@@ -1,9 +1,7 @@
 "use client";
 
-import type { ResumeWithRelations } from "@rezumerai/types";
-import { ResumeUpdateBodySchema } from "@rezumerai/types";
+import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftIcon,
   Briefcase,
@@ -93,7 +91,6 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
 
   // Use React Query mutation for saving
   const updateResumeMutation = useUpdateResume();
-  const queryClient = useQueryClient();
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -173,7 +170,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   async function handleSaveResume(): Promise<void> {
     setIsSaving(true);
     try {
-      const updates = {
+      const updates: ResumeWithRelationsInputUpdate = {
         title: draftResume.title,
         public: draftResume.public,
         professionalSummary: draftResume.professionalSummary,
@@ -188,17 +185,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
         project: draftResume.project,
       };
 
-      // Validate update payload with Zod
-      const validationResult = ResumeUpdateBodySchema.safeParse(updates);
-      if (!validationResult.success) {
-        console.error("Validation failed:", validationResult.error.flatten());
-        throw new Error("Invalid resume data");
-      }
-
-      await updateResumeMutation.mutateAsync({ id: resumeId, updates: validationResult.data });
+      await updateResumeMutation.mutateAsync({ id: resumeId, updates });
       setLastSaved(new Date());
-      // Invalidate and refetch to ensure server data wins
-      await queryClient.invalidateQueries({ queryKey: ["resumesById", resumeId] });
     } catch (error) {
       console.error("Failed to save resume:", error);
     } finally {

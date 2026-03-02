@@ -29,11 +29,15 @@ export function useResumeById(
   });
 }
 
-export function useResumeList() {
+export function useResumeList(search?: string) {
   return useQuery({
-    queryKey: ["resumes"],
-    queryFn: async () => {
-      const { data, error } = await api.resumes.get();
+    queryKey: ["resumes", { search }],
+    queryFn: async ({ queryKey }) => {
+      const [, params] = queryKey as [string, { search?: string }];
+      const queryParams = params.search ? { search: params.search } : {};
+      const { data, error } = await api.resumes.get({
+        query: queryParams,
+      });
 
       if (error) {
         const errorMessage =
