@@ -17,6 +17,7 @@ type Experience = ResumeWithRelations["experience"];
  *
  * @property experience - Array of work experience entries
  * @property onChange - Callback with updated experience array
+ * @property invalidIndices - Set of entry indices that failed end date validation; triggers auto-expand and inline error. Callers must pass a new Set reference on each validation cycle for the auto-expand effect to fire.
  */
 export interface ExperienceFormEnhancedProps {
   experience: Experience;
