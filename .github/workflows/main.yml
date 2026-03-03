@@ -96,6 +96,9 @@ jobs:
       - name: Sync Prisma schema
         run: cd packages/database && bun run db:push -- --accept-data-loss
 
+      - name: Generate Prisma client
+        run: cd packages/database && bun run db:generate
+
       - name: Build packages
         run: bun run build --filter=./packages/*
 

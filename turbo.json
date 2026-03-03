@@ -24,7 +24,9 @@
       "outputs": []
     },
     "check": {},
-    "check:types": {},
+    "check:types": {
+      "dependsOn": ["^check:types"]
+    },
     "test": {
       "cache": false
     },
