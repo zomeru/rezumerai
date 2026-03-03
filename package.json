@@ -41,6 +41,7 @@
     "version:packages": "turbo build && changeset version",
     "db:generate": "cd packages/database && bun run db:generate",
     "db:push": "cd packages/database && bun run db:push",
+    "db:migrate": "cd packages/database && bun run db:migrate",
     "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
     "db:migrate:status": "cd packages/database && bun run db:migrate:status",
     "db:seed": "cd packages/database && bun run db:seed",

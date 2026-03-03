@@ -1,6 +1,8 @@
 import cors from "@elysiajs/cors";
+import { cron } from "@elysiajs/cron";
 import { openapi } from "@elysiajs/openapi";
 import { swagger } from "@elysiajs/swagger";
+import { prisma } from "@rezumerai/database";
 import { formatDate } from "@rezumerai/utils/date";
 import { capitalize } from "@rezumerai/utils/string";
 import Elysia from "elysia";
@@ -58,9 +60,23 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   // 4. Documentation (dev only — never expose in production)
   .use(process.env.NODE_ENV === "development" ? swagger() : (app) => app)
   .use(process.env.NODE_ENV === "development" ? openapi() : (app) => app)
-  .get("/", "Hello Nextjs")
+  .get("/", "Hello from Rezumer!")
 
   // ── Health check (root) ─────────────────────────────────────────────────
+  .use(
+    cron({
+      name: "heartbeat",
+      // pattern: "0 */12 * * *",
+      pattern: "*/5 * * * * *",
+      run() {
+        const sampleDbCall = prisma.sampleTable.findFirst({
+          select: { id: true },
+        });
+
+        console.log(`[Heartbeat] ${formatDate(new Date())} - Database is healthy. Sample data:`, sampleDbCall);
+      },
+    }),
+  )
   .use(authPlugin)
   .get("/health", async ({ db }) => {
     const message = capitalize("Health check successful!");

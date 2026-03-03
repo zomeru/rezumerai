@@ -16,6 +16,7 @@
     "db:push": "bun run with-env prisma db push",
     "db:push:preview": "bun run with-env:preview prisma db push",
     "db:push:prod": "bun run with-env:prod prisma db push",
+    "db:migrate": "bun run prisma migrate deploy",
     "db:migrate:status": "bun run with-env prisma migrate status",
     "db:migrate:dev": "bun run with-env prisma migrate dev --schema ./prisma",
     "db:migrate:preview": "bun run with-env:preview prisma migrate deploy",
