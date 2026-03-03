@@ -28,7 +28,7 @@ export const ExperienceItemSchema = z
   .superRefine((data, ctx) => {
     if (!data.isCurrent && data.endDate === null) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "End date is required",
         path: ["endDate"],
       });
