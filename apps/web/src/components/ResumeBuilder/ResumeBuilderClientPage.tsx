@@ -290,7 +290,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
     ] as const;
 
     return _sections;
-  }, [draftResume, removeBackground]);
+  }, [draftResume, removeBackground, invalidExperienceIndices]);
 
   const activeSection = sections[activeSectionIndex];
   const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
