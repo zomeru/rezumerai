@@ -73,7 +73,6 @@ export default function BaseModal({
   if (!isOpen) return null;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: Backdrop div needs click handler for UX (close on outside click)
     <div
       className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}

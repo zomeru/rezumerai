@@ -143,7 +143,6 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
       };
 
       return (
-        // biome-ignore lint/a11y/useSemanticElements: div is needed for styling and ref forwarding
         <div
           ref={containerRef}
           className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 p-4"

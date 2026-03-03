@@ -1,7 +1,6 @@
 "use client";
 
 import type { ResumeWithRelations } from "@rezumerai/types";
-import { onKeyDown } from "@rezumerai/utils";
 import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
 import { memo, useState } from "react";
 
@@ -59,14 +58,16 @@ function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: Res
   }
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <div> used as a card with click handler
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
       className="group relative flex h-56 w-full cursor-pointer flex-col overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white p-6 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-slate-200 hover:shadow-xl"
-      aria-label={`Open ${resume.title} resume`}
-      onKeyDown={onKeyDown}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      tabIndex={0}
     >
       {/* Background gradient */}
       <div
@@ -85,52 +86,71 @@ function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: Res
           >
             <FilePenLineIcon className="size-6" />
           </div>
-
           {/* Action buttons */}
           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             {onDownload && (
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={handleDownload}
-                disabled={isDownloading}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    handleDownload(e as unknown as React.MouseEvent);
+                  }
+                }}
                 className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={isDownloading ? "Downloading..." : `Download ${resume.title}`}
               >
                 {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
-              </button>
+              </span>
             )}
-            <button
-              type="button"
-              onClick={(e: React.MouseEvent) => {
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  onEdit();
+                }
               }}
               className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900"
               aria-label={`Edit ${resume.title}`}
             >
               <PencilIcon className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={(e: React.MouseEvent) => {
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  onDelete();
+                }
               }}
               className="rounded-lg bg-white p-2 text-red-600 shadow-md transition-all hover:bg-red-50"
               aria-label={`Delete ${resume.title}`}
             >
               <TrashIcon className="size-4" />
-            </button>
+            </span>
           </div>
         </div>
 
         <div className="flex-1">
-          <h3
+          <h2
             className="mb-2 line-clamp-2 font-semibold text-lg transition-colors group-hover:text-slate-900"
             style={{ color: `${color}` }}
           >
             {resume.title}
-          </h3>
+          </h2>
           <p className="text-slate-500 text-sm">Updated {formatDate(resume.updatedAt)}</p>
         </div>
 

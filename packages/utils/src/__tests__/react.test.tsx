@@ -87,7 +87,6 @@ describe("onKeyDown", () => {
       };
 
       return (
-        // biome-ignore lint/a11y/noStaticElementInteractions: This is just a test component to verify onKeyDown works as expected
         <div onKeyDown={handleKeyDown}>
           <input type="text" placeholder="Test input" />
         </div>

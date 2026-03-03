@@ -32,6 +32,13 @@ const serverSchema = clientSchema.extend({
   // Optional analytics/monitoring (server-side only)
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),
   ANALYTICS_ID: z.string().optional().describe("Analytics tracking ID"),
+
+  // Optional OpenTelemetry export (server-side only)
+  OTEL_EXPORTER_OTLP_ENDPOINT: z
+    .string()
+    .optional()
+    .describe("OTLP collector endpoint (e.g. https://api.axiom.co/v1/traces)"),
+  OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
 });
 
 /**
