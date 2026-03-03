@@ -1,6 +1,7 @@
 "use client";
 
 import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
+import { ExperienceArraySchema } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
 import {
   ArrowLeftIcon,
@@ -21,7 +22,8 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -91,6 +93,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
 
   // Use React Query mutation for saving
   const updateResumeMutation = useUpdateResume();
+
+  const [invalidExperienceIndices, setInvalidExperienceIndices] = useState<Set<number>>(new Set());
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -168,6 +172,20 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   }
 
   async function handleSaveResume(): Promise<void> {
+    // Client-side validation: end date required when isCurrent is false
+    const validationResult = ExperienceArraySchema.safeParse(draftResume.experience);
+    if (!validationResult.success) {
+      const invalids = new Set<number>();
+      for (const issue of validationResult.error.issues) {
+        const idx = issue.path[0];
+        if (typeof idx === "number") invalids.add(idx);
+      }
+      setInvalidExperienceIndices(invalids);
+      toast.error("Please provide an end date for all non-current positions.");
+      return;
+    }
+    setInvalidExperienceIndices(new Set());
+
     setIsSaving(true);
     try {
       const updates: ResumeWithRelationsInputUpdate = {
@@ -249,7 +267,13 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
       },
       {
         id: "experience",
-        render: () => <ExperienceFormEnhanced experience={draftResume.experience} onChange={handleExperienceChange} />,
+        render: () => (
+          <ExperienceFormEnhanced
+            experience={draftResume.experience}
+            onChange={handleExperienceChange}
+            invalidIndices={invalidExperienceIndices}
+          />
+        ),
       },
       {
         id: "education",
