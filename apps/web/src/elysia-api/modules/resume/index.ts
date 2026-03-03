@@ -66,7 +66,13 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   // ── PATCH /resumes/:id ─────────────────────────────────────────────────────
   .patch(
     "/:id",
-    async ({ db, user, params, body }) => {
+    async ({ db, user, params, body, status }) => {
+      const { experience } = body as { experience?: Array<{ isCurrent?: boolean | null; endDate?: Date | null }> };
+      const hasInvalidExp = experience?.some((exp) => exp.isCurrent === false && !exp.endDate);
+      if (hasInvalidExp) {
+        return status(422, "End date is required for non-current positions");
+      }
+
       const updatedResume = await ResumeService.update(
         db,
         user.id,
@@ -81,6 +87,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       response: {
         200: ResumeWithoutUser,
         404: t.String(),
+        422: t.String(),
       },
     },
   )
