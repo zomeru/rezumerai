@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Skeleton, { SkeletonText } from "./Skeleton";
 
 /**
@@ -49,7 +50,7 @@ interface ResumeCardSkeletonGridProps {
  * <ResumeCardSkeletonGrid /> // defaults to 5 cards
  * ```
  */
-export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProps) {
+export const ResumeCardSkeletonGrid = memo(({ count = 5 }: ResumeCardSkeletonGridProps) => {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {Array.from({ length: count }, (_, i) => (
@@ -58,7 +59,7 @@ export function ResumeCardSkeletonGrid({ count = 5 }: ResumeCardSkeletonGridProp
       ))}
     </div>
   );
-}
+});
 
 /**
  * Props for ResumeCardSkeletonList component.
@@ -82,7 +83,7 @@ interface ResumeCardSkeletonListProps {
  * <ResumeCardSkeletonList /> // defaults to 5 cards
  * ```
  */
-export function ResumeCardSkeletonList({ count = 5 }: ResumeCardSkeletonListProps) {
+export const ResumeCardSkeletonList = memo(({ count = 5 }: ResumeCardSkeletonListProps) => {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }, (_, i) => (
@@ -91,4 +92,4 @@ export function ResumeCardSkeletonList({ count = 5 }: ResumeCardSkeletonListProp
       ))}
     </div>
   );
-}
+});

@@ -12,16 +12,67 @@ import { auth } from "@/lib/auth";
 const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW];
 
 /**
+ * Helper to set security headers
+ */
+function setSecurityHeaders(res: NextResponse, isDev: boolean) {
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set("X-XSS-Protection", "1; mode=block");
+
+  if (!isDev) {
+    // HSTS only in production
+    res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
+}
+
+/**
+ * Build dynamic Content Security Policy
+ */
+function buildCSP(isDev: boolean) {
+  const scriptSrc = ["'self'", "blob:"];
+  const connectSrc = ["'self'", "blob:"];
+
+  if (isDev) {
+    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "http://localhost:8080", "https://vercel.live");
+    connectSrc.push("http://localhost:8080");
+  } else {
+    // Production: Tailwind inline styles only
+    scriptSrc.push("'unsafe-inline'");
+  }
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(" ")}`,
+    "worker-src 'self' blob:",
+    "child-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline'",
+    `connect-src ${connectSrc.join(" ")}`,
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+/**
  * Proxy for route protection and security headers.
  * Runs on every request matching the config.matcher patterns.
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const isDev = process.env.NODE_ENV !== "production";
 
-  // Check if the current route is protected
+  // Skip API routes entirely for CSP/auth headers
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
+  // Auth session
+  const session = await auth.api.getSession({ headers: await headers() });
+
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
   // Redirect unauthenticated users from protected routes
@@ -36,47 +87,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL(ROUTES.WORKSPACE, request.url));
   }
 
+  // Response with security headers
   const response = NextResponse.next();
-
-  // Build connect-src dynamically based on environment
-  const connectSources = ["'self'", "https://api.rezumer.ai", "blob:"];
-
-  // Allow localhost in development for API and Vercel live reload
-  const scriptSources = ["'self'", "'unsafe-eval'", "'unsafe-inline'", "blob:"];
-
-  if (process.env.NODE_ENV !== "production") {
-    connectSources.push("http://localhost:8080");
-    scriptSources.push("https://vercel.live", "http://localhost:8080");
-  }
-
-  // Apply strict Content Security Policy
-  const cspDirectives = [
-    "default-src 'self'",
-    `script-src ${scriptSources.join(" ")}`,
-    "worker-src 'self' blob:", // Allow web workers from same origin and blob URLs
-    "child-src 'self' blob:", // Allow child contexts (workers, frames) from blob URLs
-    "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    `connect-src ${connectSources.join(" ")}`,
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ];
-
-  response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
-
-  // Additional security headers
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  response.headers.set("X-XSS-Protection", "1; mode=block");
-
-  // Strict-Transport-Security (HSTS) - only enable in production with HTTPS
-  if (process.env.NODE_ENV === "production") {
-    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-  }
+  setSecurityHeaders(response, isDev);
+  response.headers.set("Content-Security-Policy", buildCSP(isDev));
 
   return response;
 }

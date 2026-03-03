@@ -1,5 +1,5 @@
 import { type Prisma, prisma } from "../";
-import { dummyResumeData } from "../dummy-data/resumes";
+import { generateDummyData } from "../dummy-data/resumes";
 
 async function clearDatabase(): Promise<void> {
   console.log("🗑️  Clearing existing data...");
@@ -18,6 +18,22 @@ async function clearDatabase(): Promise<void> {
 
 async function seedResumes(): Promise<void> {
   console.log("📝 Creating resumes...");
+
+  const userEmail = process.env.DB_SEED_USER_EMAIL;
+
+  if (!userEmail) {
+    throw new Error("❌ DB_SEED_USER_EMAIL environment variable is not set");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail },
+  });
+
+  if (!user) {
+    throw new Error(`❌ User with email ${userEmail} not found`);
+  }
+
+  const dummyResumeData = generateDummyData(user.id);
 
   const operations = dummyResumeData.map((resumeData: Prisma.ResumeCreateInput) =>
     prisma.resume.create({ data: resumeData }),
@@ -47,9 +63,8 @@ async function main(): Promise<void> {
 main()
   .catch(async (e) => {
     console.error("❌ Error seeding database:", e);
-    await prisma.$disconnect();
-    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
+    process.exit(1);
   });

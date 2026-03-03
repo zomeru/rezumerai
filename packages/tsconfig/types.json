@@ -5,7 +5,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@rezumerai/database": ["../database/"],
+      "@rezumerai/database/*": ["../database/*"]
     },
     "outDir": "./dist",
     "declaration": true,

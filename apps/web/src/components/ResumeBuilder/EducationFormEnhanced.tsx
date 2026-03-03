@@ -1,12 +1,14 @@
 "use client";
 
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatFullDate, formatShortDate, parseYearMonth } from "@rezumerai/utils/date";
+import { formatShortDate } from "@rezumerai/utils/date";
 import { useState } from "react";
-import type { Education } from "@/constants/dummy";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
+
+type Education = ResumeWithRelations["education"];
 
 /**
  * Props for the EducationFormEnhanced component.
@@ -15,8 +17,8 @@ import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
  * @property onChange - Callback with updated education array
  */
 export interface EducationFormEnhancedProps {
-  education: Education[];
-  onChange: (education: Education[]) => void;
+  education: Education;
+  onChange: (education: Education) => void;
 }
 
 /**
@@ -32,12 +34,13 @@ export default function EducationFormEnhanced({ education, onChange }: Education
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
-    const newEducation: Education = {
-      _id: generateUuidKey(),
+    const newEducation: Education[number] = {
+      id: generateUuidKey(),
+      resumeId: education[0]?.resumeId || "",
       institution: "",
       degree: "",
       field: "",
-      graduationDate: "",
+      graduationDate: new Date(),
       gpa: "",
     };
     onChange([...education, newEducation]);
@@ -52,7 +55,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Education, value: string) => {
+  const handleUpdate = (index: number, field: keyof Education[number], value: string | Date) => {
     const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
     onChange(updated);
   };
@@ -64,8 +67,8 @@ export default function EducationFormEnhanced({ education, onChange }: Education
       <DraggableList
         items={education}
         onReorder={onChange}
-        getItemId={(item: Education): string => item._id}
-        renderItem={(edu: Education, index: number) => (
+        getItemId={(item: Education[number]): string => item.id}
+        renderItem={(edu: Education[number], index: number) => (
           <div className="rounded-lg border border-slate-200 bg-white">
             <button
               type="button"
@@ -78,9 +81,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                 </p>
                 <p className="text-slate-500 text-sm">
                   {edu.institution || "Institution"}
-                  {edu.graduationDate &&
-                    parseYearMonth(edu.graduationDate) &&
-                    ` • ${formatShortDate(edu.graduationDate)}`}
+                  {edu.graduationDate && ` • ${formatShortDate(edu.graduationDate)}`}
                 </p>
               </div>
               <DeleteButton onDelete={() => handleRemove(index)} ariaLabel={`Delete ${edu.degree || "education"}`} />
@@ -119,8 +120,8 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                   <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
                     <DatePicker
-                      selected={parseYearMonth(edu.graduationDate)}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", formatFullDate(date))}
+                      selected={edu.graduationDate ?? undefined}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", date ?? new Date())}
                       placeholder="Select graduation date"
                     />
                   </div>

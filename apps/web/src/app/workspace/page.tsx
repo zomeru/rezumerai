@@ -1,11 +1,10 @@
-// Dashboard page for managing resumes (create, edit, delete, download).
 "use client";
 
 import { ResumeCardSkeletonGrid, ResumeCardSkeletonList } from "@rezumerai/ui";
 import { generateUuidKey } from "@rezumerai/utils";
 import { Grid3x3, LayoutList, Plus, Search, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDeferredValue, useEffect, useTransition } from "react";
+import { useCallback, useDeferredValue, useState, useTransition } from "react";
 import {
   CreateResumeModal,
   DownloadResumeModal,
@@ -13,49 +12,45 @@ import {
   ResumeCard,
   UploadResumeModal,
 } from "@/components/Dashboard";
+import { initialResume } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
-import { useSession } from "@/lib/auth-client";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  type CreateResumeInput,
+  useCreateResume,
+  useDeleteResume,
+  useResumeList,
+  useUpdateResume,
+} from "@/hooks/useResume";
 import { useDashboardStore } from "@/store/useDashboardStore";
-import { useResumeStore } from "@/store/useResumeStore";
 
 const RESUME_COLORS: `#${string}`[] = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
-/**
- * Dashboard component for managing resumes.
- * Uses React 19 features for optimal performance:
- * - useTransition for non-blocking search updates
- * - useDeferredValue to defer expensive filtering
- */
 export default function Dashboard() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { data: session } = useSession();
-  console.log("Session data in Dashboard:", session);
 
-  // Resume store
-  const resumes = useResumeStore((state) => state.resumes);
-  const isLoading = useResumeStore((state) => state.isLoading);
-  const hasFetched = useResumeStore((state) => state.hasFetched);
-  const fetchResumes = useResumeStore((state) => state.fetchResumes);
-  const updateResume = useResumeStore((state) => state.updateResume);
-  const deleteResume = useResumeStore((state) => state.deleteResume);
+  const createResume = useCreateResume();
+  const updateResume = useUpdateResume();
+  const deleteResume = useDeleteResume();
 
-  useEffect(() => {
-    fetchResumes();
-  }, [fetchResumes]);
+  const [resumeTitle, setResumeTitle] = useState("");
 
-  // Dashboard UI store
   const modalState = useDashboardStore((state) => state.modalState);
   const setModalState = useDashboardStore((state) => state.setModalState);
-  const editingTitle = useDashboardStore((state) => state.editingTitle);
-  const setEditingTitle = useDashboardStore((state) => state.setEditingTitle);
   const viewMode = useDashboardStore((state) => state.viewMode);
   const setViewMode = useDashboardStore((state) => state.setViewMode);
   const searchQuery = useDashboardStore((state) => state.searchQuery);
   const setSearchQuery = useDashboardStore((state) => state.setSearchQuery);
 
-  // Defer search query to prevent blocking UI updates
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const debouncedSearchQuery = useDebounce(deferredSearchQuery, 300);
+
+  const { data: resumes = [], isLoading, error } = useResumeList(debouncedSearchQuery);
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setResumeTitle(e.target.value);
+  }, []);
 
   function handleSearchChange(value: string) {
     startTransition(() => {
@@ -63,39 +58,72 @@ export default function Dashboard() {
     });
   }
 
-  function handleCreateResume(title: string) {
+  async function handleCreateResume(title: string): Promise<void> {
     if (!title.trim()) return;
-    setModalState({ type: null });
-    router.push(`${ROUTES.BUILDER}/123`);
+
+    const newResumeData: CreateResumeInput = {
+      ...initialResume,
+      title,
+    };
+
+    try {
+      const newResume = await createResume.mutateAsync(newResumeData);
+      setModalState({ type: null });
+      router.push(`${ROUTES.BUILDER}/${newResume.id}`);
+    } catch {
+      // Error handling done in mutation
+    } finally {
+      setResumeTitle("");
+    }
   }
 
-  function handleUploadResume(title: string, file: File) {
+  async function handleUploadResume(title: string, file: File) {
     if (!title.trim() || !file) return;
     setModalState({ type: null });
     router.push(`${ROUTES.BUILDER}/123`);
   }
 
-  function handleEditTitle(newTitle: string) {
+  async function handleEditTitle(newTitle: string): Promise<void> {
     if (!newTitle.trim() || !modalState.resumeId) return;
-    updateResume(modalState.resumeId, { title: newTitle });
-    setModalState({ type: null });
-  }
 
-  function handleDeleteResume(resumeId: string) {
-    const confirmed = window.confirm("Are you sure you want to delete this resume?");
-    if (confirmed) {
-      deleteResume(resumeId);
+    try {
+      await updateResume.mutateAsync({ id: modalState.resumeId, updates: { title: newTitle } });
+      setModalState({ type: null });
+    } catch {
+      // Error handling done in mutation
+    } finally {
+      setResumeTitle("");
     }
   }
 
-  function handleOpenResume(resumeId: string) {
-    router.push(`${ROUTES.BUILDER}/${resumeId}`);
-  }
+  const handleDeleteResume = useCallback(
+    async (resumeId: string): Promise<void> => {
+      const confirmed = window.confirm("Are you sure you want to delete this resume?");
+      if (confirmed) {
+        try {
+          await deleteResume.mutateAsync(resumeId);
+        } catch {
+          // Error handling done in mutation
+        }
+      }
+    },
+    [deleteResume],
+  );
 
-  function handleOpenEditModal(resumeId: string, title: string) {
-    setEditingTitle(title);
-    setModalState({ type: "edit", resumeId });
-  }
+  const handleOpenResume = useCallback(
+    (resumeId: string) => {
+      router.push(`${ROUTES.BUILDER}/${resumeId}`);
+    },
+    [router],
+  );
+
+  const handleOpenEditModal = useCallback(
+    (resumeId: string, title: string) => {
+      setResumeTitle(title);
+      setModalState({ type: "edit", resumeId });
+    },
+    [setResumeTitle, setModalState],
+  );
 
   async function handleDownloadResume(resumeId: string): Promise<void> {
     setModalState({ type: "download", resumeId });
@@ -103,19 +131,13 @@ export default function Dashboard() {
 
   function handleCloseModal() {
     setModalState({ type: null });
-    setEditingTitle("");
+    setResumeTitle("");
   }
 
-  // Get the resume for download modal
   const downloadResume =
     modalState.type === "download" && modalState.resumeId
-      ? resumes.find((r) => r._id === modalState.resumeId)
+      ? resumes.find((r) => r.id === modalState.resumeId)
       : undefined;
-
-  // Filter resumes based on deferred search query for smoother UX
-  const filteredResumes = resumes.filter((resume) =>
-    resume.title.toLowerCase().includes(deferredSearchQuery.toLowerCase()),
-  );
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
@@ -194,31 +216,42 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-red-300 bg-red-50 p-12 text-center">
+            <div className="mb-4 rounded-full bg-red-100 p-4">
+              <Plus className="size-12 text-red-400" />
+            </div>
+            <h3 className="mb-2 font-semibold text-red-900 text-xl">Error loading resumes</h3>
+            <p className="mb-6 text-red-600">{error.message}</p>
+          </div>
+        )}
+
         {/* Resume Grid/List */}
-        {isLoading || !hasFetched ? (
+        {!error && isLoading ? (
           viewMode === "grid" ? (
             <ResumeCardSkeletonGrid count={5} />
           ) : (
             <ResumeCardSkeletonList count={5} />
           )
-        ) : filteredResumes.length > 0 ? (
+        ) : resumes.length > 0 ? (
           <div
             className={
               viewMode === "grid" ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" : "space-y-3"
             }
           >
-            {filteredResumes.map((resume, index) => {
-              const key = generateUuidKey(resume._id);
+            {resumes.map((resume, index) => {
+              const key = generateUuidKey(resume.id);
 
               return (
                 <ResumeCard
                   key={key}
                   resume={resume}
                   color={RESUME_COLORS[index % RESUME_COLORS.length] ?? ""}
-                  onOpen={() => handleOpenResume(resume._id)}
-                  onEdit={() => handleOpenEditModal(resume._id, resume.title)}
-                  onDelete={() => handleDeleteResume(resume._id)}
-                  onDownload={async (): Promise<void> => handleDownloadResume(resume._id)}
+                  onOpen={() => handleOpenResume(resume.id)}
+                  onEdit={() => handleOpenEditModal(resume.id, resume.title)}
+                  onDelete={() => handleDeleteResume(resume.id)}
+                  onDownload={async (): Promise<void> => handleDownloadResume(resume.id)}
                 />
               );
             })}
@@ -251,12 +284,31 @@ export default function Dashboard() {
       </div>
 
       {/* Modals */}
-      {modalState.type === "create" && <CreateResumeModal onSubmit={handleCreateResume} onClose={handleCloseModal} />}
+      {modalState.type === "create" && (
+        <CreateResumeModal
+          onSubmit={handleCreateResume}
+          onClose={handleCloseModal}
+          title={resumeTitle}
+          onChange={handleTitleChange}
+        />
+      )}
 
-      {modalState.type === "upload" && <UploadResumeModal onSubmit={handleUploadResume} onClose={handleCloseModal} />}
+      {modalState.type === "upload" && (
+        <UploadResumeModal
+          title={resumeTitle}
+          onSubmit={handleUploadResume}
+          onClose={handleCloseModal}
+          onTitleChange={handleTitleChange}
+        />
+      )}
 
       {modalState.type === "edit" && (
-        <EditResumeModal title={editingTitle} onSubmit={handleEditTitle} onClose={handleCloseModal} />
+        <EditResumeModal
+          title={resumeTitle}
+          onSubmit={handleEditTitle}
+          onClose={handleCloseModal}
+          onChange={handleTitleChange}
+        />
       )}
 
       {modalState.type === "download" && downloadResume && (

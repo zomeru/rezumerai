@@ -30,14 +30,14 @@ The `^` prefix is crucial - without it, you're referencing the same package.
 
 ### Transit Nodes for Parallel Tasks
 
-For tasks like `lint` and `check-types` that can run in parallel but need dependency-aware caching:
+For tasks like `lint` and `check:types` that can run in parallel but need dependency-aware caching:
 
 ```json
 {
   "tasks": {
     "transit": { "dependsOn": ["^transit"] },
     "lint": { "dependsOn": ["transit"] },
-    "check-types": { "dependsOn": ["transit"] }
+    "check:types": { "dependsOn": ["transit"] }
   }
 }
 ```

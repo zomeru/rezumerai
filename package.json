@@ -1,21 +1,16 @@
 {
   "name": "rezumerai",
   "devDependencies": {
-    "@biomejs/biome": "2.4.4",
+    "@biomejs/biome": "2.4.5",
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
-    "@happy-dom/global-registrator": "^20.7.0",
+    "@happy-dom/global-registrator": "^20.8.3",
     "husky": "^9.1.7",
-    "lint-staged": "16.2.7",
-    "postcss": "^8.5.6",
+    "lint-staged": "16.3.1",
+    "postcss": "^8.5.8",
     "rimraf": "^6.1.3",
-    "turbo": "^2.8.10",
+    "turbo": "^2.8.12",
     "typescript": "^5.9.3"
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
   },
   "overrides": {
     "body-parser": "^2.2.1",
@@ -23,13 +18,11 @@
     "valibot": "^1.2.0",
     "lodash": "4.17.23"
   },
-  "packageManager": "bun@1.3.8",
+  "packageManager": "bun@1.3.9",
   "private": true,
   "scripts": {
     "predev": "turbo run build --filter=@rezumerai/database",
     "build": "turbo build",
-    "build:web": "turbo run build --filter=!@rezumerai/api",
-    "build:api": "turbo run build --filter=!web --filter=!@rezumerai/ui",
     "build:production": "NODE_ENV=production turbo build",
     "build:packages": "turbo build --filter=./packages/*",
     "dev": "turbo dev",
@@ -37,34 +30,45 @@
     "check": "bun run update:biome-configs && turbo check",
     "biome": "bun run update:biome-configs && biome check --write  .",
     "update:biome-configs": "bun scripts/update-biome-config-version.ts",
-    "check-types": "turbo check-types",
-    "lint-staged": "lint-staged",
-    "code:check": "bun run check && bun run check-types",
-    "code:verify": "bun run code:check && bun run test:project && bun run build",
+    "check:types": "turbo check:types",
+    "code:check": "bun run check && bun run check:types",
+    "code:verify": "bun run code:check && bun run test && bun run build",
     "test": "turbo test",
-    "test:project": "turbo run build --filter='./packages/*' && turbo test",
     "test:watch": "turbo test:watch",
-    "test:coverage": "turbo run build --filter='./packages/*' && turbo test:coverage",
+    "test:coverage": "turbo test:coverage",
     "changeset": "changeset",
     "publish:packages": "changeset publish",
     "version:packages": "turbo build && changeset version",
-    "add-shadcn-component": "turbo run add-shadcn-component -- --",
+    "db:generate": "cd packages/database && bun run db:generate",
+    "db:push": "cd packages/database && bun run db:push",
+    "db:migrate": "cd packages/database && bun run db:migrate",
+    "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
+    "db:migrate:status": "cd packages/database && bun run db:migrate:status",
+    "db:seed": "cd packages/database && bun run db:seed",
+    "db:pull": "cd packages/database && bun run db:pull",
     "db:setup": "cd packages/database && bun run db:push && bun run db:generate",
     "db:studio": "cd packages/database && bun run db:studio",
     "db:reset": "cd packages/database && bun run with-env prisma migrate reset --force",
-    "docker:db": "docker compose up -d database redis",
     "docker:build": "./scripts/docker-compose-build.sh",
     "docker:build:standalone": "./scripts/docker-build.sh",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "install-modules": "bun install && turbo run build --filter=./packages/*",
-    "update-modules": "bun update --latest && bun update --interactive --recursive",
+    "install:modules": "bun install && turbo run build --filter=./packages/*",
+    "update:modules": "bun update --latest && bun update --latest --interactive --recursive",
     "clean": "turbo clean && rimraf node_modules .turbo tsconfig.tsbuildinfo .playwright-mcp coverage",
-    "clean:install": "turbo clean && rimraf node_modules .turbo bun.lock && bun install && turbo run build --filter=./packages/*",
+    "clean:install": "turbo clean && rimraf node_modules .turbo && bun install && turbo run build --filter=./packages/*",
     "outdated": "bun outdated",
     "security:audit": "bun audit --production",
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
+      "biome check --write --staged"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "trustedDependencies": [
     "@prisma/client",
@@ -76,5 +80,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@elysiajs/opentelemetry": "^1.4.10",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.212.0",
+    "@opentelemetry/sdk-trace-node": "^2.5.1"
+  }
 }

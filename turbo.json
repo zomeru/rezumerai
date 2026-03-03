@@ -14,7 +14,8 @@
         "BETTER_AUTH_GOOGLE_CLIENT_ID",
         "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
         "BETTER_AUTH_GITHUB_CLIENT_ID",
-        "BETTER_AUTH_GITHUB_CLIENT_SECRET"
+        "BETTER_AUTH_GITHUB_CLIENT_SECRET",
+        "CRON_SECRET"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.production.local", ".env.local", ".env.production", ".env"]
     },
@@ -23,7 +24,9 @@
       "outputs": []
     },
     "check": {},
-    "check-types": {},
+    "check:types": {
+      "dependsOn": ["^check:types"]
+    },
     "test": {
       "cache": false
     },
@@ -46,11 +49,11 @@
         "BETTER_AUTH_GOOGLE_CLIENT_ID",
         "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
         "BETTER_AUTH_GITHUB_CLIENT_ID",
-        "BETTER_AUTH_GITHUB_CLIENT_SECRET"
+        "BETTER_AUTH_GITHUB_CLIENT_SECRET",
+        "CRON_SECRET"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.development.local", ".env.local", ".env.development", ".env"]
     },
-    "add-shadcn-component": {},
     "clean": {
       "cache": false
     }

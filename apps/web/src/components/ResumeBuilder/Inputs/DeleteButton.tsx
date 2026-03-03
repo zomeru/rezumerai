@@ -40,7 +40,6 @@ export default function DeleteButton({ onDelete, ariaLabel = "Delete item", size
   const iconSize = size === "sm" ? "size-3.5" : "size-4";
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: Intentionally using span with role=button to work inside button parents
     <span
       onClick={handleClick}
       onKeyDown={handleKeyDown}

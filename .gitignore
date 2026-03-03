@@ -1,80 +1,94 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
+####################################
 # Dependencies
-node_modules
-packages/*/node_modules
-apps/*/node_modules
+####################################
+**/node_modules/
 .pnp
 .pnp.js
 
-# next.js
-.next
+####################################
+# Build outputs
+####################################
+.next/
+out/
+build/
+dist/
+coverage/
+.turbo/
+.vercel/
 
-# build output
-/out/
-build
-dist
-
-# Local env files
+####################################
+# Environment files
+####################################
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# Testing
-coverage
-
-# Turbo
-.turbo
-
-# Vercel
-.vercel
-
-# Debug
+####################################
+# Logs
+####################################
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# other lockfiles that's not bun.lock
+####################################
+# Lockfiles (Bun-only repo)
+####################################
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+####################################
 # Bun
-.bun
+####################################
+.bun/
 
-# Misc
+####################################
+# OS / Editor junk
+####################################
 .DS_Store
+Thumbs.db
 *.pem
 
-# typescript
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+####################################
+# TypeScript / JS build artifacts
+####################################
 *.tsbuildinfo
 next-env.d.ts
 
-# TypeScript compilation artifacts (should only be in dist/build folders)
-apps/*/src/**/*.js
-apps/*/src/**/*.jsx
-apps/*/src/**/*.d.ts
-apps/*/src/**/*.d.ts.map
-packages/*/src/**/*.js
-packages/*/src/**/*.jsx
-packages/*/src/**/*.d.ts
-packages/*/src/**/*.d.ts.map
-!*.config.js
-!*.config.mjs
+# Compiled JS accidentally emitted into src
+**/src/**/*.js
+**/src/**/*.jsx
+**/src/**/*.d.ts.map
 
+# Allow config files
+!**/*.config.js
+!**/*.config.mjs
+!**/*.config.ts
+
+####################################
+# Testing (Playwright, Vitest, etc.)
+####################################
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+####################################
+# Tooling / AI / MCP
+####################################
 .serena
-.vscode/launch.json
-.vscode/tasks.json
-.mcp.json
 .playwright-mcp
-tsup.config.bundled*
 .agent-files/feature-requests
 .claude/worktrees
 .claude/settings.local.json
+
+####################################
+# App / Package generated output
+####################################
 apps/web/public/pdf-worker
 apps/api/server
+packages/database/generated

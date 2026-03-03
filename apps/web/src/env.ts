@@ -21,10 +21,7 @@ const clientSchema = z.object({
 // Server-side schema (includes sensitive variables)
 const serverSchema = clientSchema.extend({
   // Authentication variables (server-side only)
-  // BETTER_AUTH_URL: z
-  //   .url()
-  //   .default("http://localhost:3000") // Commenting out since it's the same as NEXT_PUBLIC_SITE_URL and not needed on server
-  //   .describe("Better Auth URL for authentication"),
+  BETTER_AUTH_URL: z.url().default("http://localhost:3000").describe("Better Auth URL for authentication"),
   BETTER_AUTH_SECRET: z.string().default("super_long_secret").describe("Better Auth secret for signing tokens"),
   BETTER_AUTH_GITHUB_CLIENT_ID: z.string().describe("GitHub OAuth client ID"),
   BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string().describe("GitHub OAuth client secret"),
@@ -35,6 +32,13 @@ const serverSchema = clientSchema.extend({
   // Optional analytics/monitoring (server-side only)
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),
   ANALYTICS_ID: z.string().optional().describe("Analytics tracking ID"),
+
+  // Optional OpenTelemetry export (server-side only)
+  OTEL_EXPORTER_OTLP_ENDPOINT: z
+    .string()
+    .optional()
+    .describe("OTLP collector endpoint (e.g. https://api.axiom.co/v1/traces)"),
+  OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
 });
 
 /**

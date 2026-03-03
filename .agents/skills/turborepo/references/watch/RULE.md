@@ -95,5 +95,5 @@ turbo watch dev build
 
 ```bash
 # Watch and re-run type checks
-turbo watch check-types
+turbo watch check:types
 ```

@@ -1,73 +1,18 @@
----
-title: Use useRef for Transient Values
-impact: MEDIUM
-impactDescription: avoids unnecessary re-renders on frequent updates
-tags: rerender, useref, state, performance
----
+# Use useRef for Transient Values
 
-## Use useRef for Transient Values
+**Impact:** MEDIUM — avoids unnecessary re-renders on frequent updates
 
-When a value changes frequently and you don't want a re-render on every update (e.g., mouse trackers, intervals, transient flags), store it in `useRef` instead of `useState`. Keep component state for UI; use refs for temporary DOM-adjacent values. Updating a ref does not trigger a re-render.
+**Tags:** rerender, useref, state, performance
 
-**Incorrect (renders every update):**
+## Summary
 
-```tsx
-function Tracker() {
-  const [lastX, setLastX] = useState(0)
+The rule recommends using `useRef` instead of `useState` for values that change frequently without requiring UI updates. As stated in the guide, "Updating a ref does not trigger a re-render."
 
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => setLastX(e.clientX)
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [])
+This approach is ideal for scenarios like mouse tracking, intervals, and temporary flags where the component shouldn't re-render on every value change.
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: lastX,
-        width: 8,
-        height: 8,
-        background: 'black',
-      }}
-    />
-  )
-}
-```
+## Key Distinction
 
-**Correct (no re-render for tracking):**
+The incorrect approach uses state management for position tracking, causing a render cycle with each mouse movement. The corrected version leverages refs to update the DOM directly via `transform` styles, eliminating unnecessary re-renders while maintaining the same visual result.
 
-```tsx
-function Tracker() {
-  const lastXRef = useRef(0)
-  const dotRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      lastXRef.current = e.clientX
-      const node = dotRef.current
-      if (node) {
-        node.style.transform = `translateX(${e.clientX}px)`
-      }
-    }
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [])
-
-  return (
-    <div
-      ref={dotRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: 8,
-        height: 8,
-        background: 'black',
-        transform: 'translateX(0px)',
-      }}
-    />
-  )
-}
-```
+**Use refs for:** temporary values, DOM-adjacent data, frequent updates
+**Use state for:** UI-driven values that affect the render output

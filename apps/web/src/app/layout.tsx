@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
-import { Providers } from "../components/providers";
 import "./globals.css";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
 import { clientEnv } from "@/env";
+import { ReactQueryProvider } from "@/providers";
 
 const outfitSans: NextFontWithVariable = Outfit({
   variable: "--font-outfit",
@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>
-        <Providers>{children}</Providers>
+        <ReactQueryProvider>{children}</ReactQueryProvider>
       </body>
     </html>
   );

@@ -1,40 +1,16 @@
----
-title: Calculate Derived State During Rendering
-impact: MEDIUM
-impactDescription: avoids redundant renders and state drift
-tags: rerender, derived-state, useEffect, state
----
+# Calculate Derived State During Rendering
 
-## Calculate Derived State During Rendering
+**Rule:** Compute values from current props/state during rendering rather than storing them as state or updating them via effects.
 
-If a value can be computed from current props/state, do not store it in state or update it in an effect. Derive it during render to avoid extra renders and state drift. Do not set state in effects solely in response to prop changes; prefer derived values or keyed resets instead.
+**Key Principle:** "If a value can be computed from current props/state, do not store it in state or update it in an effect."
 
-**Incorrect (redundant state and effect):**
+**Why It Matters:**
+- Eliminates unnecessary re-renders
+- Prevents state drift between source values and derived values
+- Simplifies component logic
 
-```tsx
-function Form() {
-  const [firstName, setFirstName] = useState('First')
-  const [lastName, setLastName] = useState('Last')
-  const [fullName, setFullName] = useState('')
+**The Problem:** Storing derived values in state and syncing them with useEffect creates redundant state and extra render cycles.
 
-  useEffect(() => {
-    setFullName(firstName + ' ' + lastName)
-  }, [firstName, lastName])
+**The Solution:** Calculate derived values directly during the render phase. In the example provided, `fullName` is simply computed as `firstName + ' ' + lastName` inline, removing the need for separate state and effect management.
 
-  return <p>{fullName}</p>
-}
-```
-
-**Correct (derive during render):**
-
-```tsx
-function Form() {
-  const [firstName, setFirstName] = useState('First')
-  const [lastName, setLastName] = useState('Last')
-  const fullName = firstName + ' ' + lastName
-
-  return <p>{fullName}</p>
-}
-```
-
-References: [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)
+**Reference:** The rule cites React's "You Might Not Need an Effect" documentation, which addresses this common pattern of unnecessary effect-based state updates.

@@ -1,77 +1,45 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { create } from "zustand";
-import { dummyResumeData, type Resume } from "@/constants/dummy";
 
 /**
- * Zustand store state and actions for resume CRUD operations.
+ * Zustand store for client-side resume state management.
  *
- * @property resumes - Array of all user resumes
- * @property isLoading - Whether resumes are currently being fetched
- * @property hasFetched - Whether initial fetch has completed (prevents refetch)
- * @property fetchResumes - Fetches all user resumes from API
- * @property updateResume - Updates a specific resume by ID
- * @property deleteResume - Removes a resume by ID
+ * IMPORTANT: Server data should be fetched via React Query (useResumeList, useResumeById).
+ * This store is for:
+ * - Client-side form state in the builder (for non-builder pages)
+ * - Legacy support for pages that still use this store
+ *
+ * @property resumes - Array of resumes
+ * @property isLoading - Legacy property for backward compatibility (deprecated)
+ * @property hasFetched - Legacy property for backward compatibility (deprecated)
+ * @property setResumes - Updates the resume list
+ * @property addResume - Adds a resume to the list
+ * @property updateResume - Updates a resume in the list (client-side)
+ * @property clearResumes - Clears the resume list (useful for logout)
  */
 interface ResumeStore {
-  resumes: Resume[];
+  resumes: ResumeWithRelations[];
   isLoading: boolean;
   hasFetched: boolean;
-  fetchResumes: () => Promise<void>;
-  updateResume: (id: string, updates: Partial<Resume>) => void;
-  deleteResume: (id: string) => void;
+  setResumes: (resumes: ResumeWithRelations[]) => void;
+  addResume: (resume: ResumeWithRelations) => void;
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>) => void;
+  clearResumes: () => void;
 }
 
-/**
- * Global Zustand store for managing resume data.
- * Handles CRUD operations for resume documents across the application.
- *
- * @example
- * ```tsx
- * function MyComponent() {
- *   const { resumes, fetchResumes, updateResume, deleteResume } = useResumeStore();
- *
- *   useEffect(() => {
- *     fetchResumes();
- *   }, [fetchResumes]);
- *
- *   return (
- *     <>
- *       {resumes.map(resume => (
- *         <ResumeCard
- *           key={resume._id}
- *           resume={resume}
- *           onUpdate={(updates) => updateResume(resume._id, updates)}
- *           onDelete={() => deleteResume(resume._id)}
- *         />
- *       ))}
- *     </>
- *   );
- * }
- * ```
- */
-export const useResumeStore = create<ResumeStore>((set, get) => ({
+export const useResumeStore = create<ResumeStore>((set) => ({
   resumes: [],
   isLoading: false,
   hasFetched: false,
 
-  fetchResumes: async (): Promise<void> => {
-    if (get().hasFetched) return;
-    set({ isLoading: true });
-    try {
-      // TODO: Replace with actual API call
-      set({ resumes: dummyResumeData, hasFetched: true });
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+  setResumes: (resumes: ResumeWithRelations[]): void => set({ resumes, hasFetched: true }),
 
-  updateResume: (id: string, updates: Partial<Resume>) =>
+  addResume: (resume: ResumeWithRelations): void => set((state) => ({ resumes: [...state.resumes, resume] })),
+
+  updateResume: (id: string, updates: Partial<ResumeWithRelations>): void =>
     set((state) => ({
-      resumes: state.resumes.map((resume) => (resume._id === id ? { ...resume, ...updates } : resume)),
+      resumes: state.resumes.map((r) => (r.id === id ? { ...r, ...updates } : r)),
     })),
 
-  deleteResume: (id: string) =>
-    set((state) => ({
-      resumes: state.resumes.filter((resume) => resume._id !== id),
-    })),
+  clearResumes: (): void => set({ resumes: [], hasFetched: false }),
 }));

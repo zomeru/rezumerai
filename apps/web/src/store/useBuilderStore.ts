@@ -1,3 +1,4 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { create } from "zustand";
 import type { PreviewMode } from "@/hooks/usePdfGenerator";
 
@@ -16,11 +17,14 @@ import type { PreviewMode } from "@/hooks/usePdfGenerator";
  * @property setPreviewMode - Switches between HTML and PDF preview
  */
 interface BuilderStore {
+  draftResume: ResumeWithRelations | null;
   activeSectionIndex: number;
   removeBackground: boolean;
   isSaving: boolean;
   lastSaved: Date | null;
   previewMode: PreviewMode;
+  setDraftResume: (resume: ResumeWithRelations | null) => void;
+  updateDraftResume: (updates: Partial<ResumeWithRelations>) => void;
   setActiveSectionIndex: (index: number) => void;
   setRemoveBackground: (remove: boolean) => void;
   setIsSaving: (saving: boolean) => void;
@@ -55,12 +59,18 @@ interface BuilderStore {
  * ```
  */
 export const useBuilderStore = create<BuilderStore>((set) => ({
+  draftResume: null,
   activeSectionIndex: 0,
   removeBackground: false,
   isSaving: false,
   lastSaved: null,
   previewMode: "html",
 
+  setDraftResume: (draftResume: ResumeWithRelations | null) => set({ draftResume }),
+  updateDraftResume: (updates: Partial<ResumeWithRelations>) =>
+    set((state) => ({
+      draftResume: state.draftResume ? { ...state.draftResume, ...updates } : state.draftResume,
+    })),
   setActiveSectionIndex: (activeSectionIndex: number) => set({ activeSectionIndex }),
   setRemoveBackground: (removeBackground: boolean) => set({ removeBackground }),
   setIsSaving: (isSaving: boolean) => set({ isSaving }),

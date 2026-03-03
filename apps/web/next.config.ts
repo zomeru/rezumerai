@@ -1,10 +1,15 @@
 import path from "node:path";
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
-  transpilePackages: ["@rezumerai/ui"],
+  transpilePackages: [
+    "@rezumerai/ui",
+    // "@rezumerai/utils",
+    // "@rezumerai/database",
+  ],
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
 
@@ -77,4 +82,4 @@ const withBundleAnalyzer: (config: typeof nextConfig) => typeof nextConfig = req
   enabled: process.env.ANALYZE === "true",
 });
 
-export default withBundleAnalyzer(nextConfig);
+export default withBotId(withBundleAnalyzer(nextConfig));

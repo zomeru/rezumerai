@@ -18,10 +18,13 @@ const argon2Options: Options = {
 };
 
 export const auth = betterAuth({
+  basePath: "/api/auth",
+  baseURL: serverEnv.BETTER_AUTH_URL,
   secret: serverEnv.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
   account: {
     encryptOAuthTokens: true, // Uses AES-256-GCM
   },

@@ -1,7 +1,7 @@
 model Resume {
   id                  String               @id @default(cuid())
   userId              String
-  title               String
+  title               String               @default("")
   public              Boolean              @default(false)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -10,9 +10,6 @@ model Resume {
   accentColor         String               @default("#000000")
   fontSize            FontSizePreset       @default(medium)
   customFontSize      Float                @default(1)
-  website             String               @default("")
-  profession          String               @default("")
-  image               String               @default("")
   skills              String[]             @default([])
   education           Education[]
   experience          Experience[]
@@ -43,17 +40,15 @@ model PersonalInformation {
 }
 
 model Experience {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   resumeId    String
-  company     String
-  position    String
-  startDate   String
-  endDate     String
-  description String   @default("")
-  isCurrent   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  company     String    @default("")
+  position    String    @default("")
+  description String    @default("")
+  isCurrent   Boolean   @default(false)
+  startDate   DateTime
+  endDate     DateTime?
+  resume      Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
   @@map("experience")
@@ -62,13 +57,11 @@ model Experience {
 model Education {
   id             String   @id @default(cuid())
   resumeId       String
-  institution    String
-  degree         String
+  institution    String   @default("")
+  degree         String   @default("")
   field          String   @default("")
-  graduationDate String
   gpa            String   @default("")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  graduationDate DateTime
   resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
@@ -76,14 +69,12 @@ model Education {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   resumeId    String
-  name        String
-  type        String   @default("")
-  description String   @default("")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  name        String @default("")
+  type        String @default("")
+  description String @default("")
+  resume      Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
   @@map("projects")

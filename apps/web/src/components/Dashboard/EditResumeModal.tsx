@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import BaseModal from "./BaseModal";
 
 /**
@@ -12,8 +11,10 @@ import BaseModal from "./BaseModal";
  */
 export interface EditResumeModalProps {
   title: string;
-  onSubmit: (newTitle: string) => void;
+  onSubmit: (newTitle: string) => Promise<void>;
   onClose: () => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isLoading?: boolean;
 }
 
 /**
@@ -27,23 +28,24 @@ export interface EditResumeModalProps {
  * <EditResumeModal title="My Resume" onSubmit={update} onClose={close} />
  * ```
  */
-export default function EditResumeModal({ title: initialTitle, onSubmit, onClose }: EditResumeModalProps) {
-  const [title, setTitle] = useState(initialTitle);
-
-  useEffect(() => {
-    setTitle(initialTitle);
-  }, [initialTitle]);
-
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+export default function EditResumeModal({ title, onSubmit, onClose, onChange, isLoading }: EditResumeModalProps) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    onSubmit(title);
+    await onSubmit(title);
   }
 
   return (
-    <BaseModal isOpen={true} title="Edit Resume Title" onClose={onClose} onSubmit={handleSubmit} submitLabel="Update">
+    <BaseModal
+      isLoading={isLoading}
+      isOpen={true}
+      title="Edit Resume Title"
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      submitLabel="Update"
+    >
       <input
         value={title}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+        onChange={onChange}
         type="text"
         placeholder="Enter resume title"
         className="w-full rounded border border-slate-300 px-4 py-2 transition-colors focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"

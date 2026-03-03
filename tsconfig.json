@@ -17,7 +17,6 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@rezumerai/api": ["./apps/api/src/app"],
       "@rezumerai/ui": ["./packages/ui/src"],
       "@rezumerai/ui/*": ["./packages/ui/src/*"],
       "@rezumerai/types": ["./packages/types/dist"],

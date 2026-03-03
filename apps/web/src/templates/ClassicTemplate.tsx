@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
@@ -16,38 +16,38 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
       {/* Header */}
       <header className="mb-8 border-b-2 pb-6 text-center" style={{ borderColor: accentColor }}>
         <h1 className="mb-2 font-bold" style={{ color: accentColor, fontSize: "1.875em" }}>
-          {data.personalInfo.fullName || "Your Name"}
+          {data.personalInfo?.fullName || "Your Name"}
         </h1>
 
         <div className="flex flex-wrap justify-center gap-4 text-gray-600" style={{ fontSize: "0.875em" }}>
-          {data.personalInfo.email && (
+          {data.personalInfo?.email && (
             <div className="flex items-center gap-1">
               <Mail className="size-4" />
-              <span>{data.personalInfo.email}</span>
+              <span>{data.personalInfo?.email}</span>
             </div>
           )}
-          {data.personalInfo.phone && (
+          {data.personalInfo?.phone && (
             <div className="flex items-center gap-1">
               <Phone className="size-4" />
-              <span>{data.personalInfo.phone}</span>
+              <span>{data.personalInfo?.phone}</span>
             </div>
           )}
-          {data.personalInfo.location && (
+          {data.personalInfo?.location && (
             <div className="flex items-center gap-1">
               <MapPin className="size-4" />
-              <span>{data.personalInfo.location}</span>
+              <span>{data.personalInfo?.location}</span>
             </div>
           )}
-          {data.personalInfo.linkedin && (
+          {data.personalInfo?.linkedin && (
             <div className="flex items-center gap-1">
               <Linkedin className="size-4" />
-              <span className="break-all">{data.personalInfo.linkedin}</span>
+              <span className="break-all">{data.personalInfo?.linkedin}</span>
             </div>
           )}
-          {data.personalInfo.website && (
+          {data.personalInfo?.website && (
             <div className="flex items-center gap-1">
               <Globe className="size-4" />
-              <span className="break-all">{data.personalInfo.website}</span>
+              <span className="break-all">{data.personalInfo?.website}</span>
             </div>
           )}
         </div>
@@ -81,9 +81,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
                       <p className="font-medium text-gray-700">{exp.company}</p>
                     </div>
                     <div className="text-right text-gray-600" style={{ fontSize: "0.875em" }}>
-                      <p>
-                        {formatShortDate(exp.startDate)} - {exp.isCurrent ? "Present" : formatShortDate(exp.endDate)}
-                      </p>
+                      <p>{formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}</p>
                     </div>
                   </div>
                   {exp.description && (

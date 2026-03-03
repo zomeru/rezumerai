@@ -1,6 +1,7 @@
 "use client";
 
 import AuthWithSocialForm, { type AuthState } from "@rezumerai/ui/components/AuthWithSocialForm";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components";
 import { ROUTES } from "@/constants/routing";
 import { signIn, signUp } from "@/lib/auth-client";
@@ -10,6 +11,8 @@ import { signIn, signUp } from "@/lib/auth-client";
  * Creates new user accounts via Better Auth and redirects to workspace.
  */
 export default function SignUp() {
+  const router = useRouter();
+
   /**
    * Handles user registration with email and password via Better Auth.
    * Validates password requirements before submitting to the auth server.
@@ -36,6 +39,8 @@ export default function SignUp() {
       const message = signUpError.message ?? "Failed to create account";
       throw new Error(message);
     }
+
+    router.push(ROUTES.WORKSPACE);
   }
 
   /**

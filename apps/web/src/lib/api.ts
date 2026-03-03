@@ -1,5 +1,5 @@
 import { treaty } from "@elysiajs/eden";
-import type { App } from "@rezumerai/api";
+import type { elysiaApp } from "@/elysia-api/app";
 import { clientEnv } from "@/env";
 
 /**
@@ -13,12 +13,9 @@ import { clientEnv } from "@/env";
  *   const { data, error } = await api.users.get()
  *   const { data, error } = await api.users({ id: "1" }).get()
  */
+
 function createApi() {
-  return treaty<App>(clientEnv.NEXT_PUBLIC_API_URL, {
-    fetch: {
-      credentials: "include", // Forward cookies (NextAuth session)
-    },
-  });
+  return treaty<typeof elysiaApp>(clientEnv.NEXT_PUBLIC_SITE_URL).api;
 }
 
-export const api = createApi().api;
+export const api = createApi();

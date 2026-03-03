@@ -1,7 +1,7 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FontSizeValue } from "@/components/ResumeBuilder";
-import type { Resume } from "@/constants/dummy";
-import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdfUtils";
+import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdf-utils";
 
 /**
  * Preview mode for resume display.
@@ -27,7 +27,7 @@ export type PreviewMode = "html" | "pdf";
  * @property accentColor - Optional accent color for theming
  */
 interface UsePdfGeneratorProps {
-  resumeData: Resume;
+  resumeData: ResumeWithRelations;
   previewMode: PreviewMode;
   resumePreviewRef: React.RefObject<HTMLDivElement | null>;
   fontSize: FontSizeValue;
@@ -72,7 +72,7 @@ interface UsePdfGeneratorReturnType {
  * console.log(hash1 === hash3); // => false (changed data = different hash)
  * ```
  */
-function generateDataHash(resumeData: Resume, fontSize: FontSizeValue, accentColor?: string): string {
+function generateDataHash(resumeData: ResumeWithRelations, fontSize: FontSizeValue, accentColor?: string): string {
   const hashData = JSON.stringify({
     personalInfo: resumeData.personalInfo,
     professionalSummary: resumeData.professionalSummary,
@@ -246,7 +246,7 @@ export function usePdfGenerator({
       }
 
       // Generate filename and download
-      const fileName = resumeData.personalInfo.fullName
+      const fileName = resumeData.personalInfo?.fullName
         ? `Resume_${resumeData.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
         : "Resume.pdf";
 

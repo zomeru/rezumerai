@@ -1,9 +1,12 @@
 "use client";
 
+import { Skeleton } from "@rezumerai/ui";
 import { FileText, Sparkles, Target } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { DUMMY_RESUME_DATA_ID } from "@/constants/dummy";
 import { ROUTES } from "@/constants/routing";
+import { useSession } from "@/lib/auth-client";
 import Logo from "../Logo";
 
 interface MenuItem {
@@ -20,14 +23,15 @@ const menuItems: MenuItem[] = [
   { label: "GitHub", href: "#github", id: "github" },
 ];
 
-const SAMPLE_PREVIEW_RESUME_ID = "68d2a31a1c4dd38875bb037e";
-const samplePreviewHref = `${ROUTES.PREVIEW}/${SAMPLE_PREVIEW_RESUME_ID}`;
+const SAMPLE_PREVIEW_HREF = `${ROUTES.PREVIEW}/${DUMMY_RESUME_DATA_ID}`;
 
 /**
  * Hero section of the homepage, featuring the main headline, navigation bar, and call-to-action buttons.
  */
 export default function Hero() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session, isPending } = useSession();
+
   return (
     <div>
       {/* Navbar */}
@@ -43,18 +47,31 @@ export default function Hero() {
         </div>
 
         <div className="flex gap-2">
-          <Link
-            href={ROUTES.SIGNUP}
-            className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
-          >
-            Get started
-          </Link>
-          <Link
-            href={ROUTES.SIGNIN}
-            className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
-          >
-            Login
-          </Link>
+          {isPending && <Skeleton width={80} height={28} borderRadius={14} />}
+          {!isPending && session && (
+            <Link
+              href={ROUTES.WORKSPACE}
+              className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
+            >
+              Workspace
+            </Link>
+          )}
+          {!isPending && !session && (
+            <>
+              <Link
+                href={ROUTES.SIGNUP}
+                className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
+              >
+                Get started
+              </Link>
+              <Link
+                href={ROUTES.SIGNIN}
+                className="hidden rounded-full border px-6 py-2 text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 md:block"
+              >
+                Login
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -173,7 +190,7 @@ export default function Hero() {
             </svg>
           </Link>
           <Link
-            href={samplePreviewHref}
+            href={SAMPLE_PREVIEW_HREF}
             className="flex h-12 items-center gap-2 rounded-full border border-slate-400 px-7 text-slate-700 transition hover:bg-primary-50"
           >
             <svg
