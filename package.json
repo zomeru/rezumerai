@@ -83,7 +83,7 @@
   ],
   "dependencies": {
     "@elysiajs/opentelemetry": "^1.4.10",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.212.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.213.0",
     "@opentelemetry/sdk-trace-node": "^2.5.1"
   }
 }
