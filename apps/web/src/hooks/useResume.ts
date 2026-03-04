@@ -88,9 +88,7 @@ export function useUpdateResume() {
 
       if (error) {
         const errorMessage =
-          typeof error.value === "string"
-            ? error.value
-            : error.value.message || "An unknown error occurred while updating the resume.";
+          typeof error.value === "string" ? error.value : "An unknown error occurred while updating the resume.";
         throw new Error(errorMessage);
       }
 

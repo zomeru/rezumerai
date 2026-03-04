@@ -12,6 +12,14 @@
     "turbo": "^2.8.12",
     "typescript": "^5.9.3"
   },
+  "lint-staged": {
+    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
+      "biome check --write --staged"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
   "overrides": {
     "body-parser": "^2.2.1",
     "hono": "^4.10.3",
@@ -62,14 +70,6 @@
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
-      "biome check --write --staged"
-    ],
-    "*.{json,md,yaml,yml}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
-  },
   "trustedDependencies": [
     "@prisma/client",
     "@swc/core",
@@ -80,10 +80,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "@elysiajs/opentelemetry": "^1.4.10",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.212.0",
-    "@opentelemetry/sdk-trace-node": "^2.5.1"
-  }
+  ]
 }

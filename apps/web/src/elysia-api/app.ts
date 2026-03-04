@@ -1,5 +1,5 @@
 import cors from "@elysiajs/cors";
-import { cron } from "@elysiajs/cron";
+import { cron, Patterns } from "@elysiajs/cron";
 import { openapi } from "@elysiajs/openapi";
 import { swagger } from "@elysiajs/swagger";
 import { prisma } from "@rezumerai/database";
@@ -19,6 +19,9 @@ import {
   prismaPlugin,
   tracePlugin,
 } from "./plugins";
+import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
+
+const isDev = process.env.NODE_ENV === "development";
 
 /**
  * Elysia application — single source of truth for the API.
@@ -46,7 +49,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
     }),
   )
   .use(cors())
-  .use(process.env.NODE_ENV !== "development" ? rateLimit() : (app) => app)
+  .use(!isDev ? rateLimit() : (app) => app)
   .use(modernCsrf())
 
   // 2. Core infrastructure
@@ -58,22 +61,37 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(errorPlugin)
 
   // 4. Documentation (dev only — never expose in production)
-  .use(process.env.NODE_ENV === "development" ? swagger() : (app) => app)
-  .use(process.env.NODE_ENV === "development" ? openapi() : (app) => app)
+  .use(isDev ? swagger() : (app) => app)
+  .use(isDev ? openapi() : (app) => app)
   .get("/", "Hello from Rezumer!")
 
   // ── Health check (root) ─────────────────────────────────────────────────
   .use(
     cron({
       name: "heartbeat",
-      // pattern: "0 */12 * * *",
-      pattern: "*/5 * * * * *",
-      run() {
-        const sampleDbCall = prisma.sampleTable.findFirst({
+      pattern: isDev ? Patterns.EVERY_10_SECONDS : Patterns.EVERY_HOUR,
+      async run() {
+        const sampleDbCall = await prisma.sampleTable.findFirst({
           select: { id: true },
         });
 
-        console.log(`[Heartbeat] ${formatDate(new Date())} - Database is healthy. Sample data:`, sampleDbCall);
+        const timestamp = formatDate(new Date(), {
+          dateStyle: "short",
+          timeStyle: "short",
+        });
+
+        if (isDev) {
+          console.log(
+            [
+              ansiTimestamp(),
+              paint("bgCyan", ` ${bold("CRON")} `),
+              bold("heartbeat"),
+              paint("green", "✓ check successful"),
+              dim(`id=${sampleDbCall?.id ?? "N/A"}`),
+              dim(timestamp),
+            ].join("  "),
+          );
+        }
       },
     }),
   )

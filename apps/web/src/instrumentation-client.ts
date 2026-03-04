@@ -10,19 +10,7 @@ import { initBotId } from "botid/client/core";
 initBotId({
   protect: [
     {
-      path: "/api/resumes",
-      method: "POST",
-    },
-    {
-      path: "/api/auth/*",
-      method: "POST",
-    },
-    {
-      path: "/workspace*",
-      method: "POST",
-    },
-    {
-      path: "/signup",
+      path: "/api",
       method: "POST",
     },
   ],

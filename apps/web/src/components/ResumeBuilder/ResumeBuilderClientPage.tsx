@@ -37,6 +37,7 @@ import {
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
 import { useResumeById, useUpdateResume } from "@/hooks/useResume";
@@ -181,7 +182,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
         if (typeof idx === "number") invalids.add(idx);
       }
       setInvalidExperienceIndices(invalids);
-      toast.error("Please provide an end date for all non-current positions.");
+      toast.error(ERROR_MESSAGES.NON_CURRENT_POSITION_END_DATE);
       return;
     }
     setInvalidExperienceIndices(new Set());
@@ -206,7 +207,10 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
       await updateResumeMutation.mutateAsync({ id: resumeId, updates });
       setLastSaved(new Date());
     } catch (error) {
-      console.error("Failed to save resume:", error);
+      // console.error("Failed to save resume:", error);
+      const errorMessage =
+        typeof error === "string" ? error : error instanceof Error ? error.message : "An unknown error occurred.";
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }

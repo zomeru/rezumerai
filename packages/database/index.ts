@@ -1,3 +1,4 @@
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "prisma/config";
 import { PrismaClient } from "./generated/prisma/client";
@@ -12,14 +13,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-/**
- * PostgreSQL adapter for Prisma using the Neon adapter, which is compatible with serverless environments.
- * Reads the connection string from the DATABASE_URL environment variable.
- */
+const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? env("DATABASE_URL"),
-});
+/**
+ * Selects the appropriate Prisma adapter based on the database connection string.
+ * Uses PrismaNeon for Neon serverless PostgreSQL (WebSocket-based), and PrismaPg
+ * for standard PostgreSQL connections (e.g. local Docker).
+ */
+const adapter = connectionString.includes(".neon.tech")
+  ? new PrismaNeon({ connectionString })
+  : new PrismaPg({ connectionString });
 
 /**
  * Shared Prisma client singleton for database access.

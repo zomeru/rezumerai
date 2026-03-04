@@ -1,4 +1,5 @@
 import Elysia, { status, t } from "elysia";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { ResumeModel, ResumeWithoutUser } from "./model";
@@ -67,10 +68,15 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .patch(
     "/:id",
     async ({ db, user, params, body, status }) => {
-      const { experience } = body as { experience?: Array<{ isCurrent?: boolean | null; endDate?: Date | null }> };
+      const { experience } = body as {
+        experience?: Array<{
+          isCurrent?: boolean | null;
+          endDate?: Date | null;
+        }>;
+      };
       const hasInvalidExp = experience?.some((exp) => exp.isCurrent === false && !exp.endDate);
       if (hasInvalidExp) {
-        return status(422, "End date is required for non-current positions");
+        return status(422, ERROR_MESSAGES.NON_CURRENT_POSITION_END_DATE);
       }
 
       const updatedResume = await ResumeService.update(
