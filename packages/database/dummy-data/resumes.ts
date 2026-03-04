@@ -41,7 +41,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           company: "Example Technologies.",
           position: "Senior Full Stack Developer",
           startDate: new Date(2023, 5, 1),
-          endDate: null,
+          endDate: null, // Should be null if isCurrent is true
           description:
             "Architected, developed, and deployed innovative full-stack applications at Example Technologies.\ncreating robust back-end systems and intuitive front- end interfaces to deliver meaningful digital experiences ",
           isCurrent: true,
@@ -64,6 +64,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "B.TECH",
           field: "CSE",
           graduationDate: new Date(2023, 4, 1),
+          schoolYearStartDate: new Date(2019, 7, 1),
+          isCurrent: false,
           gpa: "8.7",
         },
         {
@@ -71,6 +73,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "HIGHER SECONDARY",
           field: "PCM",
           graduationDate: new Date(2019, 2, 1),
+          schoolYearStartDate: new Date(2017, 2, 1),
+          isCurrent: false,
           gpa: "",
         },
         {
@@ -78,6 +82,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "SECONDARY SCHOOL",
           field: "",
           graduationDate: new Date(2017, 2, 1),
+          schoolYearStartDate: new Date(2015, 2, 1),
+          isCurrent: false,
           gpa: "",
         },
       ],
@@ -146,7 +152,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           company: "TechSpark Inc.",
           position: "Lead Frontend Engineer",
           startDate: new Date(2022, 1, 1),
-          endDate: null,
+          endDate: null, // Should be null if isCurrent is true
           description:
             "Leading a team of frontend developers to build accessible and scalable user interfaces. Collaborated with UX teams to implement design systems and improve frontend performance.",
           isCurrent: true,
@@ -169,6 +175,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "B.Sc.",
           field: "Computer Science",
           graduationDate: new Date(2018, 5, 1),
+          schoolYearStartDate: new Date(2014, 5, 1),
+          isCurrent: false,
           gpa: "3.8",
         },
         {
@@ -176,6 +184,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "High School Diploma",
           field: "Science",
           graduationDate: new Date(2014, 4, 1),
+          schoolYearStartDate: new Date(2010, 4, 1),
+          isCurrent: false,
           gpa: "",
         },
       ],
@@ -233,7 +243,7 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           company: "DataNest Solutions",
           position: "Senior Backend Engineer",
           startDate: new Date(2021, 2, 1),
-          endDate: null,
+          endDate: null, // Should be null if isCurrent is true
           description:
             "Developed distributed microservices using Node.js and Docker. Implemented API rate limiting, authentication, and background job processing using Redis and Bull.",
           isCurrent: true,
@@ -256,6 +266,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "B.E.",
           field: "Information Technology",
           graduationDate: new Date(2016, 4, 1),
+          schoolYearStartDate: new Date(2012, 3, 1),
+          isCurrent: false,
           gpa: "3.9",
         },
         {
@@ -263,6 +275,8 @@ export const dummyResumeData: Prisma.ResumeCreateInput[] = [
           degree: "High School Diploma",
           field: "Science",
           graduationDate: new Date(2012, 3, 1),
+          schoolYearStartDate: new Date(2008, 3, 1),
+          isCurrent: false,
           gpa: "",
         },
       ],

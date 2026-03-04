@@ -150,7 +150,9 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
                       </h3>
                       <p style={{ color: accentColor }}>{edu.institution}</p>
                       <div className="flex items-center justify-between text-[0.875em] text-gray-600">
-                        <span>{formatShortDate(edu.graduationDate)}</span>
+                        <span>
+                          {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                        </span>
                         {edu.gpa && <span>GPA: {edu.gpa}</span>}
                       </div>
                     </div>

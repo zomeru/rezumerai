@@ -5,6 +5,7 @@ import { generateUuidKey } from "@rezumerai/utils";
 import { formatDateRange } from "@rezumerai/utils/date";
 import { cn } from "@rezumerai/utils/styles";
 import { useEffect, useState } from "react";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
@@ -118,10 +119,12 @@ export default function ExperienceFormEnhanced({ experience, onChange, invalidIn
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
+                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">
+                      Start Date<span className="text-red-500"> *</span>
+                    </p>
                     <DatePicker
                       selected={exp.startDate ?? undefined}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", date ?? new Date())}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", date ?? null)}
                       placeholder="Select start date"
                     />
                   </div>
@@ -136,7 +139,7 @@ export default function ExperienceFormEnhanced({ experience, onChange, invalidIn
                               isInvalid ? "text-red-500" : "text-slate-700",
                             )}
                           >
-                            End Date {!exp.isCurrent && "*"}
+                            End Date{!exp.isCurrent && <span className="text-red-500"> *</span>}
                           </p>
                           <DatePicker
                             selected={exp.endDate ?? undefined}
@@ -145,7 +148,9 @@ export default function ExperienceFormEnhanced({ experience, onChange, invalidIn
                             disabled={exp.isCurrent}
                             minDate={exp.startDate ?? undefined}
                           />
-                          {isInvalid && <p className="mt-1 text-red-500 text-xs">End date is required</p>}
+                          {isInvalid && (
+                            <p className="mt-1 text-red-500 text-xs">{ERROR_MESSAGES.EXPERIENCE_END_DATE_REQUIRED}</p>
+                          )}
                         </>
                       );
                     })()}

@@ -90,7 +90,9 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                     <div key={key}>
                       <p className="font-semibold uppercase">{edu.degree}</p>
                       <p className="text-zinc-600">{edu.institution}</p>
-                      <p className="text-[0.75em] text-zinc-500">{formatShortDate(edu.graduationDate)}</p>
+                      <p className="text-[0.75em] text-zinc-500">
+                        {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                      </p>
                     </div>
                   );
                 })}

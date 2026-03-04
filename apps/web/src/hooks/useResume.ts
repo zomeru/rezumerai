@@ -1,4 +1,4 @@
-import type { ResumeWithRelations } from "@rezumerai/types";
+import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DUMMY_RESUME_DATA_ID } from "@/constants/dummy";
 import { api } from "@/lib/api";
@@ -83,7 +83,7 @@ export function useUpdateResume() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: unknown }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: ResumeWithRelationsInputUpdate }) => {
       const { data, error } = await api.resumes({ id }).patch(updates);
 
       if (error) {
@@ -95,6 +95,7 @@ export function useUpdateResume() {
       return data as ResumeWithRelations;
     },
     onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
       void queryClient.invalidateQueries({
         queryKey: ["resumesById", variables.id],
       });
@@ -121,6 +122,9 @@ export function useDeleteResume() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["resumesById"],
+      });
     },
   });
 }

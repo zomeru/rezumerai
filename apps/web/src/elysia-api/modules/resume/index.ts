@@ -1,9 +1,9 @@
 import Elysia, { status, t } from "elysia";
-import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { ResumeModel, ResumeWithoutUser } from "./model";
+import { ResumeModel } from "./model";
 import { ResumeService } from "./service";
+import { validateResumeUpdate } from "./utils";
 
 const resumeNotFound = () => status(404, "Resume not found");
 
@@ -27,11 +27,9 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       return status(200, resumes);
     },
     {
-      query: t.Object({
-        search: t.Optional(t.String()),
-      }),
+      query: "resume.QueryList",
       response: {
-        200: t.Array(ResumeWithoutUser),
+        200: "resume.ResponseList",
       },
     },
   )
@@ -42,7 +40,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       const newResume = await ResumeService.create(db, user.id, body);
       return { success: true as const, data: newResume };
     },
-    { body: "resume.Create" },
+    { body: "resume.InputCreate" },
   )
   // ── GET /resumes/:id ───────────────────────────────────────────────────────
   .get(
@@ -57,10 +55,10 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       return status(200, resume);
     },
     {
-      params: "resume.ById",
+      params: "resume.ParamById",
       response: {
-        200: ResumeWithoutUser,
-        404: t.String(),
+        200: "resume.ResponseById",
+        404: "resume.Error",
       },
     },
   )
@@ -68,32 +66,22 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .patch(
     "/:id",
     async ({ db, user, params, body, status }) => {
-      const { experience } = body as {
-        experience?: Array<{
-          isCurrent?: boolean | null;
-          endDate?: Date | null;
-        }>;
-      };
-      const hasInvalidExp = experience?.some((exp) => exp.isCurrent === false && !exp.endDate);
-      if (hasInvalidExp) {
-        return status(422, ERROR_MESSAGES.NON_CURRENT_POSITION_END_DATE);
+      const validationError = validateResumeUpdate(body);
+      if (validationError) {
+        return status(422, validationError.message);
       }
 
-      const updatedResume = await ResumeService.update(
-        db,
-        user.id,
-        params.id,
-        body as Parameters<typeof ResumeService.update>[3],
-      );
+      const updatedResume = await ResumeService.update(db, user.id, params.id, body);
       if (!updatedResume) return resumeNotFound();
       return status(200, updatedResume);
     },
     {
-      params: "resume.ById",
+      params: "resume.ParamById",
+      body: "resume.InputUpdate",
       response: {
-        200: ResumeWithoutUser,
-        404: t.String(),
-        422: t.String(),
+        200: "resume.ResponseById",
+        404: "resume.Error",
+        422: "resume.Error",
       },
     },
   )
@@ -106,7 +94,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       return status(200, deleted);
     },
     {
-      params: "resume.ById",
-      response: { 404: t.String(), 200: t.Boolean() },
+      params: "resume.ParamById",
+      response: { 404: "resume.Error", 200: t.Boolean() },
     },
   );

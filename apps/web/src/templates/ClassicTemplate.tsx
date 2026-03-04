@@ -141,7 +141,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
                     )}
                   </div>
                   <div className="text-gray-600" style={{ fontSize: "0.875em" }}>
-                    <p>{formatShortDate(edu.graduationDate)}</p>
+                    <p>{formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}</p>
                   </div>
                 </div>
               );

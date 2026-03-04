@@ -22,7 +22,7 @@ import {
 import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
-
+const cronPattern = isDev ? Patterns.EVERY_MINUTE : Patterns.weekly();
 /**
  * Elysia application — single source of truth for the API.
  *
@@ -69,7 +69,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(
     cron({
       name: "heartbeat",
-      pattern: isDev ? Patterns.EVERY_10_SECONDS : Patterns.EVERY_HOUR,
+      pattern: cronPattern,
       async run() {
         const sampleDbCall = await prisma.sampleTable.findFirst({
           select: { id: true },

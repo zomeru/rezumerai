@@ -101,7 +101,9 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                     <p className="text-gray-600">{edu.institution}</p>
                     {edu.gpa && <p className="text-[0.875em] text-gray-500">GPA: {edu.gpa}</p>}
                   </div>
-                  <span className="text-[0.875em] text-gray-500">{formatShortDate(edu.graduationDate)}</span>
+                  <span className="text-[0.875em] text-gray-500">
+                    {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                  </span>
                 </div>
               );
             })}

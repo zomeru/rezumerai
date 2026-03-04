@@ -1,13 +1,13 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
 import type { ResumeWithRelations } from "@rezumerai/types";
 import { t } from "elysia";
-import { type CustomResumeInputCreate, CustomResumeWithRelationInputUpdate } from "./model";
+import { type CustomResumeWithRelationsInputCreate, CustomResumeWithRelationsInputUpdate } from "./model";
 
 type SyncPromiseReturn = Prisma.PrismaPromise<unknown>;
 
-const SyncEducation = t.Pick(CustomResumeWithRelationInputUpdate, ["education"]);
-const SyncExperience = t.Pick(CustomResumeWithRelationInputUpdate, ["experience"]);
-const SyncProject = t.Pick(CustomResumeWithRelationInputUpdate, ["project"]);
+const SyncEducation = t.Pick(CustomResumeWithRelationsInputUpdate, ["education"]);
+const SyncExperience = t.Pick(CustomResumeWithRelationsInputUpdate, ["experience"]);
+const SyncProject = t.Pick(CustomResumeWithRelationsInputUpdate, ["project"]);
 
 type SyncItemsType =
   | typeof SyncEducation.static.education
@@ -51,6 +51,8 @@ export abstract class ResumeService {
       },
       orderBy: { updatedAt: "desc" },
     });
+    const firstEduc = resumes[0]?.education[0];
+    console.log("First resume's first education entry:", firstEduc);
     return resumes;
   }
 
@@ -73,7 +75,7 @@ export abstract class ResumeService {
   static async create(
     db: PrismaClient,
     userId: string,
-    data: typeof CustomResumeInputCreate.static,
+    data: typeof CustomResumeWithRelationsInputCreate.static,
   ): Promise<ResumeWithRelations> {
     const { personalInfo, project, experience, education, ...rest } = data;
     const newResume = await db.resume.create({
@@ -113,7 +115,7 @@ export abstract class ResumeService {
     db: PrismaClient,
     userId: string,
     resumeId: string,
-    data: typeof CustomResumeWithRelationInputUpdate.static,
+    data: typeof CustomResumeWithRelationsInputUpdate.static,
   ): Promise<ResumeWithRelations | null> {
     const existing = await db.resume.findFirst({
       where: { id: resumeId, userId },
