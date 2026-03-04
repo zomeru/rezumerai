@@ -5,4 +5,5 @@ export * from "./logger";
 export * from "./modernCsrf";
 export * from "./opentelemetry";
 export * from "./prisma";
+export * from "./redis";
 export * from "./trace";

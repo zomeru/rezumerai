@@ -3,11 +3,14 @@ export type Element<T> = T extends (infer U)[] ? U : never;
 
 export type StripAudit<T> = Omit<T, "id" | "resumeId" | "userId" | "createdAt" | "updatedAt">;
 
-// export type DeepPartial<T> = {
-//   [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-// };
-
-type Builtin = Date | RegExp | Error | Map<any, any> | Set<any> | WeakMap<any, any> | WeakSet<any>;
+type Builtin =
+  | Date
+  | RegExp
+  | Error
+  | Map<unknown, unknown>
+  | Set<unknown>
+  | WeakMap<WeakKey, unknown>
+  | WeakSet<WeakKey>;
 
 export type DeepPartial<T> = T extends Builtin
   ? T

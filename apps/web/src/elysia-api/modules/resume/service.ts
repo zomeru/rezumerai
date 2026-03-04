@@ -51,8 +51,6 @@ export abstract class ResumeService {
       },
       orderBy: { updatedAt: "desc" },
     });
-    const firstEduc = resumes[0]?.education[0];
-    console.log("First resume's first education entry:", firstEduc);
     return resumes;
   }
 
@@ -178,10 +176,6 @@ export abstract class ResumeService {
    * @returns true if deleted, false if not found or not owned
    */
   static async delete(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
-    console.log("Attempting to delete resume with ID:", {
-      resumeId,
-      userId,
-    });
     const result = await db.resume.deleteMany({
       where: {
         id: resumeId,
@@ -190,7 +184,6 @@ export abstract class ResumeService {
         },
       },
     });
-    // console.log("Delete result:", result);
     return result.count > 0;
   }
 

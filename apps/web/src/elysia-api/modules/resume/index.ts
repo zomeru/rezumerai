@@ -1,9 +1,13 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import Elysia, { status, t } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
+import { redisCache, redisPlugin } from "../../plugins/redis";
 import { ResumeModel } from "./model";
 import { ResumeService } from "./service";
 import { validateResumeUpdate } from "./utils";
+
+const CACHE_TTL_SECONDS = 300;
 
 const resumeNotFound = () => status(404, "Resume not found");
 
@@ -13,18 +17,24 @@ const resumeNotFound = () => status(404, "Resume not found");
  */
 export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(prismaPlugin)
+  .use(redisPlugin())
   .use(authPlugin)
   .use(ResumeModel)
   .prefix("model", "resume.")
   // ── GET /resumes ───────────────────────────────────────────────────────────
   .get(
     "/",
-    async ({ db, user, query }) => {
-      const resumes = await ResumeService.search(db, user.id, {
-        search: query.search,
-      });
+    async ({ db, user, query, redis }) => {
+      const cacheKey = `resumes:${user.id}:${query.search ?? "all"}`;
 
-      return status(200, resumes);
+      const data = await redisCache<ResumeWithRelations[]>(
+        redis,
+        cacheKey,
+        () => ResumeService.search(db, user.id, { search: query.search }),
+        CACHE_TTL_SECONDS,
+      );
+
+      return status(200, data);
     },
     {
       query: "resume.QueryList",
@@ -45,14 +55,21 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   // ── GET /resumes/:id ───────────────────────────────────────────────────────
   .get(
     "/:id",
-    async ({ db, user, params, status }) => {
-      const resume = await ResumeService.findById(db, user.id, params.id);
+    async ({ db, user, params, status, redis }) => {
+      const cacheKey = `resume:${user.id}:${params.id}`;
 
-      if (!resume) {
+      const data = await redisCache<ResumeWithRelations | null>(
+        redis,
+        cacheKey,
+        () => ResumeService.findById(db, user.id, params.id),
+        CACHE_TTL_SECONDS,
+      );
+
+      if (!data) {
         return resumeNotFound();
       }
 
-      return status(200, resume);
+      return status(200, data);
     },
     {
       params: "resume.ParamById",

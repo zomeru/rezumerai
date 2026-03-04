@@ -22,18 +22,21 @@ services:
   #   networks:
   #     - app_network
 
-  # Redis (optional, for caching/sessions)
-  # redis:
-  #   image: redis:7-alpine
-  #   env_file:
-  #     - .env.local
-  #   ports:
-  #     - "${REDIS_PORT:-6379}:6379"
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 3s
-  #     retries: 5
+  # Redis (for caching)
+  redis:
+    image: redis:8.6.1
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app_network
 
   web:
     build:
@@ -41,7 +44,6 @@ services:
       dockerfile: ./apps/web/Dockerfile
       secrets:
         # Build-time secrets (for Next.js build)
-        - next_public_api_url
         - next_public_site_url
         - better_auth_secret
         - better_auth_url
@@ -60,7 +62,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      api:
+      redis:
         condition: service_started
     environment:
       NODE_ENV: production
@@ -93,6 +95,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   app_network:
@@ -103,8 +106,6 @@ secrets:
     environment: DATABASE_URL
   better_auth_secret:
     environment: BETTER_AUTH_SECRET
-  next_public_api_url:
-    environment: NEXT_PUBLIC_API_URL
   next_public_site_url:
     environment: NEXT_PUBLIC_SITE_URL
   better_auth_url:

@@ -10,8 +10,20 @@ import { initBotId } from "botid/client/core";
 initBotId({
   protect: [
     {
-      path: "/api",
+      path: "/api/*",
       method: "POST",
+    },
+    {
+      path: "/api/*",
+      method: "PUT",
+    },
+    {
+      path: "/api/*",
+      method: "PATCH",
+    },
+    {
+      path: "/api/*",
+      method: "DELETE",
     },
   ],
 });

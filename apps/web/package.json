@@ -57,6 +57,7 @@
     "elysiajs-helmet": "^1.0.4",
     "html2canvas-pro": "^2.0.2",
     "i": "^0.3.7",
+    "ioredis": "^5.10.0",
     "jspdf": "^4.2.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",

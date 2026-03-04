@@ -10,7 +10,6 @@ const isServer = typeof window === "undefined";
 
 // Client-side schema (only public variables)
 const clientSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.url().default("http://localhost:8080").describe("Public API URL for client-side requests"),
   NEXT_PUBLIC_SITE_URL: z
     .url()
     .default("http://localhost:3000") // Will be used as BETTER_AUTH_URL for client-side auth requests
