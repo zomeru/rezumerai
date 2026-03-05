@@ -28,6 +28,9 @@ const serverSchema = clientSchema.extend({
   BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
   DATABASE_URL: z.url().describe("Database connection URL (server-only)"),
 
+  // AI (server-side only)
+  OPENROUTER_API_KEY: z.string().describe("OpenRouter API key for AI text optimization"),
+
   // Optional analytics/monitoring (server-side only)
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),
   ANALYTICS_ID: z.string().optional().describe("Analytics tracking ID"),

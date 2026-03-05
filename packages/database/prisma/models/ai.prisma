@@ -1,0 +1,35 @@
+model AiOptimization {
+  id               String               @id @default(cuid())
+  userId           String
+  resumeId         String?
+  inputText        String               @db.Text
+  optimizedText    String               @db.Text
+  provider         String               @default("openrouter")
+  model            String
+  promptVersion    String               @default("optimize-v1")
+  status           AiOptimizationStatus @default(success)
+  inputCharCount   Int
+  outputCharCount  Int
+  chunkCount       Int                  @default(0)
+  durationMs       Int
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  reasoningTokens  Int?
+  errorMessage     String?              @db.Text
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([resumeId])
+  @@index([status])
+  @@map("ai_optimization")
+}
+
+enum AiOptimizationStatus {
+  success
+  failed
+  aborted
+
+  @@map("ai_optimization_status")
+}

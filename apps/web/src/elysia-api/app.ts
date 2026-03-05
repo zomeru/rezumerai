@@ -9,7 +9,7 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
-import { resumeModule, userModule } from "./modules";
+import { aiModule, resumeModule, userModule } from "./modules";
 import {
   authPlugin,
   errorPlugin,
@@ -119,6 +119,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
 
   // ── Feature modules ─────────────────────────────────────────────────────
   .use(userModule)
-  .use(resumeModule);
+  .use(resumeModule)
+  .use(aiModule);
 
 /** Export the app type for Eden treaty on the frontend. */
