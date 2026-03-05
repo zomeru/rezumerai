@@ -51,6 +51,11 @@ export interface ConsumeDailyCreditResult {
   remainingCredits: number;
 }
 
+export interface DailyCreditsStatus {
+  remainingCredits: number;
+  dailyLimit: number;
+}
+
 export class AiCreditsExhaustedError extends Error {
   readonly code: string = AI_CREDITS_EXHAUSTED_CODE;
 
@@ -87,28 +92,7 @@ export abstract class AiService {
     const todayBoundary = AiService.getAsiaManilaMidnightBoundary(now);
 
     return db.$transaction(async (tx) => {
-      await tx.aiTextOptimizerCredits.upsert({
-        where: { userId },
-        update: {},
-        create: {
-          userId,
-          credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
-          lastResetAt: todayBoundary,
-        },
-      });
-
-      await tx.aiTextOptimizerCredits.updateMany({
-        where: {
-          userId,
-          lastResetAt: {
-            lt: todayBoundary,
-          },
-        },
-        data: {
-          credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
-          lastResetAt: todayBoundary,
-        },
-      });
+      await AiService.ensureDailyCreditsWindow(tx, userId, todayBoundary);
 
       const consumeResult = await tx.aiTextOptimizerCredits.updateMany({
         where: {
@@ -134,6 +118,24 @@ export abstract class AiService {
       });
 
       return { remainingCredits: creditsRecord?.credits ?? 0 };
+    });
+  }
+
+  static async getDailyCredits(db: PrismaClient, userId: string, now: Date = new Date()): Promise<DailyCreditsStatus> {
+    const todayBoundary = AiService.getAsiaManilaMidnightBoundary(now);
+
+    return db.$transaction(async (tx) => {
+      await AiService.ensureDailyCreditsWindow(tx, userId, todayBoundary);
+
+      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
+        where: { userId },
+        select: { credits: true },
+      });
+
+      return {
+        remainingCredits: creditsRecord?.credits ?? DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+        dailyLimit: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+      };
     });
   }
 
@@ -226,5 +228,34 @@ export abstract class AiService {
     manilaDate.setUTCHours(0, 0, 0, 0);
 
     return new Date(manilaDate.getTime() - ASIA_MANILA_UTC_OFFSET_MS);
+  }
+
+  private static async ensureDailyCreditsWindow(
+    db: Pick<PrismaClient, "aiTextOptimizerCredits">,
+    userId: string,
+    todayBoundary: Date,
+  ): Promise<void> {
+    await db.aiTextOptimizerCredits.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+        lastResetAt: todayBoundary,
+      },
+    });
+
+    await db.aiTextOptimizerCredits.updateMany({
+      where: {
+        userId,
+        lastResetAt: {
+          lt: todayBoundary,
+        },
+      },
+      data: {
+        credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+        lastResetAt: todayBoundary,
+      },
+    });
   }
 }

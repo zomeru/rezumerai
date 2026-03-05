@@ -1,4 +1,13 @@
 import type { PrismaClient, User } from "@rezumerai/database";
+import type { UserAccountSettings } from "@rezumerai/types";
+import { AiService } from "../ai/service";
+
+const CREDENTIAL_PROVIDER_IDS = new Set<string>(["credential", "email-password"]);
+
+const SOCIAL_EMAIL_READ_ONLY_REASON = "Email is managed by your social auth provider and cannot be updated here.";
+const SOCIAL_PASSWORD_READ_ONLY_REASON =
+  "Password is managed by your social auth provider. Use that provider to update it.";
+const LOCAL_PASSWORD_READ_ONLY_REASON = "Password updates are not available from account settings yet.";
 
 /**
  * User service — business logic only, no HTTP concerns.
@@ -54,6 +63,50 @@ export abstract class UserService {
     });
     if (!exists) return null;
     return db.user.update({ where: { id }, data });
+  }
+
+  static async getAccountSettings(db: PrismaClient, userId: string): Promise<UserAccountSettings | null> {
+    const [user, accounts, credits] = await Promise.all([
+      db.user.findUnique({
+        where: { id: userId },
+      }),
+      db.account.findMany({
+        where: { userId },
+        select: {
+          providerId: true,
+          password: true,
+        },
+      }),
+      AiService.getDailyCredits(db, userId),
+    ]);
+
+    if (!user) return null;
+
+    const providers = accounts.map((account) => ({
+      providerId: account.providerId,
+      hasPassword: account.password !== null || CREDENTIAL_PROVIDER_IDS.has(account.providerId),
+    }));
+
+    const hasSocialProvider = providers.some((provider) => !provider.hasPassword);
+
+    return {
+      user,
+      providers,
+      permissions: {
+        canEditName: true,
+        canEditEmail: !hasSocialProvider,
+        canEditImage: true,
+        canChangePassword: false,
+      },
+      readOnlyReasons: {
+        email: hasSocialProvider ? SOCIAL_EMAIL_READ_ONLY_REASON : null,
+        password: hasSocialProvider ? SOCIAL_PASSWORD_READ_ONLY_REASON : LOCAL_PASSWORD_READ_ONLY_REASON,
+      },
+      credits: {
+        remaining: credits.remainingCredits,
+        dailyLimit: credits.dailyLimit,
+      },
+    };
   }
 
   /**

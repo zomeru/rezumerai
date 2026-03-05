@@ -6,6 +6,7 @@ const SIGNUP = "/signup";
 const WORKSPACE = "/workspace";
 const PREVIEW = "/preview";
 const BUILDER = `${WORKSPACE}/builder`;
+const SETTINGS = `${WORKSPACE}/settings`;
 
 /**
  * Centralized route constants for application navigation.
@@ -17,6 +18,7 @@ const BUILDER = `${WORKSPACE}/builder`;
  * @property WORKSPACE - Dashboard workspace route
  * @property PREVIEW - Resume preview route (dynamic: /preview/[resumeId])
  * @property BUILDER - Resume builder route (dynamic: /workspace/builder/[resumeId])
+ * @property SETTINGS - User account settings route
  *
  * @example
  * ```tsx
@@ -33,6 +35,7 @@ export const ROUTES = {
   WORKSPACE,
   PREVIEW,
   BUILDER,
+  SETTINGS,
 } as const;
 
 /**

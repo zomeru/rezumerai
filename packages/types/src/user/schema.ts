@@ -30,6 +30,49 @@ export const UserSchema = z.object({
   updatedAt: z.date(),
 });
 
+export const UpdateUserAccountSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100).optional(),
+    email: z.email().optional(),
+    image: z.url().nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    error: "At least one field must be provided",
+  });
+
+export const UserAccountProviderSchema = z.object({
+  providerId: z.string().min(1),
+  hasPassword: z.boolean(),
+});
+
+export const UserAccountPermissionsSchema = z.object({
+  canEditName: z.boolean(),
+  canEditEmail: z.boolean(),
+  canEditImage: z.boolean(),
+  canChangePassword: z.boolean(),
+});
+
+export const UserAccountReadOnlyReasonsSchema = z.object({
+  email: z.string().nullable(),
+  password: z.string().nullable(),
+});
+
+export const UserAiCreditsSchema = z.object({
+  remaining: z.number().int().min(0),
+  dailyLimit: z.number().int().positive(),
+});
+
+export const UserAccountSettingsSchema = z.object({
+  user: UserSchema,
+  providers: z.array(UserAccountProviderSchema),
+  permissions: UserAccountPermissionsSchema,
+  readOnlyReasons: UserAccountReadOnlyReasonsSchema,
+  credits: UserAiCreditsSchema,
+});
+
+export type UpdateUserAccountInput = z.infer<typeof UpdateUserAccountSchema>;
+export type UserAccountSettings = z.infer<typeof UserAccountSettingsSchema>;
+
 export const GetAccountByIdParamsSchema = z.object({
   id: z.string().min(1),
 });
