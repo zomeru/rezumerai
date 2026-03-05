@@ -24,6 +24,7 @@ const DEFAULT_AI_CONFIGURATION: AiConfiguration = {
 
 export const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
 export const AI_MODEL_UNAVAILABLE_CODE = "AI_MODEL_UNAVAILABLE";
+export const AI_MODEL_POLICY_RESTRICTED_CODE = "AI_MODEL_POLICY_RESTRICTED";
 export const AI_FORBIDDEN_CODE = "AI_FORBIDDEN";
 
 export type AiConfiguration = z.infer<typeof AI_CONFIGURATION_SCHEMA>;
@@ -98,6 +99,15 @@ export class AiModelUnavailableError extends Error {
   constructor(message = ERROR_MESSAGES.AI_MODEL_UNAVAILABLE) {
     super(message);
     this.name = "AiModelUnavailableError";
+  }
+}
+
+export class AiModelPolicyRestrictedError extends Error {
+  readonly code: string = AI_MODEL_POLICY_RESTRICTED_CODE;
+
+  constructor() {
+    super(ERROR_MESSAGES.AI_MODEL_POLICY_RESTRICTED);
+    this.name = "AiModelPolicyRestrictedError";
   }
 }
 
@@ -324,24 +334,19 @@ export abstract class AiService {
    * @param input - Raw user text to optimize
    */
   static async *streamOptimizeText(
-    input: string,
-    modelId: string,
-    systemPrompt: string,
+    stream: AsyncIterable<unknown>,
     options?: StreamOptimizeTextOptions,
   ): AsyncGenerator<string, void, unknown> {
-    const stream = await openrouter.chat.send({
-      chatGenerationParams: {
-        model: modelId,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: input },
-        ],
-        stream: true,
-      },
-    });
-
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
+    for await (const chunk of stream as AsyncIterable<{
+      choices?: Array<{ delta?: { content?: string | null } }>;
+      usage?: {
+        promptTokens?: number | null;
+        completionTokens?: number | null;
+        totalTokens?: number | null;
+        completionTokensDetails?: { reasoningTokens?: number | null };
+      };
+    }>) {
+      const content = chunk.choices?.[0]?.delta?.content;
       if (content) {
         yield content;
       }
@@ -355,6 +360,36 @@ export abstract class AiService {
         });
       }
     }
+  }
+
+  static async createOptimizeStream(
+    input: string,
+    modelId: string,
+    systemPrompt: string,
+  ): Promise<AsyncIterable<unknown>> {
+    return openrouter.chat.send({
+      chatGenerationParams: {
+        model: modelId,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: input },
+        ],
+        stream: true,
+      },
+    });
+  }
+
+  static normalizeOptimizationError(error: unknown): Error {
+    const message = AiService.getErrorMessage(error);
+    const statusCode = AiService.getErrorStatusCode(error);
+    const normalizedMessage = message.length > 0 ? message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
+    const isPolicyError = statusCode === 404 && normalizedMessage.toLowerCase().includes("data policy");
+
+    if (isPolicyError) {
+      return new AiModelPolicyRestrictedError();
+    }
+
+    return new Error(normalizedMessage);
   }
 
   static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
@@ -401,6 +436,32 @@ export abstract class AiService {
     });
 
     return ownedResume?.id ?? null;
+  }
+
+  private static getErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message.trim();
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "message" in error &&
+      typeof error.message === "string" &&
+      error.message.trim().length > 0
+    ) {
+      return error.message.trim();
+    }
+
+    return "";
+  }
+
+  private static getErrorStatusCode(error: unknown): number | null {
+    if (typeof error !== "object" || error === null || !("statusCode" in error)) {
+      return null;
+    }
+
+    return typeof error.statusCode === "number" ? error.statusCode : null;
   }
 
   private static parseAiConfiguration(value: Prisma.JsonValue): AiConfiguration {

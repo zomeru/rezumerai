@@ -7,9 +7,11 @@ import { AiModel } from "./model";
 import {
   AI_CREDITS_EXHAUSTED_CODE,
   AI_FORBIDDEN_CODE,
+  AI_MODEL_POLICY_RESTRICTED_CODE,
   AI_MODEL_UNAVAILABLE_CODE,
   AiCreditsExhaustedError,
   AiForbiddenError,
+  AiModelPolicyRestrictedError,
   AiModelUnavailableError,
   AiService,
 } from "./service";
@@ -157,41 +159,77 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         throw error;
       }
 
+      const startedAt = Date.now();
+      const usageMetrics = AiService.emptyUsageMetrics();
+      let stream: AsyncIterable<unknown>;
+
+      try {
+        stream = await AiService.createOptimizeStream(
+          input,
+          optimizationContext.model.modelId,
+          optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
+        );
+      } catch (error: unknown) {
+        const normalizedError = AiService.normalizeOptimizationError(error);
+        const responseCode: typeof AI_MODEL_POLICY_RESTRICTED_CODE | typeof AI_MODEL_UNAVAILABLE_CODE =
+          normalizedError instanceof AiModelPolicyRestrictedError
+            ? AI_MODEL_POLICY_RESTRICTED_CODE
+            : AI_MODEL_UNAVAILABLE_CODE;
+
+        try {
+          await AiService.saveOptimization(db, {
+            userId: user.id,
+            provider: optimizationContext.model.providerName,
+            model: optimizationContext.model.modelId,
+            promptVersion: optimizationContext.config.PROMPT_VERSION,
+            resumeId: body.resumeId?.trim() || null,
+            inputText: input,
+            optimizedText: "",
+            status: "failed",
+            durationMs: Date.now() - startedAt,
+            chunkCount: 0,
+            errorMessage: normalizedError.message,
+            usage: usageMetrics,
+          });
+        } catch (saveError: unknown) {
+          const message = saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
+          console.error(`[AI] Failed to persist optimization: ${message}`);
+        }
+
+        return status(422, {
+          code: responseCode,
+          message: normalizedError.message,
+        });
+      }
+
       set.headers["content-type"] = "text/plain; charset=utf-8";
       set.headers["x-content-type-options"] = "nosniff";
       set.headers["cache-control"] = "no-cache, no-store";
       set.headers["x-ai-credits-remaining"] = String(remainingCredits);
 
       return (async function* (): AsyncGenerator<string, void, unknown> {
-        const startedAt = Date.now();
-        const usageMetrics = AiService.emptyUsageMetrics();
         let optimizedText = "";
         let chunkCount = 0;
         let optimizationStatus: "success" | "failed" | "aborted" = "success";
         let errorMessage: string | null = null;
 
         try {
-          for await (const chunk of AiService.streamOptimizeText(
-            input,
-            optimizationContext.model.modelId,
-            optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
-            {
-              onUsage: (usage): void => {
-                usageMetrics.promptTokens = usage.promptTokens;
-                usageMetrics.completionTokens = usage.completionTokens;
-                usageMetrics.totalTokens = usage.totalTokens;
-                usageMetrics.reasoningTokens = usage.reasoningTokens;
-              },
+          for await (const chunk of AiService.streamOptimizeText(stream, {
+            onUsage: (usage): void => {
+              usageMetrics.promptTokens = usage.promptTokens;
+              usageMetrics.completionTokens = usage.completionTokens;
+              usageMetrics.totalTokens = usage.totalTokens;
+              usageMetrics.reasoningTokens = usage.reasoningTokens;
             },
-          )) {
+          })) {
             chunkCount += 1;
             optimizedText += chunk;
             yield chunk;
           }
         } catch (error: unknown) {
           optimizationStatus = "failed";
-          errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
-          throw error;
+          errorMessage = AiService.normalizeOptimizationError(error).message;
+          return;
         } finally {
           if (optimizationStatus === "success" && request.signal.aborted) {
             optimizationStatus = "aborted";
@@ -225,7 +263,13 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       body: "ai.OptimizeInput",
       response: {
         401: t.String({ default: ERROR_MESSAGES.AI_AUTH_REQUIRED }),
-        422: t.String(),
+        422: t.Union([
+          t.String(),
+          t.Object({
+            code: t.Union([t.Literal(AI_MODEL_POLICY_RESTRICTED_CODE), t.Literal(AI_MODEL_UNAVAILABLE_CODE)]),
+            message: t.String(),
+          }),
+        ]),
         429: t.Object({
           code: t.Literal(AI_CREDITS_EXHAUSTED_CODE),
           message: t.String({ default: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED }),

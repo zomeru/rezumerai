@@ -63,8 +63,10 @@ export default function TestSitePage(): React.JSX.Element {
   const [inputText, setInputText] = useState<string>("");
   const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const activeStreamRef = useRef<AsyncGenerator<unknown> | null>(null);
+  const stopRequestedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!aiSettings) return;
@@ -104,6 +106,10 @@ export default function TestSitePage(): React.JSX.Element {
 
       try {
         for await (const chunk of data) {
+          if (stopRequestedRef.current) {
+            await data.return(undefined);
+            break;
+          }
           onChunk(getStreamChunk(chunk));
         }
       } finally {
@@ -113,10 +119,12 @@ export default function TestSitePage(): React.JSX.Element {
   });
 
   async function handleOptimize(): Promise<void> {
-    if (!inputText.trim() || !selectedModelId || optimizeMutation.isPending) return;
+    if (!inputText.trim() || !selectedModelId || isStreaming) return;
 
+    stopRequestedRef.current = false;
     setResult("");
     setError(null);
+    setIsStreaming(true);
     optimizeMutation.reset();
 
     try {
@@ -128,15 +136,30 @@ export default function TestSitePage(): React.JSX.Element {
         },
       });
     } catch (err: unknown) {
+      if (stopRequestedRef.current) {
+        return;
+      }
+
       if (err instanceof OptimizeRequestError && err.code === AI_CREDITS_EXHAUSTED_CODE) {
         toast.error(err.message);
       }
 
       setError(err instanceof Error ? err.message : ERROR_MESSAGES.AI_OPTIMIZE_UNEXPECTED_ERROR);
+    } finally {
+      setIsStreaming(false);
+      stopRequestedRef.current = false;
     }
   }
 
   async function handleStop(): Promise<void> {
+    if (!isStreaming) {
+      return;
+    }
+
+    stopRequestedRef.current = true;
+    setIsStreaming(false);
+    optimizeMutation.reset();
+
     if (!activeStreamRef.current) {
       return;
     }
@@ -162,7 +185,7 @@ export default function TestSitePage(): React.JSX.Element {
           onChange={(nextValue) => setSelectedModelId(nextValue)}
           options={modelOptions}
           placeholder={ERROR_MESSAGES.AI_NO_ACTIVE_MODELS}
-          disabled={optimizeMutation.isPending || isAiSettingsLoading || !aiSettings?.models.length}
+          disabled={isStreaming || isAiSettingsLoading || !aiSettings?.models.length}
         />
         {isAiSettingsLoading && <p className="text-gray-500 text-xs">{ERROR_MESSAGES.AI_MODELS_LOADING}</p>}
         {aiSettingsError && <p className="text-red-600 text-xs">{ERROR_MESSAGES.AI_MODELS_LOAD_FAILED}</p>}
@@ -179,7 +202,7 @@ export default function TestSitePage(): React.JSX.Element {
           placeholder="Enter text to optimize..."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          disabled={optimizeMutation.isPending}
+          disabled={isStreaming}
         />
       </div>
 
@@ -187,10 +210,10 @@ export default function TestSitePage(): React.JSX.Element {
       <button
         type="button"
         onClick={handleOptimize}
-        disabled={optimizeMutation.isPending || !inputText.trim() || !selectedModelId}
+        disabled={isStreaming || !inputText.trim() || !selectedModelId}
         className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm text-white shadow transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {optimizeMutation.isPending ? (
+        {isStreaming ? (
           <>
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             Optimizing…
@@ -202,7 +225,7 @@ export default function TestSitePage(): React.JSX.Element {
       <button
         type="button"
         onClick={() => void handleStop()}
-        disabled={!optimizeMutation.isPending}
+        disabled={!isStreaming}
         className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-semibold text-gray-700 text-sm shadow transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Stop
@@ -216,19 +239,17 @@ export default function TestSitePage(): React.JSX.Element {
       )}
 
       {/* Result */}
-      {(result || optimizeMutation.isPending) && (
+      {(result || isStreaming) && (
         <div className="flex flex-col gap-2">
           <p className="font-medium text-gray-700 text-sm">Optimized Result</p>
           <pre
             className="min-h-32 w-full whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-4 text-gray-800 text-sm leading-relaxed"
-            aria-busy={optimizeMutation.isPending}
+            aria-busy={isStreaming}
             aria-live="polite"
             aria-atomic="false"
           >
             {result}
-            {optimizeMutation.isPending && (
-              <span className="inline-block h-4 w-0.5 animate-pulse bg-blue-500 align-middle" />
-            )}
+            {isStreaming && <span className="inline-block h-4 w-0.5 animate-pulse bg-blue-500 align-middle" />}
           </pre>
         </div>
       )}

@@ -32,6 +32,8 @@ export const ERROR_MESSAGES = {
   AI_EMPTY_INPUT: "Text input cannot be empty.",
   AI_CREDITS_EXHAUSTED: "You have reached the daily AI text optimization limit. Please try again tomorrow.",
   AI_MODEL_UNAVAILABLE: "Selected AI model is not available.",
+  AI_MODEL_POLICY_RESTRICTED:
+    "Selected AI model is blocked by your OpenRouter privacy policy. Update https://openrouter.ai/settings/privacy or choose a different model.",
   AI_NO_ACTIVE_MODELS: "No active AI models are currently available.",
   AI_ADMIN_REQUIRED: "Admin access is required for this operation.",
   AI_CONFIG_UPDATE_FORBIDDEN: "Only admins can update global AI configuration.",
