@@ -1,16 +1,15 @@
-import type { UpdateUserAccountInput } from "@rezumerai/types";
 import Elysia, { status } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { UserModel } from "./model";
+import { type UserAccountUpdateInput, UserModel } from "./model";
 import { UserService } from "./service";
 
 const userNotFound = () => status(404, "User not found");
 const forbiddenUpdate = () => status(403, "You can only update your own account");
 const invalidAccountUpdate = () => status(422, "At least one field must be updated");
 
-function sanitizeAccountUpdate(body: UpdateUserAccountInput): UpdateUserAccountInput {
-  const data: UpdateUserAccountInput = {};
+function sanitizeAccountUpdate(body: UserAccountUpdateInput): UserAccountUpdateInput {
+  const data: UserAccountUpdateInput = {};
 
   if (body.name !== undefined) {
     data.name = body.name.trim();
@@ -34,7 +33,8 @@ function sanitizeAccountUpdate(body: UpdateUserAccountInput): UpdateUserAccountI
 export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
   .use(authPlugin)
-  .model(UserModel)
+  .use(UserModel)
+  .prefix("model", "user.")
   .get(
     "/",
     async ({ db, status }) => {
@@ -43,7 +43,7 @@ export const userModule = new Elysia({ prefix: "/users" })
     },
     {
       response: {
-        200: "user.recordList",
+        200: "user.ResponseList",
       },
     },
   )
@@ -56,8 +56,8 @@ export const userModule = new Elysia({ prefix: "/users" })
     },
     {
       response: {
-        200: "user.account",
-        404: "user.error",
+        200: "user.ResponseAccount",
+        404: "user.Error",
       },
     },
   )
@@ -69,10 +69,10 @@ export const userModule = new Elysia({ prefix: "/users" })
       return status(200, user);
     },
     {
-      params: "user.byIdParams",
+      params: "user.ParamById",
       response: {
-        200: "user.record",
-        404: "user.error",
+        200: "user.ResponseById",
+        404: "user.Error",
       },
     },
   )
@@ -84,10 +84,10 @@ export const userModule = new Elysia({ prefix: "/users" })
       return status(200, user);
     },
     {
-      params: "user.byEmailParams",
+      params: "user.ParamByEmail",
       response: {
-        200: "user.record",
-        404: "user.error",
+        200: "user.ResponseById",
+        404: "user.Error",
       },
     },
   )
@@ -115,12 +115,12 @@ export const userModule = new Elysia({ prefix: "/users" })
       return status(200, refreshedAccount);
     },
     {
-      body: "user.accountUpdate",
+      body: "user.InputUpdate",
       response: {
-        200: "user.account",
-        403: "user.error",
-        404: "user.error",
-        422: "user.error",
+        200: "user.ResponseAccount",
+        403: "user.Error",
+        404: "user.Error",
+        422: "user.Error",
       },
     },
   )
@@ -147,13 +147,13 @@ export const userModule = new Elysia({ prefix: "/users" })
       return status(200, updatedUser);
     },
     {
-      params: "user.byIdParams",
-      body: "user.accountUpdate",
+      params: "user.ParamById",
+      body: "user.InputUpdate",
       response: {
-        200: "user.record",
-        403: "user.error",
-        404: "user.error",
-        422: "user.error",
+        200: "user.ResponseById",
+        403: "user.Error",
+        404: "user.Error",
+        422: "user.Error",
       },
     },
   );
