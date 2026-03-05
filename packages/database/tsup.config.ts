@@ -3,6 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: [
     "index.ts",
+    "redis.ts",
     "generated/prisma/**/*.ts",
     "generated/prismabox/**/*.ts",
     "!generated/prisma/**/*.test.ts",

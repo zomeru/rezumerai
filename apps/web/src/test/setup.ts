@@ -8,6 +8,18 @@ afterEach(() => {
   cleanup();
 });
 
+// Mock @rezumerai/database/redis to prevent a real Redis TCP connection during
+// tests. Targets the dedicated redis subpath so Prisma initialisation in the
+// main @rezumerai/database entry point is never triggered.
+mock.module("@rezumerai/database/redis", () => ({
+  redisConnection: {
+    status: "ready",
+    on: mock(() => {}),
+    off: mock(() => {}),
+    quit: mock(() => Promise.resolve()),
+  },
+}));
+
 // Mock Next.js router
 mock.module("next/navigation", () => ({
   useRouter: () => ({

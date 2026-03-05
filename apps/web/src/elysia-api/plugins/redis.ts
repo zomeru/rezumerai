@@ -1,5 +1,5 @@
+import { redisConnection } from "@rezumerai/database/redis";
 import Elysia from "elysia";
-import Redis from "ioredis";
 import { bold, dim, paint, timestamp } from "../utils/ansi";
 
 // ─── Logging Helper ───────────────────────────────────────────────────────────
@@ -11,32 +11,6 @@ const err = (msg: string, cause?: unknown): void =>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface RedisPluginOptions {
-  /**
-   * Redis connection URL.
-   * @default process.env.REDIS_URL ?? "redis://localhost:6379"
-   */
-  url?: string;
-
-  /**
-   * Default TTL in seconds for cached values.
-   * @default 300
-   */
-  defaultTtl?: number;
-
-  /**
-   * Max reconnect attempts before giving up.
-   * @default 3
-   */
-  maxRetries?: number;
-
-  /**
-   * Elysia plugin scope (global, local, or scoped).
-   * @default "global"
-   */
-  as?: "global" | "local" | "scoped";
-}
-
 export interface RedisClient {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ttlSeconds?: number): Promise<"OK">;
@@ -45,60 +19,74 @@ export interface RedisClient {
   disconnect(): Promise<void>;
 }
 
-// ─── Fallback client ──────────────────────────────────────────────────────────
+// ─── Handler tracking ─────────────────────────────────────────────────────────
 
-/** No-op client used when Redis is unavailable. All reads return null. */
-function createFallbackClient(): RedisClient {
-  return {
-    async get() {
-      return null;
-    },
-    async set() {
-      return "OK" as "OK";
-    },
-    async del() {
-      return 0;
-    },
-    async ping() {
-      return "PONG";
-    },
-    async disconnect() {},
-  };
+/**
+ * Symbol stored directly on the ioredis instance to track our registered event
+ * handlers. Using `Symbol.for` makes it stable across module re-evaluations
+ * (Turbopack HMR), so previous handlers can always be found and removed before
+ * new ones are added — preventing listener stacking.
+ */
+const _HANDLERS = Symbol.for("rezumerai:redis:handlers");
+
+interface RedisHandlers {
+  ready: () => void;
+  error: (e: Error) => void;
+  close: () => void;
 }
 
-// ─── Real client ──────────────────────────────────────────────────────────────
+type InstrumentedRedis = typeof redisConnection & {
+  [typeof _HANDLERS]?: RedisHandlers;
+};
 
-function createRedisClient(
-  url: string,
-  options: Required<Pick<RedisPluginOptions, "maxRetries" | "defaultTtl">>,
-): RedisClient {
-  let isConnected = false;
+// ─── Client wrapper ───────────────────────────────────────────────────────────
 
-  const redis = new Redis(url, {
-    maxRetriesPerRequest: options.maxRetries,
-    retryStrategy(times) {
-      if (times > options.maxRetries) {
-        err(`Giving up after ${times} attempts`);
-        return null;
-      }
-      return Math.min(times * 200, 2000);
+const DEFAULT_TTL = 300;
+
+/**
+ * Wraps a pre-existing ioredis instance with the `RedisClient` interface.
+ *
+ * On Turbopack HMR re-evaluation, this module is re-executed but `redisConnection`
+ * always refers to the same singleton object from `@rezumerai/database` (which lives
+ * in Node.js's native module cache and is never re-evaluated). This function:
+ *
+ * - Removes previously registered event handlers (tracked via `_HANDLERS` Symbol)
+ *   to prevent listener stacking across re-evaluations.
+ * - Initialises `isConnected` from `redis.status` so cache operations work correctly
+ *   without waiting for a `ready` event that will never re-fire on an existing connection.
+ * - Opens no new TCP connection.
+ */
+function createRedisClient(redis: InstrumentedRedis): RedisClient {
+  // Clean up handlers from the previous module evaluation (HMR safety)
+  const prev = redis[_HANDLERS];
+  if (prev) {
+    redis.off("ready", prev.ready);
+    redis.off("error", prev.error);
+    redis.off("close", prev.close);
+  }
+
+  // Derive current connectivity state directly from ioredis' own status property
+  let isConnected = redis.status === "ready";
+
+  const handlers: RedisHandlers = {
+    ready: () => {
+      log(paint("green", "Connected"));
+      isConnected = true;
     },
-  });
+    error: (redisErr: Error) => {
+      err("Error:", redisErr.message);
+      isConnected = false;
+    },
+    close: () => {
+      log(dim("Connection closed"));
+      isConnected = false;
+    },
+  };
 
-  redis.on("ready", () => {
-    log(`${paint("green", "Connected")} to ${dim(url)}`);
-    isConnected = true;
-  });
-
-  redis.on("error", (redisErr) => {
-    err("Error:", redisErr.message);
-    isConnected = false;
-  });
-
-  redis.on("close", () => {
-    log(dim("Connection closed"));
-    isConnected = false;
-  });
+  redis.on("ready", handlers.ready);
+  redis.on("error", handlers.error);
+  redis.on("close", handlers.close);
+  redis[_HANDLERS] = handlers;
 
   return {
     async get(key) {
@@ -111,7 +99,7 @@ function createRedisClient(
       }
     },
 
-    async set(key, value, ttlSeconds = options.defaultTtl) {
+    async set(key, value, ttlSeconds = DEFAULT_TTL) {
       if (!isConnected) return "OK" as "OK";
       try {
         return await redis.set(key, value, "EX", ttlSeconds);
@@ -187,41 +175,27 @@ export async function redisCache<T>(
   }
 }
 
-// ─── Plugin ───────────────────────────────────────────────────────────────────
+// ─── Client & Plugin ─────────────────────────────────────────────────────────
 
 /**
- * Elysia Redis plugin that decorates the context with a `redis` client.
+ * Redis client — wraps the singleton ioredis connection from `@rezumerai/database`.
  *
- * Connects eagerly on startup and disconnects cleanly on server stop.
- * Falls back to a no-op client if the connection fails, so the app
- * continues to function without Redis.
- *
- * @example
- * ```ts
- * const app = new Elysia()
- *   .use(redisPlugin())
- *   .get("/", ({ redis }) => redisCache(redis, "key", fetchData));
- * ```
+ * The underlying TCP connection is owned by the compiled database package (external
+ * to Turbopack) and is never re-created. On HMR re-evaluation this module re-runs
+ * `createRedisClient`, which removes stale event handlers from the previous evaluation
+ * and re-attaches fresh ones to the same connection — no new TCP socket is opened.
  */
-export const redisPlugin = (options?: RedisPluginOptions) => {
-  const url = options?.url ?? process.env.REDIS_URL ?? "redis://localhost:6379";
-  const defaultTtl = options?.defaultTtl ?? 300;
-  const maxRetries = options?.maxRetries ?? 3;
+export const redisClient: RedisClient = createRedisClient(redisConnection as InstrumentedRedis);
 
-  let client: RedisClient;
-
-  try {
-    client = createRedisClient(url, { defaultTtl, maxRetries });
-    log(paint("green", "[Redis] Plugin initialized"));
-  } catch (initErr) {
-    err("[Redis] Failed to initialize, using fallback client:", initErr);
-    client = createFallbackClient();
-  }
-
-  return new Elysia({ name: "plugin/redis" }).decorate("redis", client).on("stop", async () => {
-    await client.disconnect();
-    log(dim("[Redis] Plugin stopped"));
-  });
-};
+/**
+ * Elysia Redis plugin — decorates the context with the shared `redis` client.
+ *
+ * Usage in modules:
+ *   .get('/', ({ redis }) => redisCache(redis, 'key', fetchData))
+ */
+export const redisPlugin = new Elysia({ name: "plugin/redis" }).decorate("redis", redisClient).on("stop", async () => {
+  await redisClient.disconnect();
+  log(dim("Plugin stopped"));
+});
 
 export type { Redis } from "ioredis";

@@ -23,7 +23,7 @@ import {
 import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
-const cronPattern = isDev ? Patterns.EVERY_MINUTE : Patterns.weekly();
+const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
 /**
  * Elysia application — single source of truth for the API.
  *

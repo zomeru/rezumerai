@@ -17,7 +17,7 @@ const resumeNotFound = () => status(404, "Resume not found");
  */
 export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(prismaPlugin)
-  .use(redisPlugin())
+  .use(redisPlugin)
   .use(authPlugin)
   .use(ResumeModel)
   .prefix("model", "resume.")
