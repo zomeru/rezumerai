@@ -16,6 +16,7 @@ import {
   loggerPlugin,
   modernCsrf,
   opentelemetryPlugin,
+  performancePlugin,
   prismaPlugin,
   tracePlugin,
 } from "./plugins";
@@ -55,6 +56,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   // 2. Core infrastructure
   .use(prismaPlugin)
   .use(loggerPlugin())
+  .use(performancePlugin)
 
   // 3. Error handling (should wrap everything after infra)
   .use(httpExceptionPlugin())

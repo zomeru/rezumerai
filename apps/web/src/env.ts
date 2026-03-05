@@ -38,6 +38,14 @@ const serverSchema = clientSchema.extend({
     .optional()
     .describe("OTLP collector endpoint (e.g. https://api.axiom.co/v1/traces)"),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
+
+  // Performance monitoring (server-side only)
+  ENABLE_PERF_LOGS: z
+    .enum(["true", "false"])
+    .optional()
+    .default("false")
+    .transform((v) => v === "true")
+    .describe("Enable performance logging for endpoints and Prisma queries (set ENABLE_PERF_LOGS=true)"),
 });
 
 /**
