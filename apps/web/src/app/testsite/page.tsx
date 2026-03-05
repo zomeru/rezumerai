@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Select } from "@/components/ui/Select";
+import { ERROR_MESSAGES } from "@/constants/errors";
+import { useAiSettings } from "@/hooks/useAi";
 import { api } from "@/lib/api";
 
 const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
-const AI_CREDITS_EXHAUSTED_MESSAGE =
-  "You have reached the daily limit of 100 AI text optimizations. Please try again tomorrow.";
 
 interface OptimizeApiError {
   code: string | null;
@@ -45,7 +46,7 @@ function getApiError(value: unknown): OptimizeApiError {
 
   return {
     code: null,
-    message: "An unknown error occurred while optimizing text.",
+    message: ERROR_MESSAGES.AI_OPTIMIZE_UNKNOWN_ERROR,
   };
 }
 
@@ -58,21 +59,45 @@ function getStreamChunk(value: unknown): string {
 }
 
 export default function TestSitePage(): React.JSX.Element {
+  const { data: aiSettings, isLoading: isAiSettingsLoading, error: aiSettingsError } = useAiSettings();
   const [inputText, setInputText] = useState<string>("");
   const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
   const activeStreamRef = useRef<AsyncGenerator<unknown> | null>(null);
 
+  useEffect(() => {
+    if (!aiSettings) return;
+    setSelectedModelId(aiSettings.selectedModelId);
+  }, [aiSettings]);
+
+  const modelOptions = useMemo(() => {
+    if (!aiSettings) return [];
+
+    return aiSettings.models.map((model) => ({
+      value: model.modelId,
+      label: `${model.providerDisplayName} — ${model.name}`,
+    }));
+  }, [aiSettings]);
+
   const optimizeMutation = useMutation({
-    mutationFn: async ({ text, onChunk }: { text: string; onChunk: (chunk: string) => void }): Promise<void> => {
-      const { data, error } = await api.ai.optimize.post({ text });
+    mutationFn: async ({
+      text,
+      modelId,
+      onChunk,
+    }: {
+      text: string;
+      modelId: string;
+      onChunk: (chunk: string) => void;
+    }): Promise<void> => {
+      const { data, error } = await api.ai.optimize.post({ text, modelId });
 
       if (error) {
         throw new OptimizeRequestError(getApiError(error.value));
       }
 
       if (!data) {
-        throw new OptimizeRequestError({ code: null, message: "Invalid optimize response." });
+        throw new OptimizeRequestError({ code: null, message: ERROR_MESSAGES.AI_OPTIMIZE_INVALID_RESPONSE });
       }
 
       activeStreamRef.current = data;
@@ -88,7 +113,7 @@ export default function TestSitePage(): React.JSX.Element {
   });
 
   async function handleOptimize(): Promise<void> {
-    if (!inputText.trim() || optimizeMutation.isPending) return;
+    if (!inputText.trim() || !selectedModelId || optimizeMutation.isPending) return;
 
     setResult("");
     setError(null);
@@ -97,16 +122,17 @@ export default function TestSitePage(): React.JSX.Element {
     try {
       await optimizeMutation.mutateAsync({
         text: inputText.trim(),
+        modelId: selectedModelId,
         onChunk: (chunk: string): void => {
           setResult((prev) => prev + chunk);
         },
       });
     } catch (err: unknown) {
       if (err instanceof OptimizeRequestError && err.code === AI_CREDITS_EXHAUSTED_CODE) {
-        toast.error(AI_CREDITS_EXHAUSTED_MESSAGE);
+        toast.error(err.message);
       }
 
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(err instanceof Error ? err.message : ERROR_MESSAGES.AI_OPTIMIZE_UNEXPECTED_ERROR);
     }
   }
 
@@ -130,6 +156,19 @@ export default function TestSitePage(): React.JSX.Element {
 
       {/* Input */}
       <div className="flex flex-col gap-2">
+        <Select
+          label="AI Model"
+          value={selectedModelId}
+          onChange={(nextValue) => setSelectedModelId(nextValue)}
+          options={modelOptions}
+          placeholder={ERROR_MESSAGES.AI_NO_ACTIVE_MODELS}
+          disabled={optimizeMutation.isPending || isAiSettingsLoading || !aiSettings?.models.length}
+        />
+        {isAiSettingsLoading && <p className="text-gray-500 text-xs">{ERROR_MESSAGES.AI_MODELS_LOADING}</p>}
+        {aiSettingsError && <p className="text-red-600 text-xs">{ERROR_MESSAGES.AI_MODELS_LOAD_FAILED}</p>}
+      </div>
+
+      <div className="flex flex-col gap-2">
         <label htmlFor="input-text" className="font-medium text-gray-700 text-sm">
           Input Text
         </label>
@@ -148,7 +187,7 @@ export default function TestSitePage(): React.JSX.Element {
       <button
         type="button"
         onClick={handleOptimize}
-        disabled={optimizeMutation.isPending || !inputText.trim()}
+        disabled={optimizeMutation.isPending || !inputText.trim() || !selectedModelId}
         className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm text-white shadow transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {optimizeMutation.isPending ? (

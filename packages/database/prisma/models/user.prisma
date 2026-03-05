@@ -4,11 +4,14 @@ model User {
   email                  String                  @unique
   emailVerified          Boolean
   image                  String?
+  role                   UserRole                @default(USER)
+  selectedAiModelId      String?
   createdAt              DateTime
   updatedAt              DateTime
   accounts               Account[]
   resumes                Resume[]
   sessions               Session[]
+  selectedAiModel        AiModel?                @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id], onDelete: SetNull)
   aiTextOptimizerCredits AiTextOptimizerCredits?
 
   @@map("user")
@@ -56,4 +59,11 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+
+  @@map("user_role")
 }

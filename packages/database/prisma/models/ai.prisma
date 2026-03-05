@@ -1,3 +1,40 @@
+model AiProvider {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  models    AiModel[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("ai_provider")
+}
+
+model AiModel {
+  id              String     @id @default(cuid())
+  name            String
+  modelId         String
+  providerId      String
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  provider        AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  selectedByUsers User[]     @relation("UserSelectedAiModel")
+
+  @@unique([providerId, modelId])
+  @@index([providerId])
+  @@index([isActive])
+  @@map("ai_model")
+}
+
+model SystemConfiguration {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configuration")
+}
+
 model AiOptimization {
   id               String               @id @default(cuid())
   userId           String

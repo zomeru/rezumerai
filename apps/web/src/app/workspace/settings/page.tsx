@@ -1,18 +1,27 @@
 "use client";
 
-import type { UpdateUserAccountInput, UserAccountSettings } from "@rezumerai/types";
+import type { AiConfiguration, UpdateUserAccountInput, UserAccountSettings } from "@rezumerai/types";
 import { capitalize } from "@rezumerai/utils/string";
 import { ArrowLeft, Loader2, Lock, Save } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Select } from "@/components/ui/Select";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings, useUpdateAccountSettings } from "@/hooks/useAccount";
+import { useAiSettings, useUpdateAiConfiguration, useUpdateSelectedAiModel } from "@/hooks/useAi";
 
 interface AccountFormState {
   name: string;
   email: string;
   image: string;
+}
+
+interface AiConfigFormState {
+  PROMPT_VERSION: string;
+  DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: string;
+  OPTIMIZE_SYSTEM_PROMPT: string;
 }
 
 function getProviderLabel(providerId: string): string {
@@ -74,14 +83,36 @@ function createAccountUpdates(settings: UserAccountSettings, formState: AccountF
   return updates;
 }
 
+function toAiConfigFormState(config: AiConfiguration): AiConfigFormState {
+  return {
+    PROMPT_VERSION: config.PROMPT_VERSION,
+    DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: String(config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT),
+    OPTIMIZE_SYSTEM_PROMPT: config.OPTIMIZE_SYSTEM_PROMPT,
+  };
+}
+
 export default function WorkspaceSettingsPage(): React.JSX.Element {
   const { data, error, isLoading, refetch } = useAccountSettings();
+  const {
+    data: aiSettings,
+    error: aiSettingsError,
+    isLoading: isAiSettingsLoading,
+    refetch: refetchAiSettings,
+  } = useAiSettings();
   const updateAccountSettings = useUpdateAccountSettings();
+  const updateSelectedModel = useUpdateSelectedAiModel();
+  const updateAiConfiguration = useUpdateAiConfiguration();
 
   const [formState, setFormState] = useState<AccountFormState>({
     name: "",
     email: "",
     image: "",
+  });
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [aiConfigFormState, setAiConfigFormState] = useState<AiConfigFormState>({
+    PROMPT_VERSION: "",
+    DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: "",
+    OPTIMIZE_SYSTEM_PROMPT: "",
   });
 
   useEffect(() => {
@@ -89,13 +120,54 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
     setFormState(toFormState(data));
   }, [data]);
 
+  useEffect(() => {
+    if (!aiSettings) return;
+    setSelectedModelId(aiSettings.selectedModelId);
+
+    if (aiSettings.config) {
+      setAiConfigFormState(toAiConfigFormState(aiSettings.config));
+    }
+  }, [aiSettings]);
+
   const isDirty = useMemo(() => {
     if (!data) return false;
     return hasFormUpdates(data, formState);
   }, [data, formState]);
 
+  const isModelSelectionDirty = useMemo(() => {
+    if (!aiSettings) return false;
+    return selectedModelId !== aiSettings.selectedModelId;
+  }, [aiSettings, selectedModelId]);
+
+  const isAiConfigDirty = useMemo(() => {
+    if (!aiSettings?.config) return false;
+
+    return (
+      aiConfigFormState.PROMPT_VERSION.trim() !== aiSettings.config.PROMPT_VERSION ||
+      aiConfigFormState.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT.trim() !==
+        String(aiSettings.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT) ||
+      aiConfigFormState.OPTIMIZE_SYSTEM_PROMPT.trim() !== aiSettings.config.OPTIMIZE_SYSTEM_PROMPT
+    );
+  }, [aiConfigFormState, aiSettings]);
+
+  const modelOptions = useMemo(() => {
+    if (!aiSettings) return [];
+
+    return aiSettings.models.map((model) => ({
+      value: model.modelId,
+      label: `${model.providerDisplayName} — ${model.name}`,
+    }));
+  }, [aiSettings]);
+
   function updateField<K extends keyof AccountFormState>(key: K, value: AccountFormState[K]): void {
     setFormState((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function updateAiConfigField<K extends keyof AiConfigFormState>(key: K, value: AiConfigFormState[K]): void {
+    setAiConfigFormState((current) => ({
       ...current,
       [key]: value,
     }));
@@ -118,6 +190,58 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
       toast.success("Account settings updated.");
     } catch (submitError: unknown) {
       const message = submitError instanceof Error ? submitError.message : "Failed to update account settings.";
+      toast.error(message);
+    }
+  }
+
+  async function onSaveSelectedModel(): Promise<void> {
+    if (!selectedModelId || !aiSettings) return;
+
+    try {
+      const updatedSettings = await updateSelectedModel.mutateAsync(selectedModelId);
+      setSelectedModelId(updatedSettings.selectedModelId);
+      toast.success(ERROR_MESSAGES.AI_MODEL_PREFERENCE_SAVED);
+    } catch (submitError: unknown) {
+      const message =
+        submitError instanceof Error ? submitError.message : ERROR_MESSAGES.AI_MODEL_PREFERENCE_UPDATE_FAILED;
+      toast.error(message);
+    }
+  }
+
+  async function onSaveAiConfiguration(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    if (!aiSettings?.isAdmin || !aiSettings.config) return;
+
+    const promptVersion = aiConfigFormState.PROMPT_VERSION.trim();
+    const dailyLimit = Number(aiConfigFormState.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT.trim());
+    const optimizeSystemPrompt = aiConfigFormState.OPTIMIZE_SYSTEM_PROMPT.trim();
+
+    if (!promptVersion) {
+      toast.error(ERROR_MESSAGES.AI_PROMPT_VERSION_REQUIRED);
+      return;
+    }
+
+    if (!optimizeSystemPrompt) {
+      toast.error(ERROR_MESSAGES.AI_SYSTEM_PROMPT_REQUIRED);
+      return;
+    }
+
+    if (!Number.isInteger(dailyLimit) || dailyLimit < 1 || dailyLimit > 1000) {
+      toast.error(ERROR_MESSAGES.AI_DAILY_LIMIT_INVALID);
+      return;
+    }
+
+    try {
+      const updatedConfiguration = await updateAiConfiguration.mutateAsync({
+        PROMPT_VERSION: promptVersion,
+        DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: dailyLimit,
+        OPTIMIZE_SYSTEM_PROMPT: optimizeSystemPrompt,
+      });
+      setAiConfigFormState(toAiConfigFormState(updatedConfiguration));
+      toast.success(ERROR_MESSAGES.AI_GLOBAL_CONFIG_UPDATED);
+    } catch (submitError: unknown) {
+      const message = submitError instanceof Error ? submitError.message : ERROR_MESSAGES.AI_CONFIG_UPDATE_FAILED;
       toast.error(message);
     }
   }
@@ -295,6 +419,152 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
               )}
             </button>
           </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5">
+            <h2 className="font-semibold text-slate-900 text-xl">AI Settings</h2>
+            <p className="mt-1 text-slate-600 text-sm">Choose your default model and manage AI configuration.</p>
+          </div>
+
+          {isAiSettingsLoading && (
+            <div className="space-y-3">
+              <div className="h-11 animate-pulse rounded bg-slate-200" />
+              <div className="h-10 w-36 animate-pulse rounded bg-slate-200" />
+            </div>
+          )}
+
+          {!isAiSettingsLoading && aiSettingsError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="font-medium text-red-800 text-sm">{ERROR_MESSAGES.AI_SETTINGS_LOAD_FAILED}</p>
+              <p className="mt-1 text-red-700 text-xs">{aiSettingsError.message}</p>
+              <button
+                type="button"
+                onClick={() => void refetchAiSettings()}
+                className="mt-3 rounded-lg border border-red-300 bg-white px-3 py-2 font-medium text-red-700 text-xs transition-colors hover:bg-red-100"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!isAiSettingsLoading && aiSettings && (
+            <div className="space-y-6">
+              <div>
+                <Select
+                  label="Default AI model"
+                  value={selectedModelId}
+                  onChange={(nextValue) => setSelectedModelId(nextValue)}
+                  options={modelOptions}
+                  placeholder={ERROR_MESSAGES.AI_NO_ACTIVE_MODELS}
+                  disabled={!aiSettings.models.length || updateSelectedModel.isPending}
+                />
+                {Boolean(aiSettings.models.length) && (
+                  <p className="mt-1.5 text-slate-500 text-xs">Only active models are available for selection.</p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void onSaveSelectedModel()}
+                disabled={updateSelectedModel.isPending || !isModelSelectionDirty || !selectedModelId}
+                className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+              >
+                {updateSelectedModel.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="size-4" />
+                    Save model
+                  </>
+                )}
+              </button>
+
+              {aiSettings.isAdmin && aiSettings.config && (
+                <form
+                  onSubmit={(event) => void onSaveAiConfiguration(event)}
+                  className="space-y-4 border-slate-200 border-t pt-6"
+                >
+                  <div>
+                    <h3 className="font-semibold text-base text-slate-900">Admin AI Configuration</h3>
+                    <p className="mt-1 text-slate-600 text-xs">These values are global and affect all users.</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="ai-prompt-version" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                      Prompt version
+                    </label>
+                    <input
+                      id="ai-prompt-version"
+                      type="text"
+                      value={aiConfigFormState.PROMPT_VERSION}
+                      onChange={(event) => updateAiConfigField("PROMPT_VERSION", event.target.value)}
+                      maxLength={100}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="ai-daily-limit" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                      Daily AI text optimizer credit limit
+                    </label>
+                    <input
+                      id="ai-daily-limit"
+                      type="number"
+                      min={1}
+                      max={1000}
+                      step={1}
+                      value={aiConfigFormState.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT}
+                      onChange={(event) =>
+                        updateAiConfigField("DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT", event.target.value)
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="ai-optimize-system-prompt"
+                      className="mb-1.5 block font-medium text-slate-700 text-sm"
+                    >
+                      Optimize system prompt
+                    </label>
+                    <textarea
+                      id="ai-optimize-system-prompt"
+                      rows={6}
+                      value={aiConfigFormState.OPTIMIZE_SYSTEM_PROMPT}
+                      onChange={(event) => updateAiConfigField("OPTIMIZE_SYSTEM_PROMPT", event.target.value)}
+                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={updateAiConfiguration.isPending || !isAiConfigDirty}
+                    className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+                  >
+                    {updateAiConfiguration.isPending ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="size-4" />
+                        Save AI config
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </main>

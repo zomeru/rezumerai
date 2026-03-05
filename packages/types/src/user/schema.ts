@@ -1,11 +1,14 @@
 import z from "zod";
 
+export const UserRoleSchema = z.enum(["ADMIN", "USER"]);
+
 export const SessionUserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
   emailVerified: z.boolean(),
   image: z.url().nullable(),
+  role: UserRoleSchema.default("USER"),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -26,6 +29,8 @@ export const UserSchema = z.object({
   email: z.email(),
   emailVerified: z.boolean(),
   image: z.url().nullable(),
+  role: UserRoleSchema,
+  selectedAiModelId: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

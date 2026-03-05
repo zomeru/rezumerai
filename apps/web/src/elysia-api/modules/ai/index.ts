@@ -1,11 +1,18 @@
 import Elysia, { t } from "elysia";
+import { ZodError } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { AiModel } from "./model";
-import { AI_CREDITS_EXHAUSTED_CODE, AiCreditsExhaustedError, AiService } from "./service";
-
-const DEFAULT_ERROR_MESSAGE = "Unknown optimization error";
+import {
+  AI_CREDITS_EXHAUSTED_CODE,
+  AI_FORBIDDEN_CODE,
+  AI_MODEL_UNAVAILABLE_CODE,
+  AiCreditsExhaustedError,
+  AiForbiddenError,
+  AiModelUnavailableError,
+  AiService,
+} from "./service";
 
 /**
  * AI module — text optimization via OpenRouter streaming.
@@ -18,18 +25,126 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(prismaPlugin)
   .use(authPlugin)
   .use(AiModel)
+  .get(
+    "/models",
+    async ({ db, status }) => {
+      const models = await AiService.listActiveModels(db);
+      return status(200, models);
+    },
+    {
+      response: {
+        200: "ai.ModelOptionList",
+      },
+      detail: {
+        summary: "List all active AI models",
+        tags: ["AI"],
+      },
+    },
+  )
+  .get(
+    "/settings",
+    async ({ db, user, status }) => {
+      const settings = await AiService.getUserAiSettings(db, user.id);
+      return status(200, settings);
+    },
+    {
+      response: {
+        200: "ai.Settings",
+      },
+      detail: {
+        summary: "Fetch AI model and configuration settings for the current user",
+        tags: ["AI"],
+      },
+    },
+  )
+  .patch(
+    "/settings/model",
+    async ({ db, user, body, status }) => {
+      try {
+        await AiService.updateUserSelectedModel(db, user.id, body.modelId.trim());
+        const settings = await AiService.getUserAiSettings(db, user.id);
+        return status(200, settings);
+      } catch (error: unknown) {
+        if (error instanceof AiModelUnavailableError) {
+          return status(422, {
+            code: AI_MODEL_UNAVAILABLE_CODE,
+            message: error.message,
+          });
+        }
+
+        throw error;
+      }
+    },
+    {
+      body: "ai.SelectModelInput",
+      response: {
+        200: "ai.Settings",
+        422: t.Object({
+          code: t.Literal(AI_MODEL_UNAVAILABLE_CODE),
+          message: t.String(),
+        }),
+      },
+      detail: {
+        summary: "Update selected AI model for the current user",
+        tags: ["AI"],
+      },
+    },
+  )
+  .patch(
+    "/settings/config",
+    async ({ db, user, body, status }) => {
+      try {
+        const config = await AiService.updateAiConfiguration(db, user.id, body);
+        return status(200, config);
+      } catch (error: unknown) {
+        if (error instanceof AiForbiddenError) {
+          return status(403, {
+            code: AI_FORBIDDEN_CODE,
+            message: ERROR_MESSAGES.AI_CONFIG_UPDATE_FORBIDDEN,
+          });
+        }
+        if (error instanceof ZodError) {
+          return status(422, ERROR_MESSAGES.AI_CONFIG_INVALID_PAYLOAD);
+        }
+        throw error;
+      }
+    },
+    {
+      body: "ai.UpdateConfigurationInput",
+      response: {
+        200: "ai.UpdateConfigurationInput",
+        403: "ai.ForbiddenError",
+        422: "ai.Error",
+      },
+      detail: {
+        summary: "Update global AI configuration (admin only)",
+        tags: ["AI"],
+      },
+    },
+  )
   .post(
     "/optimize",
     async ({ body, set, status, db, user, request }) => {
       const input = body.text.trim();
+      const modelId = body.modelId?.trim();
 
       if (!input) {
         return status(422, ERROR_MESSAGES.AI_EMPTY_INPUT);
       }
 
+      let optimizationContext: Awaited<ReturnType<typeof AiService.resolveOptimizationContext>>;
+      try {
+        optimizationContext = await AiService.resolveOptimizationContext(db, user.id, modelId ?? null);
+      } catch (error: unknown) {
+        if (error instanceof AiModelUnavailableError) {
+          return status(422, error.message);
+        }
+        throw error;
+      }
+      const dailyLimit = optimizationContext.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT;
       let remainingCredits = 0;
       try {
-        const consumeResult = await AiService.consumeDailyCredit(db, user.id);
+        const consumeResult = await AiService.consumeDailyCredit(db, user.id, dailyLimit);
         remainingCredits = consumeResult.remainingCredits;
       } catch (error: unknown) {
         if (error instanceof AiCreditsExhaustedError) {
@@ -56,31 +171,39 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         let errorMessage: string | null = null;
 
         try {
-          for await (const chunk of AiService.streamOptimizeText(input, {
-            onUsage: (usage): void => {
-              usageMetrics.promptTokens = usage.promptTokens;
-              usageMetrics.completionTokens = usage.completionTokens;
-              usageMetrics.totalTokens = usage.totalTokens;
-              usageMetrics.reasoningTokens = usage.reasoningTokens;
+          for await (const chunk of AiService.streamOptimizeText(
+            input,
+            optimizationContext.model.modelId,
+            optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
+            {
+              onUsage: (usage): void => {
+                usageMetrics.promptTokens = usage.promptTokens;
+                usageMetrics.completionTokens = usage.completionTokens;
+                usageMetrics.totalTokens = usage.totalTokens;
+                usageMetrics.reasoningTokens = usage.reasoningTokens;
+              },
             },
-          })) {
+          )) {
             chunkCount += 1;
             optimizedText += chunk;
             yield chunk;
           }
         } catch (error: unknown) {
           optimizationStatus = "failed";
-          errorMessage = error instanceof Error ? error.message : DEFAULT_ERROR_MESSAGE;
+          errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
           throw error;
         } finally {
           if (optimizationStatus === "success" && request.signal.aborted) {
             optimizationStatus = "aborted";
-            errorMessage = "Client cancelled optimization stream";
+            errorMessage = ERROR_MESSAGES.AI_STREAM_CANCELLED;
           }
 
           try {
             await AiService.saveOptimization(db, {
               userId: user.id,
+              provider: optimizationContext.model.providerName,
+              model: optimizationContext.model.modelId,
+              promptVersion: optimizationContext.config.PROMPT_VERSION,
               resumeId: body.resumeId?.trim() || null,
               inputText: input,
               optimizedText,
@@ -91,7 +214,8 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
               usage: usageMetrics,
             });
           } catch (saveError: unknown) {
-            const message = saveError instanceof Error ? saveError.message : "Unknown persistence error";
+            const message =
+              saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
             console.error(`[AI] Failed to persist optimization: ${message}`);
           }
         }

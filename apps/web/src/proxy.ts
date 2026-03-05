@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
  * Protected routes that require authentication.
  * Users without a session will be redirected to the sign-in page.
  */
-const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS];
+const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS, ROUTES.TESTSITE];
 
 /**
  * Helper to set security headers

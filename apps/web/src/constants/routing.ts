@@ -8,6 +8,9 @@ const PREVIEW = "/preview";
 const BUILDER = `${WORKSPACE}/builder`;
 const SETTINGS = `${WORKSPACE}/settings`;
 
+// Test page
+const TESTSITE = "/testsite";
+
 /**
  * Centralized route constants for application navigation.
  * Always import and use these constants instead of hardcoding route strings.
@@ -36,6 +39,7 @@ export const ROUTES = {
   PREVIEW,
   BUILDER,
   SETTINGS,
+  TESTSITE,
 } as const;
 
 /**

@@ -54,6 +54,7 @@
     "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
     "db:migrate:status": "cd packages/database && bun run db:migrate:status",
     "db:seed": "cd packages/database && bun run db:seed",
+    "db:seed:ai": "cd packages/database && bun run db:seed:ai",
     "db:pull": "cd packages/database && bun run db:pull",
     "db:setup": "cd packages/database && bun run db:push && bun run db:generate",
     "db:studio": "cd packages/database && bun run db:studio",
