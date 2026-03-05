@@ -40,7 +40,7 @@ import {
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
 import { useResumeById, useUpdateResume } from "@/hooks/useResume";
-import { validateDraftResume } from "@/lib/validation/resume-draft";
+import { ResumeDraftValidator } from "@/lib/validation/resume-draft";
 import { useBuilderStore } from "@/store/useBuilderStore";
 import type { TemplateType } from "@/templates";
 
@@ -99,6 +99,18 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   const [personalInfoErrors, setPersonalInfoErrors] = useState<Record<string, string>>({});
   const [projectErrors, setProjectErrors] = useState<Record<number, Record<string, string>>>({});
   const [educationErrors, setEducationErrors] = useState<Record<number, Record<string, string>>>({});
+
+  // Validator is stable — useState setters never change identity
+  const validator = useMemo(
+    () =>
+      new ResumeDraftValidator({
+        setPersonalInfoErrors,
+        setInvalidExperienceIndices,
+        setProjectErrors,
+        setEducationErrors,
+      }),
+    [setPersonalInfoErrors, setInvalidExperienceIndices, setProjectErrors, setEducationErrors],
+  );
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -176,12 +188,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
   }
 
   async function handleSaveResume(): Promise<void> {
-    const isValid = validateDraftResume(draftResume, {
-      setPersonalInfoErrors,
-      setInvalidExperienceIndices,
-      setProjectErrors,
-      setEducationErrors,
-    });
+    const isValid = validator.validateAll(draftResume);
 
     if (!isValid) {
       return;

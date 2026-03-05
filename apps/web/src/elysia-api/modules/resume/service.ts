@@ -21,7 +21,7 @@ type SyncableRelation = {
   create(args: { data: Record<string, unknown> }): SyncPromiseReturn;
 };
 
-// biome-ignore lint/complexity/noStaticOnlyClass: Pattern is intentional for service classes with only static methods.
+// biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class ResumeService {
   /**
    * Retrieves all resumes for a given user.

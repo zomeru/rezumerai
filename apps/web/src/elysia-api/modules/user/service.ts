@@ -2,9 +2,10 @@ import type { PrismaClient, User } from "@rezumerai/database";
 
 /**
  * User service — business logic only, no HTTP concerns.
- * Uses abstract class (no allocation needed) with static methods receiving db via parameter.
+ * Uses abstract class (no state stored) with static methods receiving db via
+ * parameter, following the Elysia best-practice pattern.
  */
-// biome-ignore lint/complexity/noStaticOnlyClass: Pattern is intentional for service classes with only static methods.
+// biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class UserService {
   /**
    * Retrieves all users.
@@ -13,8 +14,7 @@ export abstract class UserService {
    * @returns Array of all user records
    */
   static async findAll(db: PrismaClient): Promise<User[]> {
-    const users = await db.user.findMany();
-    return users;
+    return db.user.findMany();
   }
 
   /**
@@ -25,8 +25,7 @@ export abstract class UserService {
    * @returns User record if found, null otherwise
    */
   static async findById(db: PrismaClient, id: string): Promise<User | null> {
-    const user = await db.user.findUnique({ where: { id } });
-    return user;
+    return db.user.findUnique({ where: { id } });
   }
 
   /**
@@ -37,8 +36,7 @@ export abstract class UserService {
    * @returns User record if found, null otherwise
    */
   static async findByEmail(db: PrismaClient, email: string): Promise<User | null> {
-    const user = await db.user.findUnique({ where: { email } });
-    return user;
+    return db.user.findUnique({ where: { email } });
   }
 
   /**
@@ -50,10 +48,12 @@ export abstract class UserService {
    * @returns The updated user record, or null if the user does not exist
    */
   static async update(db: PrismaClient, id: string, data: Partial<User>): Promise<User | null> {
-    const exists = await db.user.findUnique({ where: { id }, select: { id: true } });
+    const exists = await db.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
     if (!exists) return null;
-    const user = await db.user.update({ where: { id }, data });
-    return user;
+    return db.user.update({ where: { id }, data });
   }
 
   /**

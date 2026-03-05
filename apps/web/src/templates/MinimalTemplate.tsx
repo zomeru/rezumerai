@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
 

@@ -15,62 +15,91 @@ import {
 import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 
-export function validateDraftResume(
-  draftResume: ResumeWithRelations,
-  setters: {
-    setPersonalInfoErrors: Dispatch<SetStateAction<Record<string, string>>>;
-    setInvalidExperienceIndices: Dispatch<SetStateAction<Set<number>>>;
-    setProjectErrors: Dispatch<SetStateAction<Record<number, Record<string, string>>>>;
-    setEducationErrors: Dispatch<SetStateAction<Record<number, Record<string, string>>>>;
-  },
-) {
-  const { setPersonalInfoErrors, setInvalidExperienceIndices, setProjectErrors, setEducationErrors } = setters;
+type ErrorSetter<T> = Dispatch<SetStateAction<T>>;
 
-  // Personal Info
-  if (draftResume.personalInfo) {
-    const result = validateSchema(PersonalInfoItemSchema, draftResume.personalInfo);
+interface ResumeDraftValidatorDeps {
+  setPersonalInfoErrors: ErrorSetter<Record<string, string>>;
+  setInvalidExperienceIndices: ErrorSetter<Set<number>>;
+  setProjectErrors: ErrorSetter<Record<number, Record<string, string>>>;
+  setEducationErrors: ErrorSetter<Record<number, Record<string, string>>>;
+}
+
+/**
+ * Validates resume draft sections and dispatches error state to the builder UI.
+ * Construct once (via useMemo) and call individual section validators or validateAll.
+ *
+ * @example
+ * ```tsx
+ * const validator = useMemo(
+ *   () => new ResumeDraftValidator({ setPersonalInfoErrors, setInvalidExperienceIndices, setProjectErrors, setEducationErrors }),
+ *   [setPersonalInfoErrors, setInvalidExperienceIndices, setProjectErrors, setEducationErrors],
+ * );
+ *
+ * if (!validator.validateAll(draftResume)) return;
+ * ```
+ */
+export class ResumeDraftValidator {
+  constructor(private readonly deps: ResumeDraftValidatorDeps) {}
+
+  validatePersonalInfo(resume: ResumeWithRelations): boolean {
+    if (!resume.personalInfo) return true;
+    const result = validateSchema(PersonalInfoItemSchema, resume.personalInfo);
     if (!result.success) {
       const errors = mapFlatErrors(result.issues);
-      setPersonalInfoErrors(errors);
-      const firstError = getFirstErrorMessage(errors);
-      if (firstError) toast.error(firstError);
+      this.deps.setPersonalInfoErrors(errors);
+      const first = getFirstErrorMessage(errors);
+      if (first) toast.error(first);
       return false;
     }
-    setPersonalInfoErrors({});
+    this.deps.setPersonalInfoErrors({});
+    return true;
   }
 
-  // Experience
-  const expResult = validateSchema(ExperienceArraySchema, draftResume.experience);
-  if (!expResult.success) {
-    const invalids = mapInvalidIndices(expResult.issues);
-    setInvalidExperienceIndices(invalids);
-    const firstError = expResult.issues[0]?.message;
-    if (firstError) toast.error(firstError);
-    return false;
+  validateExperience(resume: ResumeWithRelations): boolean {
+    const result = validateSchema(ExperienceArraySchema, resume.experience);
+    if (!result.success) {
+      this.deps.setInvalidExperienceIndices(mapInvalidIndices(result.issues));
+      const first = result.issues[0]?.message;
+      if (first) toast.error(first);
+      return false;
+    }
+    this.deps.setInvalidExperienceIndices(new Set());
+    return true;
   }
-  setInvalidExperienceIndices(new Set());
 
-  // Projects
-  const projectResult = validateSchema(ProjectArraySchema, draftResume.project);
-  if (!projectResult.success) {
-    const errors = mapIndexedErrors(projectResult.issues);
-    setProjectErrors(errors);
-    const firstError = getFirstErrorMessage(errors);
-    if (firstError) toast.error(firstError);
-    return false;
+  validateProjects(resume: ResumeWithRelations): boolean {
+    const result = validateSchema(ProjectArraySchema, resume.project);
+    if (!result.success) {
+      const errors = mapIndexedErrors(result.issues);
+      this.deps.setProjectErrors(errors);
+      const first = getFirstErrorMessage(errors);
+      if (first) toast.error(first);
+      return false;
+    }
+    this.deps.setProjectErrors({});
+    return true;
   }
-  setProjectErrors({});
 
-  // Education
-  const eduResult = validateSchema(EducationArraySchema, draftResume.education);
-  if (!eduResult.success) {
-    const errors = mapIndexedErrors(eduResult.issues);
-    setEducationErrors(errors);
-    const firstError = getFirstErrorMessage(errors);
-    if (firstError) toast.error(firstError);
-    return false;
+  validateEducation(resume: ResumeWithRelations): boolean {
+    const result = validateSchema(EducationArraySchema, resume.education);
+    if (!result.success) {
+      const errors = mapIndexedErrors(result.issues);
+      this.deps.setEducationErrors(errors);
+      const first = getFirstErrorMessage(errors);
+      if (first) toast.error(first);
+      return false;
+    }
+    this.deps.setEducationErrors({});
+    return true;
   }
-  setEducationErrors({});
 
-  return true;
+  /** Validates all sections in order. Stops and returns false on the first failure. */
+  validateAll(resume: ResumeWithRelations): boolean {
+    return (
+      this.validatePersonalInfo(resume) &&
+      this.validateExperience(resume) &&
+      this.validateProjects(resume) &&
+      this.validateEducation(resume)
+    );
+  }
 }

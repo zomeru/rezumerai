@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import HtmlContent from "./HtmlContent";

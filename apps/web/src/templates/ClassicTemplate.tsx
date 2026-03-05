@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
