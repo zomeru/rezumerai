@@ -4,6 +4,5 @@ export * from "./error";
 export * from "./logger";
 export * from "./modernCsrf";
 export * from "./opentelemetry";
-export * from "./performance";
 export * from "./prisma";
 export * from "./trace";

@@ -17,7 +17,7 @@
         "BETTER_AUTH_GITHUB_CLIENT_SECRET",
         "CRON_SECRET",
         "REDIS_URL",
-        "ENABLE_PERF_LOGS"
+        "OPENROUTER_API_KEY"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.local", ".env"]
     },
@@ -54,7 +54,7 @@
         "BETTER_AUTH_GITHUB_CLIENT_SECRET",
         "CRON_SECRET",
         "REDIS_URL",
-        "ENABLE_PERF_LOGS"
+        "OPENROUTER_API_KEY"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env.local", ".env"]
     },

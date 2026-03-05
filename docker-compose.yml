@@ -39,6 +39,7 @@ services:
     secrets:
       # Runtime secrets (available when container runs)
       - database_url
+      - direct_url
       - better_auth_secret
       - better_auth_url
       - better_auth_github_client_id
@@ -50,30 +51,6 @@ services:
     networks:
       - app_network
 
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/api/Dockerfile
-  #     secrets:
-  #       # Build-time secrets (for build configuration)
-  #       - api_port
-  #       - cors_origins
-  #   restart: always
-  #   env_file:
-  #     - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
-  #   secrets:
-  #     # Runtime secrets (available when container runs)
-  #     - database_url
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #   environment:
-  #     NODE_ENV: production
-  #   networks:
-  #     - app_network
-
 volumes:
   postgres_data:
 
@@ -84,6 +61,8 @@ networks:
 secrets:
   database_url:
     environment: DATABASE_URL
+  direct_url:
+    environment: DIRECT_URL
   better_auth_secret:
     environment: BETTER_AUTH_SECRET
   next_public_site_url:

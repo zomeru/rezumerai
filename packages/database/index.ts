@@ -89,8 +89,6 @@ const perfExtension = Prisma.defineExtension({
 });
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
-
-const PERF_ENABLED = process.env.ENABLE_PERF_LOGS === "true";
 const isDev = process.env.NODE_ENV === "development";
 
 /**
@@ -120,6 +118,6 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = baseClient;
  * const users = await prisma.user.findMany();
  * ```
  */
-export const prisma: typeof baseClient = PERF_ENABLED
+export const prisma: typeof baseClient = isDev
   ? (baseClient.$extends(perfExtension) as unknown as typeof baseClient)
   : baseClient;
