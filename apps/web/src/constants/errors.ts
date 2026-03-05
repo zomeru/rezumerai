@@ -26,4 +26,12 @@ export const ERROR_MESSAGES = {
   PERSONAL_INFO_PHONE_INVALID: "Please enter a valid phone number.",
   PERSONAL_INFO_LINKEDIN_INVALID: "Please enter a valid LinkedIn URL.",
   PERSONAL_INFO_WEBSITE_INVALID: "Please enter a valid website URL.",
+
+  // AI feature validation - need to be signed in to access
+  AI_AUTH_REQUIRED: "You must be signed in to access this feature.",
+  AI_EMPTY_INPUT: "Text input cannot be empty.",
+  AI_CREDITS_EXHAUSTED: "You have reached the daily limit of 100 AI text optimizations. Please try again tomorrow.",
+
+  // Unknown error
+  UNKNOWN_ERROR: "An unknown error occurred. Please try again.",
 };

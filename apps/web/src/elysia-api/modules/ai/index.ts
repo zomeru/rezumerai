@@ -1,11 +1,10 @@
 import Elysia, { t } from "elysia";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { AiModel } from "./model";
-import { AI_CREDITS_EXHAUSTED_CODE, AI_CREDITS_EXHAUSTED_MESSAGE, AiCreditsExhaustedError, AiService } from "./service";
+import { AI_CREDITS_EXHAUSTED_CODE, AiCreditsExhaustedError, AiService } from "./service";
 
-const EMPTY_INPUT_ERROR = "Text input cannot be empty.";
-const UNAUTHORIZED_ERROR = "Unauthorized - valid session required";
 const DEFAULT_ERROR_MESSAGE = "Unknown optimization error";
 
 /**
@@ -25,7 +24,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       const input = body.text.trim();
 
       if (!input) {
-        return status(422, EMPTY_INPUT_ERROR);
+        return status(422, ERROR_MESSAGES.AI_EMPTY_INPUT);
       }
 
       let remainingCredits = 0;
@@ -36,7 +35,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         if (error instanceof AiCreditsExhaustedError) {
           return status(429, {
             code: AI_CREDITS_EXHAUSTED_CODE,
-            message: AI_CREDITS_EXHAUSTED_MESSAGE,
+            message: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED,
           });
         }
 
@@ -101,11 +100,11 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
     {
       body: "ai.OptimizeInput",
       response: {
-        401: t.String({ default: UNAUTHORIZED_ERROR }),
+        401: t.String({ default: ERROR_MESSAGES.AI_AUTH_REQUIRED }),
         422: t.String(),
         429: t.Object({
           code: t.Literal(AI_CREDITS_EXHAUSTED_CODE),
-          message: t.String({ default: AI_CREDITS_EXHAUSTED_MESSAGE }),
+          message: t.String({ default: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED }),
         }),
       },
       detail: {
