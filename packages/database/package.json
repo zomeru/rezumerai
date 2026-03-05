@@ -41,11 +41,11 @@
     "@prisma/client": "^7.4.2",
     "@prisma/client-runtime-utils": "7.4.2",
     "elysia": "^1.4.27",
-    "pg": "^8.19.0",
+    "pg": "^8.20.0",
     "prismabox": "^1.1.26"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.4",
+    "@biomejs/biome": "2.4.5",
     "@rezumerai/tsconfig": "workspace:*",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.3.3",

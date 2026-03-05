@@ -2,14 +2,14 @@
   "name": "rezumerai",
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
-    "@changesets/changelog-github": "^0.5.2",
-    "@changesets/cli": "^2.29.8",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
     "@happy-dom/global-registrator": "^20.8.3",
     "husky": "^9.1.7",
-    "lint-staged": "16.3.1",
+    "lint-staged": "16.3.2",
     "postcss": "^8.5.8",
     "rimraf": "^6.1.3",
-    "turbo": "^2.8.12",
+    "turbo": "^2.8.13",
     "typescript": "^5.9.3"
   },
   "lint-staged": {

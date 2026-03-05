@@ -1,4 +1,7 @@
 export function register(): void {
+  // Only applicable in the Node.js runtime — process.emitWarning is not available in Edge.
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
   // Suppress DEP0169: url.parse() deprecation warning emitted by Next.js internals.
   // Cannot be fixed in our source — the call site is inside next/dist.
   // Monkey-patching process.emitWarning is the only way to suppress it without
