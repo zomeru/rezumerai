@@ -18,7 +18,6 @@ type _ResumeWithRelationsInputUpdate = typeof ResumePlain.static &
 
 export type ResumeWithRelationsInputUpdate = DeepPartial<_ResumeWithRelationsInputUpdate>;
 
-const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
 const linkedinRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
 
 export const PersonalInfoItemSchema = z
@@ -36,12 +35,7 @@ export const PersonalInfoItemSchema = z
       .refine((val) => linkedinRegex.test(val), {
         message: "Please enter a valid LinkedIn URL",
       }),
-    website: z
-      .string()
-      .optional()
-      .refine((val) => !val || urlRegex.test(val), {
-        message: "Please enter a valid website URL",
-      }),
+    website: z.url("Please enter a valid website URL"),
     image: z.string().optional(),
   })
   .strict();
