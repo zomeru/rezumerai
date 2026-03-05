@@ -2,7 +2,7 @@ import Elysia, { t } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { AiModel } from "./model";
-import { AiService } from "./service";
+import { AI_CREDITS_EXHAUSTED_CODE, AI_CREDITS_EXHAUSTED_MESSAGE, AiCreditsExhaustedError, AiService } from "./service";
 
 const EMPTY_INPUT_ERROR = "Text input cannot be empty.";
 const UNAUTHORIZED_ERROR = "Unauthorized - valid session required";
@@ -21,16 +21,32 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(AiModel)
   .post(
     "/optimize",
-    ({ body, set, status, db, user, request }) => {
+    async ({ body, set, status, db, user, request }) => {
       const input = body.text.trim();
 
       if (!input) {
         return status(422, EMPTY_INPUT_ERROR);
       }
 
+      let remainingCredits = 0;
+      try {
+        const consumeResult = await AiService.consumeDailyCredit(db, user.id);
+        remainingCredits = consumeResult.remainingCredits;
+      } catch (error: unknown) {
+        if (error instanceof AiCreditsExhaustedError) {
+          return status(429, {
+            code: AI_CREDITS_EXHAUSTED_CODE,
+            message: AI_CREDITS_EXHAUSTED_MESSAGE,
+          });
+        }
+
+        throw error;
+      }
+
       set.headers["content-type"] = "text/plain; charset=utf-8";
       set.headers["x-content-type-options"] = "nosniff";
       set.headers["cache-control"] = "no-cache, no-store";
+      set.headers["x-ai-credits-remaining"] = String(remainingCredits);
 
       return (async function* (): AsyncGenerator<string, void, unknown> {
         const startedAt = Date.now();
@@ -87,6 +103,10 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       response: {
         401: t.String({ default: UNAUTHORIZED_ERROR }),
         422: t.String(),
+        429: t.Object({
+          code: t.Literal(AI_CREDITS_EXHAUSTED_CODE),
+          message: t.String({ default: AI_CREDITS_EXHAUSTED_MESSAGE }),
+        }),
       },
       detail: {
         summary: "Optimize text with streamed AI output",

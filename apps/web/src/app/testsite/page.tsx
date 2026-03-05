@@ -2,11 +2,31 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 
-function getApiErrorMessage(value: unknown): string {
+const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
+const AI_CREDITS_EXHAUSTED_MESSAGE =
+  "You have reached the daily limit of 100 AI text optimizations. Please try again tomorrow.";
+
+interface OptimizeApiError {
+  code: string | null;
+  message: string;
+}
+
+class OptimizeRequestError extends Error {
+  readonly code: string | null;
+
+  constructor(payload: OptimizeApiError) {
+    super(payload.message);
+    this.name = "OptimizeRequestError";
+    this.code = payload.code;
+  }
+}
+
+function getApiError(value: unknown): OptimizeApiError {
   if (typeof value === "string") {
-    return value;
+    return { code: null, message: value };
   }
 
   if (
@@ -16,10 +36,17 @@ function getApiErrorMessage(value: unknown): string {
     typeof value.message === "string" &&
     value.message.length > 0
   ) {
-    return value.message;
+    const apiCode = "code" in value && typeof value.code === "string" && value.code.length > 0 ? value.code : null;
+    return {
+      code: apiCode,
+      message: value.message,
+    };
   }
 
-  return "An unknown error occurred while optimizing text.";
+  return {
+    code: null,
+    message: "An unknown error occurred while optimizing text.",
+  };
 }
 
 function getStreamChunk(value: unknown): string {
@@ -41,11 +68,11 @@ export default function TestSitePage(): React.JSX.Element {
       const { data, error } = await api.ai.optimize.post({ text });
 
       if (error) {
-        throw new Error(getApiErrorMessage(error.value));
+        throw new OptimizeRequestError(getApiError(error.value));
       }
 
       if (!data) {
-        throw new Error("Invalid optimize response.");
+        throw new OptimizeRequestError({ code: null, message: "Invalid optimize response." });
       }
 
       activeStreamRef.current = data;
@@ -75,6 +102,10 @@ export default function TestSitePage(): React.JSX.Element {
         },
       });
     } catch (err: unknown) {
+      if (err instanceof OptimizeRequestError && err.code === AI_CREDITS_EXHAUSTED_CODE) {
+        toast.error(AI_CREDITS_EXHAUSTED_MESSAGE);
+      }
+
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
   }

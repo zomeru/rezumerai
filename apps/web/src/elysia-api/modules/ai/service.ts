@@ -17,6 +17,12 @@ const OPTIMIZE_SYSTEM_PROMPT =
 const MODEL = "arcee-ai/trinity-large-preview:free";
 const PROVIDER = "openrouter";
 const PROMPT_VERSION = "optimize-v1";
+const DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT = 100;
+const ASIA_MANILA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+export const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
+export const AI_CREDITS_EXHAUSTED_MESSAGE =
+  "You have reached the daily limit of 100 AI text optimizations. Please try again tomorrow.";
 
 export interface AiUsageMetrics {
   promptTokens: number | null;
@@ -41,6 +47,19 @@ export interface SaveOptimizationInput {
   usage: AiUsageMetrics;
 }
 
+export interface ConsumeDailyCreditResult {
+  remainingCredits: number;
+}
+
+export class AiCreditsExhaustedError extends Error {
+  readonly code: string = AI_CREDITS_EXHAUSTED_CODE;
+
+  constructor() {
+    super(AI_CREDITS_EXHAUSTED_MESSAGE);
+    this.name = "AiCreditsExhaustedError";
+  }
+}
+
 // biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class AiService {
   static readonly MODEL = MODEL;
@@ -49,6 +68,8 @@ export abstract class AiService {
 
   static readonly PROMPT_VERSION = PROMPT_VERSION;
 
+  static readonly DAILY_CREDIT_LIMIT = DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT;
+
   static emptyUsageMetrics(): AiUsageMetrics {
     return {
       promptTokens: null,
@@ -56,6 +77,64 @@ export abstract class AiService {
       totalTokens: null,
       reasoningTokens: null,
     };
+  }
+
+  static async consumeDailyCredit(
+    db: PrismaClient,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<ConsumeDailyCreditResult> {
+    const todayBoundary = AiService.getAsiaManilaMidnightBoundary(now);
+
+    return db.$transaction(async (tx) => {
+      await tx.aiTextOptimizerCredits.upsert({
+        where: { userId },
+        update: {},
+        create: {
+          userId,
+          credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+          lastResetAt: todayBoundary,
+        },
+      });
+
+      await tx.aiTextOptimizerCredits.updateMany({
+        where: {
+          userId,
+          lastResetAt: {
+            lt: todayBoundary,
+          },
+        },
+        data: {
+          credits: DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT,
+          lastResetAt: todayBoundary,
+        },
+      });
+
+      const consumeResult = await tx.aiTextOptimizerCredits.updateMany({
+        where: {
+          userId,
+          credits: {
+            gt: 0,
+          },
+        },
+        data: {
+          credits: {
+            decrement: 1,
+          },
+        },
+      });
+
+      if (consumeResult.count === 0) {
+        throw new AiCreditsExhaustedError();
+      }
+
+      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
+        where: { userId },
+        select: { credits: true },
+      });
+
+      return { remainingCredits: creditsRecord?.credits ?? 0 };
+    });
   }
 
   /**
@@ -140,5 +219,12 @@ export abstract class AiService {
     });
 
     return ownedResume?.id ?? null;
+  }
+
+  private static getAsiaManilaMidnightBoundary(date: Date): Date {
+    const manilaDate = new Date(date.getTime() + ASIA_MANILA_UTC_OFFSET_MS);
+    manilaDate.setUTCHours(0, 0, 0, 0);
+
+    return new Date(manilaDate.getTime() - ASIA_MANILA_UTC_OFFSET_MS);
   }
 }
