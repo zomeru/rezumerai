@@ -2,6 +2,7 @@ import type { User } from "better-auth";
 import Elysia from "elysia";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { updateRequestContext } from "../observability/request-context";
 
 /**
  * Auth plugin — validates the Better Auth session and injects the authenticated
@@ -29,6 +30,12 @@ export const authPlugin = new Elysia({ name: "plugin/auth" })
         __unauthorized: true as const,
       };
     }
+
+    updateRequestContext({
+      userId: user.id,
+      userRole:
+        typeof (user as { role?: unknown }).role === "string" ? String((user as { role?: unknown }).role) : null,
+    });
 
     return { user, __unauthorized: false as const };
   })

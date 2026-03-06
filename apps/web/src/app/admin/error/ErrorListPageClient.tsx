@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, ChevronLeft, ChevronRight, Eye, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Eye, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
@@ -94,14 +95,24 @@ export default function ErrorListPageClient(): React.JSX.Element {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
-          >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={ROUTES.ADMIN}
+              className="inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900"
+            >
+              <ArrowLeft className="size-4" />
+              Back to admin
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
+            >
+              <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="mb-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">

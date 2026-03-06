@@ -1,13 +1,24 @@
 import Elysia from "elysia";
+import { z } from "zod";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { AdminErrorModel, type ErrorLogListQueryInput } from "./model";
-import { ErrorLogService } from "./service";
+import {
+  AdminModel,
+  type AnalyticsQueryInput,
+  type AuditLogListQueryInput,
+  type ErrorLogListQueryInput,
+  type UserListQueryInput,
+} from "./model";
+import { AdminService, ErrorLogService } from "./service";
 
 const ADMIN_FORBIDDEN_MESSAGE = "Admin access is required";
-const ERROR_LOG_NOT_FOUND_MESSAGE = "Error log not found";
+const ERROR_LOG_NOT_FOUND_MESSAGE = AdminService.messages.ERROR_LOG_NOT_FOUND_MESSAGE;
+const USER_NOT_FOUND_MESSAGE = AdminService.messages.USER_NOT_FOUND_MESSAGE;
+const AUDIT_LOG_NOT_FOUND_MESSAGE = AdminService.messages.AUDIT_LOG_NOT_FOUND_MESSAGE;
+const CONFIG_NOT_FOUND_MESSAGE = AdminService.messages.CONFIG_NOT_FOUND_MESSAGE;
+const LAST_ADMIN_ROLE_CHANGE_MESSAGE = AdminService.messages.LAST_ADMIN_ROLE_CHANGE_MESSAGE;
 
-function parseListQuery(query: ErrorLogListQueryInput): {
+function parseErrorListQuery(query: ErrorLogListQueryInput): {
   page: number | undefined;
   pageSize: number | undefined;
   isRead: boolean | undefined;
@@ -32,10 +43,32 @@ function parseListQuery(query: ErrorLogListQueryInput): {
   };
 }
 
+function parseUserListQuery(query: UserListQueryInput) {
+  return {
+    page: query.page ? Number(query.page) : undefined,
+    pageSize: query.pageSize ? Number(query.pageSize) : undefined,
+    search: query.search?.trim() || undefined,
+    role: query.role ?? null,
+  };
+}
+
+function parseAuditListQuery(query: AuditLogListQueryInput) {
+  return {
+    page: query.page ? Number(query.page) : undefined,
+    pageSize: query.pageSize ? Number(query.pageSize) : undefined,
+    search: query.search?.trim() || undefined,
+    category: query.category ?? null,
+  };
+}
+
+function parseAnalyticsQuery(query: AnalyticsQueryInput): number | undefined {
+  return query.timeframeDays ? Number(query.timeframeDays) : undefined;
+}
+
 export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" })
   .use(prismaPlugin)
   .use(authPlugin)
-  .use(AdminErrorModel)
+  .use(AdminModel)
   .derive({ as: "scoped" }, async ({ db, user, set }) => {
     const userId = typeof user?.id === "string" ? user.id : null;
 
@@ -67,7 +100,7 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
   .get(
     "/errors",
     async ({ db, query, status }) => {
-      const result = await ErrorLogService.listErrorLogs(db, parseListQuery(query));
+      const result = await ErrorLogService.listErrorLogs(db, parseErrorListQuery(query));
 
       return status(200, result);
     },
@@ -128,6 +161,197 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
       detail: {
         summary: "Mark an error log entry as read",
         tags: ["Admin", "Errors"],
+      },
+    },
+  )
+  .get(
+    "/users",
+    async ({ db, query, status }) => {
+      const result = await AdminService.listUsers(db, parseUserListQuery(query));
+      return status(200, result);
+    },
+    {
+      query: "adminUser.QueryList",
+      response: {
+        200: "adminUser.ListResponse",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "List platform users for admin management",
+        tags: ["Admin", "Users"],
+      },
+    },
+  )
+  .get(
+    "/users/:id",
+    async ({ db, params, status }) => {
+      const result = await AdminService.getUserById(db, params.id);
+
+      if (!result) {
+        return status(404, USER_NOT_FOUND_MESSAGE);
+      }
+
+      return status(200, result);
+    },
+    {
+      params: "adminUser.ParamById",
+      response: {
+        200: "adminUser.DetailResponse",
+        403: "adminUser.Error",
+        404: "adminUser.Error",
+      },
+      detail: {
+        summary: "Get detailed admin view of a user account",
+        tags: ["Admin", "Users"],
+      },
+    },
+  )
+  .patch(
+    "/users/:id/role",
+    async ({ db, params, user, body, status }) => {
+      const result = await AdminService.updateUserRole(db, user.id, params.id, body.role);
+
+      if (result.error === USER_NOT_FOUND_MESSAGE) {
+        return status(404, USER_NOT_FOUND_MESSAGE);
+      }
+
+      if (result.error === LAST_ADMIN_ROLE_CHANGE_MESSAGE) {
+        return status(409, LAST_ADMIN_ROLE_CHANGE_MESSAGE);
+      }
+
+      if (!result.user) {
+        return status(404, USER_NOT_FOUND_MESSAGE);
+      }
+
+      return status(200, result.user);
+    },
+    {
+      params: "adminUser.ParamById",
+      body: "adminUser.RoleUpdateInput",
+      response: {
+        200: "adminUser.DetailResponse",
+        403: "adminUser.Error",
+        404: "adminUser.Error",
+        409: "adminUser.Error",
+      },
+      detail: {
+        summary: "Update a user's role",
+        tags: ["Admin", "Users"],
+      },
+    },
+  )
+  .get(
+    "/system-config",
+    async ({ db, status }) => {
+      const result = await AdminService.listSystemConfigurations(db);
+      return status(200, result);
+    },
+    {
+      response: {
+        200: "adminConfig.ListResponse",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "List application-wide system configuration entries",
+        tags: ["Admin", "System Configuration"],
+      },
+    },
+  )
+  .patch(
+    "/system-config/:name",
+    async ({ db, params, user, body, status }) => {
+      try {
+        const result = await AdminService.updateSystemConfiguration(db, user.id, params.name, body.value);
+
+        if (result.error === CONFIG_NOT_FOUND_MESSAGE) {
+          return status(404, CONFIG_NOT_FOUND_MESSAGE);
+        }
+
+        if (!result.configuration) {
+          return status(404, CONFIG_NOT_FOUND_MESSAGE);
+        }
+
+        return status(200, result.configuration);
+      } catch (error: unknown) {
+        if (error instanceof z.ZodError || error instanceof Error) {
+          return status(422, error instanceof Error ? error.message : "Invalid configuration payload");
+        }
+
+        throw error;
+      }
+    },
+    {
+      params: "adminConfig.ParamByName",
+      body: "adminConfig.UpdateInput",
+      response: {
+        200: "adminConfig.Entry",
+        403: "adminUser.Error",
+        404: "adminUser.Error",
+        422: "adminUser.Error",
+      },
+      detail: {
+        summary: "Update a system configuration entry",
+        tags: ["Admin", "System Configuration"],
+      },
+    },
+  )
+  .get(
+    "/audit-logs",
+    async ({ db, query, status }) => {
+      const result = await AdminService.listAuditLogs(db, parseAuditListQuery(query));
+      return status(200, result);
+    },
+    {
+      query: "adminAudit.QueryList",
+      response: {
+        200: "adminAudit.ListResponse",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "List audit logs grouped by user, system, and database activity",
+        tags: ["Admin", "Audit Logs"],
+      },
+    },
+  )
+  .get(
+    "/audit-logs/:id",
+    async ({ db, params, status }) => {
+      const result = await AdminService.getAuditLogById(db, params.id);
+
+      if (!result) {
+        return status(404, AUDIT_LOG_NOT_FOUND_MESSAGE);
+      }
+
+      return status(200, result);
+    },
+    {
+      params: "adminAudit.ParamById",
+      response: {
+        200: "adminAudit.DetailResponse",
+        403: "adminUser.Error",
+        404: "adminUser.Error",
+      },
+      detail: {
+        summary: "Get detailed audit log metadata",
+        tags: ["Admin", "Audit Logs"],
+      },
+    },
+  )
+  .get(
+    "/analytics",
+    async ({ db, query, status }) => {
+      const result = await AdminService.getAnalyticsDashboard(db, parseAnalyticsQuery(query));
+      return status(200, result);
+    },
+    {
+      query: "adminAnalytics.Query",
+      response: {
+        200: "adminAnalytics.Response",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "Fetch the admin analytics dashboard data",
+        tags: ["Admin", "Analytics"],
       },
     },
   );

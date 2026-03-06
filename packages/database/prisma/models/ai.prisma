@@ -28,6 +28,7 @@ model AiModel {
 model SystemConfiguration {
   id        String   @id @default(cuid())
   name      String   @unique
+  description String?
   value     Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

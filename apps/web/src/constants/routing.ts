@@ -11,6 +11,10 @@ const SETTINGS = `${WORKSPACE}/settings`;
 // Admin
 const ADMIN = "/admin";
 const ADMIN_ERROR = `${ADMIN}/error`;
+const ADMIN_USERS = `${ADMIN}/users`;
+const ADMIN_SYSTEM_CONFIG = `${ADMIN}/system-config`;
+const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
+const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
 
 // Test page
 const TESTSITE = "/testsite";
@@ -45,6 +49,10 @@ export const ROUTES = {
   SETTINGS,
   ADMIN,
   ADMIN_ERROR,
+  ADMIN_USERS,
+  ADMIN_SYSTEM_CONFIG,
+  ADMIN_AUDIT_LOGS,
+  ADMIN_ANALYTICS,
   TESTSITE,
 } as const;
 

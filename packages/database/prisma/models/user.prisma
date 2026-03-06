@@ -9,6 +9,8 @@ model User {
   createdAt              DateTime
   updatedAt              DateTime
   accounts               Account[]
+  analyticsEvents        AnalyticsEvent[]        @relation("AnalyticsEventUser")
+  auditLogs              AuditLog[]              @relation("AuditLogActor")
   errorLogs              ErrorLog[]               @relation("ErrorLogUser")
   readErrorLogs          ErrorLog[]               @relation("ErrorLogReadByUser")
   resumes                Resume[]

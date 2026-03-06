@@ -91,18 +91,26 @@ async function seedSystemConfigurations(): Promise<void> {
 
   await prisma.systemConfiguration.upsert({
     where: { name: "AI_CONFIG" },
-    update: { value: AI_CONFIG_SEED as Prisma.InputJsonValue },
+    update: {
+      description: "Global AI model and optimization configuration used across the application.",
+      value: AI_CONFIG_SEED as Prisma.InputJsonValue,
+    },
     create: {
       name: "AI_CONFIG",
+      description: "Global AI model and optimization configuration used across the application.",
       value: AI_CONFIG_SEED as Prisma.InputJsonValue,
     },
   });
 
   await prisma.systemConfiguration.upsert({
     where: { name: "GLOBAL_CONFIG" },
-    update: { value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue },
+    update: {
+      description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
+      value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
+    },
     create: {
       name: "GLOBAL_CONFIG",
+      description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
       value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
     },
   });

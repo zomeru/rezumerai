@@ -1,3 +1,4 @@
+export * from "./admin/schema";
 export * from "./ai/schema";
 export * from "./error/schema";
 export * from "./helpers";
