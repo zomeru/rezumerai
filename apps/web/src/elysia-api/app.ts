@@ -9,7 +9,8 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
-import { aiModule, resumeModule, userModule } from "./modules";
+import { adminModule, aiModule, resumeModule, userModule } from "./modules";
+import { ErrorLogService } from "./modules/admin/service";
 import {
   authPlugin,
   errorPlugin,
@@ -23,6 +24,7 @@ import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
 const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
+const errorLogRetentionCronPattern = Patterns.EVERY_DAY_AT_3AM;
 /**
  * Elysia application — single source of truth for the API.
  *
@@ -95,6 +97,42 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
       },
     }),
   )
+  .use(
+    cron({
+      name: "error-log-retention-cleanup",
+      pattern: errorLogRetentionCronPattern,
+      async run() {
+        try {
+          const { deletedCount, retentionDays, cutoffDate } = await ErrorLogService.cleanupExpiredErrorLogs(prisma);
+
+          if (isDev || deletedCount > 0) {
+            console.log(
+              [
+                ansiTimestamp(),
+                paint("bgCyan", ` ${bold("CRON")} `),
+                bold("error-log-retention"),
+                paint("green", `✓ deleted=${deletedCount}`),
+                dim(`retentionDays=${retentionDays}`),
+                dim(`cutoff<${cutoffDate.toISOString()}`),
+              ].join("  "),
+            );
+          }
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "Unknown retention cleanup error";
+
+          console.error(
+            [
+              ansiTimestamp(),
+              paint("bgRed", ` ${bold("CRON")} `),
+              bold("error-log-retention"),
+              paint("red", "✗ cleanup failed"),
+              dim(message),
+            ].join("  "),
+          );
+        }
+      },
+    }),
+  )
   .use(authPlugin)
   .get("/health", async ({ db }) => {
     const message = capitalize("Health check successful!");
@@ -116,6 +154,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   })
 
   // ── Feature modules ─────────────────────────────────────────────────────
+  .use(adminModule)
   .use(userModule)
   .use(resumeModule)
   .use(aiModule);

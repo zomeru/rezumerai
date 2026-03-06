@@ -1,237 +1,221 @@
-# Rezumer
+# Rezumerai
 
-A fullstack TypeScript monorepo for building AI-powered resume tools, managed with **Turborepo** and **Bun**. The Elysia API is embedded inside the Next.js web app and served through a catch-all API route.
+AI-powered resume builder in a fullstack TypeScript monorepo.
+
+- Monorepo: Turborepo + Bun workspaces
+- Frontend: Next.js 16 App Router + React 19
+- API: Elysia embedded in the web app (`/api/[[...slugs]]`)
+- Database: PostgreSQL + Prisma 7
+- Auth: Better Auth
+- AI: OpenRouter-powered text optimization
 
 ## Prerequisites
 
-- [Bun](https://bun.sh/) v1.x+
-- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
-
-## Tech Stack
-
-| Category         | Technology                                                |
-| ---------------- | --------------------------------------------------------- |
-| Frontend         | Next.js 16+, React 19, React Compiler, TypeScript 5.x+   |
-| Styling          | Tailwind CSS 4.x (PostCSS)                               |
-| Backend          | Elysia 1.x+ (embedded in Next.js), Bun 1.x+, TypeScript |
-| Auth             | Better Auth 1.x+                                         |
-| Database         | PostgreSQL 18 with Prisma 7.x ORM                        |
-| State            | Zustand 5.x                                              |
-| Data Fetching    | TanStack React Query 5.x, Eden (Elysia type-safe client) |
-| Rich Text        | TipTap 3.x                                               |
-| PDF              | @react-pdf/renderer, jspdf, html2canvas-pro              |
-| Drag & Drop      | @dnd-kit/core + @dnd-kit/sortable                        |
-| Testing          | Bun Test, React Testing Library                          |
-| Build            | Turborepo, Turbopack, Bun                                |
-| Code Quality     | Biome 2.x+                                               |
-| Git Hooks        | Husky + lint-staged                                       |
-| Containerization | Docker, docker-compose                                   |
+- [Bun](https://bun.sh/) `1.3.x`
+- PostgreSQL (local or hosted)
+- Docker (optional, for container workflow)
 
 ## Quick Start
 
-### 1. Install Bun
-
-```sh
-curl -fsSL https://bun.sh/install | bash
-```
-
-### 2. Install Dependencies
+1. Install dependencies
 
 ```sh
 bun install
 ```
 
-### 3. Set Up Environment Variables
+2. Configure environment variables
 
 ```sh
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your values:
+Minimum variables for local development:
 
 ```env
-# PostgreSQL
-POSTGRES_DB=rezumerai
-POSTGRES_USER=your_username
-POSTGRES_PASSWORD=your_password
-
-# Database
-DATABASE_URL=postgresql://your_username:your_password@localhost:5432/rezumerai
-
-# Better Auth
-BETTER_AUTH_SECRET=your_secret_here
-BETTER_AUTH_URL=http://localhost:3000
-
-# GitHub OAuth (optional)
-BETTER_AUTH_GITHUB_CLIENT_ID=your_github_client_id
-BETTER_AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
-
-# Site URL (used by Eden treaty client to reach the embedded API)
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+BETTER_AUTH_URL="http://localhost:3000"
+BETTER_AUTH_SECRET="..."
+BETTER_AUTH_GITHUB_CLIENT_ID="..."
+BETTER_AUTH_GITHUB_CLIENT_SECRET="..."
+OPENROUTER_API_KEY="..."
 ```
 
-### 4. Start the Database
+Optional:
 
-Set up a PostgreSQL 18 instance. You can use Docker:
+- `BETTER_AUTH_GOOGLE_CLIENT_ID`
+- `BETTER_AUTH_GOOGLE_CLIENT_SECRET`
+- `CRON_SECRET`
+- `REDIS_URL`
+- `SENTRY_DSN`
+- `ANALYTICS_ID`
+- `OTEL_EXPORTER_OTLP_ENDPOINT`
+- `OTEL_EXPORTER_OTLP_HEADERS`
 
-```sh
-docker run -d --name rezumerai-db \
-  -e POSTGRES_DB=rezumerai \
-  -e POSTGRES_USER=your_username \
-  -e POSTGRES_PASSWORD=your_password \
-  -p 5432:5432 \
-  postgres:18-alpine
-```
-
-### 5. Set Up the Database Schema
+3. Initialize database
 
 ```sh
 bun run db:setup
 ```
 
-### 6. Run Development Servers
+4. Start development
 
 ```sh
 bun run dev
 ```
 
-Or run individually:
+Notes:
+
+- Root `predev` builds `@rezumerai/database` before `turbo dev`.
+- `apps/web` also runs a `predev` script to download the PDF worker used by `react-pdf`.
+
+## Development Workflow
+
+Run only the web app:
 
 ```sh
-bun run --filter=web dev            # Next.js — http://localhost:3000
+bun run --filter=web dev
 ```
 
-## Available Scripts
+Common quality checks:
 
-### Development
+```sh
+bun run check
+bun run check:types
+bun run test
+bun run build
+```
 
-| Script | Description |
-|--------|-------------|
-| `bun run dev` | Start all apps in development mode |
-| `bun run start` | Start all apps in production mode |
+Single pre-PR command:
 
-### Build
+```sh
+bun run code:verify
+```
 
-| Script | Description |
-|--------|-------------|
-| `bun run build` | Build all packages and apps |
-| `bun run build:production` | Production build with `NODE_ENV=production` |
-| `bun run build:packages` | Build all shared packages |
+## Root Scripts
 
-### Testing
-
-| Script | Description |
-|--------|-------------|
-| `bun run test` | Run all tests |
-| `bun run test:watch` | Run tests in watch mode |
-| `bun run test:coverage` | Run tests with coverage |
-
-### Code Quality
+### Build and Run
 
 | Script | Description |
-|--------|-------------|
-| `bun run check` | Run Biome linting with auto-fix |
-| `bun run check:types` | TypeScript type checking |
-| `bun run code:check` | Lint + type checking |
+| --- | --- |
+| `bun run dev` | Start monorepo dev tasks (`turbo dev`) |
+| `bun run start` | Start production tasks (`turbo start`) |
+| `bun run build` | Build all apps/packages |
+| `bun run build:production` | Build with `NODE_ENV=production` |
+| `bun run build:packages` | Build only `packages/*` |
+
+### Code Quality and Tests
+
+| Script | Description |
+| --- | --- |
+| `bun run check` | Sync Biome version + run workspace Biome checks |
+| `bun run biome` | Direct Biome check/write from root |
+| `bun run check:types` | Workspace type checks |
+| `bun run code:check` | `check` + `check:types` |
+| `bun run test` | Workspace tests |
+| `bun run test:watch` | Workspace tests in watch mode |
+| `bun run test:coverage` | Workspace tests with coverage |
 | `bun run code:verify` | Lint + types + tests + build |
 
 ### Database
 
 | Script | Description |
-|--------|-------------|
-| `bun run db:setup` | Push schema and generate Prisma client |
-| `bun run db:studio` | Open Prisma Studio (http://localhost:5556) |
-| `bun run db:reset` | Reset database — **destroys all data** |
+| --- | --- |
+| `bun run db:setup` | `db:push` + `db:generate` |
+| `bun run db:generate` | Generate Prisma client |
+| `bun run db:push` | Push schema |
+| `bun run db:migrate` | Deploy migrations |
+| `bun run db:migrate:dev` | Create/apply dev migration |
+| `bun run db:migrate:status` | Migration status |
+| `bun run db:pull` | Pull schema from DB |
+| `bun run db:seed` | Seed DB |
+| `bun run db:seed:ai` | Seed AI-related data |
+| `bun run db:studio` | Prisma Studio (port `5556`) |
+| `bun run db:reset` | Force reset DB |
 
-### Docker
+### Docker and Maintenance
 
 | Script | Description |
-|--------|-------------|
-| `bun run docker:build` | Build and start all containers |
-| `bun run docker:up` | Start containers |
-| `bun run docker:down` | Stop containers |
+| --- | --- |
+| `bun run docker:build` | Build + start Docker compose services |
+| `bun run docker:build:standalone` | Build standalone web image |
+| `bun run docker:up` | Start Docker compose services |
+| `bun run docker:down` | Stop Docker compose services |
+| `bun run start:redis` | Start Redis service via compose (if defined) |
+| `bun run clean` | Remove build/test artifacts |
+| `bun run clean:install` | Clean + reinstall + rebuild packages |
+| `bun run outdated` | Check outdated dependencies |
+| `bun run security:audit` | Bun production audit |
+| `bun run security:check` | Audit-ci check |
 
-### Maintenance
+## Architecture Overview
 
-| Script | Description |
-|--------|-------------|
-| `bun run clean` | Remove build artifacts |
-| `bun run clean:install` | Clean, reinstall, and rebuild packages |
-| `bun run security:audit` | Audit production dependencies |
+### Web + API in one app
 
-## Running with Docker
+- Next.js routes are in `apps/web/src/app`.
+- API is mounted via `apps/web/src/app/api/[[...slugs]]/route.ts`.
+- Better Auth handler is at `apps/web/src/app/api/auth/[...all]/route.ts`.
 
-Docker Compose orchestrates the web app (with the embedded Elysia API). Sensitive values are passed via Docker secrets from your `.env.local`.
+### Elysia API modules
 
-```sh
-bun run docker:build
+`apps/web/src/elysia-api/app.ts` composes plugins and modules:
+
+- Modules: `user`, `resume`, `ai`
+- Plugins: auth, prisma, error handling, logger, CSRF, OpenTelemetry/trace, CORS, helmet, rate limit
+- Dev-only docs: Swagger/OpenAPI
+- Health route: `GET /api/health`
+
+### Shared packages
+
+- `@rezumerai/database`: Prisma client, schema, migrations, seed scripts
+- `@rezumerai/types`: shared Zod schemas/types (resume, user, ai)
+- `@rezumerai/utils`: helper utilities
+- `@rezumerai/ui`: shared UI components
+- `@rezumerai/tsconfig`: TS presets
+
+## Repository Layout
+
+```txt
+apps/
+  web/
+    src/
+      app/
+      elysia-api/
+      components/
+      hooks/
+      lib/
+      providers/
+      store/
+      templates/
+      constants/
+      env.ts
+      proxy.ts
+packages/
+  database/
+  types/
+  utils/
+  ui/
+  tsconfig/
+scripts/
+  docker-build.sh
+  docker-compose-build.sh
+  update-biome-config-version.ts
 ```
 
-| Service       | URL                        |
-|---------------|----------------------------|
-| Web app + API | http://localhost:3000      |
-| PostgreSQL    | localhost:5432             |
-| Prisma Studio | http://localhost:5556      |
+## Conventions
 
-```sh
-bun run docker:down
-```
+- Use Bun for package management and scripts.
+- Use `ROUTES` from `apps/web/src/constants/routing.ts` instead of hardcoded route strings.
+- Keep shared logic in packages instead of duplicating in app code.
+- Use Biome for formatting/linting.
+- Use colocated `__tests__` and Bun test runner conventions used in each package/app.
 
-## Project Structure
+## Docker Notes
 
-```
-rezumerai/
-├── apps/
-│   └── web/                          # Next.js 16+ frontend with embedded Elysia API
-│       └── src/
-│           ├── app/                  # App Router (pages, layouts, error boundaries)
-│           │   ├── api/auth/         # Better Auth handler (Next.js route)
-│           │   └── api/[[...slugs]]/ # Catch-all API route → Elysia app
-│           ├── elysia-api/           # Embedded Elysia API
-│           │   ├── app.ts            # Elysia app (exports type for Eden)
-│           │   ├── plugins/          # Plugins (prisma, auth, error, logger, modernCsrf)
-│           │   └── modules/          # Feature modules (resume, user)
-│           ├── components/           # React components (Home, Dashboard, ResumeBuilder,
-│           │                         #   ErrorBoundary, SafeComponents, RouteErrorBoundary, client-date)
-│           ├── hooks/                # Custom hooks (useClickOutside, useClientDate, useFocusTrap, usePdfGenerator)
-│           ├── lib/                  # Client utilities (api, api-client, auth, auth-client, errors, pdfUtils, retry)
-│           ├── store/                # Zustand stores (useResumeStore, useBuilderStore, useDashboardStore)
-│           ├── templates/            # Resume templates (Classic, Modern, Minimal, MinimalImage)
-│           ├── constants/            # App constants (routing, dummy data, PDF, templates)
-│           ├── types/                # App-local TypeScript types
-│           ├── env.ts                # Zod-validated environment variables
-│           └── proxy.ts              # Security middleware (CSP, HSTS, X-Frame-Options)
-│
-├── packages/
-│   ├── database/                     # Prisma 7.x ORM (PrismaPg adapter)
-│   │   ├── prisma/schema.prisma      # Database schema
-│   │   ├── generated/prisma/         # Generated Prisma client
-│   │   └── index.ts                  # Prisma singleton export
-│   ├── types/                        # Shared TypeScript types & Zod schemas
-│   ├── ui/                           # Shared UI components (shadcn/ui based)
-│   ├── utils/                        # Shared utilities (date, string, styles/cn, uuid, react)
-│   └── tsconfig/                     # Shared TypeScript configs
-│
-├── scripts/                          # Docker and config helper scripts
-├── biome.json                        # Biome linter/formatter config
-├── turbo.json                        # Turborepo config
-├── docker-compose.yml                # Docker orchestration
-└── package.json                      # Root package.json (Bun workspaces)
-```
-
-## Development Guidelines
-
-- **Package Manager**: Always use Bun — never npm, yarn, or pnpm
-- **Code Style**: Biome handles all linting and formatting (120 char width, double quotes, sorted Tailwind classes)
-- **Type Safety**: TypeScript strict mode everywhere with explicit return types enforced
-- **Auth**: Better Auth handles authentication; the Elysia `auth` plugin validates sessions and injects `user` into context; the Next.js `app/api/auth` route handles auth endpoints
-- **API**: The Elysia API is embedded in `apps/web/src/elysia-api/app.ts` and served via a Next.js catch-all route. Eden treaty provides end-to-end type-safe API calls (types inferred from the Elysia `App` export in `apps/web/src/elysia-api/app.ts`)
-- **State Management**: Zustand 5.x for client-side state, TanStack React Query 5.x for server state
-- **Routing**: Use `ROUTES` constants from `constants/routing.ts` — never hardcode route strings
-- **Styling**: Tailwind CSS 4.x only — no inline styles; use `cn()` for class merging
-- **Testing**: Co-locate tests with components in `__tests__` folders. Use Bun test runner (`bun:test`) + React Testing Library. Aim for 100% coverage on new components.
-- **Git Hooks**: Husky + lint-staged run `biome check --write` on every commit
+- `docker-compose.yml` currently defines the `web` service.
+- Database/Redis services are not enabled in the default compose file; run Postgres separately unless you add those services.
 
 ## License
 
-Private — All rights reserved.
+Private repository.

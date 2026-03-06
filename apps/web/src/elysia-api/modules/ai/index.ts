@@ -2,6 +2,7 @@ import Elysia, { t } from "elysia";
 import { ZodError } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
+import { trackHandledError } from "../../plugins/error";
 import { prismaPlugin } from "../../plugins/prisma";
 import { AiModel } from "./model";
 import {
@@ -15,6 +16,34 @@ import {
   AiModelUnavailableError,
   AiService,
 } from "./service";
+
+interface TrackAiHandledErrorOptions {
+  request: Request;
+  route: string;
+  userId: string;
+  error: unknown;
+  body?: unknown;
+  query?: unknown;
+  params?: unknown;
+  metadata?: Record<string, unknown>;
+}
+
+async function trackAiHandledError(options: TrackAiHandledErrorOptions): Promise<void> {
+  await trackHandledError({
+    request: options.request,
+    error: options.error,
+    code: "AI_HANDLED_ERROR",
+    body: options.body,
+    query: options.query,
+    params: options.params,
+    userId: options.userId,
+    metadata: {
+      module: "ai",
+      route: options.route,
+      ...options.metadata,
+    },
+  });
+}
 
 /**
  * AI module — text optimization via OpenRouter streaming.
@@ -61,13 +90,25 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   )
   .patch(
     "/settings/model",
-    async ({ db, user, body, status }) => {
+    async ({ db, user, body, status, request }) => {
       try {
         await AiService.updateUserSelectedModel(db, user.id, body.modelId.trim());
         const settings = await AiService.getUserAiSettings(db, user.id);
         return status(200, settings);
       } catch (error: unknown) {
         if (error instanceof AiModelUnavailableError) {
+          await trackAiHandledError({
+            request,
+            route: "/ai/settings/model",
+            userId: user.id,
+            body,
+            error,
+            metadata: {
+              responseStatus: 422,
+              reason: AI_MODEL_UNAVAILABLE_CODE,
+            },
+          });
+
           return status(422, {
             code: AI_MODEL_UNAVAILABLE_CODE,
             message: error.message,
@@ -94,18 +135,42 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   )
   .patch(
     "/settings/config",
-    async ({ db, user, body, status }) => {
+    async ({ db, user, body, status, request }) => {
       try {
         const config = await AiService.updateAiConfiguration(db, user.id, body);
         return status(200, config);
       } catch (error: unknown) {
         if (error instanceof AiForbiddenError) {
+          await trackAiHandledError({
+            request,
+            route: "/ai/settings/config",
+            userId: user.id,
+            body,
+            error,
+            metadata: {
+              responseStatus: 403,
+              reason: AI_FORBIDDEN_CODE,
+            },
+          });
+
           return status(403, {
             code: AI_FORBIDDEN_CODE,
             message: ERROR_MESSAGES.AI_CONFIG_UPDATE_FORBIDDEN,
           });
         }
         if (error instanceof ZodError) {
+          await trackAiHandledError({
+            request,
+            route: "/ai/settings/config",
+            userId: user.id,
+            body,
+            error,
+            metadata: {
+              responseStatus: 422,
+              reason: "AI_CONFIG_INVALID_PAYLOAD",
+            },
+          });
+
           return status(422, ERROR_MESSAGES.AI_CONFIG_INVALID_PAYLOAD);
         }
         throw error;
@@ -129,6 +194,12 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
     async ({ body, set, status, db, user, request }) => {
       const input = body.text.trim();
       const modelId = body.modelId?.trim();
+      const trackedRequestContext = {
+        request,
+        route: "/ai/optimize",
+        userId: user.id,
+        body,
+      } as const;
 
       if (!input) {
         return status(422, ERROR_MESSAGES.AI_EMPTY_INPUT);
@@ -139,6 +210,16 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         optimizationContext = await AiService.resolveOptimizationContext(db, user.id, modelId ?? null);
       } catch (error: unknown) {
         if (error instanceof AiModelUnavailableError) {
+          await trackAiHandledError({
+            ...trackedRequestContext,
+            error,
+            metadata: {
+              responseStatus: 422,
+              phase: "resolve-optimization-context",
+              reason: AI_MODEL_UNAVAILABLE_CODE,
+            },
+          });
+
           return status(422, error.message);
         }
         throw error;
@@ -150,6 +231,16 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         remainingCredits = consumeResult.remainingCredits;
       } catch (error: unknown) {
         if (error instanceof AiCreditsExhaustedError) {
+          await trackAiHandledError({
+            ...trackedRequestContext,
+            error,
+            metadata: {
+              responseStatus: 429,
+              phase: "consume-daily-credit",
+              reason: AI_CREDITS_EXHAUSTED_CODE,
+            },
+          });
+
           return status(429, {
             code: AI_CREDITS_EXHAUSTED_CODE,
             message: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED,
@@ -176,6 +267,18 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
             ? AI_MODEL_POLICY_RESTRICTED_CODE
             : AI_MODEL_UNAVAILABLE_CODE;
 
+        await trackAiHandledError({
+          ...trackedRequestContext,
+          error: normalizedError,
+          metadata: {
+            responseStatus: 422,
+            phase: "create-optimize-stream",
+            reason: responseCode,
+            modelId: optimizationContext.model.modelId,
+            provider: optimizationContext.model.providerName,
+          },
+        });
+
         try {
           await AiService.saveOptimization(db, {
             userId: user.id,
@@ -194,6 +297,14 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         } catch (saveError: unknown) {
           const message = saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
           console.error(`[AI] Failed to persist optimization: ${message}`);
+          await trackAiHandledError({
+            ...trackedRequestContext,
+            error: saveError,
+            metadata: {
+              phase: "save-optimization-after-create-stream-failure",
+              reason: "AI_OPTIMIZATION_PERSISTENCE_ERROR",
+            },
+          });
         }
 
         return status(422, {
@@ -229,6 +340,16 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         } catch (error: unknown) {
           optimizationStatus = "failed";
           errorMessage = AiService.normalizeOptimizationError(error).message;
+          await trackAiHandledError({
+            ...trackedRequestContext,
+            error,
+            metadata: {
+              phase: "stream-optimize-text",
+              reason: "AI_STREAM_RUNTIME_ERROR",
+              modelId: optimizationContext.model.modelId,
+              provider: optimizationContext.model.providerName,
+            },
+          });
           return;
         } finally {
           if (optimizationStatus === "success" && request.signal.aborted) {
@@ -255,6 +376,15 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
             const message =
               saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
             console.error(`[AI] Failed to persist optimization: ${message}`);
+            await trackAiHandledError({
+              ...trackedRequestContext,
+              error: saveError,
+              metadata: {
+                phase: "save-optimization-finally",
+                reason: "AI_OPTIMIZATION_PERSISTENCE_ERROR",
+                optimizationStatus,
+              },
+            });
           }
         }
       })();

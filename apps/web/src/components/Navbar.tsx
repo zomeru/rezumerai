@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, Loader2, LogOut, Settings, Sparkles } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings } from "@/hooks/useAccount";
@@ -47,6 +47,14 @@ function Avatar({ name, imageUrl }: AvatarProps): React.JSX.Element {
   );
 }
 
+function normalizePath(path: string): string {
+  if (path !== "/" && path.endsWith("/")) {
+    return path.slice(0, -1);
+  }
+
+  return path;
+}
+
 /**
  * Main navigation bar component for authenticated workspace routes.
  * Displays logo and user account controls with profile dropdown actions.
@@ -55,6 +63,7 @@ export default function Navbar(): React.JSX.Element {
   const { data: session } = useSession();
   const { data: accountSettings, isLoading } = useAccountSettings();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
@@ -65,6 +74,7 @@ export default function Navbar(): React.JSX.Element {
 
   const displayEmail = accountSettings?.user.email || session?.user.email || "";
   const avatarUrl = accountSettings?.user.image ?? session?.user.image;
+  const isAdmin = accountSettings?.user.role === "ADMIN";
 
   async function onLogout(): Promise<void> {
     try {
@@ -73,6 +83,19 @@ export default function Navbar(): React.JSX.Element {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  }
+
+  function onNavigateFromDropdown(event: React.MouseEvent<HTMLAnchorElement>, targetHref: string): void {
+    const currentPath = normalizePath(pathname ?? "");
+    const nextPath = normalizePath(targetHref);
+
+    if (currentPath === nextPath) {
+      event.preventDefault();
+      setIsOpen(false);
+      return;
+    }
+
+    setIsOpen(false);
   }
 
   return (
@@ -126,13 +149,33 @@ export default function Navbar(): React.JSX.Element {
               </div>
 
               <Link
+                href={ROUTES.WORKSPACE}
+                onClick={(event) => onNavigateFromDropdown(event, ROUTES.WORKSPACE)}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-slate-100"
+              >
+                <LayoutDashboard className="size-4" />
+                Workspace
+              </Link>
+
+              <Link
                 href={ROUTES.SETTINGS}
-                onClick={() => setIsOpen(false)}
+                onClick={(event) => onNavigateFromDropdown(event, ROUTES.SETTINGS)}
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-slate-100"
               >
                 <Settings className="size-4" />
                 Settings
               </Link>
+
+              {isAdmin && (
+                <Link
+                  href={ROUTES.ADMIN}
+                  onClick={(event) => onNavigateFromDropdown(event, ROUTES.ADMIN)}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-slate-100"
+                >
+                  <ShieldCheck className="size-4" />
+                  Admin page
+                </Link>
+              )}
 
               <button
                 type="button"

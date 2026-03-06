@@ -47,6 +47,10 @@ const AI_CONFIG_SEED = {
     "You are a professional text editor. Your task is to optimize the given text by improving clarity, fixing grammar, correcting spelling, and enhancing readability. Return only the optimized text with no explanations, preamble, or commentary.",
 } as const;
 
+const GLOBAL_CONFIG_SEED = {
+  ERROR_LOG_RETENTION_DAYS: 90,
+} as const;
+
 async function seedAiProvidersAndModels(): Promise<void> {
   console.log("🤖 Seeding AI providers and models...");
 
@@ -91,6 +95,15 @@ async function seedSystemConfigurations(): Promise<void> {
     create: {
       name: "AI_CONFIG",
       value: AI_CONFIG_SEED as Prisma.InputJsonValue,
+    },
+  });
+
+  await prisma.systemConfiguration.upsert({
+    where: { name: "GLOBAL_CONFIG" },
+    update: { value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue },
+    create: {
+      name: "GLOBAL_CONFIG",
+      value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
     },
   });
 

@@ -9,6 +9,8 @@ model User {
   createdAt              DateTime
   updatedAt              DateTime
   accounts               Account[]
+  errorLogs              ErrorLog[]               @relation("ErrorLogUser")
+  readErrorLogs          ErrorLog[]               @relation("ErrorLogReadByUser")
   resumes                Resume[]
   sessions               Session[]
   selectedAiModel        AiModel?                @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id], onDelete: SetNull)

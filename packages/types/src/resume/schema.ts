@@ -35,8 +35,29 @@ export const PersonalInfoItemSchema = z
       .refine((val) => linkedinRegex.test(val), {
         message: "Please enter a valid LinkedIn URL",
       }),
-    website: z.url("Please enter a valid website URL"),
+    website: z.string().optional(),
     image: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.website) return;
+
+    function addIssue() {
+      ctx.addIssue({
+        code: "custom",
+        message: "Please enter a valid URL for the website",
+        path: ["website"],
+      });
+    }
+
+    try {
+      const url = new URL(data.website);
+
+      if (!["http:", "https:"].includes(url.protocol)) {
+        addIssue();
+      }
+    } catch {
+      addIssue();
+    }
   })
   .strict();
 

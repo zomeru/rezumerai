@@ -8,6 +8,10 @@ const PREVIEW = "/preview";
 const BUILDER = `${WORKSPACE}/builder`;
 const SETTINGS = `${WORKSPACE}/settings`;
 
+// Admin
+const ADMIN = "/admin";
+const ADMIN_ERROR = `${ADMIN}/error`;
+
 // Test page
 const TESTSITE = "/testsite";
 
@@ -39,6 +43,8 @@ export const ROUTES = {
   PREVIEW,
   BUILDER,
   SETTINGS,
+  ADMIN,
+  ADMIN_ERROR,
   TESTSITE,
 } as const;
 

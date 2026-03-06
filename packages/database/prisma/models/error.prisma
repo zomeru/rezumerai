@@ -1,0 +1,34 @@
+model ErrorLog {
+  id             String              @id @default(cuid())
+  errorName      String
+  message        String              @db.Text
+  stackTraceJson String              @db.Text
+  endpoint       String
+  method         String
+  functionName   String?
+  queryParams    Json?
+  requestBody    Json?
+  headers        Json?
+  userId         String?
+  environment    ErrorLogEnvironment
+  createdAt      DateTime            @default(now())
+  isRead         Boolean             @default(false)
+  readAt         DateTime?
+  readByUserId   String?
+  user           User?               @relation("ErrorLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  readByUser     User?               @relation("ErrorLogReadByUser", fields: [readByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([isRead, createdAt])
+  @@index([userId])
+  @@index([readByUserId])
+  @@index([environment, createdAt])
+  @@map("error_log")
+}
+
+enum ErrorLogEnvironment {
+  development
+  production
+
+  @@map("error_log_environment")
+}
