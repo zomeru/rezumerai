@@ -1,11 +1,3 @@
-enum AuditLogCategory {
-  USER_ACTION
-  SYSTEM_ACTIVITY
-  DATABASE_CHANGE
-
-  @@map("audit_log_category")
-}
-
 model AuditLog {
   id              String           @id @default(cuid())
   category        AuditLogCategory
@@ -21,7 +13,7 @@ model AuditLog {
   beforeValues    Json?
   afterValues     Json?
   createdAt       DateTime         @default(now())
-  user            User?            @relation("AuditLogActor", fields: [userId], references: [id], onDelete: SetNull)
+  user            User?            @relation("AuditLogActor", fields: [userId], references: [id])
 
   @@index([category, createdAt])
   @@index([userId, createdAt])
@@ -29,13 +21,6 @@ model AuditLog {
   @@index([eventType, createdAt])
   @@index([endpoint, createdAt])
   @@map("audit_log")
-}
-
-enum AnalyticsEventSource {
-  API_REQUEST
-  BACKGROUND_JOB
-
-  @@map("analytics_event_source")
 }
 
 model AnalyticsEvent {
@@ -52,7 +37,7 @@ model AnalyticsEvent {
   errorName  String?
   metadata   Json?
   createdAt  DateTime             @default(now())
-  user       User?                @relation("AnalyticsEventUser", fields: [userId], references: [id], onDelete: SetNull)
+  user       User?                @relation("AnalyticsEventUser", fields: [userId], references: [id])
 
   @@index([source, createdAt])
   @@index([endpoint, createdAt])
@@ -61,4 +46,19 @@ model AnalyticsEvent {
   @@index([isAdmin, createdAt])
   @@index([eventType, createdAt])
   @@map("analytics_event")
+}
+
+enum AuditLogCategory {
+  USER_ACTION
+  SYSTEM_ACTIVITY
+  DATABASE_CHANGE
+
+  @@map("audit_log_category")
+}
+
+enum AnalyticsEventSource {
+  API_REQUEST
+  BACKGROUND_JOB
+
+  @@map("analytics_event_source")
 }

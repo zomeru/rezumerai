@@ -1,9 +1,9 @@
 model AiProvider {
   id        String    @id @default(cuid())
   name      String    @unique
-  models    AiModel[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  models    AiModel[]
 
   @@map("ai_provider")
 }
@@ -26,12 +26,12 @@ model AiModel {
 }
 
 model SystemConfiguration {
-  id        String   @id @default(cuid())
-  name      String   @unique
+  id          String   @id @default(cuid())
+  name        String   @unique
+  value       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   description String?
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("system_configuration")
 }
@@ -40,8 +40,8 @@ model AiOptimization {
   id               String               @id @default(cuid())
   userId           String
   resumeId         String?
-  inputText        String               @db.Text
-  optimizedText    String               @db.Text
+  inputText        String
+  optimizedText    String
   provider         String               @default("openrouter")
   model            String
   promptVersion    String               @default("optimize-v1")
@@ -54,7 +54,7 @@ model AiOptimization {
   completionTokens Int?
   totalTokens      Int?
   reasoningTokens  Int?
-  errorMessage     String?              @db.Text
+  errorMessage     String?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 

@@ -69,7 +69,8 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
   .use(prismaPlugin)
   .use(authPlugin)
   .use(AdminModel)
-  .derive({ as: "scoped" }, async ({ db, user, set }) => {
+  // Keep the admin policy local to the admin module so it cannot affect sibling routes.
+  .derive(async ({ db, user, set }) => {
     const userId = typeof user?.id === "string" ? user.id : null;
 
     if (!userId) {
@@ -92,7 +93,7 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
       __forbidden: false as const,
     };
   })
-  .onBeforeHandle({ as: "scoped" }, ({ __forbidden, status }) => {
+  .onBeforeHandle(({ __forbidden, status }) => {
     if (__forbidden) {
       return status(403, ADMIN_FORBIDDEN_MESSAGE);
     }

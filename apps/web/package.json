@@ -5,9 +5,9 @@
   "scripts": {
     "predev": "bun scripts/download-pdf-worker.ts",
     "prebuild": "bun scripts/download-pdf-worker.ts",
-    "dev": "bun run with-env next dev",
-    "build": "bun run with-env next build",
-    "start": "next start",
+    "dev": "bun run with-env bun --bun next dev",
+    "build": "bun run with-env bun --bun next build",
+    "start": "bun run with-env bun --bun next start",
     "check:types": "tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",

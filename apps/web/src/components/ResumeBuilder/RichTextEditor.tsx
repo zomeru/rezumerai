@@ -87,7 +87,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[120px] p-3",
+        class: "rich-text-editor__content min-h-[120px] p-3 focus:outline-none",
       },
     },
   });

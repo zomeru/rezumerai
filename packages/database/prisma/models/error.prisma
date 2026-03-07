@@ -1,8 +1,8 @@
 model ErrorLog {
   id             String              @id @default(cuid())
   errorName      String
-  message        String              @db.Text
-  stackTraceJson String              @db.Text
+  message        String
+  stackTraceJson String
   endpoint       String
   method         String
   functionName   String?
@@ -15,8 +15,8 @@ model ErrorLog {
   isRead         Boolean             @default(false)
   readAt         DateTime?
   readByUserId   String?
-  user           User?               @relation("ErrorLogUser", fields: [userId], references: [id], onDelete: SetNull)
-  readByUser     User?               @relation("ErrorLogReadByUser", fields: [readByUserId], references: [id], onDelete: SetNull)
+  readByUser     User?               @relation("ErrorLogReadByUser", fields: [readByUserId], references: [id])
+  user           User?               @relation("ErrorLogUser", fields: [userId], references: [id])
 
   @@index([createdAt])
   @@index([isRead, createdAt])

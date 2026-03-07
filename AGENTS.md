@@ -229,7 +229,17 @@ bun run db:generate
 bun run db:migrate:dev
 ```
 
-## 10. Agent Do/Do Not
+## 10. Test Accounts for AI Browser Testing (Playwright MCP, etc...)
+USER ROLE:
+Email: `test@test.com`
+Password: `Test1234`
+
+ADMIN ROLE:
+Email: `testadmin@test.com`
+Password: `Test1234`
+
+
+## 11. Agent Do/Do Not
 
 ## Do
 
