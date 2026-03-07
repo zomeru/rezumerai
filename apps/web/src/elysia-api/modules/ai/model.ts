@@ -83,12 +83,15 @@ export const AiModel = new Elysia().model({
   "ai.AssistantChatInput": t.Object({
     messages: t.Array(AssistantMessage, { minItems: 1, maxItems: 12 }),
     currentPath: t.Optional(t.String({ maxLength: 200 })),
+    conversationId: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
   }),
   "ai.AssistantChatResponse": t.Object({
     scope: t.Union([t.Literal("PUBLIC"), t.Literal("USER"), t.Literal("ADMIN")]),
     reply: t.String(),
     blocks: t.Array(AssistantReplyBlock, { maxItems: 40 }),
     toolNames: t.Array(t.String()),
+    usedConversationMemory: t.Boolean(),
+    conversationId: t.Nullable(t.String({ minLength: 1, maxLength: 100 })),
   }),
   "ai.ResumeSectionTarget": ResumeSectionTarget,
   "ai.CopilotOptimizeInput": t.Object({

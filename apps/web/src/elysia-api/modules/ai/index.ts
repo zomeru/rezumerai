@@ -5,6 +5,12 @@ import { createAuditLog } from "../../observability/audit";
 import { authPlugin, resolveSessionUser } from "../../plugins/auth";
 import { trackHandledError } from "../../plugins/error";
 import { prismaPlugin } from "../../plugins/prisma";
+import {
+  AI_ASSISTANT_SESSION_COOKIE_MAX_AGE_SECONDS,
+  AI_ASSISTANT_SESSION_COOKIE_NAME,
+  readCookieValue,
+  serializeCookie,
+} from "./assistant-chat";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import { AiModel } from "./model";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "./service";
@@ -54,6 +60,27 @@ function resolveUserRole(value: unknown): "ADMIN" | "USER" | null {
   return value === "ADMIN" || value === "USER" ? value : null;
 }
 
+function resolveAssistantSession(request: Request): { sessionId: string; setCookie: string | null } {
+  const cookieValue = readCookieValue(request.headers.get("cookie"), AI_ASSISTANT_SESSION_COOKIE_NAME);
+
+  if (cookieValue) {
+    return {
+      sessionId: cookieValue,
+      setCookie: null,
+    };
+  }
+
+  const sessionId = crypto.randomUUID();
+
+  return {
+    sessionId,
+    setCookie: serializeCookie(AI_ASSISTANT_SESSION_COOKIE_NAME, sessionId, {
+      maxAge: AI_ASSISTANT_SESSION_COOKIE_MAX_AGE_SECONDS,
+      secure: process.env.NODE_ENV === "production",
+    }),
+  };
+}
+
 async function auditAdminAssistantUsage(options: {
   userId: string;
   reply: string;
@@ -81,7 +108,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(AiModel)
   .post(
     "/assistant/chat",
-    async ({ body, db, status, request }) => {
+    async ({ body, db, status, request, set }) => {
       const parsedInput = AssistantChatInputSchema.safeParse(body);
       if (!parsedInput.success) {
         return status(422, {
@@ -94,16 +121,24 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
             },
           ],
           toolNames: [],
+          usedConversationMemory: false,
+          conversationId: null,
         });
       }
 
       const sessionUser = await resolveSessionUser();
       const role = resolveUserRole((sessionUser as { role?: unknown } | null)?.role);
+      const assistantSession = resolveAssistantSession(request);
+
+      if (assistantSession.setCookie) {
+        set.headers["set-cookie"] = assistantSession.setCookie;
+      }
 
       try {
         const result = await AiService.runAssistantChat(db, parsedInput.data, {
           userId: sessionUser?.id ?? null,
           role,
+          sessionId: assistantSession.sessionId,
         });
 
         if (role === "ADMIN" && sessionUser?.id) {
@@ -138,6 +173,8 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
             },
           ],
           toolNames: [],
+          usedConversationMemory: false,
+          conversationId: null,
         });
       }
     },

@@ -13,6 +13,7 @@ import {
 } from "./utils";
 
 type UserRole = "ADMIN" | "USER";
+type ToolEntityRecord = Record<string, unknown>;
 
 interface AssistantToolOptions {
   db: PrismaClient;
@@ -74,6 +75,40 @@ async function getOwnedResume(db: PrismaClient, userId: string, resumeId: string
 
 function clampLimit(limit: number | undefined, fallback: number): number {
   return Math.min(10, Math.max(1, limit ?? fallback));
+}
+
+function createToolCollectionResult<T extends ToolEntityRecord>(
+  entity: string,
+  items: T[],
+  summary: string,
+  meta?: Record<string, unknown>,
+) {
+  return {
+    type: "collection" as const,
+    entity,
+    summary,
+    count: items.length,
+    items,
+    meta: meta ?? null,
+  };
+}
+
+function createToolDetailResult<T extends ToolEntityRecord>(entity: string, item: T, summary: string) {
+  return {
+    type: "detail" as const,
+    entity,
+    summary,
+    item,
+  };
+}
+
+function createToolMetricResult<T extends ToolEntityRecord>(entity: string, data: T, summary: string) {
+  return {
+    type: "metric" as const,
+    entity,
+    summary,
+    data,
+  };
 }
 
 export function createCopilotTools(options: CopilotToolOptions) {
@@ -149,13 +184,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
       inputSchema: z.object({
         topic: PublicContentTopicSchema,
       }),
-      execute: async ({ topic }) => getPublicAppContent(topic, db),
+      execute: async ({ topic }) =>
+        createToolDetailResult("public_content", await getPublicAppContent(topic, db), `Public content for ${topic}.`),
     }),
     tool({
       name: "searchPublicFaq",
       description: "Search public FAQ.",
       inputSchema: searchSchema,
-      execute: async ({ query }) => searchPublicFaq(query, db),
+      execute: async ({ query }) =>
+        createToolCollectionResult("faq_entry", await searchPublicFaq(query, db), `FAQ matches for "${query}".`, {
+          query,
+        }),
     }),
   ] as const;
 
@@ -176,12 +215,16 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: clampLimit(limit, 5),
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          title: row.title || "Untitled resume",
-          updatedAt: row.updatedAt.toISOString(),
-          visibility: row.public ? "public" : "private",
-        }));
+        return createToolCollectionResult(
+          "resume",
+          rows.map((row) => ({
+            id: row.id,
+            title: row.title || "Untitled resume",
+            updatedAt: row.updatedAt.toISOString(),
+            visibility: row.public ? "public" : "private",
+          })),
+          `Recent resumes for the current user (up to ${clampLimit(limit, 5)}).`,
+        );
       },
     }),
     tool({
@@ -192,12 +235,16 @@ export function createAssistantTools(options: AssistantToolOptions) {
         const resume = await getOwnedResume(db, userId, resumeId);
         const snapshot = buildResumeSnapshot(resume);
 
-        return {
-          id: resume.id,
-          title: resume.title || "Untitled resume",
-          updatedAt: resume.updatedAt.toISOString(),
-          ...snapshot,
-        };
+        return createToolDetailResult(
+          "resume",
+          {
+            id: resume.id,
+            title: resume.title || "Untitled resume",
+            updatedAt: resume.updatedAt.toISOString(),
+            ...snapshot,
+          },
+          `Resume details for ${resume.title || "Untitled resume"}.`,
+        );
       },
     }),
     tool({
@@ -212,24 +259,44 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: clampLimit(limit, 5),
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          title: row.title || "Untitled draft",
-          updatedAt: row.updatedAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "draft",
+          rows.map((row) => ({
+            id: row.id,
+            title: row.title || "Untitled draft",
+            updatedAt: row.updatedAt.toISOString(),
+          })),
+          `Recent private drafts for the current user (up to ${clampLimit(limit, 5)}).`,
+        );
       },
     }),
     tool({
       name: "getMyOptimizationCredits",
       description: "Read my AI credits.",
       inputSchema: z.object({}),
-      execute: async () => getOptimizationCredits(),
+      execute: async () =>
+        createToolMetricResult(
+          "optimization_credits",
+          (await getOptimizationCredits()) ?? {
+            remainingCredits: null,
+            dailyLimit: null,
+          },
+          "Current AI optimization credit balance.",
+        ),
     }),
     tool({
       name: "getMyCurrentModelSettings",
       description: "Read my model settings.",
       inputSchema: z.object({}),
-      execute: async () => getCurrentModelSettings(),
+      execute: async () =>
+        createToolMetricResult(
+          "ai_model_settings",
+          (await getCurrentModelSettings()) ?? {
+            selectedModelId: null,
+            models: [],
+          },
+          "Current selected AI model and available model IDs for the user.",
+        ),
     }),
     tool({
       name: "searchMyResumes",
@@ -255,12 +322,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 10,
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          title: row.title || "Untitled resume",
-          updatedAt: row.updatedAt.toISOString(),
-          summary: compactText(row.professionalSummary ?? "", 160),
-        }));
+        return createToolCollectionResult(
+          "resume",
+          rows.map((row) => ({
+            id: row.id,
+            title: row.title || "Untitled resume",
+            updatedAt: row.updatedAt.toISOString(),
+            summary: compactText(row.professionalSummary ?? "", 160),
+          })),
+          `Resume search results for "${query}".`,
+          { query },
+        );
       },
     }),
   ] as const;
@@ -287,13 +359,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: clampLimit(limit, 5),
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          name: row.name,
-          email: row.email,
-          role: row.role,
-          createdAt: row.createdAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "user",
+          rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            createdAt: row.createdAt.toISOString(),
+          })),
+          `Recent users (up to ${clampLimit(limit, 5)}).`,
+        );
       },
     }),
     tool({
@@ -319,13 +395,18 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 10,
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          name: row.name,
-          email: row.email,
-          role: row.role,
-          createdAt: row.createdAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "user",
+          rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            createdAt: row.createdAt.toISOString(),
+          })),
+          `User search results for "${query}".`,
+          { query },
+        );
       },
     }),
     tool({
@@ -355,16 +436,20 @@ export function createAssistantTools(options: AssistantToolOptions) {
           throw new Error("User not found.");
         }
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          emailVerified: user.emailVerified,
-          resumeCount: user._count.resumes,
-          credits: user.aiTextOptimizerCredits?.credits ?? null,
-          createdAt: user.createdAt.toISOString(),
-        };
+        return createToolDetailResult(
+          "user",
+          {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified,
+            resumeCount: user._count.resumes,
+            credits: user.aiTextOptimizerCredits?.credits ?? null,
+            createdAt: user.createdAt.toISOString(),
+          },
+          `Account summary for ${user.email}.`,
+        );
       },
     }),
     tool({
@@ -382,12 +467,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: clampLimit(limit, 5),
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          title: row.title || "Untitled resume",
-          updatedAt: row.updatedAt.toISOString(),
-          visibility: row.public ? "public" : "private",
-        }));
+        return createToolCollectionResult(
+          "resume",
+          rows.map((row) => ({
+            id: row.id,
+            title: row.title || "Untitled resume",
+            updatedAt: row.updatedAt.toISOString(),
+            visibility: row.public ? "public" : "private",
+          })),
+          `Resumes for user ${targetUserId}.`,
+          { userId: targetUserId },
+        );
       },
     }),
     tool({
@@ -412,12 +502,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 10,
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          title: row.title || "Untitled resume",
-          ownerEmail: row.user.email,
-          updatedAt: row.updatedAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "resume",
+          rows.map((row) => ({
+            id: row.id,
+            title: row.title || "Untitled resume",
+            ownerEmail: row.user.email,
+            updatedAt: row.updatedAt.toISOString(),
+          })),
+          `Global resume search results for "${query}".`,
+          { query },
+        );
       },
     }),
     tool({
@@ -431,10 +526,14 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 20,
         });
 
-        return rows.map((row) => ({
-          name: row.name,
-          updatedAt: row.updatedAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "system_configuration",
+          rows.map((row) => ({
+            name: row.name,
+            updatedAt: row.updatedAt.toISOString(),
+          })),
+          "System configuration entries.",
+        );
       },
     }),
     tool({
@@ -457,14 +556,18 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 10,
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          eventType: row.eventType,
-          action: row.action,
-          resourceType: row.resourceType,
-          actorEmail: row.user?.email ?? null,
-          createdAt: row.createdAt.toISOString(),
-        }));
+        return createToolCollectionResult(
+          "audit_log",
+          rows.map((row) => ({
+            id: row.id,
+            eventType: row.eventType,
+            action: row.action,
+            resourceType: row.resourceType,
+            actorEmail: row.user?.email ?? null,
+            createdAt: row.createdAt.toISOString(),
+          })),
+          "Recent audit log entries.",
+        );
       },
     }),
     tool({
@@ -485,12 +588,16 @@ export function createAssistantTools(options: AssistantToolOptions) {
           }),
         ]);
 
-        return {
-          timeframeDays: 7,
-          requestCount,
-          errorCount,
-          activeUsers: activeUsers.length,
-        };
+        return createToolMetricResult(
+          "analytics_summary",
+          {
+            timeframeDays: 7,
+            requestCount,
+            errorCount,
+            activeUsers: activeUsers.length,
+          },
+          "High-level analytics summary for the last 7 days.",
+        );
       },
     }),
     tool({
@@ -526,12 +633,17 @@ export function createAssistantTools(options: AssistantToolOptions) {
           take: 10,
         });
 
-        return rows.map((row) => ({
-          id: row.id,
-          email: row.email,
-          role: row.role,
-          credits: row.aiTextOptimizerCredits?.credits ?? null,
-        }));
+        return createToolCollectionResult(
+          "user_credit_balance",
+          rows.map((row) => ({
+            id: row.id,
+            email: row.email,
+            role: row.role,
+            credits: row.aiTextOptimizerCredits?.credits ?? null,
+          })),
+          `Users with credits at or below ${threshold}.`,
+          { threshold },
+        );
       },
     }),
   ] as const;

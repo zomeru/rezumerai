@@ -14,6 +14,7 @@ model User {
   selectedAiModelId      String?
   accounts               Account[]
   aiTextOptimizerCredits AiTextOptimizerCredits?
+  assistantConversations AiAssistantConversation[]
   analyticsEvents        AnalyticsEvent[]        @relation("AnalyticsEventUser")
   auditLogs              AuditLog[]              @relation("AuditLogActor")
   readErrorLogs          ErrorLog[]              @relation("ErrorLogReadByUser")

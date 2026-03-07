@@ -3,7 +3,7 @@
 import type { AssistantChatMessage, AssistantReplyBlock } from "@rezumerai/types";
 import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useAssistantChat } from "@/hooks/useAi";
@@ -21,6 +21,26 @@ const INITIAL_MESSAGES: WidgetMessage[] = [
     content: "Ask about Rezumerai, your resumes, or admin data based on your access.",
   },
 ];
+
+const DEFAULT_PANEL_SIZE = {
+  width: 384,
+  height: 512,
+} as const;
+
+const MIN_PANEL_SIZE = {
+  width: 320,
+  height: 448,
+} as const;
+
+const MAX_PANEL_WIDTH = 640;
+type PanelSize = {
+  width: number;
+  height: number;
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 
 function normalizeAssistantContent(content: string): string {
   return content
@@ -98,8 +118,29 @@ function parseMessageBlocks(content: string): AssistantReplyBlock[] {
   return blocks;
 }
 
-function renderInlineText(content: string): React.ReactNode {
-  const parts = content.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+function normalizeInlineContent(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (typeof content === "number" || typeof content === "boolean") {
+    return String(content);
+  }
+
+  if (content == null) {
+    return "";
+  }
+
+  try {
+    return JSON.stringify(content);
+  } catch {
+    return String(content);
+  }
+}
+
+function renderInlineText(content: unknown): React.ReactNode {
+  const normalizedContent = normalizeInlineContent(content);
+  const parts = normalizedContent.split(/(\*\*.*?\*\*)/g).filter(Boolean);
 
   return parts.map((part) => {
     if (part.startsWith("**") && part.endsWith("**")) {
@@ -124,14 +165,15 @@ function AssistantMessageContent({
   const messageBlocks = blocks && blocks.length > 0 ? blocks : parseMessageBlocks(content);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 break-words [overflow-wrap:anywhere]">
       {messageBlocks.map((block) => {
         if (block.type === "ordered-list") {
-          const blockKey = `ordered-${block.items.join("|")}`;
+          const normalizedItems = block.items.map((item) => normalizeInlineContent(item));
+          const blockKey = `ordered-${normalizedItems.join("|")}`;
 
           return (
             <ol key={blockKey} className="list-decimal space-y-1 pl-5">
-              {block.items.map((item) => (
+              {normalizedItems.map((item) => (
                 <li key={`ordered-item-${item}`}>{renderInlineText(item)}</li>
               ))}
             </ol>
@@ -139,20 +181,23 @@ function AssistantMessageContent({
         }
 
         if (block.type === "unordered-list") {
-          const blockKey = `unordered-${block.items.join("|")}`;
+          const normalizedItems = block.items.map((item) => normalizeInlineContent(item));
+          const blockKey = `unordered-${normalizedItems.join("|")}`;
 
           return (
             <ul key={blockKey} className="list-disc space-y-1 pl-5">
-              {block.items.map((item) => (
+              {normalizedItems.map((item) => (
                 <li key={`unordered-item-${item}`}>{renderInlineText(item)}</li>
               ))}
             </ul>
           );
         }
 
+        const paragraphContent = normalizeInlineContent(block.content);
+
         return (
-          <p key={`paragraph-${block.content}`} className="whitespace-pre-wrap">
-            {renderInlineText(block.content)}
+          <p key={`paragraph-${paragraphContent}`} className="whitespace-pre-wrap">
+            {renderInlineText(paragraphContent)}
           </p>
         );
       })}
@@ -173,10 +218,85 @@ export default function AiAssistantWidget(): React.JSX.Element {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<WidgetMessage[]>(INITIAL_MESSAGES);
   const [responseScope, setResponseScope] = useState<"PUBLIC" | "USER" | "ADMIN" | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStateRef = useRef<{
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+  } | null>(null);
 
   const role = accountSettings.data?.user.role;
   const scope =
     responseScope ?? (role === "ADMIN" ? "ADMIN" : role === "USER" || session?.user?.id ? "USER" : "PUBLIC");
+
+  useEffect(() => {
+    if (!isResizing) {
+      return;
+    }
+
+    function stopResizing(): void {
+      resizeStateRef.current = null;
+      setIsResizing(false);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+
+    function onPointerMove(event: PointerEvent): void {
+      const resizeState = resizeStateRef.current;
+
+      if (!resizeState) {
+        return;
+      }
+
+      const maxWidth = Math.min(MAX_PANEL_WIDTH, window.innerWidth - 32);
+      const maxHeight = Math.min(Math.floor(window.innerHeight * 0.8), window.innerHeight - 32);
+      const nextWidth = clamp(
+        resizeState.startWidth - (event.clientX - resizeState.startX),
+        MIN_PANEL_SIZE.width,
+        Math.max(MIN_PANEL_SIZE.width, maxWidth),
+      );
+      const nextHeight = clamp(
+        resizeState.startHeight - (event.clientY - resizeState.startY),
+        MIN_PANEL_SIZE.height,
+        Math.max(MIN_PANEL_SIZE.height, maxHeight),
+      );
+
+      setPanelSize({
+        width: nextWidth,
+        height: nextHeight,
+      });
+    }
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    window.addEventListener("pointercancel", stopResizing);
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+      window.removeEventListener("pointercancel", stopResizing);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isResizing]);
+
+  function onResizeHandlePointerDown(event: React.PointerEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    resizeStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: panelSize.width,
+      startHeight: panelSize.height,
+    };
+    setIsResizing(true);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "nwse-resize";
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -200,14 +320,18 @@ export default function AiAssistantWidget(): React.JSX.Element {
 
     try {
       const response = await assistantChat.mutateAsync({
-        messages: nextMessages.slice(-8).map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
+        messages: [
+          {
+            role: "user",
+            content: nextInput,
+          },
+        ],
         currentPath: pathname ?? "/",
+        conversationId: conversationId ?? undefined,
       });
 
       setResponseScope(response.scope);
+      setConversationId(response.conversationId ?? null);
       setMessages((current) => [
         ...current,
         {
@@ -226,9 +350,24 @@ export default function AiAssistantWidget(): React.JSX.Element {
   return (
     <aside aria-label="AI assistant" className="fixed right-4 bottom-4 z-100 flex flex-col items-end gap-3">
       {isOpen && (
-        <div className="flex h-128 w-[24rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15">
+        <div
+          className="relative flex max-h-[80vh] min-h-[28rem] min-w-[20rem] max-w-[min(90vw,40rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
+          style={{
+            width: `${panelSize.width}px`,
+            height: `${panelSize.height}px`,
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Resize assistant"
+            onPointerDown={onResizeHandlePointerDown}
+            className="absolute top-2 left-2 z-10 flex h-5 w-5 cursor-nwse-resize items-start justify-start rounded-full border border-white/20 bg-white/10 text-white/70 transition hover:bg-white/15 hover:text-white"
+            style={{ touchAction: "none" }}
+          >
+            <span className="pointer-events-none block h-2.5 w-2.5 border-white/70 border-t border-l" />
+          </button>
           <div className="flex items-center justify-between border-slate-200 border-b bg-slate-950 px-4 py-3 text-white">
-            <div>
+            <div className="pl-6">
               <p className="font-semibold text-sm">Rezumerai Assistant</p>
               <p className="text-slate-300 text-xs">Scope: {scope}</p>
             </div>
@@ -241,7 +380,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                className={`min-w-0 max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] ${
                   message.role === "assistant"
                     ? "mr-auto bg-white text-slate-700 shadow-sm"
                     : "ml-auto bg-primary-600 text-white"

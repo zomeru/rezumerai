@@ -50,6 +50,7 @@ export const AssistantChatMessageSchema = z.object({
 export const AssistantChatInputSchema = z.object({
   messages: z.array(AssistantChatMessageSchema).min(1).max(12),
   currentPath: z.string().trim().max(200).optional(),
+  conversationId: z.string().trim().min(1).max(100).optional(),
 });
 
 export const AssistantReplyParagraphBlockSchema = z.object({
@@ -78,6 +79,8 @@ export const AssistantChatResponseSchema = z.object({
   reply: z.string().trim().min(1).max(4000),
   blocks: z.array(AssistantReplyBlockSchema).max(40),
   toolNames: z.array(z.string().trim().min(1).max(80)).max(20),
+  usedConversationMemory: z.boolean(),
+  conversationId: z.string().trim().min(1).max(100).nullable(),
 });
 
 export const ResumeSectionSchema = z.enum(["professionalSummary", "skills", "experience", "education", "project"]);

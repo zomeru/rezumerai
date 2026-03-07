@@ -5,6 +5,7 @@ import {
   AiConfigurationSchema,
   type AssistantChatInput,
   type AssistantChatMessage,
+  type AssistantChatResponse,
   type AssistantChatResponseSchema,
   type AssistantRoleScope,
   DEFAULT_AI_CONFIGURATION,
@@ -23,6 +24,12 @@ import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { serverEnv } from "@/env";
 import { getPublicAppContent, searchPublicFaq } from "@/lib/system-content";
+import {
+  buildAssistantSessionKey,
+  buildDeterministicConversationReply,
+  getLatestUserMessage,
+  isConversationMemoryIntent,
+} from "./assistant-chat";
 import {
   AI_CREDITS_EXHAUSTED_CODE,
   AI_MODEL_POLICY_RESTRICTED_CODE,
@@ -54,6 +61,16 @@ interface OpenRouterRuntime {
 }
 
 let openRouterRuntimePromise: Promise<OpenRouterRuntime> | null = null;
+const assistantConversationFallbackStore = new Map<
+  string,
+  {
+    conversationId: string;
+    sessionKey: string;
+    scope: AssistantRoleScope;
+    userId: string | null;
+    history: AssistantChatMessage[];
+  }
+>();
 
 async function getOpenRouterRuntime(): Promise<OpenRouterRuntime> {
   if (!openRouterRuntimePromise) {
@@ -185,6 +202,19 @@ interface CopilotRunResult<T> {
   response: T;
   usage: AiUsageMetrics;
   promptVersion: string;
+}
+
+interface AssistantConversationIdentity {
+  userId: string | null;
+  role: "ADMIN" | "USER" | null;
+  sessionId: string;
+}
+
+interface AssistantConversationState {
+  conversationId: string | null;
+  history: AssistantChatMessage[];
+  persistenceAvailable: boolean;
+  sessionKey: string;
 }
 
 export class AiCreditsExhaustedError extends Error {
@@ -412,29 +442,115 @@ export abstract class AiService {
   static async runAssistantChat(
     db: PrismaClient,
     input: AssistantChatInput,
-    identity: { userId: string | null; role: "ADMIN" | "USER" | null },
+    identity: AssistantConversationIdentity,
   ): Promise<z.infer<typeof AssistantChatResponseSchema>> {
     const scope = AiService.toAssistantScope(identity.role);
     const runtime = await AiService.resolveOptimizationContext(db, identity.userId, null);
-    const history = input.messages.slice(-runtime.config.ASSISTANT_HISTORY_LIMIT).map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
-    const messages = input.currentPath
-      ? [...history, { role: "user" as const, content: `Page: ${input.currentPath}` }]
-      : history;
-    const tools = createAssistantTools({
-      db,
+    const latestUserTurn = getLatestUserMessage(input.messages);
+
+    if (!latestUserTurn) {
+      throw new Error("Assistant chat requires a user message.");
+    }
+
+    const fallbackHistory = input.messages
+      .slice(0, -1)
+      .slice(-runtime.config.ASSISTANT_HISTORY_LIMIT)
+      .map((message) => ({
+        role: message.role,
+        content: message.content,
+      }));
+    const conversation = await AiService.getAssistantConversationState(db, {
+      sessionKey: buildAssistantSessionKey({
+        scope,
+        userId: identity.userId,
+        sessionId: identity.sessionId,
+      }),
+      requestedConversationId: input.conversationId ?? null,
       scope,
       userId: identity.userId,
-      role: identity.role,
-      getOptimizationCredits: async () => (identity.userId ? AiService.getDailyCredits(db, identity.userId) : null),
+      historyLimit: runtime.config.ASSISTANT_HISTORY_LIMIT,
+      fallbackHistory,
+    });
+
+    const history: AssistantChatMessage[] = [
+      ...conversation.history,
+      { role: "user" as const, content: latestUserTurn.content },
+    ].slice(-runtime.config.ASSISTANT_HISTORY_LIMIT);
+    const isConversationRequest = isConversationMemoryIntent(latestUserTurn.content);
+
+    const result = isConversationRequest
+      ? await AiService.answerConversationFromHistory({
+          scope,
+          modelId: runtime.model.modelId,
+          systemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
+          maxSteps: 1,
+          latestUserMessage: latestUserTurn.content,
+          currentPath: input.currentPath,
+          history,
+        })
+      : await AiService.answerAssistantDataRequest(db, {
+          scope,
+          role: identity.role,
+          userId: identity.userId,
+          modelId: runtime.model.modelId,
+          systemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
+          maxSteps: runtime.config.ASSISTANT_MAX_STEPS,
+          latestUserMessage: latestUserTurn.content,
+          currentPath: input.currentPath,
+          history,
+        });
+    const blocks = parseAssistantReplyBlocks(result.reply);
+
+    if (conversation.conversationId) {
+      await AiService.saveAssistantConversationExchange(db, {
+        conversationId: conversation.conversationId,
+        sessionKey: conversation.sessionKey,
+        scope,
+        userId: identity.userId,
+        userMessage: latestUserTurn.content,
+        assistantMessage: result.reply,
+        blocks,
+        toolNames: result.toolNames,
+        persistenceAvailable: conversation.persistenceAvailable,
+      });
+    }
+
+    return {
+      scope,
+      reply: result.reply,
+      blocks,
+      toolNames: result.toolNames,
+      usedConversationMemory: isConversationRequest || conversation.history.length > 0,
+      conversationId: conversation.conversationId,
+    };
+  }
+
+  private static async answerAssistantDataRequest(
+    db: PrismaClient,
+    options: {
+      scope: AssistantRoleScope;
+      role: "ADMIN" | "USER" | null;
+      userId: string | null;
+      modelId: string;
+      systemPrompt: string;
+      maxSteps: number;
+      latestUserMessage: string;
+      currentPath?: string;
+      history: AssistantChatMessage[];
+    },
+  ): Promise<{ reply: string; toolNames: string[] }> {
+    const tools = createAssistantTools({
+      db,
+      scope: options.scope,
+      userId: options.userId,
+      role: options.role,
+      getOptimizationCredits: async () => (options.userId ? AiService.getDailyCredits(db, options.userId) : null),
       getCurrentModelSettings: async () => {
-        if (!identity.userId) {
+        if (!options.userId) {
           return null;
         }
 
-        const settings = await AiService.getUserAiSettings(db, identity.userId);
+        const settings = await AiService.getUserAiSettings(db, options.userId);
         return {
           selectedModelId: settings.selectedModelId,
           models: settings.models.map((item) => item.modelId),
@@ -443,29 +559,256 @@ export abstract class AiService {
     });
 
     const result = await AiService.runTextModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.ASSISTANT_SYSTEM_PROMPT} ` +
-        `Scope=${scope}. Use tools when needed. Keep the reply short. ` +
-        "Format replies as: short intro line, blank line, optional `**Section:**` headers on their own lines, list items one per line, blank line, short closing line if needed.",
-      input: messages,
+      modelId: options.modelId,
+      instructions: AiService.buildAssistantInstructions({
+        scope: options.scope,
+        systemPrompt: options.systemPrompt,
+        currentPath: options.currentPath,
+        allowTools: true,
+      }),
+      input: options.history,
       tools,
-      maxSteps: runtime.config.ASSISTANT_MAX_STEPS,
+      maxSteps: options.maxSteps,
     });
 
-    const latestUserMessage = [...input.messages].reverse().find((message) => message.role === "user")?.content ?? "";
     const reply =
-      scope === "PUBLIC" && result.toolNames.length === 0
-        ? await AiService.buildPublicAssistantFallback(db, latestUserMessage)
+      options.scope === "PUBLIC" && result.toolNames.length === 0
+        ? await AiService.buildPublicAssistantFallback(db, options.latestUserMessage)
         : formatAssistantReply(result.text, 4000);
-    const blocks = parseAssistantReplyBlocks(reply);
 
     return {
-      scope,
       reply,
-      blocks,
       toolNames: result.toolNames,
     };
+  }
+
+  private static async answerConversationFromHistory(options: {
+    scope: AssistantRoleScope;
+    modelId: string;
+    systemPrompt: string;
+    maxSteps: number;
+    latestUserMessage: string;
+    currentPath?: string;
+    history: AssistantChatMessage[];
+  }): Promise<{ reply: string; toolNames: string[] }> {
+    const directReply = buildDeterministicConversationReply({
+      history: options.history,
+      latestUserMessage: options.latestUserMessage,
+    });
+
+    if (directReply) {
+      return {
+        reply: formatAssistantReply(directReply, 4000),
+        toolNames: [],
+      };
+    }
+
+    const result = await AiService.runTextModel({
+      modelId: options.modelId,
+      instructions:
+        `${AiService.buildAssistantInstructions({
+          scope: options.scope,
+          systemPrompt: options.systemPrompt,
+          currentPath: options.currentPath,
+          allowTools: false,
+        })} ` +
+        "Answer only from the conversation history already provided. If the answer is not in this chat, say so plainly.",
+      input: options.history,
+      tools: [],
+      maxSteps: options.maxSteps,
+    });
+
+    return {
+      reply: formatAssistantReply(result.text, 4000),
+      toolNames: result.toolNames,
+    };
+  }
+
+  private static buildAssistantInstructions(options: {
+    scope: AssistantRoleScope;
+    systemPrompt: string;
+    currentPath?: string;
+    allowTools: boolean;
+  }): string {
+    const pathInstruction = options.currentPath ? ` CurrentPage=${options.currentPath}.` : "";
+
+    return (
+      `${options.systemPrompt} ` +
+      `Scope=${options.scope}. ${options.allowTools ? "Use tools only when real application data is required." : "Do not call tools."}` +
+      pathInstruction +
+      " Keep the reply short. Tool results use a structured JSON envelope with `type`, `entity`, and `summary`; when listing records, prefer readable labels and omit raw IDs unless the user explicitly asks for them. Format replies as: short intro line, blank line, optional `**Section:**` headers on their own lines, list items one per line, blank line, short closing line if needed."
+    );
+  }
+
+  private static async getAssistantConversationState(
+    db: PrismaClient,
+    options: {
+      sessionKey: string;
+      requestedConversationId: string | null;
+      scope: AssistantRoleScope;
+      userId: string | null;
+      historyLimit: number;
+      fallbackHistory: AssistantChatMessage[];
+    },
+  ): Promise<AssistantConversationState> {
+    try {
+      const existingConversation = await db.aiAssistantConversation.findFirst({
+        where: options.requestedConversationId
+          ? {
+              id: options.requestedConversationId,
+              scope: options.scope,
+              ...(options.userId ? { userId: options.userId } : { sessionKey: options.sessionKey }),
+            }
+          : {
+              sessionKey: options.sessionKey,
+            },
+        select: {
+          id: true,
+          messages: {
+            select: {
+              role: true,
+              content: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: options.historyLimit,
+          },
+        },
+      });
+
+      if (existingConversation) {
+        return {
+          conversationId: existingConversation.id,
+          history: existingConversation.messages
+            .slice()
+            .reverse()
+            .map((message) => ({
+              role: message.role as AssistantChatMessage["role"],
+              content: message.content,
+            })),
+          persistenceAvailable: true,
+          sessionKey: options.sessionKey,
+        };
+      }
+
+      const conversation = await db.aiAssistantConversation.create({
+        data: {
+          sessionKey: options.sessionKey,
+          scope: options.scope,
+          userId: options.userId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return {
+        conversationId: conversation.id,
+        history: [],
+        persistenceAvailable: true,
+        sessionKey: options.sessionKey,
+      };
+    } catch {
+      const existingFallbackConversation = options.requestedConversationId
+        ? (assistantConversationFallbackStore.get(options.requestedConversationId) ?? null)
+        : ([...assistantConversationFallbackStore.values()].find(
+            (conversation) => conversation.sessionKey === options.sessionKey,
+          ) ?? null);
+
+      const canReuseFallbackConversation =
+        existingFallbackConversation &&
+        existingFallbackConversation.scope === options.scope &&
+        (options.userId
+          ? existingFallbackConversation.userId === options.userId
+          : existingFallbackConversation.sessionKey === options.sessionKey);
+
+      if (canReuseFallbackConversation && existingFallbackConversation) {
+        return {
+          conversationId: existingFallbackConversation.conversationId,
+          history: existingFallbackConversation.history,
+          persistenceAvailable: false,
+          sessionKey: existingFallbackConversation.sessionKey,
+        };
+      }
+
+      const conversationId = crypto.randomUUID();
+
+      assistantConversationFallbackStore.set(conversationId, {
+        conversationId,
+        sessionKey: options.sessionKey,
+        scope: options.scope,
+        userId: options.userId,
+        history: options.fallbackHistory,
+      });
+
+      return {
+        conversationId,
+        history: options.fallbackHistory,
+        persistenceAvailable: false,
+        sessionKey: options.sessionKey,
+      };
+    }
+  }
+
+  private static async saveAssistantConversationExchange(
+    db: PrismaClient,
+    options: {
+      conversationId: string;
+      sessionKey: string;
+      scope: AssistantRoleScope;
+      userId: string | null;
+      userMessage: string;
+      assistantMessage: string;
+      blocks: AssistantChatResponse["blocks"];
+      toolNames: string[];
+      persistenceAvailable: boolean;
+    },
+  ): Promise<void> {
+    if (!options.persistenceAvailable) {
+      const existingConversation = assistantConversationFallbackStore.get(options.conversationId);
+      const nextHistory = [
+        ...(existingConversation?.history ?? []),
+        { role: "user" as const, content: options.userMessage },
+        { role: "assistant" as const, content: options.assistantMessage },
+      ];
+
+      assistantConversationFallbackStore.set(options.conversationId, {
+        conversationId: options.conversationId,
+        sessionKey: options.sessionKey,
+        scope: existingConversation?.scope ?? options.scope,
+        userId: existingConversation?.userId ?? options.userId,
+        history: nextHistory,
+      });
+      return;
+    }
+
+    try {
+      await db.$transaction([
+        db.aiAssistantConversationMessage.createMany({
+          data: [
+            {
+              conversationId: options.conversationId,
+              role: "user",
+              content: options.userMessage,
+            },
+            {
+              conversationId: options.conversationId,
+              role: "assistant",
+              content: options.assistantMessage,
+              blocks: options.blocks as unknown as Prisma.InputJsonValue,
+              toolNames: options.toolNames,
+            },
+          ],
+        }),
+        db.aiAssistantConversation.update({
+          where: { id: options.conversationId },
+          data: {
+            lastUserMessageAt: new Date(),
+          },
+        }),
+      ]);
+    } catch {
+      return;
+    }
   }
 
   static async runCopilotOptimize(
