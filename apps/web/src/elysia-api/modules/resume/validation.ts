@@ -1,17 +1,14 @@
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { detectResumeQualityIssues } from "@/lib/resume-quality";
-import type { CustomResumeWithRelationsInputUpdate } from "./model";
+import type { ResumeUpdateInput } from "./types";
 
 export type ValidationError = {
   message: string;
 };
 
-export function validateResumeUpdate(
-  input: typeof CustomResumeWithRelationsInputUpdate.static,
-): ValidationError | null {
+export function validateResumeUpdate(input: ResumeUpdateInput): ValidationError | null {
   const { experience, personalInfo, project, education } = input;
 
-  // Validate Experience
   if (experience) {
     for (const exp of experience) {
       if (!exp.position || exp.position.trim() === "") {
@@ -29,7 +26,6 @@ export function validateResumeUpdate(
     }
   }
 
-  // Validate Personal Info
   if (personalInfo) {
     if (!personalInfo.fullName || personalInfo.fullName.trim() === "") {
       return { message: ERROR_MESSAGES.PERSONAL_INFO_FULL_NAME_REQUIRED };
@@ -51,7 +47,6 @@ export function validateResumeUpdate(
     }
   }
 
-  // Validate Projects
   if (project) {
     for (const proj of project) {
       if (!proj.name || proj.name.trim() === "") {
@@ -60,7 +55,6 @@ export function validateResumeUpdate(
     }
   }
 
-  // Validate Education
   if (education) {
     for (const edu of education) {
       if (!edu.institution || edu.institution.trim() === "") {

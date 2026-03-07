@@ -34,8 +34,6 @@ export const CustomResumeWithRelationsInputUpdate = t.Composite([
   CustomResumeRelationsInputUpdate,
 ]);
 
-export type asd = typeof CustomResumeWithRelationsInputUpdate.static;
-
 export const ResumeModel = new Elysia().model({
   responseList: t.Array(ResumeWithoutUser),
   responseById: ResumeWithoutUser,

@@ -3,26 +3,27 @@ import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { ResumeModel } from "./model";
 import { ResumeService } from "./service";
-import { validateResumeUpdate } from "./utils";
+import { validateResumeUpdate } from "./validation";
 
 const resumeNotFound = () => status(404, "Resume not found");
 
 /**
  * Resume module — CRUD routes for resumes.
- * Protected by authPlugin — requires a valid Better Auth session.
+ * Route handlers stay focused on transport concerns while the service/repository
+ * layers own orchestration and Prisma access.
  */
 export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(prismaPlugin)
   .use(authPlugin)
   .use(ResumeModel)
   .prefix("model", "resume.")
-  // ── GET /resumes ───────────────────────────────────────────────────────────
   .get(
     "/",
     async ({ db, user, query }) => {
       const data = await ResumeService.search(db, user.id, {
         search: query.search,
       });
+
       return status(200, data);
     },
     {
@@ -32,16 +33,15 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       },
     },
   )
-  // ── POST /resumes ──────────────────────────────────────────────────────────
   .post(
     "/",
     async ({ db, user, body }) => {
       const newResume = await ResumeService.create(db, user.id, body);
+
       return { success: true as const, data: newResume };
     },
     { body: "resume.InputCreate" },
   )
-  // ── GET /resumes/:id ───────────────────────────────────────────────────────
   .get(
     "/:id",
     async ({ db, user, params, status }) => {
@@ -61,17 +61,21 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       },
     },
   )
-  // ── PATCH /resumes/:id ─────────────────────────────────────────────────────
   .patch(
     "/:id",
     async ({ db, user, params, body, status }) => {
       const validationError = validateResumeUpdate(body);
+
       if (validationError) {
         return status(422, validationError.message);
       }
 
       const updatedResume = await ResumeService.update(db, user.id, params.id, body);
-      if (!updatedResume) return resumeNotFound();
+
+      if (!updatedResume) {
+        return resumeNotFound();
+      }
+
       return status(200, updatedResume);
     },
     {
@@ -84,12 +88,15 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
       },
     },
   )
-  // ── DELETE /resumes/:id ────────────────────────────────────────────────────
   .delete(
     "/:id",
     async ({ db, user, params }) => {
       const deleted = await ResumeService.delete(db, user.id, params.id);
-      if (!deleted) return resumeNotFound();
+
+      if (!deleted) {
+        return resumeNotFound();
+      }
+
       return status(200, deleted);
     },
     {

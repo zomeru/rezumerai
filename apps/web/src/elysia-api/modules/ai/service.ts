@@ -1,4 +1,3 @@
-import type { Tool } from "@openrouter/sdk";
 import type { Prisma, PrismaClient } from "@rezumerai/database";
 import {
   type AiConfiguration,
@@ -6,7 +5,6 @@ import {
   type AssistantChatInput,
   type AssistantChatMessage,
   type AssistantChatResponse,
-  type AssistantChatResponseSchema,
   type AssistantRoleScope,
   DEFAULT_AI_CONFIGURATION,
   type ResumeCopilotOptimizeInput,
@@ -22,7 +20,6 @@ import {
 } from "@rezumerai/types";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { serverEnv } from "@/env";
 import { getPublicAppContent, searchPublicFaq } from "@/lib/system-content";
 import {
   buildAssistantSessionKey,
@@ -30,16 +27,26 @@ import {
   getLatestUserMessage,
   isConversationMemoryIntent,
 } from "./assistant-chat";
-import {
-  AI_CREDITS_EXHAUSTED_CODE,
-  AI_MODEL_POLICY_RESTRICTED_CODE,
-  AI_MODEL_UNAVAILABLE_CODE,
-  aiConfigurationName,
-  asiaManilaUtcOffsetMs,
-  DEFAULT_AI_SETTINGS,
-  openRouterProviderName,
-} from "./constants";
+import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
+import { AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
+import { emptyAiUsageMetrics } from "./mapper";
+import { openRouterAiProvider } from "./providers/openrouter-provider";
+import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
+import { AiRepository } from "./repository";
 import { createAssistantTools } from "./tools";
+import type {
+  ActiveAiModel,
+  AiUsageMetrics,
+  AssistantConversationIdentity,
+  CopilotRunResult,
+  DailyCreditsStatus,
+  OptimizationContext,
+  SaveOptimizationInput,
+  StreamOptimizeTextOptions,
+  StructuredModelResult,
+  TextModelResult,
+  UserAiSettings,
+} from "./types";
 import {
   analyzeJobDescriptionText,
   buildDraftPatch,
@@ -49,41 +56,8 @@ import {
   getResumeSectionSource,
   matchResumeSnapshotToJob,
   parseAssistantReplyBlocks,
-  parseJsonResponse,
   toJsonText,
 } from "./utils";
-
-type OpenRouterModule = typeof import("@openrouter/sdk");
-
-interface OpenRouterRuntime {
-  client: InstanceType<OpenRouterModule["OpenRouter"]>;
-  stepCountIs: OpenRouterModule["stepCountIs"];
-}
-
-let openRouterRuntimePromise: Promise<OpenRouterRuntime> | null = null;
-const assistantConversationFallbackStore = new Map<
-  string,
-  {
-    conversationId: string;
-    sessionKey: string;
-    scope: AssistantRoleScope;
-    userId: string | null;
-    history: AssistantChatMessage[];
-  }
->();
-
-async function getOpenRouterRuntime(): Promise<OpenRouterRuntime> {
-  if (!openRouterRuntimePromise) {
-    openRouterRuntimePromise = import("@openrouter/sdk").then(({ OpenRouter, stepCountIs }) => ({
-      client: new OpenRouter({
-        apiKey: serverEnv?.OPENROUTER_API_KEY,
-      }),
-      stepCountIs,
-    }));
-  }
-
-  return openRouterRuntimePromise;
-}
 
 const optimizeModelSchema = z.object({
   title: z.string().trim().min(1).max(140),
@@ -133,179 +107,57 @@ const reviewModelSchema = z.object({
   nextSteps: z.array(z.string().trim().min(1).max(180)).max(6).default([]),
 });
 
-export interface AiUsageMetrics {
-  promptTokens: number | null;
-  completionTokens: number | null;
-  totalTokens: number | null;
-  reasoningTokens: number | null;
-}
+const defaultAiProvider: AiProvider = openRouterAiProvider;
 
-export interface StreamOptimizeTextOptions {
-  onUsage?: (usage: AiUsageMetrics) => void;
-}
+export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
+export type {
+  ActiveAiModel,
+  AiUsageMetrics,
+  AssistantConversationIdentity,
+  CopilotRunResult,
+  DailyCreditsStatus,
+  OptimizationContext,
+  SaveOptimizationInput,
+  StreamOptimizeTextOptions,
+  UserAiSettings,
+} from "./types";
 
-export interface SaveOptimizationInput {
-  userId: string;
-  provider: string;
-  model: string;
-  promptVersion: string;
-  resumeId?: string | null;
-  inputText: string;
-  optimizedText: string;
-  status: "success" | "failed" | "aborted";
-  durationMs: number;
-  chunkCount: number;
-  errorMessage?: string | null;
-  usage: AiUsageMetrics;
-}
-
-export interface ConsumeDailyCreditResult {
-  remainingCredits: number;
-}
-
-export interface DailyCreditsStatus {
-  remainingCredits: number;
-  dailyLimit: number;
-}
-
-export interface ActiveAiModel {
-  id: string;
-  name: string;
-  modelId: string;
-  providerName: string;
-  providerDisplayName: string;
-}
-
-export interface UserAiSettings {
-  models: ActiveAiModel[];
-  selectedModelId: string;
-}
-
-interface OptimizationContext {
-  model: ActiveAiModel;
-  config: AiConfiguration;
-}
-
-interface StructuredModelResult<T> {
-  data: T;
-  usage: AiUsageMetrics;
-  toolNames: string[];
-}
-
-interface TextModelResult {
-  text: string;
-  usage: AiUsageMetrics;
-  toolNames: string[];
-}
-
-interface CopilotRunResult<T> {
-  response: T;
-  usage: AiUsageMetrics;
-  promptVersion: string;
-}
-
-interface AssistantConversationIdentity {
-  userId: string | null;
-  role: "ADMIN" | "USER" | null;
-  sessionId: string;
-}
-
-interface AssistantConversationState {
-  conversationId: string | null;
-  history: AssistantChatMessage[];
-  persistenceAvailable: boolean;
-  sessionKey: string;
-}
-
-export class AiCreditsExhaustedError extends Error {
-  readonly code: string = AI_CREDITS_EXHAUSTED_CODE;
-
-  constructor() {
-    super(ERROR_MESSAGES.AI_CREDITS_EXHAUSTED);
-    this.name = "AiCreditsExhaustedError";
-  }
-}
-
-export class AiModelUnavailableError extends Error {
-  readonly code: string = AI_MODEL_UNAVAILABLE_CODE;
-
-  constructor(message = ERROR_MESSAGES.AI_MODEL_UNAVAILABLE) {
-    super(message);
-    this.name = "AiModelUnavailableError";
-  }
-}
-
-export class AiModelPolicyRestrictedError extends Error {
-  readonly code: string = AI_MODEL_POLICY_RESTRICTED_CODE;
-
-  constructor() {
-    super(ERROR_MESSAGES.AI_MODEL_POLICY_RESTRICTED);
-    this.name = "AiModelPolicyRestrictedError";
-  }
-}
-
-// biome-ignore lint/complexity/noStaticOnlyClass: Elysia module service keeps related runtime helpers together.
+// biome-ignore lint/complexity/noStaticOnlyClass: The AI service exposes a stable facade while delegating IO to repositories and providers.
 export abstract class AiService {
   static readonly DEFAULT_CONFIGURATION = DEFAULT_AI_SETTINGS;
 
+  private static provider: AiProvider = defaultAiProvider;
+
+  static configureProvider(provider: AiProvider): void {
+    AiService.provider = provider;
+  }
+
+  static resetProvider(): void {
+    AiService.provider = defaultAiProvider;
+  }
+
   static emptyUsageMetrics(): AiUsageMetrics {
-    return {
-      promptTokens: null,
-      completionTokens: null,
-      totalTokens: null,
-      reasoningTokens: null,
-    };
+    return emptyAiUsageMetrics();
   }
 
   static async listActiveModels(db: PrismaClient): Promise<ActiveAiModel[]> {
-    const models = await db.aiModel.findMany({
-      where: {
-        isActive: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        modelId: true,
-        provider: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
-    });
-
-    return models.map((model) => ({
-      id: model.id,
-      name: model.name,
-      modelId: model.modelId,
-      providerName: model.provider.name,
-      providerDisplayName: AiService.formatProviderName(model.provider.name),
-    }));
+    return AiRepository.listActiveModels(db);
   }
 
   static async getAiConfiguration(db: PrismaClient): Promise<AiConfiguration> {
-    const configuration = await db.systemConfiguration.findUnique({
-      where: { name: aiConfigurationName },
-      select: { value: true },
-    });
+    const configurationValue = await AiRepository.getAiConfigurationValue(db);
 
-    if (!configuration) {
+    if (!configurationValue) {
       return DEFAULT_AI_CONFIGURATION;
     }
 
-    return AiService.parseAiConfiguration(configuration.value);
+    return AiService.parseAiConfiguration(configurationValue);
   }
 
   static async getUserAiSettings(db: PrismaClient, userId: string): Promise<UserAiSettings> {
     const [models, user] = await Promise.all([
       AiService.listActiveModels(db),
-      db.user.findUnique({
-        where: { id: userId },
-        select: {
-          selectedAiModelId: true,
-        },
-      }),
+      AiRepository.getUserSelectedModelRecord(db, userId),
     ]);
 
     if (!user) {
@@ -329,12 +181,7 @@ export abstract class AiService {
       throw new AiModelUnavailableError();
     }
 
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        selectedAiModelId: selectedModel.id,
-      },
-    });
+    await AiRepository.updateUserSelectedModel(db, userId, selectedModel.id);
 
     return selectedModel.modelId;
   }
@@ -347,24 +194,15 @@ export abstract class AiService {
     const [models, config, user] = await Promise.all([
       AiService.listActiveModels(db),
       AiService.getAiConfiguration(db),
-      userId
-        ? db.user.findUnique({
-            where: { id: userId },
-            select: {
-              selectedAiModelId: true,
-            },
-          })
-        : Promise.resolve(null),
+      userId ? AiRepository.getUserSelectedModelRecord(db, userId) : Promise.resolve(null),
     ]);
 
     if (userId && !user) {
       throw new Error(ERROR_MESSAGES.AI_USER_NOT_FOUND);
     }
 
-    const model = AiService.resolveSelectedModel(models, user?.selectedAiModelId ?? null, requestedModelId ?? null);
-
     return {
-      model,
+      model: AiService.resolveSelectedModel(models, user?.selectedAiModelId ?? null, requestedModelId ?? null),
       config,
     };
   }
@@ -374,57 +212,13 @@ export abstract class AiService {
     userId: string,
     dailyLimit: number,
     now: Date = new Date(),
-  ): Promise<ConsumeDailyCreditResult> {
-    const todayBoundary = AiService.getAsiaManilaMidnightBoundary(now);
-
-    return db.$transaction(async (tx) => {
-      await AiService.ensureDailyCreditsWindow(tx, userId, todayBoundary, dailyLimit);
-
-      const consumeResult = await tx.aiTextOptimizerCredits.updateMany({
-        where: {
-          userId,
-          credits: {
-            gt: 0,
-          },
-        },
-        data: {
-          credits: {
-            decrement: 1,
-          },
-        },
-      });
-
-      if (consumeResult.count === 0) {
-        throw new AiCreditsExhaustedError();
-      }
-
-      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
-        where: { userId },
-        select: { credits: true },
-      });
-
-      return { remainingCredits: creditsRecord?.credits ?? 0 };
-    });
+  ): Promise<{ remainingCredits: number }> {
+    return AiRepository.consumeDailyCredit(db, userId, dailyLimit, now);
   }
 
   static async getDailyCredits(db: PrismaClient, userId: string, now: Date = new Date()): Promise<DailyCreditsStatus> {
     const config = await AiService.getAiConfiguration(db);
-    const dailyLimit = config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT;
-    const todayBoundary = AiService.getAsiaManilaMidnightBoundary(now);
-
-    return db.$transaction(async (tx) => {
-      await AiService.ensureDailyCreditsWindow(tx, userId, todayBoundary, dailyLimit);
-
-      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
-        where: { userId },
-        select: { credits: true },
-      });
-
-      return {
-        remainingCredits: creditsRecord?.credits ?? dailyLimit,
-        dailyLimit,
-      };
-    });
+    return AiRepository.getDailyCredits(db, userId, config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT, now);
   }
 
   static toAssistantScope(role: string | null | undefined): AssistantRoleScope {
@@ -443,7 +237,7 @@ export abstract class AiService {
     db: PrismaClient,
     input: AssistantChatInput,
     identity: AssistantConversationIdentity,
-  ): Promise<z.infer<typeof AssistantChatResponseSchema>> {
+  ): Promise<AssistantChatResponse> {
     const scope = AiService.toAssistantScope(identity.role);
     const runtime = await AiService.resolveOptimizationContext(db, identity.userId, null);
     const latestUserTurn = getLatestUserMessage(input.messages);
@@ -459,7 +253,7 @@ export abstract class AiService {
         role: message.role,
         content: message.content,
       }));
-    const conversation = await AiService.getAssistantConversationState(db, {
+    const conversation = await AiRepository.getAssistantConversationState(db, {
       sessionKey: buildAssistantSessionKey({
         scope,
         userId: identity.userId,
@@ -502,14 +296,14 @@ export abstract class AiService {
     const blocks = parseAssistantReplyBlocks(result.reply);
 
     if (conversation.conversationId) {
-      await AiService.saveAssistantConversationExchange(db, {
+      await AiRepository.saveAssistantConversationExchange(db, {
         conversationId: conversation.conversationId,
         sessionKey: conversation.sessionKey,
         scope,
         userId: identity.userId,
         userMessage: latestUserTurn.content,
         assistantMessage: result.reply,
-        blocks,
+        blocks: blocks as unknown as Prisma.JsonValue,
         toolNames: result.toolNames,
         persistenceAvailable: conversation.persistenceAvailable,
       });
@@ -523,6 +317,267 @@ export abstract class AiService {
       usedConversationMemory: isConversationRequest || conversation.history.length > 0,
       conversationId: conversation.conversationId,
     };
+  }
+
+  static async runCopilotOptimize(
+    db: PrismaClient,
+    userId: string,
+    input: ResumeCopilotOptimizeInput,
+  ): Promise<CopilotRunResult<ResumeCopilotOptimizeResponse>> {
+    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
+    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
+    const resume = await AiRepository.getOwnedResume(db, userId, input.resumeId);
+    const sectionSource = getResumeSectionSource(resume, input.target);
+    const snapshot = buildResumeSnapshot(resume);
+
+    const result = await AiService.runStructuredModel({
+      modelId: runtime.model.modelId,
+      instructions:
+        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
+        "Task=optimize. Rewrite only the requested section. Keep facts unchanged. " +
+        "Return JSON with title, rationale, suggestedText, cautions, draftPatch.",
+      input: [
+        {
+          role: "user",
+          content: toJsonText({
+            resumeId: input.resumeId,
+            intent: input.intent,
+            resume: {
+              headline: snapshot.headline,
+              summary: snapshot.summary,
+              skills: snapshot.skills.slice(0, 12),
+            },
+            target: {
+              ...sectionSource,
+              originalText: compactText(sectionSource.originalText, 2000),
+            },
+          }),
+        },
+      ],
+      tools: [],
+      schema: optimizeModelSchema,
+      maxSteps: 1,
+    });
+
+    return {
+      response: ResumeCopilotOptimizeResponseSchema.parse({
+        target: input.target,
+        intent: input.intent,
+        modelId: runtime.model.modelId,
+        creditsRemaining: credit.remainingCredits,
+        suggestion: {
+          title: result.data.title,
+          rationale: result.data.rationale,
+          originalText: sectionSource.originalText,
+          suggestedText: result.data.suggestedText,
+          cautions: result.data.cautions,
+          draftPatch: result.data.draftPatch ?? buildDraftPatch(input.target, result.data.suggestedText),
+        },
+      }),
+      usage: result.usage,
+      promptVersion: runtime.config.PROMPT_VERSION,
+    };
+  }
+
+  static async runCopilotTailor(
+    db: PrismaClient,
+    userId: string,
+    input: ResumeCopilotTailorInput,
+  ): Promise<CopilotRunResult<ResumeCopilotTailorResponse>> {
+    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
+    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
+    const resume = await AiRepository.getOwnedResume(db, userId, input.resumeId);
+    const snapshot = buildResumeSnapshot(resume);
+    const analysis = analyzeJobDescriptionText(input.jobDescription);
+    const comparison = matchResumeSnapshotToJob(snapshot, analysis);
+    const allowedTargets = AiService.buildCopilotTargets(resume);
+
+    const result = await AiService.runStructuredModel({
+      modelId: runtime.model.modelId,
+      instructions:
+        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
+        "Task=tailor. Suggest only truthful emphasis changes based on the provided resume and job analysis. " +
+        "Only suggest truthful emphasis changes. Return compact JSON with jobTitle, priorities, matches, gaps, suggestions.",
+      input: [
+        {
+          role: "user",
+          content: toJsonText({
+            resumeId: input.resumeId,
+            resume: snapshot,
+            job: {
+              description: compactText(input.jobDescription, 4000),
+              analysis,
+              comparison,
+            },
+            allowedTargets,
+          }),
+        },
+      ],
+      tools: [],
+      schema: tailorModelSchema,
+      maxSteps: 1,
+    });
+
+    return {
+      response: ResumeCopilotTailorResponseSchema.parse({
+        modelId: runtime.model.modelId,
+        creditsRemaining: credit.remainingCredits,
+        jobTitle: result.data.jobTitle,
+        priorities: result.data.priorities,
+        matches: result.data.matches,
+        gaps: result.data.gaps,
+        suggestions: result.data.suggestions.map((item) => ({
+          ...item,
+          draftPatch: item.draftPatch ?? buildDraftPatch(item.target as ResumeSectionTarget, item.suggestion),
+        })),
+      }),
+      usage: result.usage,
+      promptVersion: runtime.config.PROMPT_VERSION,
+    };
+  }
+
+  static async runCopilotReview(
+    db: PrismaClient,
+    userId: string,
+    input: ResumeCopilotReviewInput,
+  ): Promise<CopilotRunResult<ResumeCopilotReviewResponse>> {
+    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
+    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
+    const resume = await AiRepository.getOwnedResume(db, userId, input.resumeId);
+    const snapshot = buildResumeSnapshot(resume);
+    const analysis = input.jobDescription ? analyzeJobDescriptionText(input.jobDescription) : null;
+    const comparison = analysis ? matchResumeSnapshotToJob(snapshot, analysis) : null;
+
+    const result = await AiService.runStructuredModel({
+      modelId: runtime.model.modelId,
+      instructions:
+        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
+        "Task=review. Review the resume for clarity, completeness, and safe resume quality. " +
+        "Return JSON with overallScore, summary, strengths, findings, nextSteps.",
+      input: [
+        {
+          role: "user",
+          content: toJsonText({
+            resumeId: input.resumeId,
+            resume: snapshot,
+            job: input.jobDescription
+              ? {
+                  description: compactText(input.jobDescription, 4000),
+                  analysis,
+                  comparison,
+                }
+              : null,
+          }),
+        },
+      ],
+      tools: [],
+      schema: reviewModelSchema,
+      maxSteps: 1,
+    });
+
+    return {
+      response: ResumeCopilotReviewResponseSchema.parse({
+        modelId: runtime.model.modelId,
+        creditsRemaining: credit.remainingCredits,
+        overallScore: result.data.overallScore,
+        summary: result.data.summary,
+        strengths: result.data.strengths,
+        findings: result.data.findings,
+        nextSteps: result.data.nextSteps,
+      }),
+      usage: result.usage,
+      promptVersion: runtime.config.PROMPT_VERSION,
+    };
+  }
+
+  static async createOptimizeStream(
+    input: string,
+    modelId: string,
+    systemPrompt: string,
+  ): Promise<AsyncIterable<unknown>> {
+    return AiService.provider.createOptimizeStream({
+      input,
+      modelId,
+      systemPrompt,
+    });
+  }
+
+  static async *streamOptimizeText(
+    stream: AsyncIterable<unknown>,
+    options?: StreamOptimizeTextOptions,
+  ): AsyncGenerator<string, void, unknown> {
+    yield* AiService.provider.streamOptimizeText(stream, options);
+  }
+
+  static normalizeOptimizationError(error: unknown): Error {
+    const message = AiService.getErrorMessage(error);
+    const statusCode = AiService.getErrorStatusCode(error);
+    const normalizedMessage = message.length > 0 ? message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
+    const isPolicyError = statusCode === 404 && normalizedMessage.toLowerCase().includes("data policy");
+
+    if (isPolicyError) {
+      return new AiModelPolicyRestrictedError();
+    }
+
+    return new Error(normalizedMessage);
+  }
+
+  static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
+    await AiRepository.saveOptimization(db, payload);
+  }
+
+  static async saveCopilotResult(
+    db: PrismaClient,
+    userId: string,
+    resumeId: string,
+    operation: "optimize" | "tailor" | "review",
+    modelId: string,
+    promptVersion: string,
+    payload: unknown,
+    response: unknown,
+    usage: AiUsageMetrics,
+    durationMs: number,
+  ): Promise<void> {
+    await AiService.saveOptimization(db, {
+      userId,
+      resumeId,
+      provider: openRouterProviderName,
+      model: modelId,
+      promptVersion: `${promptVersion}:${operation}`,
+      inputText: toJsonText(payload),
+      optimizedText: toJsonText(response),
+      status: "success",
+      durationMs,
+      chunkCount: 0,
+      usage,
+    });
+  }
+
+  static async saveCopilotFailure(
+    db: PrismaClient,
+    userId: string,
+    resumeId: string,
+    operation: "optimize" | "tailor" | "review",
+    modelId: string,
+    promptVersion: string,
+    payload: unknown,
+    errorMessage: string,
+    durationMs: number,
+  ): Promise<void> {
+    await AiService.saveOptimization(db, {
+      userId,
+      resumeId,
+      provider: openRouterProviderName,
+      model: modelId,
+      promptVersion: `${promptVersion}:${operation}`,
+      inputText: toJsonText(payload),
+      optimizedText: "",
+      status: "failed",
+      durationMs,
+      chunkCount: 0,
+      errorMessage,
+      usage: AiService.emptyUsageMetrics(),
+    });
   }
 
   private static async answerAssistantDataRequest(
@@ -551,6 +606,7 @@ export abstract class AiService {
         }
 
         const settings = await AiService.getUserAiSettings(db, options.userId);
+
         return {
           selectedModelId: settings.selectedModelId,
           models: settings.models.map((item) => item.modelId),
@@ -640,595 +696,17 @@ export abstract class AiService {
     );
   }
 
-  private static async getAssistantConversationState(
-    db: PrismaClient,
-    options: {
-      sessionKey: string;
-      requestedConversationId: string | null;
-      scope: AssistantRoleScope;
-      userId: string | null;
-      historyLimit: number;
-      fallbackHistory: AssistantChatMessage[];
-    },
-  ): Promise<AssistantConversationState> {
-    try {
-      const existingConversation = await db.aiAssistantConversation.findFirst({
-        where: options.requestedConversationId
-          ? {
-              id: options.requestedConversationId,
-              scope: options.scope,
-              ...(options.userId ? { userId: options.userId } : { sessionKey: options.sessionKey }),
-            }
-          : {
-              sessionKey: options.sessionKey,
-            },
-        select: {
-          id: true,
-          messages: {
-            select: {
-              role: true,
-              content: true,
-            },
-            orderBy: { createdAt: "desc" },
-            take: options.historyLimit,
-          },
-        },
-      });
-
-      if (existingConversation) {
-        return {
-          conversationId: existingConversation.id,
-          history: existingConversation.messages
-            .slice()
-            .reverse()
-            .map((message) => ({
-              role: message.role as AssistantChatMessage["role"],
-              content: message.content,
-            })),
-          persistenceAvailable: true,
-          sessionKey: options.sessionKey,
-        };
-      }
-
-      const conversation = await db.aiAssistantConversation.create({
-        data: {
-          sessionKey: options.sessionKey,
-          scope: options.scope,
-          userId: options.userId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      return {
-        conversationId: conversation.id,
-        history: [],
-        persistenceAvailable: true,
-        sessionKey: options.sessionKey,
-      };
-    } catch {
-      const existingFallbackConversation = options.requestedConversationId
-        ? (assistantConversationFallbackStore.get(options.requestedConversationId) ?? null)
-        : ([...assistantConversationFallbackStore.values()].find(
-            (conversation) => conversation.sessionKey === options.sessionKey,
-          ) ?? null);
-
-      const canReuseFallbackConversation =
-        existingFallbackConversation &&
-        existingFallbackConversation.scope === options.scope &&
-        (options.userId
-          ? existingFallbackConversation.userId === options.userId
-          : existingFallbackConversation.sessionKey === options.sessionKey);
-
-      if (canReuseFallbackConversation && existingFallbackConversation) {
-        return {
-          conversationId: existingFallbackConversation.conversationId,
-          history: existingFallbackConversation.history,
-          persistenceAvailable: false,
-          sessionKey: existingFallbackConversation.sessionKey,
-        };
-      }
-
-      const conversationId = crypto.randomUUID();
-
-      assistantConversationFallbackStore.set(conversationId, {
-        conversationId,
-        sessionKey: options.sessionKey,
-        scope: options.scope,
-        userId: options.userId,
-        history: options.fallbackHistory,
-      });
-
-      return {
-        conversationId,
-        history: options.fallbackHistory,
-        persistenceAvailable: false,
-        sessionKey: options.sessionKey,
-      };
-    }
+  private static async runStructuredModel<T extends Record<string, unknown>>(
+    options: StructuredModelCallOptions<T>,
+  ): Promise<StructuredModelResult<T>> {
+    return AiService.provider.runStructuredModel(options);
   }
 
-  private static async saveAssistantConversationExchange(
-    db: PrismaClient,
-    options: {
-      conversationId: string;
-      sessionKey: string;
-      scope: AssistantRoleScope;
-      userId: string | null;
-      userMessage: string;
-      assistantMessage: string;
-      blocks: AssistantChatResponse["blocks"];
-      toolNames: string[];
-      persistenceAvailable: boolean;
-    },
-  ): Promise<void> {
-    if (!options.persistenceAvailable) {
-      const existingConversation = assistantConversationFallbackStore.get(options.conversationId);
-      const nextHistory = [
-        ...(existingConversation?.history ?? []),
-        { role: "user" as const, content: options.userMessage },
-        { role: "assistant" as const, content: options.assistantMessage },
-      ];
-
-      assistantConversationFallbackStore.set(options.conversationId, {
-        conversationId: options.conversationId,
-        sessionKey: options.sessionKey,
-        scope: existingConversation?.scope ?? options.scope,
-        userId: existingConversation?.userId ?? options.userId,
-        history: nextHistory,
-      });
-      return;
-    }
-
-    try {
-      await db.$transaction([
-        db.aiAssistantConversationMessage.createMany({
-          data: [
-            {
-              conversationId: options.conversationId,
-              role: "user",
-              content: options.userMessage,
-            },
-            {
-              conversationId: options.conversationId,
-              role: "assistant",
-              content: options.assistantMessage,
-              blocks: options.blocks as unknown as Prisma.InputJsonValue,
-              toolNames: options.toolNames,
-            },
-          ],
-        }),
-        db.aiAssistantConversation.update({
-          where: { id: options.conversationId },
-          data: {
-            lastUserMessageAt: new Date(),
-          },
-        }),
-      ]);
-    } catch {
-      return;
-    }
+  private static async runTextModel(options: TextModelCallOptions): Promise<TextModelResult> {
+    return AiService.provider.runTextModel(options);
   }
 
-  static async runCopilotOptimize(
-    db: PrismaClient,
-    userId: string,
-    input: ResumeCopilotOptimizeInput,
-  ): Promise<CopilotRunResult<ResumeCopilotOptimizeResponse>> {
-    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
-    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
-    const resume = await AiService.getOwnedResume(db, userId, input.resumeId);
-    const sectionSource = getResumeSectionSource(resume, input.target);
-    const snapshot = buildResumeSnapshot(resume);
-
-    const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=optimize. Rewrite only the requested section. Keep facts unchanged. " +
-        "Return JSON with title, rationale, suggestedText, cautions, draftPatch.",
-      input: [
-        {
-          role: "user",
-          content: toJsonText({
-            resumeId: input.resumeId,
-            intent: input.intent,
-            resume: {
-              headline: snapshot.headline,
-              summary: snapshot.summary,
-              skills: snapshot.skills.slice(0, 12),
-            },
-            target: {
-              ...sectionSource,
-              originalText: compactText(sectionSource.originalText, 2000),
-            },
-          }),
-        },
-      ],
-      tools: [],
-      schema: optimizeModelSchema,
-      maxSteps: 1,
-    });
-
-    return {
-      response: ResumeCopilotOptimizeResponseSchema.parse({
-        target: input.target,
-        intent: input.intent,
-        modelId: runtime.model.modelId,
-        creditsRemaining: credit.remainingCredits,
-        suggestion: {
-          title: result.data.title,
-          rationale: result.data.rationale,
-          originalText: sectionSource.originalText,
-          suggestedText: result.data.suggestedText,
-          cautions: result.data.cautions,
-          draftPatch: result.data.draftPatch ?? buildDraftPatch(input.target, result.data.suggestedText),
-        },
-      }),
-      usage: result.usage,
-      promptVersion: runtime.config.PROMPT_VERSION,
-    };
-  }
-
-  static async runCopilotTailor(
-    db: PrismaClient,
-    userId: string,
-    input: ResumeCopilotTailorInput,
-  ): Promise<CopilotRunResult<ResumeCopilotTailorResponse>> {
-    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
-    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
-    const resume = await AiService.getOwnedResume(db, userId, input.resumeId);
-    const snapshot = buildResumeSnapshot(resume);
-    const analysis = analyzeJobDescriptionText(input.jobDescription);
-    const comparison = matchResumeSnapshotToJob(snapshot, analysis);
-    const allowedTargets = AiService.buildCopilotTargets(resume);
-
-    const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=tailor. Suggest only truthful emphasis changes based on the provided resume and job analysis. " +
-        "Only suggest truthful emphasis changes. Return compact JSON with jobTitle, priorities, matches, gaps, suggestions.",
-      input: [
-        {
-          role: "user",
-          content: toJsonText({
-            resumeId: input.resumeId,
-            resume: snapshot,
-            job: {
-              description: compactText(input.jobDescription, 4000),
-              analysis,
-              comparison,
-            },
-            allowedTargets,
-          }),
-        },
-      ],
-      tools: [],
-      schema: tailorModelSchema,
-      maxSteps: 1,
-    });
-
-    return {
-      response: ResumeCopilotTailorResponseSchema.parse({
-        modelId: runtime.model.modelId,
-        creditsRemaining: credit.remainingCredits,
-        jobTitle: result.data.jobTitle,
-        priorities: result.data.priorities,
-        matches: result.data.matches,
-        gaps: result.data.gaps,
-        suggestions: result.data.suggestions.map((item) => ({
-          ...item,
-          draftPatch: item.draftPatch ?? buildDraftPatch(item.target as ResumeSectionTarget, item.suggestion),
-        })),
-      }),
-      usage: result.usage,
-      promptVersion: runtime.config.PROMPT_VERSION,
-    };
-  }
-
-  static async runCopilotReview(
-    db: PrismaClient,
-    userId: string,
-    input: ResumeCopilotReviewInput,
-  ): Promise<CopilotRunResult<ResumeCopilotReviewResponse>> {
-    const runtime = await AiService.resolveOptimizationContext(db, userId, null);
-    const credit = await AiService.consumeDailyCredit(db, userId, runtime.config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT);
-    const resume = await AiService.getOwnedResume(db, userId, input.resumeId);
-    const snapshot = buildResumeSnapshot(resume);
-    const analysis = input.jobDescription ? analyzeJobDescriptionText(input.jobDescription) : null;
-    const comparison = analysis ? matchResumeSnapshotToJob(snapshot, analysis) : null;
-
-    const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=review. Review the resume for clarity, completeness, and safe resume quality. " +
-        "Return JSON with overallScore, summary, strengths, findings, nextSteps.",
-      input: [
-        {
-          role: "user",
-          content: toJsonText({
-            resumeId: input.resumeId,
-            resume: snapshot,
-            job: input.jobDescription
-              ? {
-                  description: compactText(input.jobDescription, 4000),
-                  analysis,
-                  comparison,
-                }
-              : null,
-          }),
-        },
-      ],
-      tools: [],
-      schema: reviewModelSchema,
-      maxSteps: 1,
-    });
-
-    return {
-      response: ResumeCopilotReviewResponseSchema.parse({
-        modelId: runtime.model.modelId,
-        creditsRemaining: credit.remainingCredits,
-        overallScore: result.data.overallScore,
-        summary: result.data.summary,
-        strengths: result.data.strengths,
-        findings: result.data.findings,
-        nextSteps: result.data.nextSteps,
-      }),
-      usage: result.usage,
-      promptVersion: runtime.config.PROMPT_VERSION,
-    };
-  }
-
-  static async *streamOptimizeText(
-    stream: AsyncIterable<unknown>,
-    options?: StreamOptimizeTextOptions,
-  ): AsyncGenerator<string, void, unknown> {
-    for await (const chunk of stream as AsyncIterable<{
-      choices?: Array<{ delta?: { content?: string | null } }>;
-      usage?: {
-        promptTokens?: number | null;
-        completionTokens?: number | null;
-        totalTokens?: number | null;
-        completionTokensDetails?: { reasoningTokens?: number | null };
-      };
-    }>) {
-      const content = chunk.choices?.[0]?.delta?.content;
-      if (content) {
-        yield content;
-      }
-
-      if (chunk.usage) {
-        options?.onUsage?.({
-          promptTokens: chunk.usage.promptTokens ?? null,
-          completionTokens: chunk.usage.completionTokens ?? null,
-          totalTokens: chunk.usage.totalTokens ?? null,
-          reasoningTokens: chunk.usage.completionTokensDetails?.reasoningTokens ?? null,
-        });
-      }
-    }
-  }
-
-  static async createOptimizeStream(
-    input: string,
-    modelId: string,
-    systemPrompt: string,
-  ): Promise<AsyncIterable<unknown>> {
-    const { client } = await getOpenRouterRuntime();
-
-    return client.chat.send({
-      chatGenerationParams: {
-        model: modelId,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: input },
-        ],
-        stream: true,
-      },
-    });
-  }
-
-  static normalizeOptimizationError(error: unknown): Error {
-    const message = AiService.getErrorMessage(error);
-    const statusCode = AiService.getErrorStatusCode(error);
-    const normalizedMessage = message.length > 0 ? message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
-    const isPolicyError = statusCode === 404 && normalizedMessage.toLowerCase().includes("data policy");
-
-    if (isPolicyError) {
-      return new AiModelPolicyRestrictedError();
-    }
-
-    return new Error(normalizedMessage);
-  }
-
-  static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
-    const inputText = payload.inputText.trim();
-    const optimizedText = payload.optimizedText.trim();
-
-    const linkedResumeId = await AiService.resolveOwnedResumeId(db, payload.userId, payload.resumeId ?? null);
-
-    await db.aiOptimization.create({
-      data: {
-        userId: payload.userId,
-        resumeId: linkedResumeId,
-        inputText,
-        optimizedText,
-        provider: payload.provider,
-        model: payload.model,
-        promptVersion: payload.promptVersion,
-        status: payload.status,
-        inputCharCount: inputText.length,
-        outputCharCount: optimizedText.length,
-        chunkCount: payload.chunkCount,
-        durationMs: payload.durationMs,
-        promptTokens: payload.usage.promptTokens,
-        completionTokens: payload.usage.completionTokens,
-        totalTokens: payload.usage.totalTokens,
-        reasoningTokens: payload.usage.reasoningTokens,
-        errorMessage: payload.errorMessage ?? null,
-      },
-    });
-  }
-
-  static async saveCopilotResult(
-    db: PrismaClient,
-    userId: string,
-    resumeId: string,
-    operation: "optimize" | "tailor" | "review",
-    modelId: string,
-    promptVersion: string,
-    payload: unknown,
-    response: unknown,
-    usage: AiUsageMetrics,
-    durationMs: number,
-  ): Promise<void> {
-    await AiService.saveOptimization(db, {
-      userId,
-      resumeId,
-      provider: openRouterProviderName,
-      model: modelId,
-      promptVersion: `${promptVersion}:${operation}`,
-      inputText: toJsonText(payload),
-      optimizedText: toJsonText(response),
-      status: "success",
-      durationMs,
-      chunkCount: 0,
-      usage,
-    });
-  }
-
-  static async saveCopilotFailure(
-    db: PrismaClient,
-    userId: string,
-    resumeId: string,
-    operation: "optimize" | "tailor" | "review",
-    modelId: string,
-    promptVersion: string,
-    payload: unknown,
-    errorMessage: string,
-    durationMs: number,
-  ): Promise<void> {
-    await AiService.saveOptimization(db, {
-      userId,
-      resumeId,
-      provider: openRouterProviderName,
-      model: modelId,
-      promptVersion: `${promptVersion}:${operation}`,
-      inputText: toJsonText(payload),
-      optimizedText: "",
-      status: "failed",
-      durationMs,
-      chunkCount: 0,
-      errorMessage,
-      usage: AiService.emptyUsageMetrics(),
-    });
-  }
-
-  private static async runStructuredModel<T extends Record<string, unknown>>(options: {
-    modelId: string;
-    instructions: string;
-    input: AssistantChatMessage[] | Array<{ role: "user" | "assistant"; content: string }>;
-    tools: readonly Tool[];
-    schema: z.ZodType<T> & z.ZodObject<z.ZodRawShape>;
-    maxSteps: number;
-  }): Promise<StructuredModelResult<T>> {
-    const { client } = await getOpenRouterRuntime();
-    const response = await client.chat.send({
-      chatGenerationParams: {
-        model: options.modelId,
-        messages: [
-          { role: "system", content: options.instructions },
-          ...options.input.map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
-        ],
-        responseFormat: {
-          type: "json_schema",
-          jsonSchema: {
-            name: "resume_copilot_response",
-            schema: z.toJSONSchema(options.schema),
-            strict: true,
-          },
-        },
-      },
-    });
-    const messageContent = response.choices[0]?.message?.content;
-    const text = typeof messageContent === "string" ? messageContent : JSON.stringify(messageContent ?? {});
-    const structuredData = parseJsonResponse(text, options.schema);
-
-    return {
-      data: structuredData,
-      usage: {
-        promptTokens: response.usage?.promptTokens ?? null,
-        completionTokens: response.usage?.completionTokens ?? null,
-        totalTokens: response.usage?.totalTokens ?? null,
-        reasoningTokens: response.usage?.completionTokensDetails?.reasoningTokens ?? null,
-      },
-      toolNames: [],
-    };
-  }
-
-  private static async runTextModel(options: {
-    modelId: string;
-    instructions: string;
-    input: AssistantChatMessage[] | Array<{ role: "user" | "assistant"; content: string }>;
-    tools: readonly Tool[];
-    maxSteps: number;
-  }): Promise<TextModelResult> {
-    const { client, stepCountIs } = await getOpenRouterRuntime();
-    const result = client.callModel({
-      model: options.modelId,
-      instructions: options.instructions,
-      input: options.input,
-      tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps),
-    });
-
-    const [text, response, toolCalls] = await Promise.all([
-      result.getText(),
-      result.getResponse(),
-      result.getToolCalls(),
-    ]);
-
-    return {
-      text: text.trim() || ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
-      usage: {
-        promptTokens: response.usage?.inputTokens ?? null,
-        completionTokens: response.usage?.outputTokens ?? null,
-        totalTokens:
-          response.usage &&
-          typeof response.usage.inputTokens === "number" &&
-          typeof response.usage.outputTokens === "number"
-            ? response.usage.inputTokens + response.usage.outputTokens
-            : null,
-        reasoningTokens: response.usage?.outputTokensDetails?.reasoningTokens ?? null,
-      },
-      toolNames: toolCalls.map((toolCall) => toolCall.name),
-    };
-  }
-
-  private static async getOwnedResume(db: PrismaClient, userId: string, resumeId: string) {
-    const resume = await db.resume.findFirst({
-      where: { id: resumeId, userId },
-      include: {
-        personalInfo: true,
-        experience: true,
-        education: true,
-        project: true,
-      },
-    });
-
-    if (!resume) {
-      throw new Error("Resume not found.");
-    }
-
-    return resume;
-  }
-
-  private static buildCopilotTargets(resume: Awaited<ReturnType<typeof AiService.getOwnedResume>>) {
+  private static buildCopilotTargets(resume: Awaited<ReturnType<typeof AiRepository.getOwnedResume>>) {
     const targets: ResumeSectionTarget[] = [
       { section: "professionalSummary" },
       { section: "skills" },
@@ -1262,23 +740,6 @@ export abstract class AiService {
     }
 
     return compactText(`${landing.title}. ${landing.summary}`, 4000);
-  }
-
-  private static async resolveOwnedResumeId(
-    db: PrismaClient,
-    userId: string,
-    resumeId: string | null,
-  ): Promise<string | null> {
-    if (!resumeId) {
-      return null;
-    }
-
-    const ownedResume = await db.resume.findFirst({
-      where: { id: resumeId, userId },
-      select: { id: true },
-    });
-
-    return ownedResume?.id ?? null;
   }
 
   private static getErrorMessage(error: unknown): string {
@@ -1328,64 +789,22 @@ export abstract class AiService {
 
     if (requestedModelId) {
       const requestedModel = models.find((model) => model.modelId === requestedModelId);
+
       if (!requestedModel) {
         throw new AiModelUnavailableError();
       }
+
       return requestedModel;
     }
 
     if (selectedModelDbId) {
       const savedModel = models.find((model) => model.id === selectedModelDbId);
+
       if (savedModel) {
         return savedModel;
       }
     }
 
     return models[0] as ActiveAiModel;
-  }
-
-  private static formatProviderName(providerName: string): string {
-    return providerName
-      .split(/[-_\s]+/)
-      .filter(Boolean)
-      .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
-      .join(" ");
-  }
-
-  private static getAsiaManilaMidnightBoundary(date: Date): Date {
-    const manilaDate = new Date(date.getTime() + asiaManilaUtcOffsetMs);
-    manilaDate.setUTCHours(0, 0, 0, 0);
-
-    return new Date(manilaDate.getTime() - asiaManilaUtcOffsetMs);
-  }
-
-  private static async ensureDailyCreditsWindow(
-    db: Pick<PrismaClient, "aiTextOptimizerCredits">,
-    userId: string,
-    todayBoundary: Date,
-    dailyLimit: number,
-  ): Promise<void> {
-    await db.aiTextOptimizerCredits.upsert({
-      where: { userId },
-      update: {},
-      create: {
-        userId,
-        credits: dailyLimit,
-        lastResetAt: todayBoundary,
-      },
-    });
-
-    await db.aiTextOptimizerCredits.updateMany({
-      where: {
-        userId,
-        lastResetAt: {
-          lt: todayBoundary,
-        },
-      },
-      data: {
-        credits: dailyLimit,
-        lastResetAt: todayBoundary,
-      },
-    });
   }
 }

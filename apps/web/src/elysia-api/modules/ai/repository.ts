@@ -1,0 +1,403 @@
+import type { Prisma, PrismaClient } from "@rezumerai/database";
+import type { AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
+import { aiConfigurationName, asiaManilaUtcOffsetMs } from "./constants";
+import { AiCreditsExhaustedError } from "./errors";
+import { toActiveAiModel } from "./mapper";
+import type {
+  ActiveAiModel,
+  AssistantConversationRecord,
+  AssistantConversationState,
+  ConsumeDailyCreditResult,
+  DailyCreditsStatus,
+  SaveOptimizationInput,
+} from "./types";
+
+type CreditsAccessor = Pick<PrismaClient, "aiTextOptimizerCredits">;
+
+const assistantConversationFallbackStore = new Map<string, AssistantConversationRecord>();
+
+interface ConversationStateOptions {
+  sessionKey: string;
+  requestedConversationId: string | null;
+  scope: AssistantRoleScope;
+  userId: string | null;
+  historyLimit: number;
+  fallbackHistory: AssistantChatMessage[];
+}
+
+interface SaveConversationExchangeOptions {
+  conversationId: string;
+  sessionKey: string;
+  scope: AssistantRoleScope;
+  userId: string | null;
+  userMessage: string;
+  assistantMessage: string;
+  blocks: Prisma.JsonValue;
+  toolNames: string[];
+  persistenceAvailable: boolean;
+}
+
+// biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally exposes stateless query helpers for the module.
+export abstract class AiRepository {
+  static async listActiveModels(db: PrismaClient): Promise<ActiveAiModel[]> {
+    const models = await db.aiModel.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        modelId: true,
+        provider: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
+    });
+
+    return models.map(toActiveAiModel);
+  }
+
+  static async getAiConfigurationValue(db: PrismaClient): Promise<Prisma.JsonValue | null> {
+    const configuration = await db.systemConfiguration.findUnique({
+      where: { name: aiConfigurationName },
+      select: { value: true },
+    });
+
+    return configuration?.value ?? null;
+  }
+
+  static async getUserSelectedModelRecord(
+    db: PrismaClient,
+    userId: string,
+  ): Promise<{ selectedAiModelId: string | null } | null> {
+    return db.user.findUnique({
+      where: { id: userId },
+      select: {
+        selectedAiModelId: true,
+      },
+    });
+  }
+
+  static async updateUserSelectedModel(db: PrismaClient, userId: string, selectedAiModelId: string): Promise<void> {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        selectedAiModelId,
+      },
+    });
+  }
+
+  static async consumeDailyCredit(
+    db: PrismaClient,
+    userId: string,
+    dailyLimit: number,
+    now: Date = new Date(),
+  ): Promise<ConsumeDailyCreditResult> {
+    const todayBoundary = AiRepository.getAsiaManilaMidnightBoundary(now);
+
+    return db.$transaction(async (tx) => {
+      await AiRepository.ensureDailyCreditsWindow(tx, userId, todayBoundary, dailyLimit);
+
+      const consumeResult = await tx.aiTextOptimizerCredits.updateMany({
+        where: {
+          userId,
+          credits: {
+            gt: 0,
+          },
+        },
+        data: {
+          credits: {
+            decrement: 1,
+          },
+        },
+      });
+
+      if (consumeResult.count === 0) {
+        throw new AiCreditsExhaustedError();
+      }
+
+      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
+        where: { userId },
+        select: { credits: true },
+      });
+
+      return { remainingCredits: creditsRecord?.credits ?? 0 };
+    });
+  }
+
+  static async getDailyCredits(
+    db: PrismaClient,
+    userId: string,
+    dailyLimit: number,
+    now: Date = new Date(),
+  ): Promise<DailyCreditsStatus> {
+    const todayBoundary = AiRepository.getAsiaManilaMidnightBoundary(now);
+
+    return db.$transaction(async (tx) => {
+      await AiRepository.ensureDailyCreditsWindow(tx, userId, todayBoundary, dailyLimit);
+
+      const creditsRecord = await tx.aiTextOptimizerCredits.findUnique({
+        where: { userId },
+        select: { credits: true },
+      });
+
+      return {
+        remainingCredits: creditsRecord?.credits ?? dailyLimit,
+        dailyLimit,
+      };
+    });
+  }
+
+  static async getAssistantConversationState(
+    db: PrismaClient,
+    options: ConversationStateOptions,
+  ): Promise<AssistantConversationState> {
+    try {
+      const existingConversation = await db.aiAssistantConversation.findFirst({
+        where: options.requestedConversationId
+          ? {
+              id: options.requestedConversationId,
+              scope: options.scope,
+              ...(options.userId ? { userId: options.userId } : { sessionKey: options.sessionKey }),
+            }
+          : {
+              sessionKey: options.sessionKey,
+            },
+        select: {
+          id: true,
+          messages: {
+            select: {
+              role: true,
+              content: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: options.historyLimit,
+          },
+        },
+      });
+
+      if (existingConversation) {
+        return {
+          conversationId: existingConversation.id,
+          history: existingConversation.messages
+            .slice()
+            .reverse()
+            .map((message) => ({
+              role: message.role as AssistantChatMessage["role"],
+              content: message.content,
+            })),
+          persistenceAvailable: true,
+          sessionKey: options.sessionKey,
+        };
+      }
+
+      const conversation = await db.aiAssistantConversation.create({
+        data: {
+          sessionKey: options.sessionKey,
+          scope: options.scope,
+          userId: options.userId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return {
+        conversationId: conversation.id,
+        history: [],
+        persistenceAvailable: true,
+        sessionKey: options.sessionKey,
+      };
+    } catch {
+      const existingFallbackConversation = options.requestedConversationId
+        ? (assistantConversationFallbackStore.get(options.requestedConversationId) ?? null)
+        : ([...assistantConversationFallbackStore.values()].find(
+            (conversation) => conversation.sessionKey === options.sessionKey,
+          ) ?? null);
+
+      const canReuseFallbackConversation =
+        existingFallbackConversation &&
+        existingFallbackConversation.scope === options.scope &&
+        (options.userId
+          ? existingFallbackConversation.userId === options.userId
+          : existingFallbackConversation.sessionKey === options.sessionKey);
+
+      if (canReuseFallbackConversation && existingFallbackConversation) {
+        return {
+          conversationId: existingFallbackConversation.conversationId,
+          history: existingFallbackConversation.history,
+          persistenceAvailable: false,
+          sessionKey: existingFallbackConversation.sessionKey,
+        };
+      }
+
+      const conversationId = crypto.randomUUID();
+
+      assistantConversationFallbackStore.set(conversationId, {
+        conversationId,
+        sessionKey: options.sessionKey,
+        scope: options.scope,
+        userId: options.userId,
+        history: options.fallbackHistory,
+      });
+
+      return {
+        conversationId,
+        history: options.fallbackHistory,
+        persistenceAvailable: false,
+        sessionKey: options.sessionKey,
+      };
+    }
+  }
+
+  static async saveAssistantConversationExchange(
+    db: PrismaClient,
+    options: SaveConversationExchangeOptions,
+  ): Promise<void> {
+    if (!options.persistenceAvailable) {
+      const existingConversation = assistantConversationFallbackStore.get(options.conversationId);
+      const nextHistory = [
+        ...(existingConversation?.history ?? []),
+        { role: "user" as const, content: options.userMessage },
+        { role: "assistant" as const, content: options.assistantMessage },
+      ];
+
+      assistantConversationFallbackStore.set(options.conversationId, {
+        conversationId: options.conversationId,
+        sessionKey: options.sessionKey,
+        scope: existingConversation?.scope ?? options.scope,
+        userId: existingConversation?.userId ?? options.userId,
+        history: nextHistory,
+      });
+      return;
+    }
+
+    try {
+      await db.$transaction([
+        db.aiAssistantConversationMessage.createMany({
+          data: [
+            {
+              conversationId: options.conversationId,
+              role: "user",
+              content: options.userMessage,
+            },
+            {
+              conversationId: options.conversationId,
+              role: "assistant",
+              content: options.assistantMessage,
+              blocks: options.blocks as Prisma.InputJsonValue,
+              toolNames: options.toolNames,
+            },
+          ],
+        }),
+        db.aiAssistantConversation.update({
+          where: { id: options.conversationId },
+          data: {
+            lastUserMessageAt: new Date(),
+          },
+        }),
+      ]);
+    } catch {
+      return;
+    }
+  }
+
+  static async getOwnedResume(db: PrismaClient, userId: string, resumeId: string) {
+    const resume = await db.resume.findFirst({
+      where: { id: resumeId, userId },
+      include: {
+        personalInfo: true,
+        experience: true,
+        education: true,
+        project: true,
+      },
+    });
+
+    if (!resume) {
+      throw new Error("Resume not found.");
+    }
+
+    return resume;
+  }
+
+  static async resolveOwnedResumeId(db: PrismaClient, userId: string, resumeId: string | null): Promise<string | null> {
+    if (!resumeId) {
+      return null;
+    }
+
+    const ownedResume = await db.resume.findFirst({
+      where: { id: resumeId, userId },
+      select: { id: true },
+    });
+
+    return ownedResume?.id ?? null;
+  }
+
+  static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
+    const inputText = payload.inputText.trim();
+    const optimizedText = payload.optimizedText.trim();
+    const linkedResumeId = await AiRepository.resolveOwnedResumeId(db, payload.userId, payload.resumeId ?? null);
+
+    await db.aiOptimization.create({
+      data: {
+        userId: payload.userId,
+        resumeId: linkedResumeId,
+        inputText,
+        optimizedText,
+        provider: payload.provider,
+        model: payload.model,
+        promptVersion: payload.promptVersion,
+        status: payload.status,
+        inputCharCount: inputText.length,
+        outputCharCount: optimizedText.length,
+        chunkCount: payload.chunkCount,
+        durationMs: payload.durationMs,
+        promptTokens: payload.usage.promptTokens,
+        completionTokens: payload.usage.completionTokens,
+        totalTokens: payload.usage.totalTokens,
+        reasoningTokens: payload.usage.reasoningTokens,
+        errorMessage: payload.errorMessage ?? null,
+      },
+    });
+  }
+
+  private static getAsiaManilaMidnightBoundary(date: Date): Date {
+    const manilaDate = new Date(date.getTime() + asiaManilaUtcOffsetMs);
+    manilaDate.setUTCHours(0, 0, 0, 0);
+
+    return new Date(manilaDate.getTime() - asiaManilaUtcOffsetMs);
+  }
+
+  private static async ensureDailyCreditsWindow(
+    db: CreditsAccessor,
+    userId: string,
+    todayBoundary: Date,
+    dailyLimit: number,
+  ): Promise<void> {
+    await db.aiTextOptimizerCredits.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        credits: dailyLimit,
+        lastResetAt: todayBoundary,
+      },
+    });
+
+    await db.aiTextOptimizerCredits.updateMany({
+      where: {
+        userId,
+        lastResetAt: {
+          lt: todayBoundary,
+        },
+      },
+      data: {
+        credits: dailyLimit,
+        lastResetAt: todayBoundary,
+      },
+    });
+  }
+}
