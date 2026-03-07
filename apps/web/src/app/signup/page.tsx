@@ -1,5 +1,6 @@
 "use client";
 
+import { PasswordSchema } from "@rezumerai/types";
 import AuthWithSocialForm, { type AuthState } from "@rezumerai/ui/components/AuthWithSocialForm";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components";
@@ -18,9 +19,9 @@ export default function SignUp() {
    * Validates password requirements before submitting to the auth server.
    */
   async function onSignUp(state: AuthState): Promise<void> {
-    if (state.password.length < 8) {
-      const message = "Password must be at least 8 characters";
-      throw new Error(message);
+    const passwordValidation = PasswordSchema.safeParse(state.password);
+    if (!passwordValidation.success) {
+      throw new Error(passwordValidation.error.issues[0]?.message ?? "Invalid password.");
     }
 
     if (state.password !== state.confirmPassword) {

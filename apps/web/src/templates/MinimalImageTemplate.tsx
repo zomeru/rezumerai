@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import HtmlContent from "./HtmlContent";
@@ -90,7 +90,9 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                     <div key={key}>
                       <p className="font-semibold uppercase">{edu.degree}</p>
                       <p className="text-zinc-600">{edu.institution}</p>
-                      <p className="text-[0.75em] text-zinc-500">{formatShortDate(edu.graduationDate)}</p>
+                      <p className="text-[0.75em] text-zinc-500">
+                        {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                      </p>
                     </div>
                   );
                 })}

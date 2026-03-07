@@ -21,31 +21,36 @@ async function seedResumes(): Promise<void> {
 
   const userEmail = process.env.DB_SEED_USER_EMAIL;
 
-  if (!userEmail) {
-    throw new Error("❌ DB_SEED_USER_EMAIL environment variable is not set");
-  }
+  const emailsToSeed = [userEmail, "test@test.com", "testadmin@test.com"].filter(Boolean) as string[];
 
-  const user = await prisma.user.findUnique({
-    where: { email: userEmail },
+  // if (!userEmail) {
+  //   throw new Error("❌ DB_SEED_USER_EMAIL environment variable is not set");
+  // }
+
+  const users = await prisma.user.findMany({
+    where: { email: { in: emailsToSeed } },
   });
 
-  if (!user) {
-    throw new Error(`❌ User with email ${userEmail} not found`);
+  if (users.length === 0) {
+    throw new Error(`❌ No users found with emails: ${emailsToSeed.join(", ")}`);
   }
 
-  const dummyResumeData = generateDummyData(user.id);
+  for (const user of users) {
+    console.log(`\n👤 Seeding resumes for user: ${user.email} (${user.id})`);
+    const dummyResumeData = generateDummyData(user.id);
 
-  const operations = dummyResumeData.map((resumeData: Prisma.ResumeCreateInput) =>
-    prisma.resume.create({ data: resumeData }),
-  );
+    const operations = dummyResumeData.map((resumeData: Prisma.ResumeCreateInput) =>
+      prisma.resume.create({ data: resumeData }),
+    );
 
-  const results = await prisma.$transaction(operations);
+    const results = await prisma.$transaction(operations);
 
-  results.forEach((resume) => {
-    console.log(`  ✓ Created resume: ${resume.title} (${resume.id})`);
-  });
+    results.forEach((resume) => {
+      console.log(`  ✓ Created resume: ${resume.title} (${resume.id})`);
+    });
 
-  console.log(`\n✨ Successfully seeded ${results.length} resumes`);
+    console.log(`\n✨ Successfully seeded ${results.length} resumes for ${user.email}`);
+  }
 }
 
 async function main(): Promise<void> {
@@ -63,8 +68,8 @@ async function main(): Promise<void> {
 main()
   .catch(async (e) => {
     console.error("❌ Error seeding database:", e);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
-    process.exit(1);
   });

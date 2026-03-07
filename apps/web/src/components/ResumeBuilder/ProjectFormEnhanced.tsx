@@ -14,10 +14,12 @@ type Project = ResumeWithRelations["project"];
  *
  * @property project - Array of project entries
  * @property onChange - Callback with updated project array
+ * @property errors - Field-level errors indexed by entry position
  */
 export interface ProjectFormEnhancedProps {
   project: Project;
   onChange: (project: Project) => void;
+  errors?: Record<number, Record<string, string>>;
 }
 
 /**
@@ -29,7 +31,7 @@ export interface ProjectFormEnhancedProps {
  * @returns Project form with DnD reordering and accordion entries
  */
 
-export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEnhancedProps) {
+export default function ProjectFormEnhanced({ project, onChange, errors = {} }: ProjectFormEnhancedProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
@@ -88,6 +90,7 @@ export default function ProjectFormEnhanced({ project, onChange }: ProjectFormEn
                   value={proj.name}
                   onValueChange={(value: string) => handleUpdate(index, "name", value)}
                   placeholder="e.g. E-commerce Platform"
+                  error={errors[index]?.name}
                 />
 
                 <TextInput

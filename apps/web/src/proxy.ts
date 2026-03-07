@@ -1,5 +1,5 @@
+import { prisma } from "@rezumerai/database";
 import { headers } from "next/headers";
-
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ROUTES } from "@/constants/routing";
@@ -9,7 +9,12 @@ import { auth } from "@/lib/auth";
  * Protected routes that require authentication.
  * Users without a session will be redirected to the sign-in page.
  */
-const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW];
+const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS, ROUTES.TESTSITE];
+
+function rewriteToNotFound(request: NextRequest): NextResponse {
+  const notFoundUrl = new URL("/_not-found", request.url);
+  return NextResponse.rewrite(notFoundUrl, { status: 404 });
+}
 
 /**
  * Helper to set security headers
@@ -35,8 +40,7 @@ function buildCSP(isDev: boolean) {
   const connectSrc = ["'self'", "blob:"];
 
   if (isDev) {
-    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "http://localhost:8080", "https://vercel.live");
-    connectSrc.push("http://localhost:8080");
+    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "https://vercel.live");
   } else {
     // Production: Tailwind inline styles only
     scriptSrc.push("'unsafe-inline'");
@@ -72,6 +76,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // Auth session
   const session = await auth.api.getSession({ headers: await headers() });
+  const isAdminRoute = pathname.startsWith(ROUTES.ADMIN);
+
+  if (isAdminRoute) {
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return rewriteToNotFound(request);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    if (!user || user.role !== "ADMIN") {
+      return rewriteToNotFound(request);
+    }
+  }
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 

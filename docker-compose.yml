@@ -22,26 +22,12 @@ services:
   #   networks:
   #     - app_network
 
-  # Redis (optional, for caching/sessions)
-  # redis:
-  #   image: redis:7-alpine
-  #   env_file:
-  #     - .env.local
-  #   ports:
-  #     - "${REDIS_PORT:-6379}:6379"
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 3s
-  #     retries: 5
-
   web:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
       secrets:
         # Build-time secrets (for Next.js build)
-        - next_public_api_url
         - next_public_site_url
         - better_auth_secret
         - better_auth_url
@@ -53,43 +39,17 @@ services:
     secrets:
       # Runtime secrets (available when container runs)
       - database_url
+      - direct_url
       - better_auth_secret
       - better_auth_url
       - better_auth_github_client_id
       - better_auth_github_client_secret
     ports:
       - "3000:3000"
-    depends_on:
-      api:
-        condition: service_started
     environment:
       NODE_ENV: production
     networks:
       - app_network
-
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/api/Dockerfile
-  #     secrets:
-  #       # Build-time secrets (for build configuration)
-  #       - api_port
-  #       - cors_origins
-  #   restart: always
-  #   env_file:
-  #     - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
-  #   secrets:
-  #     # Runtime secrets (available when container runs)
-  #     - database_url
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #   environment:
-  #     NODE_ENV: production
-  #   networks:
-  #     - app_network
 
 volumes:
   postgres_data:
@@ -101,10 +61,10 @@ networks:
 secrets:
   database_url:
     environment: DATABASE_URL
+  direct_url:
+    environment: DIRECT_URL
   better_auth_secret:
     environment: BETTER_AUTH_SECRET
-  next_public_api_url:
-    environment: NEXT_PUBLIC_API_URL
   next_public_site_url:
     environment: NEXT_PUBLIC_SITE_URL
   better_auth_url:

@@ -3,6 +3,7 @@ export * from "./compress";
 export * from "./error";
 export * from "./logger";
 export * from "./modernCsrf";
+export * from "./observability";
 export * from "./opentelemetry";
 export * from "./prisma";
 export * from "./trace";

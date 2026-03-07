@@ -2,10 +2,14 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 import Logo from "../Logo";
 
+interface FooterProps {
+  description: string;
+}
+
 /**
  * Footer component for the homepage, containing the logo, a brief description, and copyright information.
  */
-export default function Footer() {
+export default function Footer({ description }: FooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -14,10 +18,14 @@ export default function Footer() {
         <div className="mb-6 flex items-center space-x-3">
           <Logo />
         </div>
-        <p className="max-w-xl text-center font-normal text-sm leading-relaxed">
-          Rezumer is an AI-assisted resume builder for job seekers, career changers, and professionals who want a
-          stronger resume without hiring a resume writer. Currently in early access.
-        </p>
+        <p className="max-w-xl text-center font-normal text-sm leading-relaxed">{description}</p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
+          <Link href={ROUTES.ABOUT}>About</Link>
+          <Link href={ROUTES.FAQ}>FAQ</Link>
+          <Link href={ROUTES.PRIVACY}>Privacy</Link>
+          <Link href={ROUTES.TERMS}>Terms</Link>
+          <Link href={ROUTES.CONTACT}>Contact</Link>
+        </div>
       </div>
       <div className="border-slate-200 border-t">
         <div className="mx-auto max-w-400 px-6 py-6 text-center font-normal text-sm">

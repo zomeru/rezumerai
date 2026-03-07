@@ -1,5 +1,5 @@
-import { prisma } from "@rezumerai/database";
 import Elysia from "elysia";
+import { observedPrisma } from "../observability/prisma-observer";
 
 /**
  * Prisma plugin — decorates the Elysia context with the shared Prisma client
@@ -8,4 +8,4 @@ import Elysia from "elysia";
  * Usage in modules:
  *   .get('/items', ({ db }) => db.sampleTable.findMany())
  */
-export const prismaPlugin = new Elysia({ name: "plugin/prisma" }).decorate("db", prisma);
+export const prismaPlugin = new Elysia({ name: "plugin/prisma" }).decorate("db", observedPrisma);

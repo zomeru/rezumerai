@@ -1,14 +1,27 @@
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  accounts      Account[]
-  resumes       Resume[]
-  sessions      Session[]
+  id                     String                  @id
+  name                   String
+  email                  String                  @unique
+  emailVerified          Boolean
+  image                  String?
+  createdAt              DateTime
+  updatedAt              DateTime
+  lastPasswordChangeAt   DateTime?
+  role                   UserRole                @default(USER)
+  banned                 Boolean                 @default(false)
+  banReason              String?
+  banExpires             DateTime?
+  selectedAiModelId      String?
+  accounts               Account[]
+  aiTextOptimizerCredits AiTextOptimizerCredits?
+  assistantConversations AiAssistantConversation[]
+  analyticsEvents        AnalyticsEvent[]        @relation("AnalyticsEventUser")
+  auditLogs              AuditLog[]              @relation("AuditLogActor")
+  readErrorLogs          ErrorLog[]              @relation("ErrorLogReadByUser")
+  errorLogs              ErrorLog[]              @relation("ErrorLogUser")
+  resumes                Resume[]
+  sessions               Session[]
+  selectedAiModel        AiModel?                @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id])
 
   @@map("user")
 }
@@ -21,6 +34,7 @@ model Session {
   updatedAt DateTime
   ipAddress String?
   userAgent String?
+  impersonatedBy String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -48,11 +62,18 @@ model Account {
 
 model Verification {
   id         String    @id
-  identifier String
+  identifier String    @unique
   value      String
   expiresAt  DateTime
   createdAt  DateTime?
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+
+  @@map("user_role")
 }

@@ -35,14 +35,17 @@ COPY --from=builder /app/out/full/ .
 
 # Build the web app
 # Mount secrets for Next.js build configuration (DATABASE_URL uses placeholder for Prisma generation)
-RUN --mount=type=secret,id=next_public_api_url \
-    --mount=type=secret,id=better_auth_url \
+RUN --mount=type=secret,id=better_auth_url \
     --mount=type=secret,id=better_auth_secret \
     --mount=type=secret,id=next_public_site_url \
     --mount=type=secret,id=better_auth_github_client_id \
     --mount=type=secret,id=better_auth_github_client_secret \
-    export DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder" && \
-    export NEXT_PUBLIC_API_URL="$(cat /run/secrets/next_public_api_url)" && \
+    --mount=type=secret,id=database_url \
+    --mount=type=secret,id=direct_url \
+    --mount=type=secret,id=openrouter_api_key \
+    export DATABASE_URL="$(cat /run/secrets/database_url)" && \
+    export DIRECT_URL="$(cat /run/secrets/direct_url)" && \
+    export OPENROUTER_API_KEY="$(cat /run/secrets/openrouter_api_key)" && \
     export BETTER_AUTH_URL="$(cat /run/secrets/better_auth_url)" && \
     export BETTER_AUTH_SECRET="$(cat /run/secrets/better_auth_secret)" && \
     export NEXT_PUBLIC_SITE_URL="$(cat /run/secrets/next_public_site_url)" && \

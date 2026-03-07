@@ -1,11 +1,29 @@
 // Authentication
 const SIGNIN = "/signin";
 const SIGNUP = "/signup";
+const TERMS = "/terms";
+const PRIVACY = "/privacy";
+const FAQ = "/faq";
+const ABOUT = "/about";
+const CONTACT = "/contact";
 
 // Workspace and resume builder
 const WORKSPACE = "/workspace";
 const PREVIEW = "/preview";
 const BUILDER = `${WORKSPACE}/builder`;
+const SETTINGS = `${WORKSPACE}/settings`;
+
+// Admin
+const ADMIN = "/admin";
+const ADMIN_ERROR = `${ADMIN}/error`;
+const ADMIN_USERS = `${ADMIN}/users`;
+const ADMIN_AI_MODELS = `${ADMIN}/ai-models`;
+const ADMIN_SYSTEM_CONFIG = `${ADMIN}/system-config`;
+const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
+const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
+
+// Test page
+const TESTSITE = "/testsite";
 
 /**
  * Centralized route constants for application navigation.
@@ -17,6 +35,7 @@ const BUILDER = `${WORKSPACE}/builder`;
  * @property WORKSPACE - Dashboard workspace route
  * @property PREVIEW - Resume preview route (dynamic: /preview/[resumeId])
  * @property BUILDER - Resume builder route (dynamic: /workspace/builder/[resumeId])
+ * @property SETTINGS - User account settings route
  *
  * @example
  * ```tsx
@@ -30,9 +49,23 @@ export const ROUTES = {
   HOME: "/",
   SIGNIN,
   SIGNUP,
+  TERMS,
+  PRIVACY,
+  FAQ,
+  ABOUT,
+  CONTACT,
   WORKSPACE,
   PREVIEW,
   BUILDER,
+  SETTINGS,
+  ADMIN,
+  ADMIN_ERROR,
+  ADMIN_USERS,
+  ADMIN_AI_MODELS,
+  ADMIN_SYSTEM_CONFIG,
+  ADMIN_AUDIT_LOGS,
+  ADMIN_ANALYTICS,
+  TESTSITE,
 } as const;
 
 /**

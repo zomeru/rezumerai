@@ -7,17 +7,19 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": [
         "DATABASE_URL",
+        "DIRECT_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "NEXT_PUBLIC_SITE_URL",
-        "NEXT_PUBLIC_API_URL",
         "BETTER_AUTH_GOOGLE_CLIENT_ID",
         "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
         "BETTER_AUTH_GITHUB_CLIENT_ID",
         "BETTER_AUTH_GITHUB_CLIENT_SECRET",
-        "CRON_SECRET"
+        "CRON_SECRET",
+        "REDIS_URL",
+        "OPENROUTER_API_KEY"
       ],
-      "inputs": ["$TURBO_DEFAULT$", ".env.production.local", ".env.local", ".env.production", ".env"]
+      "inputs": ["$TURBO_DEFAULT$", ".env.local", ".env"]
     },
     "start": {
       "dependsOn": ["build"],
@@ -42,17 +44,19 @@
       "persistent": true,
       "env": [
         "DATABASE_URL",
+        "DIRECT_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "NEXT_PUBLIC_SITE_URL",
-        "NEXT_PUBLIC_API_URL",
         "BETTER_AUTH_GOOGLE_CLIENT_ID",
         "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
         "BETTER_AUTH_GITHUB_CLIENT_ID",
         "BETTER_AUTH_GITHUB_CLIENT_SECRET",
-        "CRON_SECRET"
+        "CRON_SECRET",
+        "REDIS_URL",
+        "OPENROUTER_API_KEY"
       ],
-      "inputs": ["$TURBO_DEFAULT$", ".env.development.local", ".env.local", ".env.development", ".env"]
+      "inputs": ["$TURBO_DEFAULT$", ".env.local", ".env"]
     },
     "clean": {
       "cache": false

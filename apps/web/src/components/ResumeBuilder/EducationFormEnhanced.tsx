@@ -15,10 +15,12 @@ type Education = ResumeWithRelations["education"];
  *
  * @property education - Array of education entries
  * @property onChange - Callback with updated education array
+ * @property errors - Field-level errors indexed by entry position
  */
 export interface EducationFormEnhancedProps {
   education: Education;
   onChange: (education: Education) => void;
+  errors?: Record<number, Record<string, string>>;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface EducationFormEnhancedProps {
  * @returns Education form with DnD reordering and accordion entries
  */
 
-export default function EducationFormEnhanced({ education, onChange }: EducationFormEnhancedProps) {
+export default function EducationFormEnhanced({ education, onChange, errors = {} }: EducationFormEnhancedProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const handleAdd = () => {
@@ -40,7 +42,9 @@ export default function EducationFormEnhanced({ education, onChange }: Education
       institution: "",
       degree: "",
       field: "",
-      graduationDate: new Date(),
+      schoolYearStartDate: new Date(),
+      graduationDate: null,
+      isCurrent: false,
       gpa: "",
     };
     onChange([...education, newEducation]);
@@ -55,7 +59,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
     }
   };
 
-  const handleUpdate = (index: number, field: keyof Education[number], value: string | Date) => {
+  const handleUpdate = (index: number, field: keyof Education[number], value: string | Date | null | boolean) => {
     const updated = education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu));
     onChange(updated);
   };
@@ -96,6 +100,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                   value={edu.institution}
                   onValueChange={(value: string) => handleUpdate(index, "institution", value)}
                   placeholder="e.g. Harvard University"
+                  error={errors[index]?.institution}
                 />
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -106,6 +111,7 @@ export default function EducationFormEnhanced({ education, onChange }: Education
                     value={edu.degree}
                     onValueChange={(value: string) => handleUpdate(index, "degree", value)}
                     placeholder="e.g. Bachelor of Science"
+                    error={errors[index]?.degree}
                   />
                   <TextInput
                     id={`edu-field-${index}`}
@@ -118,21 +124,54 @@ export default function EducationFormEnhanced({ education, onChange }: Education
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
+                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">
+                      School Year Start Date<span className="text-red-500"> *</span>
+                    </p>
+                    <DatePicker
+                      selected={(edu as { schoolYearStartDate?: Date }).schoolYearStartDate ?? undefined}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "schoolYearStartDate", date ?? null)}
+                      placeholder="Select start date"
+                    />
+                  </div>
+                  <div>
                     <p className="mb-1.5 block font-medium text-slate-700 text-sm">Graduation Date</p>
                     <DatePicker
                       selected={edu.graduationDate ?? undefined}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", date ?? new Date())}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", date ?? null)}
                       placeholder="Select graduation date"
+                      disabled={(edu as { isCurrent?: boolean }).isCurrent ?? false}
                     />
                   </div>
-                  <TextInput
-                    id={`edu-gpa-${index}`}
-                    label="GPA (Optional)"
-                    value={edu.gpa}
-                    onValueChange={(value: string) => handleUpdate(index, "gpa", value)}
-                    placeholder="e.g. 3.8 or 8.5/10"
-                  />
                 </div>
+
+                <div className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`edu-current-${index}`}
+                    checked={(edu as { isCurrent?: boolean }).isCurrent ?? false}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const isChecked = e.target.checked;
+                      if (isChecked) {
+                        handleUpdate(index, "graduationDate", null);
+                        handleUpdate(index, "isCurrent", true);
+                      } else {
+                        handleUpdate(index, "isCurrent", false);
+                      }
+                    }}
+                    className="size-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <label htmlFor={`edu-current-${index}`} className="text-slate-700 text-sm">
+                    Currently studying
+                  </label>
+                </div>
+
+                <TextInput
+                  id={`edu-gpa-${index}`}
+                  label="GPA (Optional)"
+                  value={edu.gpa}
+                  onValueChange={(value: string) => handleUpdate(index, "gpa", value)}
+                  placeholder="e.g. 3.8 or 8.5/10"
+                />
               </div>
             )}
           </div>

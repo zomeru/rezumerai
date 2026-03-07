@@ -2,14 +2,16 @@ import path from "node:path";
 import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
+
+const isBotIdEnabled = process.env.BOTID_ENABLED === "true";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
-  transpilePackages: [
-    "@rezumerai/ui",
-    // "@rezumerai/utils",
-    // "@rezumerai/database",
-  ],
+  transpilePackages: ["@rezumerai/ui"],
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
 
@@ -78,8 +80,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-const withBundleAnalyzer: (config: typeof nextConfig) => typeof nextConfig = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
-
-export default withBotId(withBundleAnalyzer(nextConfig));
+export default withBundleAnalyzer(isBotIdEnabled ? withBotId(nextConfig) : nextConfig);

@@ -1,5 +1,5 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
 import type { TemplateProps } from "./types";
@@ -141,7 +141,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
                     )}
                   </div>
                   <div className="text-gray-600" style={{ fontSize: "0.875em" }}>
-                    <p>{formatShortDate(edu.graduationDate)}</p>
+                    <p>{formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}</p>
                   </div>
                 </div>
               );

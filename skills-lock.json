@@ -61,6 +61,11 @@
       "sourceType": "github",
       "computedHash": "dbf750eb5f48f712c2a5c01473ccbb23b5d19c2d4cac932470ae8e333e733e5c"
     },
+    "create-agent": {
+      "source": "OpenRouterTeam/agent-skills",
+      "sourceType": "github",
+      "computedHash": "7232cfa7d012008bf12fa33815af49db10e7ddd5549c75c501168875a5334e11"
+    },
     "csrf-protection": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
@@ -80,6 +85,11 @@
       "source": "georgekhananaev/claude-skills-vault",
       "sourceType": "github",
       "computedHash": "6d0d06ee81e089ed853b28b801a360dd8976e8eb0b23acc0301d069c71fbebe1"
+    },
+    "openrouter-typescript-sdk": {
+      "source": "OpenRouterTeam/agent-skills",
+      "sourceType": "github",
+      "computedHash": "0cb0e2f07f6b42fb8974c2ee89ca3ba3a103dfe565f12bc7ca9f41945fc7227a"
     },
     "playwright": {
       "source": "secondsky/claude-skills",

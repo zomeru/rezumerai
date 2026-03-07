@@ -14,8 +14,12 @@ import { clientEnv } from "@/env";
  *   const { data, error } = await api.users({ id: "1" }).get()
  */
 
+function getApiBaseUrl(): string {
+  return clientEnv.NEXT_PUBLIC_SITE_URL;
+}
+
 function createApi() {
-  return treaty<typeof elysiaApp>(clientEnv.NEXT_PUBLIC_SITE_URL).api;
+  return treaty<typeof elysiaApp>(getApiBaseUrl()).api;
 }
 
 export const api = createApi();

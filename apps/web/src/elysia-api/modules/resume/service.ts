@@ -1,13 +1,13 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
 import type { ResumeWithRelations } from "@rezumerai/types";
 import { t } from "elysia";
-import { type CustomResumeInputCreate, CustomResumeWithRelationInputUpdate } from "./model";
+import { type CustomResumeWithRelationsInputCreate, CustomResumeWithRelationsInputUpdate } from "./model";
 
 type SyncPromiseReturn = Prisma.PrismaPromise<unknown>;
 
-const SyncEducation = t.Pick(CustomResumeWithRelationInputUpdate, ["education"]);
-const SyncExperience = t.Pick(CustomResumeWithRelationInputUpdate, ["experience"]);
-const SyncProject = t.Pick(CustomResumeWithRelationInputUpdate, ["project"]);
+const SyncEducation = t.Pick(CustomResumeWithRelationsInputUpdate, ["education"]);
+const SyncExperience = t.Pick(CustomResumeWithRelationsInputUpdate, ["experience"]);
+const SyncProject = t.Pick(CustomResumeWithRelationsInputUpdate, ["project"]);
 
 type SyncItemsType =
   | typeof SyncEducation.static.education
@@ -21,7 +21,7 @@ type SyncableRelation = {
   create(args: { data: Record<string, unknown> }): SyncPromiseReturn;
 };
 
-// biome-ignore lint/complexity/noStaticOnlyClass: Pattern is intentional for service classes with only static methods.
+// biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class ResumeService {
   /**
    * Retrieves all resumes for a given user.
@@ -73,7 +73,7 @@ export abstract class ResumeService {
   static async create(
     db: PrismaClient,
     userId: string,
-    data: typeof CustomResumeInputCreate.static,
+    data: typeof CustomResumeWithRelationsInputCreate.static,
   ): Promise<ResumeWithRelations> {
     const { personalInfo, project, experience, education, ...rest } = data;
     const newResume = await db.resume.create({
@@ -113,7 +113,7 @@ export abstract class ResumeService {
     db: PrismaClient,
     userId: string,
     resumeId: string,
-    data: typeof CustomResumeWithRelationInputUpdate.static,
+    data: typeof CustomResumeWithRelationsInputUpdate.static,
   ): Promise<ResumeWithRelations | null> {
     const existing = await db.resume.findFirst({
       where: { id: resumeId, userId },
@@ -176,10 +176,6 @@ export abstract class ResumeService {
    * @returns true if deleted, false if not found or not owned
    */
   static async delete(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
-    console.log("Attempting to delete resume with ID:", {
-      resumeId,
-      userId,
-    });
     const result = await db.resume.deleteMany({
       where: {
         id: resumeId,
@@ -188,7 +184,6 @@ export abstract class ResumeService {
         },
       },
     });
-    // console.log("Delete result:", result);
     return result.count > 0;
   }
 

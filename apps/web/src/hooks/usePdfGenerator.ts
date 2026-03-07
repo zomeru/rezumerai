@@ -95,26 +95,38 @@ function generateDataHash(resumeData: ResumeWithRelations, fontSize: FontSizeVal
 }
 
 /**
- * Internal cache structure for PDF blob persistence.
- * Stores generated PDF with its corresponding data hash for validation.
- *
- * @property blob - Generated PDF blob
- * @property dataHash - Hash of the data used to generate this PDF
+ * Encapsulates PDF blob persistence with an explicit, testable API.
+ * Replaces the raw module-level mutable reference so all cache reads
+ * and writes go through a single controlled interface.
  *
  * @internal
  */
-interface PDFCache {
-  blob: Blob;
-  dataHash: string;
+class PdfCacheManager {
+  private cache: { blob: Blob; dataHash: string } | null = null;
+
+  /** Returns true if a cached blob exists for the given hash. */
+  isValid(hash: string): boolean {
+    return this.cache?.dataHash === hash;
+  }
+
+  /** Returns the cached blob if the hash matches, otherwise null. */
+  get(hash: string): Blob | null {
+    return this.isValid(hash) ? (this.cache?.blob ?? null) : null;
+  }
+
+  /** Stores a blob with its associated data hash. */
+  set(blob: Blob, hash: string): void {
+    this.cache = { blob, dataHash: hash };
+  }
+
+  /** Clears the cache. */
+  invalidate(): void {
+    this.cache = null;
+  }
 }
 
-/**
- * Module-level cache to persist PDF blobs across HTML/PDF mode switches.
- * Prevents unnecessary regeneration when switching between preview modes.
- *
- * @internal
- */
-const pdfCache: { current: PDFCache | null } = { current: null };
+/** Module-level singleton — persists across HTML/PDF mode switches. */
+const pdfCache = new PdfCacheManager();
 
 /**
  * Custom hook to handle PDF generation from HTML resume preview
@@ -158,10 +170,10 @@ export function usePdfGenerator({
   useEffect(() => {
     if (previewMode === "pdf" && !isGeneratingPdf) {
       // Check if we have a cached PDF with matching hash
-      if (pdfCache.current && pdfCache.current.dataHash === dataHash) {
-        // Use cached PDF - no regeneration needed
+      if (pdfCache.isValid(dataHash)) {
+        // Use cached PDF — no regeneration needed
         if (!pdfBlob || lastHashRef.current !== dataHash) {
-          setPdfBlob(pdfCache.current.blob);
+          setPdfBlob(pdfCache.get(dataHash));
           lastHashRef.current = dataHash;
         }
         return;
@@ -177,7 +189,7 @@ export function usePdfGenerator({
             if (blob) {
               setPdfBlob(blob);
               // Store in cache
-              pdfCache.current = { blob, dataHash };
+              pdfCache.set(blob, dataHash);
             } else {
               console.error("Failed to generate PDF: blob is null");
             }
@@ -204,7 +216,7 @@ export function usePdfGenerator({
             if (blob) {
               setPdfBlob(blob);
               // Update cache with new PDF
-              pdfCache.current = { blob, dataHash };
+              pdfCache.set(blob, dataHash);
             } else {
               console.error("Failed to regenerate PDF: blob is null");
             }
@@ -230,14 +242,14 @@ export function usePdfGenerator({
     try {
       // Use cached PDF if available and hash matches
       let blob: Blob | null = null;
-      if (pdfCache.current && pdfCache.current.dataHash === dataHash) {
-        blob = pdfCache.current.blob;
+      if (pdfCache.isValid(dataHash)) {
+        blob = pdfCache.get(dataHash);
       } else {
         // Generate new PDF
         blob = await generatePdfFromHtml();
         if (blob) {
           // Store in cache for future use
-          pdfCache.current = { blob, dataHash };
+          pdfCache.set(blob, dataHash);
         }
       }
 

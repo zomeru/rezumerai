@@ -1,6 +1,7 @@
 "use client";
 
 import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
+
 import { cn } from "@rezumerai/utils/styles";
 import {
   ArrowLeftIcon,
@@ -21,7 +22,8 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
@@ -31,6 +33,7 @@ import {
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
+  ResumeCopilotPanel,
   ResumePreview,
   SkillsFormEnhanced,
   TemplateSelector,
@@ -38,6 +41,7 @@ import {
 import { ROUTES } from "@/constants/routing";
 import { usePdfGenerator } from "@/hooks/usePdfGenerator";
 import { useResumeById, useUpdateResume } from "@/hooks/useResume";
+import { ResumeDraftValidator } from "@/lib/validation/resume-draft";
 import { useBuilderStore } from "@/store/useBuilderStore";
 import type { TemplateType } from "@/templates";
 
@@ -91,6 +95,23 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
 
   // Use React Query mutation for saving
   const updateResumeMutation = useUpdateResume();
+
+  const [invalidExperienceIndices, setInvalidExperienceIndices] = useState<Set<number>>(new Set());
+  const [personalInfoErrors, setPersonalInfoErrors] = useState<Record<string, string>>({});
+  const [projectErrors, setProjectErrors] = useState<Record<number, Record<string, string>>>({});
+  const [educationErrors, setEducationErrors] = useState<Record<number, Record<string, string>>>({});
+
+  // Validator is stable — useState setters never change identity
+  const validator = useMemo(
+    () =>
+      new ResumeDraftValidator({
+        setPersonalInfoErrors,
+        setInvalidExperienceIndices,
+        setProjectErrors,
+        setEducationErrors,
+      }),
+    [setPersonalInfoErrors, setInvalidExperienceIndices, setProjectErrors, setEducationErrors],
+  );
 
   // Builder UI store
   const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
@@ -167,28 +188,66 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
     updateDraft({ public: !draftResume.public });
   }
 
+  function applyCopilotPatch(patch: unknown): void {
+    if (!patch || typeof patch !== "object") {
+      return;
+    }
+
+    const patchRecord = patch as Record<string, unknown>;
+
+    if (typeof patchRecord.professionalSummary === "string") {
+      updateDraft({ professionalSummary: patchRecord.professionalSummary });
+    }
+
+    if (Array.isArray(patchRecord.skills)) {
+      updateDraft({ skills: patchRecord.skills as string[] });
+    }
+
+    const applyArrayPatch = (key: "experience" | "education" | "project"): void => {
+      const nextValue = patchRecord[key];
+      if (!Array.isArray(nextValue)) {
+        return;
+      }
+
+      const currentItems = draftResume[key];
+      const mergedItems = currentItems.map((item) => {
+        const matchingPatch = nextValue.find(
+          (candidate): candidate is Record<string, unknown> =>
+            typeof candidate === "object" && candidate !== null && candidate.id === item.id,
+        );
+
+        return matchingPatch ? { ...item, ...matchingPatch } : item;
+      });
+
+      updateDraft({ [key]: mergedItems } as Partial<ResumeWithRelations>);
+    };
+
+    applyArrayPatch("experience");
+    applyArrayPatch("education");
+    applyArrayPatch("project");
+  }
+
   async function handleSaveResume(): Promise<void> {
+    const isValid = validator.validateAll(draftResume);
+
+    if (!isValid) {
+      return;
+    }
+
+    const resumeDataToSave: ResumeWithRelationsInputUpdate = {
+      ...draftResume,
+      personalInfo: draftResume.personalInfo as ResumeWithRelationsInputUpdate["personalInfo"],
+    };
+
     setIsSaving(true);
     try {
-      const updates: ResumeWithRelationsInputUpdate = {
-        title: draftResume.title,
-        public: draftResume.public,
-        professionalSummary: draftResume.professionalSummary,
-        template: draftResume.template,
-        accentColor: draftResume.accentColor,
-        fontSize: draftResume.fontSize,
-        customFontSize: draftResume.customFontSize,
-        skills: draftResume.skills,
-        personalInfo: draftResume.personalInfo ?? undefined,
-        experience: draftResume.experience,
-        education: draftResume.education,
-        project: draftResume.project,
-      };
-
-      await updateResumeMutation.mutateAsync({ id: resumeId, updates });
+      await updateResumeMutation.mutateAsync({ id: resumeId, updates: resumeDataToSave });
       setLastSaved(new Date());
     } catch (error) {
-      console.error("Failed to save resume:", error);
+      // console.error("Failed to save resume:", error);
+      const errorMessage =
+        typeof error === "string" ? error : error instanceof Error ? error.message : "An unknown error occurred.";
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -235,6 +294,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
             onChangeAction={updateResumeData}
             removeBackground={removeBackground}
             setRemoveBackgroundAction={setRemoveBackground}
+            errors={personalInfoErrors}
           />
         ),
       },
@@ -249,15 +309,29 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
       },
       {
         id: "experience",
-        render: () => <ExperienceFormEnhanced experience={draftResume.experience} onChange={handleExperienceChange} />,
+        render: () => (
+          <ExperienceFormEnhanced
+            experience={draftResume.experience}
+            onChange={handleExperienceChange}
+            invalidIndices={invalidExperienceIndices}
+          />
+        ),
       },
       {
         id: "education",
-        render: () => <EducationFormEnhanced education={draftResume.education} onChange={handleEducationChange} />,
+        render: () => (
+          <EducationFormEnhanced
+            education={draftResume.education}
+            onChange={handleEducationChange}
+            errors={educationErrors}
+          />
+        ),
       },
       {
         id: "projects",
-        render: () => <ProjectFormEnhanced project={draftResume.project} onChange={handleProjectChange} />,
+        render: () => (
+          <ProjectFormEnhanced project={draftResume.project} onChange={handleProjectChange} errors={projectErrors} />
+        ),
       },
       {
         id: "skills",
@@ -266,7 +340,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
     ] as const;
 
     return _sections;
-  }, [draftResume, removeBackground]);
+  }, [draftResume, removeBackground, invalidExperienceIndices, personalInfoErrors, projectErrors, educationErrors]);
 
   const activeSection = sections[activeSectionIndex];
   const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
@@ -406,6 +480,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   </>
                 )}
               </button>
+
+              <ResumeCopilotPanel resumeId={resumeId} resume={draftResume} onApplyPatch={applyCopilotPatch} />
             </div>
           </div>
 
