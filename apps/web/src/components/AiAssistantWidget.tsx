@@ -351,7 +351,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
     <aside aria-label="AI assistant" className="fixed right-4 bottom-4 z-100 flex flex-col items-end gap-3">
       {isOpen && (
         <div
-          className="relative flex max-h-[80vh] min-h-[28rem] min-w-[20rem] max-w-[min(90vw,40rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
+          className="relative flex max-h-[80vh] min-h-112 min-w-[20rem] max-w-[min(90vw,40rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
           style={{
             width: `${panelSize.width}px`,
             height: `${panelSize.height}px`,
