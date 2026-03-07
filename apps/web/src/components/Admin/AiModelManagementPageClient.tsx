@@ -313,7 +313,7 @@ function AiModelEditorModal({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-[210] flex items-end justify-center p-4 transition-opacity duration-200 sm:items-center",
+        "fixed inset-0 z-210 flex items-end justify-center p-4 transition-opacity duration-200 sm:items-center",
         isVisible ? "bg-slate-950/45 opacity-100 backdrop-blur-sm" : "bg-slate-950/0 opacity-0",
       )}
       onClick={(event) => {
@@ -769,30 +769,12 @@ export default function AiModelManagementPageClient(): React.JSX.Element {
                           return (
                             <tr
                               key={model.id}
-                              role={isMobileViewport ? undefined : "button"}
-                              tabIndex={isMobileViewport ? undefined : 0}
                               className={cn(
                                 isEditing
                                   ? "border-primary-200 bg-primary-50/80 shadow-[inset_4px_0_0_0_rgba(37,99,235,0.95)]"
                                   : "hover:bg-slate-50",
-                                !isMobileViewport &&
-                                  "cursor-pointer transition-colors focus:outline-none focus-visible:bg-primary-50/80",
+                                "transition-colors",
                               )}
-                              onClick={() => {
-                                if (!isMobileViewport) {
-                                  startEditing(model, false);
-                                }
-                              }}
-                              onKeyDown={(event) => {
-                                if (isMobileViewport) {
-                                  return;
-                                }
-
-                                if (event.key === "Enter" || event.key === " ") {
-                                  event.preventDefault();
-                                  startEditing(model, false);
-                                }
-                              }}
                             >
                               <td className={cn("px-4 py-4", isEditing && "relative pl-6")}>
                                 {isEditing ? (
@@ -832,7 +814,7 @@ export default function AiModelManagementPageClient(): React.JSX.Element {
                                       event.stopPropagation();
                                       startEditing(model, true);
                                     }}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 font-medium text-slate-700 text-xs transition-colors hover:bg-slate-100 md:hidden"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 font-medium text-slate-700 text-xs transition-colors hover:bg-slate-100"
                                   >
                                     Edit
                                   </button>

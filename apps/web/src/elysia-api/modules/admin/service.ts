@@ -13,14 +13,20 @@ import type {
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
 } from "@rezumerai/types";
-import { AiConfigurationSchema } from "@rezumerai/types";
+import {
+  AiConfigurationSchema,
+  ContentPageSchema,
+  FaqInformationSchema,
+  LandingPageInformationSchema,
+  SYSTEM_CONFIGURATION_KEYS,
+} from "@rezumerai/types";
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
 
-const GLOBAL_CONFIGURATION_NAME = "GLOBAL_CONFIG";
+const GLOBAL_CONFIGURATION_NAME = SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG;
 const DEFAULT_ERROR_LOG_RETENTION_DAYS = 90;
 const DEFAULT_PAGE_SIZE = 50;
 const MIN_PAGE_SIZE = 1;
@@ -51,6 +57,30 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
   GLOBAL_CONFIG: {
     description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
     schema: GLOBAL_CONFIGURATION_SCHEMA,
+  },
+  TOS_INFORMATION: {
+    description: "Structured Terms of Service content for public pages and assistant responses.",
+    schema: ContentPageSchema,
+  },
+  PRIVACY_POLICY_INFORMATION: {
+    description: "Structured Privacy Policy content for public pages and assistant responses.",
+    schema: ContentPageSchema,
+  },
+  FAQ_INFORMATION: {
+    description: "Structured FAQ content used across public pages and assistant responses.",
+    schema: FaqInformationSchema,
+  },
+  ABOUT_US_INFORMATION: {
+    description: "Structured About page content for public pages and assistant responses.",
+    schema: ContentPageSchema,
+  },
+  CONTACT_INFORMATION: {
+    description: "Structured Contact page content for public pages and assistant responses.",
+    schema: ContentPageSchema,
+  },
+  LANDING_PAGE_INFORMATION: {
+    description: "Structured landing page content for the home page and assistant responses.",
+    schema: LandingPageInformationSchema,
   },
 } as const;
 

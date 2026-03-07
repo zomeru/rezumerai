@@ -1,23 +1,18 @@
+import { AssistantChatInputSchema } from "@rezumerai/types";
 import Elysia, { t } from "elysia";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { authPlugin } from "../../plugins/auth";
+import { createAuditLog } from "../../observability/audit";
+import { authPlugin, resolveSessionUser } from "../../plugins/auth";
 import { trackHandledError } from "../../plugins/error";
 import { prismaPlugin } from "../../plugins/prisma";
+import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import { AiModel } from "./model";
-import {
-  AI_CREDITS_EXHAUSTED_CODE,
-  AI_MODEL_POLICY_RESTRICTED_CODE,
-  AI_MODEL_UNAVAILABLE_CODE,
-  AiCreditsExhaustedError,
-  AiModelPolicyRestrictedError,
-  AiModelUnavailableError,
-  AiService,
-} from "./service";
+import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "./service";
 
 interface TrackAiHandledErrorOptions {
   request: Request;
   route: string;
-  userId: string;
+  userId?: string | null;
   error: unknown;
   body?: unknown;
   query?: unknown;
@@ -33,7 +28,7 @@ async function trackAiHandledError(options: TrackAiHandledErrorOptions): Promise
     body: options.body,
     query: options.query,
     params: options.params,
-    userId: options.userId,
+    userId: options.userId ?? undefined,
     metadata: {
       module: "ai",
       route: options.route,
@@ -55,17 +50,110 @@ async function trackUnverifiedAiAccess(options: { request: Request; route: strin
   });
 }
 
-/**
- * AI module — text optimization via OpenRouter streaming.
- *
- * POST /api/ai/optimize
- *   Body: { text: string }
- *   Response: text/plain stream — chunks arrive progressively as the model generates them.
- */
+function resolveUserRole(value: unknown): "ADMIN" | "USER" | null {
+  return value === "ADMIN" || value === "USER" ? value : null;
+}
+
+async function auditAdminAssistantUsage(options: {
+  userId: string;
+  reply: string;
+  toolNames: string[];
+  request: Request;
+}): Promise<void> {
+  await createAuditLog({
+    category: "USER_ACTION",
+    eventType: "ADMIN_AI_ASSISTANT_CHAT",
+    action: "RUN",
+    resourceType: "AI_ASSISTANT",
+    userId: options.userId,
+    endpoint: new URL(options.request.url).pathname,
+    method: options.request.method.toUpperCase(),
+    serviceName: "AiService.runAssistantChat",
+    requestMetadata: {
+      toolNames: options.toolNames,
+      replyLength: options.reply.length,
+    },
+  });
+}
+
 export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(prismaPlugin)
-  .use(authPlugin)
   .use(AiModel)
+  .post(
+    "/assistant/chat",
+    async ({ body, db, status, request }) => {
+      const parsedInput = AssistantChatInputSchema.safeParse(body);
+      if (!parsedInput.success) {
+        return status(422, {
+          scope: "PUBLIC",
+          reply: ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+          blocks: [
+            {
+              type: "paragraph",
+              content: ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+            },
+          ],
+          toolNames: [],
+        });
+      }
+
+      const sessionUser = await resolveSessionUser();
+      const role = resolveUserRole((sessionUser as { role?: unknown } | null)?.role);
+
+      try {
+        const result = await AiService.runAssistantChat(db, parsedInput.data, {
+          userId: sessionUser?.id ?? null,
+          role,
+        });
+
+        if (role === "ADMIN" && sessionUser?.id) {
+          await auditAdminAssistantUsage({
+            userId: sessionUser.id,
+            reply: result.reply,
+            toolNames: result.toolNames,
+            request,
+          });
+        }
+
+        return status(200, result);
+      } catch (error: unknown) {
+        await trackAiHandledError({
+          request,
+          route: "/ai/assistant/chat",
+          userId: sessionUser?.id ?? null,
+          body,
+          error,
+          metadata: {
+            responseStatus: 422,
+          },
+        });
+
+        return status(422, {
+          scope: role ? AiService.toAssistantScope(role) : "PUBLIC",
+          reply: ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+          blocks: [
+            {
+              type: "paragraph",
+              content: ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+            },
+          ],
+          toolNames: [],
+        });
+      }
+    },
+    {
+      body: "ai.AssistantChatInput",
+      response: {
+        200: "ai.AssistantChatResponse",
+        422: "ai.AssistantChatResponse",
+      },
+      detail: {
+        summary: "Run the unified AI assistant widget",
+        tags: ["AI"],
+      },
+    },
+  )
+  .use(authPlugin)
   .get(
     "/models",
     async ({ db, status, request, user }) => {
@@ -170,6 +258,262 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       detail: {
         summary: "Update selected AI model for the current user",
         tags: ["AI"],
+      },
+    },
+  )
+  .post(
+    "/copilot/optimize-section",
+    async ({ body, db, user, status, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/copilot/optimize-section",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
+      const startedAt = Date.now();
+      let runtime = null as Awaited<ReturnType<typeof AiService.resolveOptimizationContext>> | null;
+
+      try {
+        runtime = await AiService.resolveOptimizationContext(db, user.id, null);
+        const result = await AiService.runCopilotOptimize(db, user.id, {
+          ...body,
+          intent: body.intent ?? "clarity",
+        });
+
+        await AiService.saveCopilotResult(
+          db,
+          user.id,
+          body.resumeId,
+          "optimize",
+          result.response.modelId,
+          result.promptVersion,
+          body,
+          result.response,
+          result.usage,
+          Date.now() - startedAt,
+        );
+
+        return status(200, result.response);
+      } catch (error: unknown) {
+        const normalizedError = error instanceof Error ? error : new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+        await trackAiHandledError({
+          request,
+          route: "/ai/copilot/optimize-section",
+          userId: user.id,
+          body,
+          error: normalizedError,
+          metadata: {
+            responseStatus:
+              error instanceof AiCreditsExhaustedError ? 429 : error instanceof AiModelUnavailableError ? 422 : 500,
+          },
+        });
+
+        if (runtime) {
+          await AiService.saveCopilotFailure(
+            db,
+            user.id,
+            body.resumeId,
+            "optimize",
+            runtime.model.modelId,
+            runtime.config.PROMPT_VERSION,
+            body,
+            normalizedError.message,
+            Date.now() - startedAt,
+          );
+        }
+
+        if (error instanceof AiCreditsExhaustedError) {
+          return status(429, ERROR_MESSAGES.AI_CREDITS_EXHAUSTED);
+        }
+
+        if (error instanceof AiModelUnavailableError || error instanceof AiModelPolicyRestrictedError) {
+          return status(422, normalizedError.message);
+        }
+
+        return status(500, ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+      }
+    },
+    {
+      body: "ai.CopilotOptimizeInput",
+      response: {
+        200: "ai.CopilotOptimizeResponse",
+        403: "ai.Error",
+        422: "ai.Error",
+        429: "ai.Error",
+        500: "ai.Error",
+      },
+      detail: {
+        summary: "Optimize a resume section with Resume Copilot",
+        tags: ["AI", "Resume Copilot"],
+      },
+    },
+  )
+  .post(
+    "/copilot/tailor",
+    async ({ body, db, user, status, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/copilot/tailor",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
+      const startedAt = Date.now();
+      let runtime = null as Awaited<ReturnType<typeof AiService.resolveOptimizationContext>> | null;
+
+      try {
+        runtime = await AiService.resolveOptimizationContext(db, user.id, null);
+        const result = await AiService.runCopilotTailor(db, user.id, body);
+
+        await AiService.saveCopilotResult(
+          db,
+          user.id,
+          body.resumeId,
+          "tailor",
+          result.response.modelId,
+          result.promptVersion,
+          body,
+          result.response,
+          result.usage,
+          Date.now() - startedAt,
+        );
+
+        return status(200, result.response);
+      } catch (error: unknown) {
+        const normalizedError = error instanceof Error ? error : new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+        await trackAiHandledError({
+          request,
+          route: "/ai/copilot/tailor",
+          userId: user.id,
+          body,
+          error: normalizedError,
+        });
+
+        if (runtime) {
+          await AiService.saveCopilotFailure(
+            db,
+            user.id,
+            body.resumeId,
+            "tailor",
+            runtime.model.modelId,
+            runtime.config.PROMPT_VERSION,
+            body,
+            normalizedError.message,
+            Date.now() - startedAt,
+          );
+        }
+
+        if (error instanceof AiCreditsExhaustedError) {
+          return status(429, ERROR_MESSAGES.AI_CREDITS_EXHAUSTED);
+        }
+
+        if (error instanceof AiModelUnavailableError || error instanceof AiModelPolicyRestrictedError) {
+          return status(422, normalizedError.message);
+        }
+
+        return status(500, ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+      }
+    },
+    {
+      body: "ai.CopilotTailorInput",
+      response: {
+        200: "ai.CopilotTailorResponse",
+        403: "ai.Error",
+        422: "ai.Error",
+        429: "ai.Error",
+        500: "ai.Error",
+      },
+      detail: {
+        summary: "Tailor a resume to a job description",
+        tags: ["AI", "Resume Copilot"],
+      },
+    },
+  )
+  .post(
+    "/copilot/review",
+    async ({ body, db, user, status, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/copilot/review",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
+      const startedAt = Date.now();
+      let runtime = null as Awaited<ReturnType<typeof AiService.resolveOptimizationContext>> | null;
+
+      try {
+        runtime = await AiService.resolveOptimizationContext(db, user.id, null);
+        const result = await AiService.runCopilotReview(db, user.id, body);
+
+        await AiService.saveCopilotResult(
+          db,
+          user.id,
+          body.resumeId,
+          "review",
+          result.response.modelId,
+          result.promptVersion,
+          body,
+          result.response,
+          result.usage,
+          Date.now() - startedAt,
+        );
+
+        return status(200, result.response);
+      } catch (error: unknown) {
+        const normalizedError = error instanceof Error ? error : new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+        await trackAiHandledError({
+          request,
+          route: "/ai/copilot/review",
+          userId: user.id,
+          body,
+          error: normalizedError,
+        });
+
+        if (runtime) {
+          await AiService.saveCopilotFailure(
+            db,
+            user.id,
+            body.resumeId,
+            "review",
+            runtime.model.modelId,
+            runtime.config.PROMPT_VERSION,
+            body,
+            normalizedError.message,
+            Date.now() - startedAt,
+          );
+        }
+
+        if (error instanceof AiCreditsExhaustedError) {
+          return status(429, ERROR_MESSAGES.AI_CREDITS_EXHAUSTED);
+        }
+
+        if (error instanceof AiModelUnavailableError || error instanceof AiModelPolicyRestrictedError) {
+          return status(422, normalizedError.message);
+        }
+
+        return status(500, ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
+      }
+    },
+    {
+      body: "ai.CopilotReviewInput",
+      response: {
+        200: "ai.CopilotReviewResponse",
+        403: "ai.Error",
+        422: "ai.Error",
+        429: "ai.Error",
+        500: "ai.Error",
+      },
+      detail: {
+        summary: "Review overall resume quality",
+        tags: ["AI", "Resume Copilot"],
       },
     },
   )
@@ -290,14 +634,6 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         } catch (saveError: unknown) {
           const message = saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
           console.error(`[AI] Failed to persist optimization: ${message}`);
-          await trackAiHandledError({
-            ...trackedRequestContext,
-            error: saveError,
-            metadata: {
-              phase: "save-optimization-after-create-stream-failure",
-              reason: "AI_OPTIMIZATION_PERSISTENCE_ERROR",
-            },
-          });
         }
 
         return status(422, {
@@ -369,15 +705,6 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
             const message =
               saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
             console.error(`[AI] Failed to persist optimization: ${message}`);
-            await trackAiHandledError({
-              ...trackedRequestContext,
-              error: saveError,
-              metadata: {
-                phase: "save-optimization-finally",
-                reason: "AI_OPTIMIZATION_PERSISTENCE_ERROR",
-                optimizationStatus,
-              },
-            });
           }
         }
       })();

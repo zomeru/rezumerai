@@ -196,11 +196,7 @@ export default function UserListPageClient(): React.JSX.Element {
                       </tr>
                     ))
                   : data?.items.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="cursor-pointer transition-colors hover:bg-slate-50"
-                        onClick={() => router.push(`${ROUTES.ADMIN_USERS}/${item.id}`)}
-                      >
+                      <tr key={item.id} className="transition-colors hover:bg-slate-50">
                         <td className="px-4 py-4 font-semibold text-slate-900">{item.name}</td>
                         <td className="px-4 py-4 text-slate-600">{item.email}</td>
                         <td className="px-4 py-4">

@@ -1,3 +1,13 @@
+import {
+  DEFAULT_ABOUT_CONTENT,
+  DEFAULT_AI_CONFIGURATION,
+  DEFAULT_CONTACT_CONTENT,
+  DEFAULT_FAQ_CONTENT,
+  DEFAULT_LANDING_PAGE_CONTENT,
+  DEFAULT_PRIVACY_CONTENT,
+  DEFAULT_TERMS_CONTENT,
+  SYSTEM_CONFIGURATION_KEYS,
+} from "@rezumerai/types";
 import { type Prisma, prisma } from "../";
 
 const AI_PROVIDER_SEED = [
@@ -39,13 +49,6 @@ const AI_PROVIDER_SEED = [
     ],
   },
 ] as const;
-
-const AI_CONFIG_SEED = {
-  PROMPT_VERSION: "optimize-v1",
-  DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: 100,
-  OPTIMIZE_SYSTEM_PROMPT:
-    "You are a professional text editor. Your task is to optimize the given text by improving clarity, fixing grammar, correcting spelling, and enhancing readability. Return only the optimized text with no explanations, preamble, or commentary.",
-} as const;
 
 const GLOBAL_CONFIG_SEED = {
   ERROR_LOG_RETENTION_DAYS: 90,
@@ -90,30 +93,78 @@ async function seedSystemConfigurations(): Promise<void> {
   console.log("⚙️  Seeding system configuration...");
 
   await prisma.systemConfiguration.upsert({
-    where: { name: "AI_CONFIG" },
+    where: { name: SYSTEM_CONFIGURATION_KEYS.AI_CONFIG },
     update: {
       description: "Global AI model and optimization configuration used across the application.",
-      value: AI_CONFIG_SEED as Prisma.InputJsonValue,
+      value: DEFAULT_AI_CONFIGURATION as Prisma.InputJsonValue,
     },
     create: {
-      name: "AI_CONFIG",
+      name: SYSTEM_CONFIGURATION_KEYS.AI_CONFIG,
       description: "Global AI model and optimization configuration used across the application.",
-      value: AI_CONFIG_SEED as Prisma.InputJsonValue,
+      value: DEFAULT_AI_CONFIGURATION as Prisma.InputJsonValue,
     },
   });
 
   await prisma.systemConfiguration.upsert({
-    where: { name: "GLOBAL_CONFIG" },
+    where: { name: SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG },
     update: {
       description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
       value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
     },
     create: {
-      name: "GLOBAL_CONFIG",
+      name: SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG,
       description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
       value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
     },
   });
+
+  const publicContentSeeds = [
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.TOS_INFORMATION,
+      description: "Structured Terms of Service content for public pages and assistant responses.",
+      value: DEFAULT_TERMS_CONTENT,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.PRIVACY_POLICY_INFORMATION,
+      description: "Structured Privacy Policy content for public pages and assistant responses.",
+      value: DEFAULT_PRIVACY_CONTENT,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.FAQ_INFORMATION,
+      description: "Structured FAQ content used across public pages and assistant responses.",
+      value: DEFAULT_FAQ_CONTENT,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.ABOUT_US_INFORMATION,
+      description: "Structured About page content for public pages and assistant responses.",
+      value: DEFAULT_ABOUT_CONTENT,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.CONTACT_INFORMATION,
+      description: "Structured Contact page content for public pages and assistant responses.",
+      value: DEFAULT_CONTACT_CONTENT,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.LANDING_PAGE_INFORMATION,
+      description: "Structured landing page content for the home page and assistant responses.",
+      value: DEFAULT_LANDING_PAGE_CONTENT,
+    },
+  ] as const;
+
+  for (const seed of publicContentSeeds) {
+    await prisma.systemConfiguration.upsert({
+      where: { name: seed.name },
+      update: {
+        description: seed.description,
+        value: seed.value as Prisma.InputJsonValue,
+      },
+      create: {
+        name: seed.name,
+        description: seed.description,
+        value: seed.value as Prisma.InputJsonValue,
+      },
+    });
+  }
 
   console.log("✅ System configuration seeded");
 }

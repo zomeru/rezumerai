@@ -40,8 +40,7 @@ function buildCSP(isDev: boolean) {
   const connectSrc = ["'self'", "blob:"];
 
   if (isDev) {
-    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "http://localhost:8080", "https://vercel.live");
-    connectSrc.push("http://localhost:8080");
+    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "https://vercel.live");
   } else {
     // Production: Tailwind inline styles only
     scriptSrc.push("'unsafe-inline'");

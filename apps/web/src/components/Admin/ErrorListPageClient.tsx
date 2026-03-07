@@ -203,11 +203,7 @@ export default function ErrorListPageClient(): React.JSX.Element {
                     ))
                   ) : data?.items.length ? (
                     data.items.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="cursor-pointer transition-colors hover:bg-slate-50"
-                        onClick={() => router.push(`${ROUTES.ADMIN_ERROR}/${item.id}`)}
-                      >
+                      <tr key={item.id} className="transition-colors hover:bg-slate-50">
                         <td className="px-4 py-4 font-semibold text-slate-900">{item.errorName}</td>
                         <td className="px-4 py-4 text-slate-600">{formatDateTime(item.createdAt)}</td>
                         <td className="px-4 py-4">

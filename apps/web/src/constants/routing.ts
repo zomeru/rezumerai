@@ -1,6 +1,11 @@
 // Authentication
 const SIGNIN = "/signin";
 const SIGNUP = "/signup";
+const TERMS = "/terms";
+const PRIVACY = "/privacy";
+const FAQ = "/faq";
+const ABOUT = "/about";
+const CONTACT = "/contact";
 
 // Workspace and resume builder
 const WORKSPACE = "/workspace";
@@ -44,6 +49,11 @@ export const ROUTES = {
   HOME: "/",
   SIGNIN,
   SIGNUP,
+  TERMS,
+  PRIVACY,
+  FAQ,
+  ABOUT,
+  CONTACT,
   WORKSPACE,
   PREVIEW,
   BUILDER,

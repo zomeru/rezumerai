@@ -33,6 +33,7 @@ import {
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
+  ResumeCopilotPanel,
   ResumePreview,
   SkillsFormEnhanced,
   TemplateSelector,
@@ -185,6 +186,45 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
 
   function changeResumeVisibility() {
     updateDraft({ public: !draftResume.public });
+  }
+
+  function applyCopilotPatch(patch: unknown): void {
+    if (!patch || typeof patch !== "object") {
+      return;
+    }
+
+    const patchRecord = patch as Record<string, unknown>;
+
+    if (typeof patchRecord.professionalSummary === "string") {
+      updateDraft({ professionalSummary: patchRecord.professionalSummary });
+    }
+
+    if (Array.isArray(patchRecord.skills)) {
+      updateDraft({ skills: patchRecord.skills as string[] });
+    }
+
+    const applyArrayPatch = (key: "experience" | "education" | "project"): void => {
+      const nextValue = patchRecord[key];
+      if (!Array.isArray(nextValue)) {
+        return;
+      }
+
+      const currentItems = draftResume[key];
+      const mergedItems = currentItems.map((item) => {
+        const matchingPatch = nextValue.find(
+          (candidate): candidate is Record<string, unknown> =>
+            typeof candidate === "object" && candidate !== null && candidate.id === item.id,
+        );
+
+        return matchingPatch ? { ...item, ...matchingPatch } : item;
+      });
+
+      updateDraft({ [key]: mergedItems } as Partial<ResumeWithRelations>);
+    };
+
+    applyArrayPatch("experience");
+    applyArrayPatch("education");
+    applyArrayPatch("project");
   }
 
   async function handleSaveResume(): Promise<void> {
@@ -440,6 +480,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   </>
                 )}
               </button>
+
+              <ResumeCopilotPanel resumeId={resumeId} resume={draftResume} onApplyPatch={applyCopilotPatch} />
             </div>
           </div>
 

@@ -229,14 +229,21 @@ bun run db:generate
 bun run db:migrate:dev
 ```
 
-## 10. Test Accounts for AI Browser Testing (Playwright MCP, etc...)
-USER ROLE:
-Email: `test@test.com`
-Password: `Test1234`
+## 10. Test Accounts for AI Browser Testing (Playwright MCP, etc.)
 
-ADMIN ROLE:
-Email: `testadmin@test.com`
-Password: `Test1234`
+Use the existing development server running on **port 3000** when executing browser-based tests (e.g., Playwright MCP).
+
+### USER Role
+- **Email:** `test@test.com`
+- **Password:** `Test1234`
+
+### ADMIN Role
+- **Email:** `testadmin@test.com`
+- **Password:** `Test1234`
+
+### Notes
+- Ensure the dev server is running before executing tests.
+- These accounts are intended for automated browser testing and role-based access validation.
 
 
 ## 11. Agent Do/Do Not

@@ -26,6 +26,7 @@ export const ERROR_MESSAGES = {
   PERSONAL_INFO_PHONE_INVALID: "Please enter a valid phone number.",
   PERSONAL_INFO_LINKEDIN_INVALID: "Please enter a valid LinkedIn URL.",
   PERSONAL_INFO_WEBSITE_INVALID: "Please enter a valid website URL.",
+  RESUME_LOW_QUALITY_TEXT: "Your resume contains suspicious or low-quality text. Please review before saving.",
 
   // AI feature validation - need to be signed in to access
   AI_AUTH_REQUIRED: "You must be signed in to access this feature.",
@@ -51,6 +52,9 @@ export const ERROR_MESSAGES = {
   AI_OPTIMIZE_UNKNOWN_ERROR: "An unknown error occurred while optimizing text.",
   AI_OPTIMIZE_INVALID_RESPONSE: "Invalid optimize response.",
   AI_OPTIMIZE_UNEXPECTED_ERROR: "An unexpected error occurred.",
+  AI_ASSISTANT_UNKNOWN_ERROR: "The assistant could not complete that request.",
+  AI_ASSISTANT_FORBIDDEN: "Sorry, I can't access that information.",
+  AI_COPILOT_RUN_FAILED: "Resume Copilot could not finish that request.",
 
   // Unknown error
   UNKNOWN_ERROR: "An unknown error occurred. Please try again.",

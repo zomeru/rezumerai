@@ -16,6 +16,7 @@ export {
 export { default as PersonalInfoForm } from "./PersonalInfoForm";
 export { default as ProfessionalSummaryFormEnhanced } from "./ProfessionalSummaryFormEnhanced";
 export { default as ProjectFormEnhanced } from "./ProjectFormEnhanced";
+export { default as ResumeCopilotPanel } from "./ResumeCopilotPanel";
 export { default as ResumePreview } from "./ResumePreview";
 export { default as RichTextEditor } from "./RichTextEditor";
 export { default as SkillsFormEnhanced } from "./SkillsFormEnhanced";

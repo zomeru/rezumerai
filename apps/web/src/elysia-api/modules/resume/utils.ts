@@ -1,4 +1,5 @@
 import { ERROR_MESSAGES } from "@/constants/errors";
+import { detectResumeQualityIssues } from "@/lib/resume-quality";
 import type { CustomResumeWithRelationsInputUpdate } from "./model";
 
 export type ValidationError = {
@@ -79,6 +80,12 @@ export function validateResumeUpdate(
         };
       }
     }
+  }
+
+  if (detectResumeQualityIssues(input).length > 0) {
+    return {
+      message: ERROR_MESSAGES.RESUME_LOW_QUALITY_TEXT,
+    };
   }
 
   return null;

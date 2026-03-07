@@ -20,7 +20,9 @@ function getApiErrorMessage(value: unknown, fallback: string): string {
   return fallback;
 }
 
-export function useAccountSettings(options?: Omit<QueryOptions<UserAccountSettings>, "queryKey" | "queryFn">) {
+export function useAccountSettings(
+  options?: Omit<QueryOptions<UserAccountSettings>, "queryKey" | "queryFn"> & { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ACCOUNT_QUERY_KEY,
     queryFn: async () => {

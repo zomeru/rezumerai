@@ -6,6 +6,8 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
 
+const isBotIdEnabled = process.env.BOTID_ENABLED === "true";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
@@ -78,4 +80,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(withBotId(nextConfig));
+export default withBundleAnalyzer(isBotIdEnabled ? withBotId(nextConfig) : nextConfig);
