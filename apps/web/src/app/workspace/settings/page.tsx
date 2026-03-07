@@ -1,22 +1,43 @@
 "use client";
 
-import type { UpdateUserAccountInput, UserAccountSettings } from "@rezumerai/types";
+import { PasswordChangeInputSchema, type UpdateUserAccountInput, type UserAccountSettings } from "@rezumerai/types";
 import { capitalize } from "@rezumerai/utils/string";
 import { ArrowLeft, Loader2, Lock, Save } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DisabledTooltip } from "@/components/ui/DisabledTooltip";
 import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings, useUpdateAccountSettings } from "@/hooks/useAccount";
 import { useAiSettings, useUpdateSelectedAiModel } from "@/hooks/useAi";
+import { changePassword } from "@/lib/auth-client";
+import { isCredentialProvider, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/password-policy";
 
 interface AccountFormState {
   name: string;
   email: string;
   image: string;
 }
+
+interface PasswordFormState {
+  currentPassword: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface PasswordFormErrors {
+  currentPassword?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+const EMPTY_PASSWORD_FORM: PasswordFormState = {
+  currentPassword: "",
+  password: "",
+  confirmPassword: "",
+};
 
 function getProviderLabel(providerId: string): string {
   if (providerId === "credential" || providerId === "email-password") {
@@ -77,6 +98,14 @@ function createAccountUpdates(settings: UserAccountSettings, formState: AccountF
   return updates;
 }
 
+function toPasswordErrors(fieldErrors: Record<string, string[] | undefined>): PasswordFormErrors {
+  return {
+    currentPassword: fieldErrors.currentPassword?.[0],
+    password: fieldErrors.password?.[0],
+    confirmPassword: fieldErrors.confirmPassword?.[0],
+  };
+}
+
 export default function WorkspaceSettingsPage(): React.JSX.Element {
   const { data, error, isLoading, refetch } = useAccountSettings();
   const {
@@ -84,7 +113,9 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
     error: aiSettingsError,
     isLoading: isAiSettingsLoading,
     refetch: refetchAiSettings,
-  } = useAiSettings();
+  } = useAiSettings({
+    enabled: data?.user.emailVerified === true,
+  });
   const updateAccountSettings = useUpdateAccountSettings();
   const updateSelectedModel = useUpdateSelectedAiModel();
 
@@ -94,6 +125,9 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
     image: "",
   });
   const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [passwordForm, setPasswordForm] = useState<PasswordFormState>(EMPTY_PASSWORD_FORM);
+  const [passwordErrors, setPasswordErrors] = useState<PasswordFormErrors>({});
+  const [isPasswordUpdating, setIsPasswordUpdating] = useState<boolean>(false);
 
   useEffect(() => {
     if (!data) return;
@@ -131,6 +165,17 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
     }));
   }
 
+  function updatePasswordField<K extends keyof PasswordFormState>(key: K, value: PasswordFormState[K]): void {
+    setPasswordForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+    setPasswordErrors((current) => ({
+      ...current,
+      [key]: undefined,
+    }));
+  }
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
@@ -163,6 +208,39 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
       const message =
         submitError instanceof Error ? submitError.message : ERROR_MESSAGES.AI_MODEL_PREFERENCE_UPDATE_FAILED;
       toast.error(message);
+    }
+  }
+
+  async function onSubmitPassword(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    const parsed = PasswordChangeInputSchema.safeParse(passwordForm);
+    if (!parsed.success) {
+      setPasswordErrors(toPasswordErrors(parsed.error.flatten().fieldErrors));
+      return;
+    }
+
+    setPasswordErrors({});
+    setIsPasswordUpdating(true);
+
+    try {
+      const { error: passwordError } = await changePassword({
+        currentPassword: parsed.data.currentPassword,
+        newPassword: parsed.data.password,
+      });
+
+      if (passwordError) {
+        throw new Error(passwordError.message ?? "Failed to update password.");
+      }
+
+      setPasswordForm(EMPTY_PASSWORD_FORM);
+      await refetch();
+      toast.success("Password updated successfully.");
+    } catch (submitError: unknown) {
+      const message = submitError instanceof Error ? submitError.message : "Failed to update password.";
+      toast.error(message);
+    } finally {
+      setIsPasswordUpdating(false);
     }
   }
 
@@ -212,6 +290,16 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
   }
 
   const emailReadOnly = !data.permissions.canEditEmail;
+  const isAiRestricted = !data.user.emailVerified;
+  const isOAuthOnly = data.passwordManagement.isOAuthOnly;
+  const showEditablePasswordForm = data.passwordManagement.hasCredentialProvider && !isOAuthOnly;
+  const oauthProviderLabels = data.providers
+    .filter((provider) => !isCredentialProvider(provider.providerId))
+    .map((provider) => getProviderLabel(provider.providerId));
+  const oauthProviderMessage =
+    oauthProviderLabels.length > 0
+      ? `This account is connected to ${oauthProviderLabels.join(", ")}.`
+      : "This account is connected to an OAuth provider.";
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
@@ -301,26 +389,6 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
               />
             </div>
 
-            <div>
-              <label htmlFor="account-password" className="mb-1.5 block font-medium text-slate-700 text-sm">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  id="account-password"
-                  type="password"
-                  value="********"
-                  className="w-full rounded-xl border border-slate-300 bg-slate-100 py-2.5 pr-4 pl-9 text-slate-500 text-sm"
-                  disabled
-                  readOnly
-                />
-              </div>
-              {data.readOnlyReasons.password && (
-                <p className="mt-1.5 text-slate-500 text-xs">{data.readOnlyReasons.password}</p>
-              )}
-            </div>
-
             <button
               type="submit"
               disabled={updateAccountSettings.isPending || !isDirty}
@@ -339,6 +407,122 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
               )}
             </button>
           </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5">
+            <h2 className="font-semibold text-slate-900 text-xl">Password</h2>
+            <p className="mt-1 text-slate-600 text-sm">
+              Use your current password and choose a new one that meets the existing account rules.
+            </p>
+          </div>
+
+          {!showEditablePasswordForm ? (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="account-password-readonly" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="account-password-readonly"
+                    type="password"
+                    value="********"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-100 py-2.5 pr-4 pl-9 text-slate-500 text-sm"
+                    disabled
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+                <p className="font-medium">{data.readOnlyReasons.password ?? oauthProviderMessage}</p>
+                <p className="mt-1 text-amber-800 text-xs">
+                  Password changes for OAuth-only accounts are managed by the connected provider.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={(event) => void onSubmitPassword(event)} className="space-y-5">
+              {data.passwordManagement.cooldownMessage && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+                  {data.passwordManagement.cooldownMessage}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="account-current-password" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                  Current password
+                </label>
+                <input
+                  id="account-current-password"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) => updatePasswordField("currentPassword", event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  disabled={isPasswordUpdating || data.passwordManagement.isCooldownActive}
+                  required
+                />
+                {passwordErrors.currentPassword && (
+                  <p className="mt-1.5 text-red-600 text-xs">{passwordErrors.currentPassword}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="account-password" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                  New password
+                </label>
+                <input
+                  id="account-password"
+                  type="password"
+                  value={passwordForm.password}
+                  onChange={(event) => updatePasswordField("password", event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  disabled={isPasswordUpdating || data.passwordManagement.isCooldownActive}
+                  required
+                />
+                <p className="mt-1.5 text-slate-500 text-xs">Password must be {PASSWORD_REQUIREMENTS_TEXT}.</p>
+                {passwordErrors.password && <p className="mt-1.5 text-red-600 text-xs">{passwordErrors.password}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="account-confirm-password" className="mb-1.5 block font-medium text-slate-700 text-sm">
+                  Confirm new password
+                </label>
+                <input
+                  id="account-confirm-password"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(event) => updatePasswordField("confirmPassword", event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  disabled={isPasswordUpdating || data.passwordManagement.isCooldownActive}
+                  required
+                />
+                {passwordErrors.confirmPassword && (
+                  <p className="mt-1.5 text-red-600 text-xs">{passwordErrors.confirmPassword}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPasswordUpdating || data.passwordManagement.isCooldownActive}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 font-semibold text-sm text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isPasswordUpdating ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="size-4" />
+                    Update password
+                  </>
+                )}
+              </button>
+            </form>
+          )}
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -377,31 +561,52 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
                   onChange={(nextValue) => setSelectedModelId(nextValue)}
                   options={modelOptions}
                   placeholder={ERROR_MESSAGES.AI_NO_ACTIVE_MODELS}
-                  disabled={!aiSettings.models.length || updateSelectedModel.isPending}
+                  disabled={isAiRestricted || !aiSettings.models.length || updateSelectedModel.isPending}
                 />
-                {Boolean(aiSettings.models.length) && (
+                {isAiRestricted ? (
+                  <p className="mt-1.5 text-amber-700 text-xs">{ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}</p>
+                ) : aiSettings.models.length ? (
                   <p className="mt-1.5 text-slate-500 text-xs">Only active models are available for selection.</p>
-                )}
+                ) : null}
               </div>
 
-              <button
-                type="button"
-                onClick={() => void onSaveSelectedModel()}
-                disabled={updateSelectedModel.isPending || !isModelSelectionDirty || !selectedModelId}
-                className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
-              >
-                {updateSelectedModel.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
+              {isAiRestricted ? (
+                <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}>
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white opacity-60 shadow-none"
+                  >
                     <Save className="size-4" />
                     Save model
-                  </>
-                )}
-              </button>
+                  </button>
+                </DisabledTooltip>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void onSaveSelectedModel()}
+                  disabled={updateSelectedModel.isPending || !isModelSelectionDirty || !selectedModelId}
+                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/40 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+                >
+                  {updateSelectedModel.isPending ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="size-4" />
+                      Save model
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {!isAiSettingsLoading && !aiSettings && isAiRestricted && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+              {ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}
             </div>
           )}
         </div>

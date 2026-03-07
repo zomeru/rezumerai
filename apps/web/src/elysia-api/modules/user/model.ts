@@ -18,6 +18,15 @@ const UserAccountReadOnlyReasons = t.Object({
   password: t.Nullable(t.String()),
 });
 
+const UserPasswordManagement = t.Object({
+  hasCredentialProvider: t.Boolean(),
+  isOAuthOnly: t.Boolean(),
+  isCooldownActive: t.Boolean(),
+  lastChangedAt: t.Nullable(t.String({ format: "date-time" })),
+  nextAllowedAt: t.Nullable(t.String({ format: "date-time" })),
+  cooldownMessage: t.Nullable(t.String()),
+});
+
 const UserCredits = t.Object({
   remaining: t.Integer({ minimum: 0 }),
   dailyLimit: t.Integer({ minimum: 1 }),
@@ -28,6 +37,7 @@ const UserAccountSettings = t.Object({
   providers: t.Array(UserAccountProvider),
   permissions: UserAccountPermissions,
   readOnlyReasons: UserAccountReadOnlyReasons,
+  passwordManagement: UserPasswordManagement,
   credits: UserCredits,
 });
 

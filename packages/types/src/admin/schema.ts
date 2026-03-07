@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UserRoleSchema } from "../user/schema";
+import { PasswordConfirmationSchema, PasswordSchema, UserRoleSchema } from "../user/schema";
 
 export const AdminPaginationSchema = z.object({
   page: z.number().int().positive(),
@@ -62,6 +62,16 @@ export const AdminUserDetailSchema = z.object({
 export const AdminUserRoleUpdateInputSchema = z.object({
   role: UserRoleSchema,
 });
+
+export const AdminUserPasswordUpdateInputSchema = z
+  .object({
+    password: PasswordSchema,
+    confirmPassword: PasswordConfirmationSchema,
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    path: ["confirmPassword"],
+    error: "Passwords do not match.",
+  });
 
 export const SystemConfigurationEntrySchema = z.object({
   id: z.string(),
@@ -216,6 +226,7 @@ export type AdminUserListResponse = z.infer<typeof AdminUserListResponseSchema>;
 export type AdminUserActivityItem = z.infer<typeof AdminUserActivityItemSchema>;
 export type AdminUserDetail = z.infer<typeof AdminUserDetailSchema>;
 export type AdminUserRoleUpdateInput = z.infer<typeof AdminUserRoleUpdateInputSchema>;
+export type AdminUserPasswordUpdateInput = z.infer<typeof AdminUserPasswordUpdateInputSchema>;
 export type SystemConfigurationEntry = z.infer<typeof SystemConfigurationEntrySchema>;
 export type SystemConfigurationListResponse = z.infer<typeof SystemConfigurationListResponseSchema>;
 export type UpdateSystemConfigurationInput = z.infer<typeof UpdateSystemConfigurationInputSchema>;

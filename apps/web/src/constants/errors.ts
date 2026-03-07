@@ -29,6 +29,7 @@ export const ERROR_MESSAGES = {
 
   // AI feature validation - need to be signed in to access
   AI_AUTH_REQUIRED: "You must be signed in to access this feature.",
+  AI_EMAIL_VERIFICATION_REQUIRED: "You must verify your email before using AI features.",
   AI_EMPTY_INPUT: "Text input cannot be empty.",
   AI_CREDITS_EXHAUSTED: "You have reached the daily AI text optimization limit. Please try again tomorrow.",
   AI_MODEL_UNAVAILABLE: "Selected AI model is not available.",

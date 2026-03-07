@@ -4,6 +4,7 @@ import type {
   AdminAiModelMutationInput,
   AdminUserDetail,
   AdminUserListResponse,
+  AdminUserPasswordUpdateInput,
   AdminUserRoleUpdateInput,
   AnalyticsDashboard,
   AuditLogCategory,
@@ -128,6 +129,38 @@ export function useUpdateAdminUserRole() {
 
       if (!data) {
         throw new Error("Invalid user role update response.");
+      }
+
+      return data as AdminUserDetail;
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", variables.userId] });
+      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+    },
+  });
+}
+
+export function useUpdateAdminUserPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      input,
+    }: {
+      userId: string;
+      input: AdminUserPasswordUpdateInput;
+    }): Promise<AdminUserDetail> => {
+      const { data, error } = await api.admin.users({ id: userId }).password.patch(input);
+
+      if (error) {
+        throw new Error(getApiErrorMessage(error.value, "Failed to update user password."));
+      }
+
+      if (!data) {
+        throw new Error("Invalid user password update response.");
       }
 
       return data as AdminUserDetail;

@@ -17,7 +17,9 @@ function getApiErrorMessage(value: unknown, fallback: string): string {
   return fallback;
 }
 
-export function useAiSettings(options?: Omit<QueryOptions<AiSettings>, "queryKey" | "queryFn">) {
+export function useAiSettings(
+  options?: Omit<QueryOptions<AiSettings>, "queryKey" | "queryFn"> & { enabled?: boolean },
+) {
   return useQuery({
     queryKey: AI_SETTINGS_QUERY_KEY,
     queryFn: async () => {

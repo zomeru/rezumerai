@@ -99,15 +99,18 @@ export function AdminInput({
   value,
   onChange,
   placeholder,
+  type = "text",
   className,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  type?: React.HTMLInputTypeAttribute;
   className?: string;
 }): React.JSX.Element {
   return (
     <input
+      type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}

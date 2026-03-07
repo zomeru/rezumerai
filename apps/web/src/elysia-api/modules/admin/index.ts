@@ -20,6 +20,7 @@ const AI_MODEL_NOT_FOUND_MESSAGE = AdminService.messages.AI_MODEL_NOT_FOUND_MESS
 const AI_PROVIDER_NOT_FOUND_MESSAGE = AdminService.messages.AI_PROVIDER_NOT_FOUND_MESSAGE;
 const AI_MODEL_DUPLICATE_MESSAGE = AdminService.messages.AI_MODEL_DUPLICATE_MESSAGE;
 const LAST_ADMIN_ROLE_CHANGE_MESSAGE = AdminService.messages.LAST_ADMIN_ROLE_CHANGE_MESSAGE;
+const PASSWORD_CONFIRMATION_MISMATCH_MESSAGE = "Passwords do not match.";
 
 function parseErrorListQuery(query: ErrorLogListQueryInput): {
   page: number | undefined;
@@ -240,6 +241,40 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
       },
       detail: {
         summary: "Update a user's role",
+        tags: ["Admin", "Users"],
+      },
+    },
+  )
+  .patch(
+    "/users/:id/password",
+    async ({ db, params, user, body, request, status }) => {
+      if (body.password !== body.confirmPassword) {
+        return status(422, PASSWORD_CONFIRMATION_MISMATCH_MESSAGE);
+      }
+
+      const result = await AdminService.updateUserPassword(db, user.id, params.id, body.password, request.headers);
+
+      if (result.error === USER_NOT_FOUND_MESSAGE) {
+        return status(404, USER_NOT_FOUND_MESSAGE);
+      }
+
+      if (!result.user) {
+        return status(404, USER_NOT_FOUND_MESSAGE);
+      }
+
+      return status(200, result.user);
+    },
+    {
+      params: "adminUser.ParamById",
+      body: "adminUser.PasswordUpdateInput",
+      response: {
+        200: "adminUser.DetailResponse",
+        403: "adminUser.Error",
+        404: "adminUser.Error",
+        422: "adminUser.Error",
+      },
+      detail: {
+        summary: "Set or replace a user's password",
         tags: ["Admin", "Users"],
       },
     },

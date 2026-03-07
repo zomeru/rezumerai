@@ -15,6 +15,7 @@ import type {
 } from "@rezumerai/types";
 import { AiConfigurationSchema } from "@rezumerai/types";
 import { z } from "zod";
+import { setManagedUserPassword } from "@/lib/auth";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
@@ -181,6 +182,11 @@ export interface ListAuditLogsInput {
 }
 
 export interface UpdateUserRoleResult {
+  user: AdminUserDetail | null;
+  error: string | null;
+}
+
+export interface UpdateUserPasswordResult {
   user: AdminUserDetail | null;
   error: string | null;
 }
@@ -879,6 +885,55 @@ export abstract class AdminService {
     }
 
     return updateResult;
+  }
+
+  static async updateUserPassword(
+    db: PrismaClient,
+    actorUserId: string,
+    targetUserId: string,
+    newPassword: string,
+    headers: Headers,
+  ): Promise<UpdateUserPasswordResult> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.updateUserPassword" });
+
+    const targetUser = await db.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!targetUser) {
+      return {
+        user: null,
+        error: USER_NOT_FOUND_MESSAGE,
+      };
+    }
+
+    const { createdCredentialAccount } = await setManagedUserPassword(targetUserId, newPassword, headers);
+    const user = await AdminService.getUserById(db, targetUserId);
+
+    if (user) {
+      await createAuditLog({
+        category: "USER_ACTION",
+        eventType: "ADMIN_USER_PASSWORD_UPDATED",
+        action: "PASSWORD_CHANGE",
+        resourceType: "User",
+        resourceId: targetUserId,
+        userId: actorUserId,
+        endpoint: `/api/admin/users/${targetUserId}/password`,
+        method: "PATCH",
+        serviceName: "AdminService.updateUserPassword",
+        afterValues: {
+          credentialAccountCreated: createdCredentialAccount,
+        },
+      });
+    }
+
+    return {
+      user,
+      error: null,
+    };
   }
 
   static async listSystemConfigurations(db: PrismaClient): Promise<SystemConfigurationListResponse> {

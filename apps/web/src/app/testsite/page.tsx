@@ -3,10 +3,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DisabledTooltip } from "@/components/ui/DisabledTooltip";
 import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAiSettings } from "@/hooks/useAi";
 import { api } from "@/lib/api";
+import { useSession } from "@/lib/auth-client";
 
 const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
 
@@ -59,7 +61,15 @@ function getStreamChunk(value: unknown): string {
 }
 
 export default function TestSitePage(): React.JSX.Element {
-  const { data: aiSettings, isLoading: isAiSettingsLoading, error: aiSettingsError } = useAiSettings();
+  const { data: session, isPending: isSessionPending } = useSession();
+  const isAiRestricted = session?.user ? !session.user.emailVerified : false;
+  const {
+    data: aiSettings,
+    isLoading: isAiSettingsLoading,
+    error: aiSettingsError,
+  } = useAiSettings({
+    enabled: !isSessionPending && !isAiRestricted,
+  });
   const [inputText, setInputText] = useState<string>("");
   const [result, setResult] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +86,7 @@ export default function TestSitePage(): React.JSX.Element {
   const modelOptions = useMemo(() => {
     if (!aiSettings) return [];
 
-    return aiSettings.models.map((model) => ({
+    return aiSettings.models.map((model: (typeof aiSettings.models)[number]) => ({
       value: model.modelId,
       label: `${model.providerDisplayName} — ${model.name}`,
     }));
@@ -102,12 +112,17 @@ export default function TestSitePage(): React.JSX.Element {
         throw new OptimizeRequestError({ code: null, message: ERROR_MESSAGES.AI_OPTIMIZE_INVALID_RESPONSE });
       }
 
-      activeStreamRef.current = data;
+      if (typeof data === "string") {
+        throw new OptimizeRequestError({ code: null, message: data });
+      }
+
+      const stream = data as AsyncGenerator<unknown>;
+      activeStreamRef.current = stream;
 
       try {
-        for await (const chunk of data) {
+        for await (const chunk of stream) {
           if (stopRequestedRef.current) {
-            await data.return(undefined);
+            await stream.return(undefined);
             break;
           }
           onChunk(getStreamChunk(chunk));
@@ -185,9 +200,10 @@ export default function TestSitePage(): React.JSX.Element {
           onChange={(nextValue) => setSelectedModelId(nextValue)}
           options={modelOptions}
           placeholder={ERROR_MESSAGES.AI_NO_ACTIVE_MODELS}
-          disabled={isStreaming || isAiSettingsLoading || !aiSettings?.models.length}
+          disabled={isAiRestricted || isStreaming || isAiSettingsLoading || !aiSettings?.models.length}
         />
         {isAiSettingsLoading && <p className="text-gray-500 text-xs">{ERROR_MESSAGES.AI_MODELS_LOADING}</p>}
+        {isAiRestricted && <p className="text-amber-700 text-xs">{ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}</p>}
         {aiSettingsError && <p className="text-red-600 text-xs">{ERROR_MESSAGES.AI_MODELS_LOAD_FAILED}</p>}
       </div>
 
@@ -207,21 +223,33 @@ export default function TestSitePage(): React.JSX.Element {
       </div>
 
       {/* Action */}
-      <button
-        type="button"
-        onClick={handleOptimize}
-        disabled={isStreaming || !inputText.trim() || !selectedModelId}
-        className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm text-white shadow transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isStreaming ? (
-          <>
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            Optimizing…
-          </>
-        ) : (
-          "Optimize Text"
-        )}
-      </button>
+      {isAiRestricted ? (
+        <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED} className="w-full">
+          <button
+            type="button"
+            disabled
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm text-white opacity-50 shadow"
+          >
+            Optimize Text
+          </button>
+        </DisabledTooltip>
+      ) : (
+        <button
+          type="button"
+          onClick={handleOptimize}
+          disabled={isStreaming || !inputText.trim() || !selectedModelId}
+          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm text-white shadow transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isStreaming ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Optimizing…
+            </>
+          ) : (
+            "Optimize Text"
+          )}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => void handleStop()}

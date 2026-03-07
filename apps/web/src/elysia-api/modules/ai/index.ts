@@ -42,6 +42,19 @@ async function trackAiHandledError(options: TrackAiHandledErrorOptions): Promise
   });
 }
 
+async function trackUnverifiedAiAccess(options: { request: Request; route: string; userId: string }): Promise<void> {
+  await trackAiHandledError({
+    request: options.request,
+    route: options.route,
+    userId: options.userId,
+    error: new Error(ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED),
+    metadata: {
+      responseStatus: 403,
+      reason: "AI_EMAIL_VERIFICATION_REQUIRED",
+    },
+  });
+}
+
 /**
  * AI module — text optimization via OpenRouter streaming.
  *
@@ -55,13 +68,23 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(AiModel)
   .get(
     "/models",
-    async ({ db, status }) => {
+    async ({ db, status, request, user }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/models",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
       const models = await AiService.listActiveModels(db);
       return status(200, models);
     },
     {
       response: {
         200: "ai.ModelOptionList",
+        403: "ai.Error",
       },
       detail: {
         summary: "List all active AI models",
@@ -71,13 +94,23 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   )
   .get(
     "/settings",
-    async ({ db, user, status }) => {
+    async ({ db, user, status, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/settings",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
       const settings = await AiService.getUserAiSettings(db, user.id);
       return status(200, settings);
     },
     {
       response: {
         200: "ai.Settings",
+        403: "ai.Error",
       },
       detail: {
         summary: "Fetch active AI models and the current user's default selection",
@@ -88,6 +121,15 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .patch(
     "/settings/model",
     async ({ db, user, body, status, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/settings/model",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
       try {
         await AiService.updateUserSelectedModel(db, user.id, body.modelId.trim());
         const settings = await AiService.getUserAiSettings(db, user.id);
@@ -119,6 +161,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       body: "ai.SelectModelInput",
       response: {
         200: "ai.Settings",
+        403: "ai.Error",
         422: t.Object({
           code: t.Literal(AI_MODEL_UNAVAILABLE_CODE),
           message: t.String(),
@@ -133,6 +176,15 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .post(
     "/optimize",
     async ({ body, set, status, db, user, request }) => {
+      if (!user.emailVerified) {
+        await trackUnverifiedAiAccess({
+          request,
+          route: "/ai/optimize",
+          userId: user.id,
+        });
+        return status(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+      }
+
       const input = body.text.trim();
       const modelId = body.modelId?.trim();
       const trackedRequestContext = {
@@ -334,6 +386,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       body: "ai.OptimizeInput",
       response: {
         401: t.String({ default: ERROR_MESSAGES.AI_AUTH_REQUIRED }),
+        403: t.String({ default: ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED }),
         422: t.Union([
           t.String(),
           t.Object({

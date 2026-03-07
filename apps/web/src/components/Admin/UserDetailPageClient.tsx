@@ -1,15 +1,18 @@
 "use client";
 
+import { type AdminUserPasswordUpdateInput, AdminUserPasswordUpdateInputSchema } from "@rezumerai/types";
 import { AlertCircle, ArrowLeft, Loader2, Save, ShieldAlert, UserCog } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routing";
-import { useAdminUserDetail, useUpdateAdminUserRole } from "@/hooks/useAdmin";
+import { useAdminUserDetail, useUpdateAdminUserPassword, useUpdateAdminUserRole } from "@/hooks/useAdmin";
+import { PASSWORD_REQUIREMENTS_TEXT } from "@/lib/password-policy";
 import {
   AdminBadge,
   AdminEmptyState,
   AdminFieldLabel,
+  AdminInput,
   AdminPageShell,
   AdminPanel,
   AdminSelect,
@@ -19,10 +22,21 @@ import { formatDateTime } from "./format";
 
 const ROLE_OPTIONS = ["ADMIN", "USER"] as const;
 
+interface PasswordFormErrors {
+  password?: string;
+  confirmPassword?: string;
+}
+
 export default function UserDetailPageClient({ userId }: { userId: string }): React.JSX.Element {
   const { data, error, isLoading } = useAdminUserDetail(userId);
   const updateRole = useUpdateAdminUserRole();
+  const updatePassword = useUpdateAdminUserPassword();
   const [selectedRole, setSelectedRole] = useState<(typeof ROLE_OPTIONS)[number]>("USER");
+  const [passwordForm, setPasswordForm] = useState<AdminUserPasswordUpdateInput>({
+    password: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState<PasswordFormErrors>({});
 
   useEffect(() => {
     if (data) {
@@ -42,6 +56,39 @@ export default function UserDetailPageClient({ userId }: { userId: string }): Re
       toast.success("User role updated.");
     } catch (mutationError: unknown) {
       toast.error(mutationError instanceof Error ? mutationError.message : "Failed to update user role.");
+    }
+  }
+
+  async function onSavePassword(): Promise<void> {
+    if (!data) {
+      return;
+    }
+
+    const parsed = AdminUserPasswordUpdateInputSchema.safeParse(passwordForm);
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setPasswordErrors({
+        password: fieldErrors.password?.[0],
+        confirmPassword: fieldErrors.confirmPassword?.[0],
+      });
+      return;
+    }
+
+    setPasswordErrors({});
+
+    try {
+      await updatePassword.mutateAsync({
+        userId: data.id,
+        input: parsed.data,
+      });
+      setPasswordForm({
+        password: "",
+        confirmPassword: "",
+      });
+      toast.success("User password updated.");
+    } catch (mutationError: unknown) {
+      toast.error(mutationError instanceof Error ? mutationError.message : "Failed to update user password.");
     }
   }
 
@@ -157,6 +204,62 @@ export default function UserDetailPageClient({ userId }: { userId: string }): Re
                   >
                     {updateRole.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                     Save role
+                  </button>
+                </div>
+              </AdminPanel>
+
+              <AdminPanel>
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="size-5 text-primary-700" />
+                  <h3 className="font-semibold text-slate-900 text-xl">Password Management</h3>
+                </div>
+                <p className="mt-3 text-slate-600 text-sm">
+                  Set a new credential password for this user. If the account is OAuth-only, this will add a Better Auth
+                  credential password without removing linked providers.
+                </p>
+                <p className="mt-2 text-slate-500 text-xs">Password must be {PASSWORD_REQUIREMENTS_TEXT}.</p>
+
+                <div className="mt-4 space-y-4">
+                  <AdminFieldLabel label="New password">
+                    <AdminInput
+                      type="password"
+                      value={passwordForm.password}
+                      onChange={(value) => {
+                        setPasswordForm((current) => ({ ...current, password: value }));
+                        setPasswordErrors((current) => ({ ...current, password: undefined }));
+                      }}
+                      className="w-full"
+                    />
+                    {passwordErrors.password ? <p className="text-red-600 text-xs">{passwordErrors.password}</p> : null}
+                  </AdminFieldLabel>
+
+                  <AdminFieldLabel label="Confirm new password">
+                    <AdminInput
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(value) => {
+                        setPasswordForm((current) => ({ ...current, confirmPassword: value }));
+                        setPasswordErrors((current) => ({ ...current, confirmPassword: undefined }));
+                      }}
+                      className="w-full"
+                    />
+                    {passwordErrors.confirmPassword ? (
+                      <p className="text-red-600 text-xs">{passwordErrors.confirmPassword}</p>
+                    ) : null}
+                  </AdminFieldLabel>
+
+                  <button
+                    type="button"
+                    onClick={() => void onSavePassword()}
+                    disabled={updatePassword.isPending}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-primary-500 to-primary-600 px-4 py-2.5 font-medium text-sm text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updatePassword.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Save className="size-4" />
+                    )}
+                    Update password
                   </button>
                 </div>
               </AdminPanel>

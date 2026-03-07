@@ -1,13 +1,10 @@
 import type { PrismaClient, User } from "@rezumerai/database";
 import type { UserAccountSettings } from "@rezumerai/types";
+import { getPasswordManagementState, isCredentialProvider } from "@/lib/password-policy";
 import { AiService } from "../ai/service";
 
-const CREDENTIAL_PROVIDER_IDS = new Set<string>(["credential", "email-password"]);
-
 const SOCIAL_EMAIL_READ_ONLY_REASON = "Email is managed by your social auth provider and cannot be updated here.";
-const SOCIAL_PASSWORD_READ_ONLY_REASON =
-  "Password is managed by your social auth provider. Use that provider to update it.";
-const LOCAL_PASSWORD_READ_ONLY_REASON = "Password updates are not available from account settings yet.";
+const SOCIAL_PASSWORD_READ_ONLY_REASON = "This account is connected to an OAuth provider.";
 
 /**
  * User service — business logic only, no HTTP concerns.
@@ -84,10 +81,17 @@ export abstract class UserService {
 
     const providers = accounts.map((account) => ({
       providerId: account.providerId,
-      hasPassword: account.password !== null || CREDENTIAL_PROVIDER_IDS.has(account.providerId),
+      hasPassword: account.password !== null || isCredentialProvider(account.providerId),
     }));
 
-    const hasSocialProvider = providers.some((provider) => !provider.hasPassword);
+    const hasSocialProvider = providers.some((provider) => !isCredentialProvider(provider.providerId));
+    const hasCredentialProvider = providers.some((provider) => isCredentialProvider(provider.providerId));
+    const isOAuthOnly = hasSocialProvider && !hasCredentialProvider;
+    const passwordManagement = getPasswordManagementState({
+      hasCredentialProvider,
+      isOAuthOnly,
+      lastPasswordChangeAt: user.lastPasswordChangeAt,
+    });
 
     return {
       user,
@@ -96,12 +100,13 @@ export abstract class UserService {
         canEditName: true,
         canEditEmail: !hasSocialProvider,
         canEditImage: true,
-        canChangePassword: false,
+        canChangePassword: hasCredentialProvider,
       },
       readOnlyReasons: {
         email: hasSocialProvider ? SOCIAL_EMAIL_READ_ONLY_REASON : null,
-        password: hasSocialProvider ? SOCIAL_PASSWORD_READ_ONLY_REASON : LOCAL_PASSWORD_READ_ONLY_REASON,
+        password: isOAuthOnly ? SOCIAL_PASSWORD_READ_ONLY_REASON : null,
       },
+      passwordManagement,
       credits: {
         remaining: credits.remainingCredits,
         dailyLimit: credits.dailyLimit,

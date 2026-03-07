@@ -6,7 +6,11 @@ model User {
   image                  String?
   createdAt              DateTime
   updatedAt              DateTime
+  lastPasswordChangeAt   DateTime?
   role                   UserRole                @default(USER)
+  banned                 Boolean                 @default(false)
+  banReason              String?
+  banExpires             DateTime?
   selectedAiModelId      String?
   accounts               Account[]
   aiTextOptimizerCredits AiTextOptimizerCredits?
@@ -29,6 +33,7 @@ model Session {
   updatedAt DateTime
   ipAddress String?
   userAgent String?
+  impersonatedBy String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
