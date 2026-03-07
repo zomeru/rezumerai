@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import UserDetailPageClient from "./UserDetailPageClient";
+import UserDetailPageClient from "@/components/Admin/UserDetailPageClient";
 
 interface AdminUserDetailPageProps {
   params: Promise<{

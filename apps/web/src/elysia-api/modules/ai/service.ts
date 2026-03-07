@@ -25,7 +25,6 @@ const DEFAULT_AI_CONFIGURATION: AiConfiguration = {
 export const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
 export const AI_MODEL_UNAVAILABLE_CODE = "AI_MODEL_UNAVAILABLE";
 export const AI_MODEL_POLICY_RESTRICTED_CODE = "AI_MODEL_POLICY_RESTRICTED";
-export const AI_FORBIDDEN_CODE = "AI_FORBIDDEN";
 
 export type AiConfiguration = z.infer<typeof AI_CONFIGURATION_SCHEMA>;
 
@@ -75,8 +74,6 @@ export interface ActiveAiModel {
 export interface UserAiSettings {
   models: ActiveAiModel[];
   selectedModelId: string;
-  isAdmin: boolean;
-  config: AiConfiguration | null;
 }
 
 interface OptimizationContext {
@@ -108,15 +105,6 @@ export class AiModelPolicyRestrictedError extends Error {
   constructor() {
     super(ERROR_MESSAGES.AI_MODEL_POLICY_RESTRICTED);
     this.name = "AiModelPolicyRestrictedError";
-  }
-}
-
-export class AiForbiddenError extends Error {
-  readonly code: string = AI_FORBIDDEN_CODE;
-
-  constructor() {
-    super(ERROR_MESSAGES.AI_ADMIN_REQUIRED);
-    this.name = "AiForbiddenError";
   }
 }
 
@@ -174,13 +162,11 @@ export abstract class AiService {
   }
 
   static async getUserAiSettings(db: PrismaClient, userId: string): Promise<UserAiSettings> {
-    const [models, config, user] = await Promise.all([
+    const [models, user] = await Promise.all([
       AiService.listActiveModels(db),
-      AiService.getAiConfiguration(db),
       db.user.findUnique({
         where: { id: userId },
         select: {
-          role: true,
           selectedAiModelId: true,
         },
       }),
@@ -196,8 +182,6 @@ export abstract class AiService {
     return {
       models,
       selectedModelId: selectedModel?.modelId ?? "",
-      isAdmin: user.role === "ADMIN",
-      config: user.role === "ADMIN" ? config : null,
     };
   }
 
@@ -217,28 +201,6 @@ export abstract class AiService {
     });
 
     return selectedModel.modelId;
-  }
-
-  static async updateAiConfiguration(
-    db: PrismaClient,
-    userId: string,
-    configuration: AiConfiguration,
-  ): Promise<AiConfiguration> {
-    await AiService.assertAdmin(db, userId);
-
-    const parsedConfiguration = AI_CONFIGURATION_SCHEMA.parse(configuration);
-    const value = parsedConfiguration as unknown as Prisma.InputJsonValue;
-
-    await db.systemConfiguration.upsert({
-      where: { name: AI_CONFIGURATION_NAME },
-      update: { value },
-      create: {
-        name: AI_CONFIGURATION_NAME,
-        value,
-      },
-    });
-
-    return parsedConfiguration;
   }
 
   static async resolveOptimizationContext(
@@ -508,19 +470,6 @@ export abstract class AiService {
       .filter(Boolean)
       .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
       .join(" ");
-  }
-
-  private static async assertAdmin(db: PrismaClient, userId: string): Promise<void> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        role: true,
-      },
-    });
-
-    if (!user || user.role !== "ADMIN") {
-      throw new AiForbiddenError();
-    }
   }
 
   private static getAsiaManilaMidnightBoundary(date: Date): Date {

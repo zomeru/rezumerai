@@ -6,15 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routing";
 import { useSystemConfigurations, useUpdateSystemConfiguration } from "@/hooks/useAdmin";
-import {
-  AdminBadge,
-  AdminEmptyState,
-  AdminPageShell,
-  AdminPanel,
-  AdminTableWrapper,
-  AdminTextarea,
-} from "../_components/AdminUI";
-import { formatDateTime, formatJson } from "../_components/format";
+import { AdminBadge, AdminEmptyState, AdminPageShell, AdminPanel, AdminTableWrapper, AdminTextarea } from "./AdminUI";
+import { formatDateTime, formatJson } from "./format";
 
 export default function SystemConfigurationPageClient(): React.JSX.Element {
   const { data, error, isLoading, isFetching, refetch } = useSystemConfigurations();

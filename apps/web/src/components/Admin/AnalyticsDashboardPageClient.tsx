@@ -15,8 +15,8 @@ import {
   AdminStatCard,
   AdminTableWrapper,
   AdminTrendChart,
-} from "../_components/AdminUI";
-import { formatDateTime, formatDuration, formatNumber, formatPercentage } from "../_components/format";
+} from "./AdminUI";
+import { formatDateTime, formatDuration, formatNumber, formatPercentage } from "./format";
 
 const RANGE_OPTIONS = [
   { value: 1, label: "Last 24 hours" },

@@ -17,18 +17,13 @@ export const AiModelOptionSchema = z.object({
 export const AiSettingsSchema = z.object({
   models: z.array(AiModelOptionSchema),
   selectedModelId: z.string(),
-  isAdmin: z.boolean(),
-  config: AiConfigurationSchema.nullable(),
 });
 
 export const SelectAiModelInputSchema = z.object({
   modelId: z.string().trim().min(1),
 });
 
-export const UpdateAiConfigurationInputSchema = AiConfigurationSchema;
-
 export type AiConfiguration = z.infer<typeof AiConfigurationSchema>;
 export type AiModelOption = z.infer<typeof AiModelOptionSchema>;
 export type AiSettings = z.infer<typeof AiSettingsSchema>;
 export type SelectAiModelInput = z.infer<typeof SelectAiModelInputSchema>;
-export type UpdateAiConfigurationInput = z.infer<typeof UpdateAiConfigurationInputSchema>;

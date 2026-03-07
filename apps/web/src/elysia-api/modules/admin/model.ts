@@ -132,6 +132,22 @@ const SystemConfigurationEntry = t.Object({
   validationMode: t.Union([t.Literal("KNOWN_SCHEMA"), t.Literal("RAW_JSON")]),
 });
 
+const AdminAiProviderOption = t.Object({
+  id: t.String(),
+  name: t.String(),
+});
+
+const AdminAiModel = t.Object({
+  id: t.String(),
+  name: t.String(),
+  modelId: t.String(),
+  providerId: t.String(),
+  providerName: t.String(),
+  isActive: t.Boolean(),
+  createdAt: t.String({ format: "date-time" }),
+  updatedAt: t.String({ format: "date-time" }),
+});
+
 const AuditLogActor = t.Object({
   id: t.String(),
   name: t.String(),
@@ -247,6 +263,23 @@ export const AdminModel = new Elysia().model({
   "adminConfig.ListResponse": t.Object({
     items: t.Array(SystemConfigurationEntry),
   }),
+  "adminAiModel.ParamById": ParamById,
+  "adminAiModel.MutationInput": t.Object({
+    providerId: t.String({ minLength: 1, pattern: ".*\\S.*" }),
+    name: t.String({ minLength: 1, pattern: ".*\\S.*" }),
+    modelId: t.String({ minLength: 1, pattern: ".*\\S.*" }),
+    isActive: t.Boolean(),
+  }),
+  "adminAiModel.Entry": AdminAiModel,
+  "adminAiModel.ProviderOption": AdminAiProviderOption,
+  "adminAiModel.ListResponse": t.Object({
+    models: t.Array(AdminAiModel),
+    providers: t.Array(AdminAiProviderOption),
+  }),
+  "adminAiModel.DeleteResponse": t.Object({
+    id: t.String(),
+  }),
+  "adminAiModel.Error": t.String(),
   "adminAudit.QueryList": AuditLogListQuery,
   "adminAudit.ParamById": ParamById,
   "adminAudit.ListResponse": t.Object({

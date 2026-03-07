@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import AuditLogDetailPageClient from "./AuditLogDetailPageClient";
+import AuditLogDetailPageClient from "@/components/Admin/AuditLogDetailPageClient";
 
 interface AdminAuditLogDetailPageProps {
   params: Promise<{

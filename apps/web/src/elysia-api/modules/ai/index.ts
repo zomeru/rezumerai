@@ -1,5 +1,4 @@
 import Elysia, { t } from "elysia";
-import { ZodError } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { authPlugin } from "../../plugins/auth";
 import { trackHandledError } from "../../plugins/error";
@@ -7,11 +6,9 @@ import { prismaPlugin } from "../../plugins/prisma";
 import { AiModel } from "./model";
 import {
   AI_CREDITS_EXHAUSTED_CODE,
-  AI_FORBIDDEN_CODE,
   AI_MODEL_POLICY_RESTRICTED_CODE,
   AI_MODEL_UNAVAILABLE_CODE,
   AiCreditsExhaustedError,
-  AiForbiddenError,
   AiModelPolicyRestrictedError,
   AiModelUnavailableError,
   AiService,
@@ -83,7 +80,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         200: "ai.Settings",
       },
       detail: {
-        summary: "Fetch AI model and configuration settings for the current user",
+        summary: "Fetch active AI models and the current user's default selection",
         tags: ["AI"],
       },
     },
@@ -129,62 +126,6 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       },
       detail: {
         summary: "Update selected AI model for the current user",
-        tags: ["AI"],
-      },
-    },
-  )
-  .patch(
-    "/settings/config",
-    async ({ db, user, body, status, request }) => {
-      try {
-        const config = await AiService.updateAiConfiguration(db, user.id, body);
-        return status(200, config);
-      } catch (error: unknown) {
-        if (error instanceof AiForbiddenError) {
-          await trackAiHandledError({
-            request,
-            route: "/ai/settings/config",
-            userId: user.id,
-            body,
-            error,
-            metadata: {
-              responseStatus: 403,
-              reason: AI_FORBIDDEN_CODE,
-            },
-          });
-
-          return status(403, {
-            code: AI_FORBIDDEN_CODE,
-            message: ERROR_MESSAGES.AI_CONFIG_UPDATE_FORBIDDEN,
-          });
-        }
-        if (error instanceof ZodError) {
-          await trackAiHandledError({
-            request,
-            route: "/ai/settings/config",
-            userId: user.id,
-            body,
-            error,
-            metadata: {
-              responseStatus: 422,
-              reason: "AI_CONFIG_INVALID_PAYLOAD",
-            },
-          });
-
-          return status(422, ERROR_MESSAGES.AI_CONFIG_INVALID_PAYLOAD);
-        }
-        throw error;
-      }
-    },
-    {
-      body: "ai.UpdateConfigurationInput",
-      response: {
-        200: "ai.UpdateConfigurationInput",
-        403: "ai.ForbiddenError",
-        422: "ai.Error",
-      },
-      detail: {
-        summary: "Update global AI configuration (admin only)",
         tags: ["AI"],
       },
     },

@@ -16,8 +16,8 @@ import {
   AdminPagination,
   AdminSelect,
   AdminTableWrapper,
-} from "../_components/AdminUI";
-import { formatDateTime } from "../_components/format";
+} from "./AdminUI";
+import { formatDateTime } from "./format";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const ROLE_OPTIONS = [

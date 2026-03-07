@@ -4,8 +4,8 @@ import { AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 import { useAuditLogDetail } from "@/hooks/useAdmin";
-import { AdminBadge, AdminPageShell, AdminPanel, JsonCodeBlock } from "../../_components/AdminUI";
-import { formatDateTime, formatJson } from "../../_components/format";
+import { AdminBadge, AdminPageShell, AdminPanel, JsonCodeBlock } from "./AdminUI";
+import { formatDateTime, formatJson } from "./format";
 
 function resolveTone(category: "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE"): "info" | "warning" | "neutral" {
   if (category === "DATABASE_CHANGE") {

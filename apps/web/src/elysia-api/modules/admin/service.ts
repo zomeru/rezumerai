@@ -1,10 +1,13 @@
 import { Prisma, type PrismaClient } from "@rezumerai/database";
 import type {
+  AdminAiModel,
+  AdminAiModelCatalog,
   AdminUserDetail,
   AdminUserListResponse,
   AnalyticsDashboard,
   AuditLogDetail,
   AuditLogListResponse,
+  DeleteAdminAiModelResponse,
   ErrorLogDetail,
   ErrorLogListResponse,
   SystemConfigurationEntry,
@@ -28,6 +31,9 @@ const ERROR_LOG_NOT_FOUND_MESSAGE = "Error log not found";
 const USER_NOT_FOUND_MESSAGE = "User not found";
 const AUDIT_LOG_NOT_FOUND_MESSAGE = "Audit log not found";
 const CONFIG_NOT_FOUND_MESSAGE = "System configuration not found";
+const AI_MODEL_NOT_FOUND_MESSAGE = "AI model not found";
+const AI_PROVIDER_NOT_FOUND_MESSAGE = "AI provider not found";
+const AI_MODEL_DUPLICATE_MESSAGE = "An AI model with this provider and model ID already exists.";
 const LAST_ADMIN_ROLE_CHANGE_MESSAGE = "At least one admin must remain assigned to the system.";
 
 const GLOBAL_CONFIGURATION_SCHEMA = z
@@ -46,6 +52,21 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
     schema: GLOBAL_CONFIGURATION_SCHEMA,
   },
 } as const;
+
+const ADMIN_AI_MODEL_SELECT = {
+  id: true,
+  name: true,
+  modelId: true,
+  providerId: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+  provider: {
+    select: {
+      name: true,
+    },
+  },
+} satisfies Prisma.AiModelSelect;
 
 type AdminUserRole = "ADMIN" | "USER";
 type AuditLogCategoryValue = "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE";
@@ -94,6 +115,19 @@ interface ErrorLogDetailRecord {
     name: string;
     email: string;
   } | null;
+}
+
+interface AdminAiModelRecord {
+  id: string;
+  name: string;
+  modelId: string;
+  providerId: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  provider: {
+    name: string;
+  };
 }
 
 interface AnalyticsTimeseriesRow {
@@ -149,6 +183,13 @@ export interface ListAuditLogsInput {
 export interface UpdateUserRoleResult {
   user: AdminUserDetail | null;
   error: string | null;
+}
+
+export interface AdminAiModelMutationInput {
+  providerId: string;
+  name: string;
+  modelId: string;
+  isActive: boolean;
 }
 
 function toPage(page: number | undefined): number {
@@ -349,6 +390,19 @@ function toSystemConfigurationEntry(record: {
     updatedAt: record.updatedAt.toISOString(),
     isEditable: true,
     validationMode: resolveConfigurationValidationMode(record.name),
+  };
+}
+
+function toAdminAiModel(record: AdminAiModelRecord): AdminAiModel {
+  return {
+    id: record.id,
+    name: record.name,
+    modelId: record.modelId,
+    providerId: record.providerId,
+    providerName: record.provider.name,
+    isActive: record.isActive,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
   };
 }
 
@@ -898,6 +952,228 @@ export abstract class AdminService {
     };
   }
 
+  static async listAiModels(db: PrismaClient): Promise<AdminAiModelCatalog> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.listAiModels" });
+
+    const [models, providers] = await db.$transaction([
+      db.aiModel.findMany({
+        select: ADMIN_AI_MODEL_SELECT,
+        orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
+      }),
+      db.aiProvider.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: [{ name: "asc" }],
+      }),
+    ]);
+
+    return {
+      models: models.map((model) => toAdminAiModel(model)),
+      providers,
+    };
+  }
+
+  static async createAiModel(
+    db: PrismaClient,
+    actorUserId: string,
+    input: AdminAiModelMutationInput,
+  ): Promise<{ model: AdminAiModel | null; error: string | null }> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.createAiModel" });
+
+    const payload = {
+      providerId: input.providerId.trim(),
+      name: input.name.trim(),
+      modelId: input.modelId.trim(),
+      isActive: input.isActive,
+    };
+
+    const [provider, duplicate] = await Promise.all([
+      db.aiProvider.findUnique({
+        where: { id: payload.providerId },
+        select: { id: true },
+      }),
+      db.aiModel.findFirst({
+        where: {
+          providerId: payload.providerId,
+          modelId: payload.modelId,
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!provider) {
+      return {
+        model: null,
+        error: AI_PROVIDER_NOT_FOUND_MESSAGE,
+      };
+    }
+
+    if (duplicate) {
+      return {
+        model: null,
+        error: AI_MODEL_DUPLICATE_MESSAGE,
+      };
+    }
+
+    const created = await db.aiModel.create({
+      data: payload,
+      select: ADMIN_AI_MODEL_SELECT,
+    });
+
+    const serializedModel = toAdminAiModel(created);
+
+    await createAuditLog({
+      category: "USER_ACTION",
+      eventType: "AI_MODEL_CREATED",
+      action: "CREATE",
+      resourceType: "AiModel",
+      resourceId: created.id,
+      userId: actorUserId,
+      endpoint: "/api/admin/ai-models",
+      method: "POST",
+      serviceName: "AdminService.createAiModel",
+      beforeValues: null,
+      afterValues: serializedModel,
+    });
+
+    return {
+      model: serializedModel,
+      error: null,
+    };
+  }
+
+  static async updateAiModel(
+    db: PrismaClient,
+    actorUserId: string,
+    id: string,
+    input: AdminAiModelMutationInput,
+  ): Promise<{ model: AdminAiModel | null; error: string | null }> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.updateAiModel" });
+
+    const payload = {
+      providerId: input.providerId.trim(),
+      name: input.name.trim(),
+      modelId: input.modelId.trim(),
+      isActive: input.isActive,
+    };
+
+    const existing = await db.aiModel.findUnique({
+      where: { id },
+      select: ADMIN_AI_MODEL_SELECT,
+    });
+
+    if (!existing) {
+      return {
+        model: null,
+        error: AI_MODEL_NOT_FOUND_MESSAGE,
+      };
+    }
+
+    const [provider, duplicate] = await Promise.all([
+      db.aiProvider.findUnique({
+        where: { id: payload.providerId },
+        select: { id: true },
+      }),
+      db.aiModel.findFirst({
+        where: {
+          providerId: payload.providerId,
+          modelId: payload.modelId,
+          NOT: {
+            id,
+          },
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!provider) {
+      return {
+        model: null,
+        error: AI_PROVIDER_NOT_FOUND_MESSAGE,
+      };
+    }
+
+    if (duplicate) {
+      return {
+        model: null,
+        error: AI_MODEL_DUPLICATE_MESSAGE,
+      };
+    }
+
+    const updated = await db.aiModel.update({
+      where: { id },
+      data: payload,
+      select: ADMIN_AI_MODEL_SELECT,
+    });
+
+    const previousModel = toAdminAiModel(existing);
+    const serializedModel = toAdminAiModel(updated);
+
+    await createAuditLog({
+      category: "USER_ACTION",
+      eventType: "AI_MODEL_UPDATED",
+      action: "UPDATE",
+      resourceType: "AiModel",
+      resourceId: updated.id,
+      userId: actorUserId,
+      endpoint: `/api/admin/ai-models/${id}`,
+      method: "PATCH",
+      serviceName: "AdminService.updateAiModel",
+      beforeValues: previousModel,
+      afterValues: serializedModel,
+    });
+
+    return {
+      model: serializedModel,
+      error: null,
+    };
+  }
+
+  static async deleteAiModel(
+    db: PrismaClient,
+    actorUserId: string,
+    id: string,
+  ): Promise<{ result: DeleteAdminAiModelResponse | null; error: string | null }> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.deleteAiModel" });
+
+    const existing = await db.aiModel.findUnique({
+      where: { id },
+      select: ADMIN_AI_MODEL_SELECT,
+    });
+
+    if (!existing) {
+      return {
+        result: null,
+        error: AI_MODEL_NOT_FOUND_MESSAGE,
+      };
+    }
+
+    await db.aiModel.delete({
+      where: { id },
+    });
+
+    await createAuditLog({
+      category: "USER_ACTION",
+      eventType: "AI_MODEL_DELETED",
+      action: "DELETE",
+      resourceType: "AiModel",
+      resourceId: existing.id,
+      userId: actorUserId,
+      endpoint: `/api/admin/ai-models/${id}`,
+      method: "DELETE",
+      serviceName: "AdminService.deleteAiModel",
+      beforeValues: toAdminAiModel(existing),
+      afterValues: null,
+    });
+
+    return {
+      result: { id: existing.id },
+      error: null,
+    };
+  }
+
   static async listAuditLogs(db: PrismaClient, input: ListAuditLogsInput = {}): Promise<AuditLogListResponse> {
     mergeRequestContextMetadata({ serviceName: "AdminService.listAuditLogs" });
     const page = toPage(input.page);
@@ -1146,6 +1422,9 @@ export abstract class AdminService {
     USER_NOT_FOUND_MESSAGE,
     AUDIT_LOG_NOT_FOUND_MESSAGE,
     CONFIG_NOT_FOUND_MESSAGE,
+    AI_MODEL_NOT_FOUND_MESSAGE,
+    AI_PROVIDER_NOT_FOUND_MESSAGE,
+    AI_MODEL_DUPLICATE_MESSAGE,
     LAST_ADMIN_ROLE_CHANGE_MESSAGE,
   } as const;
 }

@@ -16,6 +16,9 @@ const ERROR_LOG_NOT_FOUND_MESSAGE = AdminService.messages.ERROR_LOG_NOT_FOUND_ME
 const USER_NOT_FOUND_MESSAGE = AdminService.messages.USER_NOT_FOUND_MESSAGE;
 const AUDIT_LOG_NOT_FOUND_MESSAGE = AdminService.messages.AUDIT_LOG_NOT_FOUND_MESSAGE;
 const CONFIG_NOT_FOUND_MESSAGE = AdminService.messages.CONFIG_NOT_FOUND_MESSAGE;
+const AI_MODEL_NOT_FOUND_MESSAGE = AdminService.messages.AI_MODEL_NOT_FOUND_MESSAGE;
+const AI_PROVIDER_NOT_FOUND_MESSAGE = AdminService.messages.AI_PROVIDER_NOT_FOUND_MESSAGE;
+const AI_MODEL_DUPLICATE_MESSAGE = AdminService.messages.AI_MODEL_DUPLICATE_MESSAGE;
 const LAST_ADMIN_ROLE_CHANGE_MESSAGE = AdminService.messages.LAST_ADMIN_ROLE_CHANGE_MESSAGE;
 
 function parseErrorListQuery(query: ErrorLogListQueryInput): {
@@ -293,6 +296,125 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
       detail: {
         summary: "Update a system configuration entry",
         tags: ["Admin", "System Configuration"],
+      },
+    },
+  )
+  .get(
+    "/ai-models",
+    async ({ db, status }) => {
+      const result = await AdminService.listAiModels(db);
+      return status(200, result);
+    },
+    {
+      response: {
+        200: "adminAiModel.ListResponse",
+        403: "adminAiModel.Error",
+      },
+      detail: {
+        summary: "List AI models and providers for admin management",
+        tags: ["Admin", "AI Models"],
+      },
+    },
+  )
+  .post(
+    "/ai-models",
+    async ({ db, user, body, status }) => {
+      const result = await AdminService.createAiModel(db, user.id, body);
+
+      if (result.error === AI_PROVIDER_NOT_FOUND_MESSAGE) {
+        return status(404, AI_PROVIDER_NOT_FOUND_MESSAGE);
+      }
+
+      if (result.error === AI_MODEL_DUPLICATE_MESSAGE) {
+        return status(409, AI_MODEL_DUPLICATE_MESSAGE);
+      }
+
+      if (!result.model) {
+        return status(422, "Unable to create AI model.");
+      }
+
+      return status(200, result.model);
+    },
+    {
+      body: "adminAiModel.MutationInput",
+      response: {
+        200: "adminAiModel.Entry",
+        403: "adminAiModel.Error",
+        404: "adminAiModel.Error",
+        409: "adminAiModel.Error",
+        422: "adminAiModel.Error",
+      },
+      detail: {
+        summary: "Create a new AI model",
+        tags: ["Admin", "AI Models"],
+      },
+    },
+  )
+  .patch(
+    "/ai-models/:id",
+    async ({ db, params, user, body, status }) => {
+      const result = await AdminService.updateAiModel(db, user.id, params.id, body);
+
+      if (result.error === AI_MODEL_NOT_FOUND_MESSAGE) {
+        return status(404, AI_MODEL_NOT_FOUND_MESSAGE);
+      }
+
+      if (result.error === AI_PROVIDER_NOT_FOUND_MESSAGE) {
+        return status(404, AI_PROVIDER_NOT_FOUND_MESSAGE);
+      }
+
+      if (result.error === AI_MODEL_DUPLICATE_MESSAGE) {
+        return status(409, AI_MODEL_DUPLICATE_MESSAGE);
+      }
+
+      if (!result.model) {
+        return status(422, "Unable to update AI model.");
+      }
+
+      return status(200, result.model);
+    },
+    {
+      params: "adminAiModel.ParamById",
+      body: "adminAiModel.MutationInput",
+      response: {
+        200: "adminAiModel.Entry",
+        403: "adminAiModel.Error",
+        404: "adminAiModel.Error",
+        409: "adminAiModel.Error",
+        422: "adminAiModel.Error",
+      },
+      detail: {
+        summary: "Update an existing AI model",
+        tags: ["Admin", "AI Models"],
+      },
+    },
+  )
+  .delete(
+    "/ai-models/:id",
+    async ({ db, params, user, status }) => {
+      const result = await AdminService.deleteAiModel(db, user.id, params.id);
+
+      if (result.error === AI_MODEL_NOT_FOUND_MESSAGE) {
+        return status(404, AI_MODEL_NOT_FOUND_MESSAGE);
+      }
+
+      if (!result.result) {
+        return status(422, "Unable to delete AI model.");
+      }
+
+      return status(200, result.result);
+    },
+    {
+      params: "adminAiModel.ParamById",
+      response: {
+        200: "adminAiModel.DeleteResponse",
+        403: "adminAiModel.Error",
+        404: "adminAiModel.Error",
+        422: "adminAiModel.Error",
+      },
+      detail: {
+        summary: "Delete an AI model",
+        tags: ["Admin", "AI Models"],
       },
     },
   )

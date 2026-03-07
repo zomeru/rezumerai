@@ -14,8 +14,8 @@ import {
   AdminPanel,
   AdminSelect,
   AdminTableWrapper,
-} from "../../_components/AdminUI";
-import { formatDateTime } from "../../_components/format";
+} from "./AdminUI";
+import { formatDateTime } from "./format";
 
 const ROLE_OPTIONS = ["ADMIN", "USER"] as const;
 

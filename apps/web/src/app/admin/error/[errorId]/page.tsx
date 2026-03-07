@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import ErrorDetailPageClient from "./ErrorDetailPageClient";
+import ErrorDetailPageClient from "@/components/Admin/ErrorDetailPageClient";
 
 interface AdminErrorDetailPageProps {
   params: Promise<{
