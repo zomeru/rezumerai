@@ -15,6 +15,7 @@ model User {
   accounts               Account[]
   aiTextOptimizerCredits AiTextOptimizerCredits?
   assistantConversations AiAssistantConversation[]
+  assistantConversationEmbeddings AiAssistantConversationEmbedding[]
   analyticsEvents        AnalyticsEvent[]        @relation("AnalyticsEventUser")
   auditLogs              AuditLog[]              @relation("AuditLogActor")
   readErrorLogs          ErrorLog[]              @relation("ErrorLogReadByUser")

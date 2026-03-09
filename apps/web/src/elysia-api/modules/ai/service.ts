@@ -33,6 +33,7 @@ import { AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors"
 import { emptyAiUsageMetrics } from "./mapper";
 import { openRouterAiProvider } from "./providers/openrouter-provider";
 import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
+import { ConversationMemoryService } from "./memory/service";
 import { AiRepository } from "./repository";
 import type {
   ActiveAiModel,
@@ -254,7 +255,7 @@ export abstract class AiService {
 
     const fallbackHistory = input.messages
       .slice(0, -1)
-      .slice(-runtime.config.ASSISTANT_HISTORY_LIMIT)
+      .slice(-Math.max(runtime.config.ASSISTANT_HISTORY_LIMIT, runtime.config.ASSISTANT_RAG_RECENT_LIMIT))
       .map((message) => ({
         role: message.role,
         content: message.content,
@@ -268,14 +269,31 @@ export abstract class AiService {
       requestedConversationId: input.conversationId ?? null,
       scope,
       userId: identity.userId,
-      historyLimit: runtime.config.ASSISTANT_HISTORY_LIMIT,
+      historyLimit: Math.max(runtime.config.ASSISTANT_HISTORY_LIMIT, runtime.config.ASSISTANT_RAG_RECENT_LIMIT),
       fallbackHistory,
     });
-
-    const history: AssistantChatMessage[] = [
-      ...conversation.history,
-      { role: "user" as const, content: latestUserTurn.content },
-    ].slice(-runtime.config.ASSISTANT_HISTORY_LIMIT);
+    const currentTurnTimestamp = new Date();
+    const context = await ConversationMemoryService.buildConversationContext({
+      db,
+      config: runtime.config,
+      conversationId: conversation.conversationId,
+      scope,
+      userId: identity.userId,
+      latestUserMessage: latestUserTurn.content,
+      recentMessages: [
+        ...conversation.recentMessages,
+        {
+          id: `pending:${conversation.conversationId ?? conversation.sessionKey}:${currentTurnTimestamp.getTime()}`,
+          role: "user",
+          content: latestUserTurn.content,
+          createdAt: currentTurnTimestamp,
+        },
+      ],
+    });
+    const history: AssistantChatMessage[] = context.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
     const isConversationRequest = isConversationMemoryIntent(latestUserTurn.content);
 
     const result = isConversationRequest
@@ -302,7 +320,7 @@ export abstract class AiService {
     const blocks = parseAssistantReplyBlocks(result.reply);
 
     if (conversation.conversationId) {
-      await AiRepository.saveAssistantConversationExchange(db, {
+      const savedExchange = await AiRepository.saveAssistantConversationExchange(db, {
         conversationId: conversation.conversationId,
         sessionKey: conversation.sessionKey,
         scope,
@@ -313,6 +331,11 @@ export abstract class AiService {
         toolNames: result.toolNames,
         persistenceAvailable: conversation.persistenceAvailable,
       });
+      ConversationMemoryService.scheduleEmbeddingIndex({
+        db,
+        config: runtime.config,
+        messages: savedExchange.messages,
+      });
     }
 
     return {
@@ -320,7 +343,7 @@ export abstract class AiService {
       reply: result.reply,
       blocks,
       toolNames: result.toolNames,
-      usedConversationMemory: isConversationRequest || conversation.history.length > 0,
+      usedConversationMemory: isConversationRequest || context.messages.length > 1,
       conversationId: conversation.conversationId,
     };
   }

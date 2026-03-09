@@ -5,6 +5,14 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.js"
+    },
+    "./generated/prismabox/*": {
+      "types": "./generated/prismabox/*.ts",
+      "import": "./generated/prismabox/*.ts"
+    },
+    "./generated/prisma/*": {
+      "types": "./generated/prisma/*.ts",
+      "import": "./generated/prisma/*.ts"
     }
   },
   "type": "module",
@@ -23,6 +31,8 @@
     "db:migrate:prod": "bun run with-env:prod prisma migrate deploy",
     "db:reset": "bun run with-env prisma migrate reset",
     "db:studio": "bun run with-env prisma studio --port 5556",
+    "db:psql": "bun run with-env sh -lc 'psql \"$DATABASE_URL\"'",
+    "db:inspect-vectors": "bun run with-env sh -lc 'psql \"$DATABASE_URL\" -c \"SELECT \\\"id\\\", \\\"conversationId\\\", \\\"messageId\\\", \\\"userId\\\", \\\"scope\\\", \\\"role\\\", LEFT(\\\"content\\\", 120) AS preview, vector_dims(\\\"embedding\\\") AS dims, \\\"createdAt\\\" FROM \\\"ai_assistant_conversation_embedding\\\" ORDER BY \\\"createdAt\\\" DESC LIMIT 20;\"'",
     "db:pull": "bun run with-env prisma db pull",
     "db:seed:ai": "bun run with-env bun ./scripts/ai-seed.ts",
     "db:seed": "bun run db:pull && bun run db:seed:ai && bun run with-env bun ./scripts/seed.ts",

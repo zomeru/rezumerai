@@ -9,6 +9,7 @@
     "build": "bun run with-env bun --bun next build",
     "start": "bun run prepare:standalone && bun run with-env node .next/standalone/apps/web/server.js",
     "prepare:standalone": "bun scripts/prepare-standalone-assets.ts",
+    "assistant:reindex-memory": "bun run with-env bun ./scripts/reindex-assistant-memory.ts",
     "check:types": "tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",

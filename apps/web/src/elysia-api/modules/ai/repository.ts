@@ -6,9 +6,11 @@ import { toActiveAiModel } from "./mapper";
 import type {
   ActiveAiModel,
   AssistantConversationRecord,
+  AssistantConversationMemoryMessage,
   AssistantConversationState,
   ConsumeDailyCreditResult,
   DailyCreditsStatus,
+  SavedAssistantConversationMessage,
   SaveOptimizationInput,
 } from "./types";
 
@@ -37,6 +39,10 @@ interface SaveConversationExchangeOptions {
   blocks: Prisma.InputJsonValue;
   toolNames: string[];
   persistenceAvailable: boolean;
+}
+
+interface SaveConversationExchangeResult {
+  messages: SavedAssistantConversationMessage[];
 }
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally exposes stateless query helpers for the module.
@@ -176,8 +182,10 @@ export abstract class AiRepository {
           id: true,
           messages: {
             select: {
+              id: true,
               role: true,
               content: true,
+              createdAt: true,
             },
             orderBy: { createdAt: "desc" },
             take: options.historyLimit,
@@ -186,15 +194,15 @@ export abstract class AiRepository {
       });
 
       if (existingConversation) {
+        const recentMessages = existingConversation.messages.slice().reverse().map(AiRepository.toConversationMemoryMessage);
+
         return {
           conversationId: existingConversation.id,
-          history: existingConversation.messages
-            .slice()
-            .reverse()
-            .map((message) => ({
-              role: AiRepository.toAssistantMessageRole(message.role),
-              content: message.content,
-            })),
+          history: recentMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
+          recentMessages,
           persistenceAvailable: true,
           sessionKey: options.sessionKey,
         };
@@ -214,6 +222,7 @@ export abstract class AiRepository {
       return {
         conversationId: conversation.id,
         history: [],
+        recentMessages: [],
         persistenceAvailable: true,
         sessionKey: options.sessionKey,
       };
@@ -235,6 +244,12 @@ export abstract class AiRepository {
         return {
           conversationId: existingFallbackConversation.conversationId,
           history: existingFallbackConversation.history,
+          recentMessages: existingFallbackConversation.history.map((message, index) => ({
+            id: `fallback:${existingFallbackConversation.conversationId}:${index}`,
+            role: message.role,
+            content: message.content,
+            createdAt: new Date(0),
+          })),
           persistenceAvailable: false,
           sessionKey: existingFallbackConversation.sessionKey,
         };
@@ -253,6 +268,12 @@ export abstract class AiRepository {
       return {
         conversationId,
         history: options.fallbackHistory,
+        recentMessages: options.fallbackHistory.map((message, index) => ({
+          id: `fallback:${conversationId}:${index}`,
+          role: message.role,
+          content: message.content,
+          createdAt: new Date(0),
+        })),
         persistenceAvailable: false,
         sessionKey: options.sessionKey,
       };
@@ -262,7 +283,7 @@ export abstract class AiRepository {
   static async saveAssistantConversationExchange(
     db: TransactionCapableDatabaseClient,
     options: SaveConversationExchangeOptions,
-  ): Promise<void> {
+  ): Promise<SaveConversationExchangeResult> {
     if (!options.persistenceAvailable) {
       const existingConversation = assistantConversationFallbackStore.get(options.conversationId);
       const nextHistory = [
@@ -278,37 +299,86 @@ export abstract class AiRepository {
         userId: existingConversation?.userId ?? options.userId,
         history: nextHistory,
       });
-      return;
+      return { messages: [] };
     }
 
     try {
-      await db.$transaction([
-        db.aiAssistantConversationMessage.createMany({
-          data: [
-            {
-              conversationId: options.conversationId,
-              role: "user",
-              content: options.userMessage,
-            },
-            {
-              conversationId: options.conversationId,
-              role: "assistant",
-              content: options.assistantMessage,
-              blocks: options.blocks,
-              toolNames: options.toolNames,
-            },
-          ],
-        }),
-        db.aiAssistantConversation.update({
+      const messages = await db.$transaction(async (tx) => {
+        const userMessage = await tx.aiAssistantConversationMessage.create({
+          data: {
+            conversationId: options.conversationId,
+            role: "user",
+            content: options.userMessage,
+          },
+          select: {
+            id: true,
+            conversationId: true,
+            role: true,
+            content: true,
+            createdAt: true,
+          },
+        });
+        const assistantMessage = await tx.aiAssistantConversationMessage.create({
+          data: {
+            conversationId: options.conversationId,
+            role: "assistant",
+            content: options.assistantMessage,
+            blocks: options.blocks,
+            toolNames: options.toolNames,
+          },
+          select: {
+            id: true,
+            conversationId: true,
+            role: true,
+            content: true,
+            createdAt: true,
+          },
+        });
+
+        await tx.aiAssistantConversation.update({
           where: { id: options.conversationId },
           data: {
             lastUserMessageAt: new Date(),
           },
-        }),
-      ]);
+        });
+
+        return [userMessage, assistantMessage] satisfies Array<{
+          id: string;
+          conversationId: string;
+          role: string;
+          content: string;
+          createdAt: Date;
+        }>;
+      });
+
+      return {
+        messages: messages.map((message) => ({
+          id: message.id,
+          conversationId: message.conversationId,
+          scope: options.scope,
+          userId: options.userId,
+          role: AiRepository.toAssistantMessageRole(message.role),
+          content: message.content,
+          createdAt: message.createdAt,
+        })),
+      };
     } catch {
-      return;
+      return { messages: [] };
     }
+  }
+
+  private static toConversationMemoryMessage(message: {
+    id: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+  }): AssistantConversationMemoryMessage {
+    return {
+      id: message.id,
+      role: AiRepository.toAssistantMessageRole(message.role),
+      content: message.content,
+      createdAt: message.createdAt,
+    };
   }
 
   static async getOwnedResume(db: DatabaseClient, userId: string, resumeId: string) {

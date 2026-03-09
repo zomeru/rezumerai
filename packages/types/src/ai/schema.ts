@@ -8,6 +8,13 @@ export const AiConfigurationSchema = z.object({
   ASSISTANT_SYSTEM_PROMPT: z.string().trim().min(1).max(6000),
   ASSISTANT_MAX_STEPS: z.number().int().min(1).max(8),
   ASSISTANT_HISTORY_LIMIT: z.number().int().min(1).max(12),
+  EMBEDDING_PROVIDER: z.string().trim().min(1).max(100),
+  EMBEDDING_MODEL: z.string().trim().min(1).max(200),
+  EMBEDDING_DIMENSIONS: z.number().int().min(1).max(3072),
+  ASSISTANT_RAG_ENABLED: z.boolean(),
+  ASSISTANT_RAG_TOP_K: z.number().int().min(1).max(12),
+  ASSISTANT_RAG_RECENT_LIMIT: z.number().int().min(1).max(20),
+  ASSISTANT_CONTEXT_TOKEN_LIMIT: z.number().int().min(128).max(16000),
 });
 
 export const DEFAULT_AI_CONFIGURATION = {
@@ -21,6 +28,13 @@ export const DEFAULT_AI_CONFIGURATION = {
     "You are Rezumerai Assistant. Use only allowed tools. Keep replies short, factual, and role-safe. If access is not allowed, refuse briefly. Prefer concise lists over long prose. Use real line breaks, section headers on their own lines, and one list item per line.",
   ASSISTANT_MAX_STEPS: 4,
   ASSISTANT_HISTORY_LIMIT: 8,
+  EMBEDDING_PROVIDER: "openrouter",
+  EMBEDDING_MODEL: "openai/text-embedding-3-small",
+  EMBEDDING_DIMENSIONS: 1536,
+  ASSISTANT_RAG_ENABLED: true,
+  ASSISTANT_RAG_TOP_K: 4,
+  ASSISTANT_RAG_RECENT_LIMIT: 8,
+  ASSISTANT_CONTEXT_TOKEN_LIMIT: 1200,
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
 
 export const AiModelOptionSchema = z.object({

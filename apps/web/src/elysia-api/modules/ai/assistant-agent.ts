@@ -1362,11 +1362,18 @@ function renderMetricReply(envelope: Extract<AssistantToolEnvelope, { type: "met
 
   if (envelope.entity === "ai_configuration") {
     const labels: Record<string, string> = {
+      ASSISTANT_CONTEXT_TOKEN_LIMIT: "Assistant context token limit",
       ASSISTANT_HISTORY_LIMIT: "Assistant history limit",
       ASSISTANT_MAX_STEPS: "Assistant max steps",
+      ASSISTANT_RAG_ENABLED: "Assistant RAG enabled",
+      ASSISTANT_RAG_RECENT_LIMIT: "Assistant RAG recent limit",
+      ASSISTANT_RAG_TOP_K: "Assistant RAG top K",
       ASSISTANT_SYSTEM_PROMPT: "Assistant system prompt",
       COPILOT_SYSTEM_PROMPT: "Copilot system prompt",
       DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: "Daily optimizer credit limit",
+      EMBEDDING_DIMENSIONS: "Embedding dimensions",
+      EMBEDDING_MODEL: "Embedding model",
+      EMBEDDING_PROVIDER: "Embedding provider",
       OPTIMIZE_SYSTEM_PROMPT: "Optimize system prompt",
       PROMPT_VERSION: "Prompt version",
     };

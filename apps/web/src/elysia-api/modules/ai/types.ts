@@ -80,6 +80,7 @@ export interface AssistantConversationIdentity {
 export interface AssistantConversationState {
   conversationId: string | null;
   history: AssistantChatMessage[];
+  recentMessages: AssistantConversationMemoryMessage[];
   persistenceAvailable: boolean;
   sessionKey: string;
 }
@@ -92,4 +93,17 @@ export interface AssistantConversationRecord {
   scope: AssistantRoleScope;
   userId: string | null;
   history: AssistantChatMessage[];
+}
+
+export interface AssistantConversationMemoryMessage {
+  id: string;
+  role: AssistantChatMessage["role"];
+  content: string;
+  createdAt: Date;
+}
+
+export interface SavedAssistantConversationMessage extends AssistantConversationMemoryMessage {
+  conversationId: string;
+  scope: AssistantRoleScope;
+  userId: string | null;
 }
