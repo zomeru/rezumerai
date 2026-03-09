@@ -18,7 +18,7 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onClose?: (
     if (!isOpen) return;
 
     // Store the element that had focus before modal opened
-    previousActiveElement.current = document.activeElement as HTMLElement;
+    previousActiveElement.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const modalElement = ref.current;
     if (!modalElement) return;

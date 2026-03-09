@@ -1,20 +1,22 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "prisma/config";
-import { Prisma, PrismaClient } from "./generated/prisma/client";
+import { PrismaClient } from "./generated/prisma/client";
 
 export * from "./generated/prisma/client";
 
 // ─── Globals ──────────────────────────────────────────────────────────────────
+
+declare global {
+  var __rezumeraiPrisma: PrismaClient | undefined;
+}
 
 /**
  * Global reference to hold the BASE Prisma client across hot reloads.
  * We intentionally cache the base client (not the extended one) so that
  * the perf extension is never applied more than once per process.
  */
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
-};
+const globalForPrisma = globalThis;
 
 const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
 
@@ -50,67 +52,26 @@ const _dur = (ms: number): string => {
   return _p(_c.red, label);
 };
 
-// ─── Performance Extension ────────────────────────────────────────────────────
-
-/**
- * Prisma Client extension that intercepts every model operation to measure
- * and log query duration.
- *
- * Activated when ENABLE_PERF_LOGS=true. Uses `Prisma.defineExtension` with
- * `$allOperations` — the Prisma 5+ replacement for the removed `$use` middleware.
- *
- * Log format:
- *   <timestamp>  PERF  prisma  <Model>.<action>  <duration>
- *
- * @example
- *   2026-03-04T21:00:00.000Z  PERF  prisma  Resume.findMany  23.45ms
- */
-const perfExtension = Prisma.defineExtension({
-  name: "perf-logger",
-  query: {
-    $allModels: {
-      async $allOperations({ operation, model, args, query }) {
-        const start = performance.now();
-        const result = await query(args);
-        const duration = performance.now() - start;
-        console.log(
-          [
-            _ts(),
-            _p(_c.cyan, " PERF "),
-            _p(_c.magenta, "prisma"),
-            _p(_c.bold, `${model ?? "unknown"}.${operation}`),
-            _dur(duration),
-          ].join("  "),
-        );
-        return result;
-      },
-    },
-  },
-});
-
-// ─── Singleton ────────────────────────────────────────────────────────────────
 const isDev = process.env.NODE_ENV === "development";
 
 /**
- * Base Prisma client. Cached in `globalForPrisma` (not the extended wrapper)
- * to prevent double-wrapping the perf extension across hot reloads.
+ * Base Prisma client. Cached in `globalForPrisma` to prevent reconnect churn
+ * across hot reloads.
  */
 const baseClient =
-  globalForPrisma.prisma ||
+  globalForPrisma.__rezumeraiPrisma ||
   new PrismaClient({
     adapter,
     log: isDev ? ["query", "error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = baseClient;
+if (process.env.NODE_ENV !== "production") globalForPrisma.__rezumeraiPrisma = baseClient;
 
 /**
  * Shared Prisma client singleton for database access.
  *
- * When ENABLE_PERF_LOGS=true, all model operations are wrapped with the
- * perf-logger extension which logs model name, action, and duration.
- * The exported type is preserved via type assertion so downstream consumers
- * (prismaPlugin, route handlers) require no changes.
+ * This export intentionally stays as the base Prisma client so every consumer
+ * sees one stable type across environments.
  *
  * @example
  * ```ts
@@ -118,6 +79,4 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = baseClient;
  * const users = await prisma.user.findMany();
  * ```
  */
-export const prisma: typeof baseClient = isDev
-  ? (baseClient.$extends(perfExtension) as unknown as typeof baseClient)
-  : baseClient;
+export const prisma = baseClient;

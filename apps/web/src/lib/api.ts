@@ -18,8 +18,9 @@ function getApiBaseUrl(): string {
   return clientEnv.NEXT_PUBLIC_SITE_URL;
 }
 
-function createApi() {
-  return treaty<typeof elysiaApp>(getApiBaseUrl()).api;
+function createApi(options?: Parameters<typeof treaty<typeof elysiaApp>>[1]) {
+  return treaty<typeof elysiaApp>(getApiBaseUrl(), options).api;
 }
 
 export const api = createApi();
+export const apiWithoutDateParsing = createApi({ parseDate: false });

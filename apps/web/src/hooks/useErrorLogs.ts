@@ -1,6 +1,7 @@
 import type { ErrorLogDetail, ErrorLogListResponse } from "@rezumerai/types";
+import { ErrorLogDetailSchema, ErrorLogListResponseSchema } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { apiWithoutDateParsing } from "@/lib/api";
 
 interface ErrorLogListQuery {
   page: number;
@@ -60,7 +61,7 @@ export function useAdminErrorLogs(
         requestQuery.isRead = query.isRead ? "true" : "false";
       }
 
-      const { data, error } = await api.admin.errors.get({
+      const { data, error } = await apiWithoutDateParsing.admin.errors.get({
         query: requestQuery,
       });
 
@@ -72,7 +73,7 @@ export function useAdminErrorLogs(
         throw new Error("Invalid error log list response.");
       }
 
-      return data as ErrorLogListResponse;
+      return ErrorLogListResponseSchema.parse(data);
     },
     ...options,
   });
@@ -86,7 +87,7 @@ export function useAdminErrorLogDetail(
     queryKey: [...ERROR_LOGS_QUERY_KEY, "detail", id],
     enabled: id.length > 0,
     queryFn: async (): Promise<ErrorLogDetail> => {
-      const { data, error } = await api.admin.errors({ id }).get();
+      const { data, error } = await apiWithoutDateParsing.admin.errors({ id }).get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load error detail."));
@@ -96,7 +97,7 @@ export function useAdminErrorLogDetail(
         throw new Error("Invalid error detail response.");
       }
 
-      return normalizeErrorLogDetail(data as ErrorLogDetail);
+      return normalizeErrorLogDetail(ErrorLogDetailSchema.parse(data));
     },
     ...options,
   });
@@ -107,7 +108,7 @@ export function useMarkAdminErrorAsRead() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<ErrorLogDetail> => {
-      const { data, error } = await api.admin.errors({ id }).read.patch();
+      const { data, error } = await apiWithoutDateParsing.admin.errors({ id }).read.patch();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to mark error as read."));
@@ -117,7 +118,7 @@ export function useMarkAdminErrorAsRead() {
         throw new Error("Invalid mark-as-read response.");
       }
 
-      return normalizeErrorLogDetail(data as ErrorLogDetail);
+      return normalizeErrorLogDetail(ErrorLogDetailSchema.parse(data));
     },
     onSuccess: async (_, id) => {
       await queryClient.invalidateQueries({ queryKey: ERROR_LOGS_QUERY_KEY });

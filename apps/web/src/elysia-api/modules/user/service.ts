@@ -5,6 +5,8 @@ import { AiService } from "../ai/service";
 
 const SOCIAL_EMAIL_READ_ONLY_REASON = "Email is managed by your social auth provider and cannot be updated here.";
 const SOCIAL_PASSWORD_READ_ONLY_REASON = "This account is connected to an OAuth provider.";
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
 /**
  * User service — business logic only, no HTTP concerns.
@@ -19,7 +21,7 @@ export abstract class UserService {
    * @param db - Prisma client instance
    * @returns Array of all user records
    */
-  static async findAll(db: PrismaClient): Promise<User[]> {
+  static async findAll(db: DatabaseClient): Promise<User[]> {
     return db.user.findMany();
   }
 
@@ -30,7 +32,7 @@ export abstract class UserService {
    * @param id - User ID to look up
    * @returns User record if found, null otherwise
    */
-  static async findById(db: PrismaClient, id: string): Promise<User | null> {
+  static async findById(db: DatabaseClient, id: string): Promise<User | null> {
     return db.user.findUnique({ where: { id } });
   }
 
@@ -41,7 +43,7 @@ export abstract class UserService {
    * @param email - User email to look up
    * @returns User record if found, null otherwise
    */
-  static async findByEmail(db: PrismaClient, email: string): Promise<User | null> {
+  static async findByEmail(db: DatabaseClient, email: string): Promise<User | null> {
     return db.user.findUnique({ where: { email } });
   }
 
@@ -53,7 +55,7 @@ export abstract class UserService {
    * @param data - Partial user data to update (e.g. name, email)
    * @returns The updated user record, or null if the user does not exist
    */
-  static async update(db: PrismaClient, id: string, data: Partial<User>): Promise<User | null> {
+  static async update(db: DatabaseClient, id: string, data: Partial<User>): Promise<User | null> {
     const exists = await db.user.findUnique({
       where: { id },
       select: { id: true },
@@ -62,7 +64,10 @@ export abstract class UserService {
     return db.user.update({ where: { id }, data });
   }
 
-  static async getAccountSettings(db: PrismaClient, userId: string): Promise<UserAccountSettings | null> {
+  static async getAccountSettings(
+    db: TransactionCapableDatabaseClient,
+    userId: string,
+  ): Promise<UserAccountSettings | null> {
     const [user, accounts, credits] = await Promise.all([
       db.user.findUnique({
         where: { id: userId },

@@ -1,4 +1,3 @@
-import type { Tool } from "@openrouter/sdk";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { serverEnv } from "@/env";
@@ -12,6 +11,10 @@ type OpenRouterModule = typeof import("@openrouter/sdk");
 interface OpenRouterRuntime {
   client: InstanceType<OpenRouterModule["OpenRouter"]>;
   stepCountIs: OpenRouterModule["stepCountIs"];
+}
+
+function isOpenRouterStreamChunk(value: unknown): value is OpenRouterStreamChunk {
+  return typeof value === "object" && value !== null;
 }
 
 let openRouterRuntimePromise: Promise<OpenRouterRuntime> | null = null;
@@ -69,7 +72,7 @@ async function runTextModel(options: TextModelCallOptions) {
     model: options.modelId,
     instructions: options.instructions,
     input: options.input,
-    tools: options.tools as readonly Tool[],
+    tools: options.tools,
     stopWhen: stepCountIs(options.maxSteps),
   });
 
@@ -102,7 +105,11 @@ export const openRouterAiProvider: AiProvider = {
     });
   },
   async *streamOptimizeText(stream, options) {
-    for await (const chunk of stream as AsyncIterable<OpenRouterStreamChunk>) {
+    for await (const chunk of stream) {
+      if (!isOpenRouterStreamChunk(chunk)) {
+        continue;
+      }
+
       const content = chunk.choices?.[0]?.delta?.content;
 
       if (content) {

@@ -106,7 +106,7 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
             bold(path),
             paint("red", "error"),
             colorizeElapsed(elapsed),
-            paint("red", (error as Error).message ?? "unknown"),
+            paint("red", error instanceof Error ? error.message : "unknown"),
           ].join("  "),
         );
       });

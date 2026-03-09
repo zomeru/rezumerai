@@ -12,7 +12,9 @@ import type {
   SaveOptimizationInput,
 } from "./types";
 
-type CreditsAccessor = Pick<PrismaClient, "aiTextOptimizerCredits">;
+type CreditsAccessor = Pick<DatabaseClient, "aiTextOptimizerCredits">;
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
 const assistantConversationFallbackStore = new Map<string, AssistantConversationRecord>();
 
@@ -32,14 +34,18 @@ interface SaveConversationExchangeOptions {
   userId: string | null;
   userMessage: string;
   assistantMessage: string;
-  blocks: Prisma.JsonValue;
+  blocks: Prisma.InputJsonValue;
   toolNames: string[];
   persistenceAvailable: boolean;
 }
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally exposes stateless query helpers for the module.
 export abstract class AiRepository {
-  static async listActiveModels(db: PrismaClient): Promise<ActiveAiModel[]> {
+  private static toAssistantMessageRole(role: string): AssistantChatMessage["role"] {
+    return role === "assistant" ? "assistant" : "user";
+  }
+
+  static async listActiveModels(db: DatabaseClient): Promise<ActiveAiModel[]> {
     const models = await db.aiModel.findMany({
       where: {
         isActive: true,
@@ -60,7 +66,7 @@ export abstract class AiRepository {
     return models.map(toActiveAiModel);
   }
 
-  static async getAiConfigurationValue(db: PrismaClient): Promise<Prisma.JsonValue | null> {
+  static async getAiConfigurationValue(db: DatabaseClient): Promise<Prisma.JsonValue | null> {
     const configuration = await db.systemConfiguration.findUnique({
       where: { name: aiConfigurationName },
       select: { value: true },
@@ -70,7 +76,7 @@ export abstract class AiRepository {
   }
 
   static async getUserSelectedModelRecord(
-    db: PrismaClient,
+    db: DatabaseClient,
     userId: string,
   ): Promise<{ selectedAiModelId: string | null } | null> {
     return db.user.findUnique({
@@ -81,7 +87,7 @@ export abstract class AiRepository {
     });
   }
 
-  static async updateUserSelectedModel(db: PrismaClient, userId: string, selectedAiModelId: string): Promise<void> {
+  static async updateUserSelectedModel(db: DatabaseClient, userId: string, selectedAiModelId: string): Promise<void> {
     await db.user.update({
       where: { id: userId },
       data: {
@@ -91,7 +97,7 @@ export abstract class AiRepository {
   }
 
   static async consumeDailyCredit(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     dailyLimit: number,
     now: Date = new Date(),
@@ -129,7 +135,7 @@ export abstract class AiRepository {
   }
 
   static async getDailyCredits(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     dailyLimit: number,
     now: Date = new Date(),
@@ -152,7 +158,7 @@ export abstract class AiRepository {
   }
 
   static async getAssistantConversationState(
-    db: PrismaClient,
+    db: DatabaseClient,
     options: ConversationStateOptions,
   ): Promise<AssistantConversationState> {
     try {
@@ -186,7 +192,7 @@ export abstract class AiRepository {
             .slice()
             .reverse()
             .map((message) => ({
-              role: message.role as AssistantChatMessage["role"],
+              role: AiRepository.toAssistantMessageRole(message.role),
               content: message.content,
             })),
           persistenceAvailable: true,
@@ -254,7 +260,7 @@ export abstract class AiRepository {
   }
 
   static async saveAssistantConversationExchange(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     options: SaveConversationExchangeOptions,
   ): Promise<void> {
     if (!options.persistenceAvailable) {
@@ -288,7 +294,7 @@ export abstract class AiRepository {
               conversationId: options.conversationId,
               role: "assistant",
               content: options.assistantMessage,
-              blocks: options.blocks as Prisma.InputJsonValue,
+              blocks: options.blocks,
               toolNames: options.toolNames,
             },
           ],
@@ -305,7 +311,7 @@ export abstract class AiRepository {
     }
   }
 
-  static async getOwnedResume(db: PrismaClient, userId: string, resumeId: string) {
+  static async getOwnedResume(db: DatabaseClient, userId: string, resumeId: string) {
     const resume = await db.resume.findFirst({
       where: { id: resumeId, userId },
       include: {
@@ -323,7 +329,11 @@ export abstract class AiRepository {
     return resume;
   }
 
-  static async resolveOwnedResumeId(db: PrismaClient, userId: string, resumeId: string | null): Promise<string | null> {
+  static async resolveOwnedResumeId(
+    db: DatabaseClient,
+    userId: string,
+    resumeId: string | null,
+  ): Promise<string | null> {
     if (!resumeId) {
       return null;
     }
@@ -336,7 +346,7 @@ export abstract class AiRepository {
     return ownedResume?.id ?? null;
   }
 
-  static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
+  static async saveOptimization(db: DatabaseClient, payload: SaveOptimizationInput): Promise<void> {
     const inputText = payload.inputText.trim();
     const optimizedText = payload.optimizedText.trim();
     const linkedResumeId = await AiRepository.resolveOwnedResumeId(db, payload.userId, payload.resumeId ?? null);

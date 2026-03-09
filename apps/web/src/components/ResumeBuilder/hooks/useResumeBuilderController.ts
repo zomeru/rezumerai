@@ -146,7 +146,7 @@ export function useResumeBuilderController({
 
     const resumeDataToSave: ResumeWithRelationsInputUpdate = {
       ...draftResume,
-      personalInfo: draftResume.personalInfo as ResumeWithRelationsInputUpdate["personalInfo"],
+      personalInfo: draftResume.personalInfo ?? undefined,
     };
 
     setIsSaving(true);

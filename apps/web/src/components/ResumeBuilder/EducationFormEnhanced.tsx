@@ -128,7 +128,7 @@ export default function EducationFormEnhanced({ education, onChange, errors = {}
                       School Year Start Date<span className="text-red-500"> *</span>
                     </p>
                     <DatePicker
-                      selected={(edu as { schoolYearStartDate?: Date }).schoolYearStartDate ?? undefined}
+                      selected={edu.schoolYearStartDate ?? undefined}
                       onSelect={(date: Date | undefined) => handleUpdate(index, "schoolYearStartDate", date ?? null)}
                       placeholder="Select start date"
                     />
@@ -139,7 +139,7 @@ export default function EducationFormEnhanced({ education, onChange, errors = {}
                       selected={edu.graduationDate ?? undefined}
                       onSelect={(date: Date | undefined) => handleUpdate(index, "graduationDate", date ?? null)}
                       placeholder="Select graduation date"
-                      disabled={(edu as { isCurrent?: boolean }).isCurrent ?? false}
+                      disabled={edu.isCurrent}
                     />
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function EducationFormEnhanced({ education, onChange, errors = {}
                   <input
                     type="checkbox"
                     id={`edu-current-${index}`}
-                    checked={(edu as { isCurrent?: boolean }).isCurrent ?? false}
+                    checked={edu.isCurrent}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const isChecked = e.target.checked;
                       if (isChecked) {

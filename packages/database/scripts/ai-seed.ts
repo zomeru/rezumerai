@@ -54,6 +54,9 @@ const GLOBAL_CONFIG_SEED = {
   ERROR_LOG_RETENTION_DAYS: 90,
 } as const;
 
+const DEFAULT_AI_CONFIGURATION_JSON: Prisma.InputJsonValue = DEFAULT_AI_CONFIGURATION;
+const GLOBAL_CONFIG_SEED_JSON: Prisma.InputJsonValue = GLOBAL_CONFIG_SEED;
+
 async function seedAiProvidersAndModels(): Promise<void> {
   console.log("🤖 Seeding AI providers and models...");
 
@@ -96,12 +99,12 @@ async function seedSystemConfigurations(): Promise<void> {
     where: { name: SYSTEM_CONFIGURATION_KEYS.AI_CONFIG },
     update: {
       description: "Global AI model and optimization configuration used across the application.",
-      value: DEFAULT_AI_CONFIGURATION as Prisma.InputJsonValue,
+      value: DEFAULT_AI_CONFIGURATION_JSON,
     },
     create: {
       name: SYSTEM_CONFIGURATION_KEYS.AI_CONFIG,
       description: "Global AI model and optimization configuration used across the application.",
-      value: DEFAULT_AI_CONFIGURATION as Prisma.InputJsonValue,
+      value: DEFAULT_AI_CONFIGURATION_JSON,
     },
   });
 
@@ -109,12 +112,12 @@ async function seedSystemConfigurations(): Promise<void> {
     where: { name: SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG },
     update: {
       description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
-      value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
+      value: GLOBAL_CONFIG_SEED_JSON,
     },
     create: {
       name: SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG,
       description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",
-      value: GLOBAL_CONFIG_SEED as Prisma.InputJsonValue,
+      value: GLOBAL_CONFIG_SEED_JSON,
     },
   });
 
@@ -156,12 +159,12 @@ async function seedSystemConfigurations(): Promise<void> {
       where: { name: seed.name },
       update: {
         description: seed.description,
-        value: seed.value as Prisma.InputJsonValue,
+        value: seed.value,
       },
       create: {
         name: seed.name,
         description: seed.description,
-        value: seed.value as Prisma.InputJsonValue,
+        value: seed.value,
       },
     });
   }

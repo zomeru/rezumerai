@@ -99,7 +99,9 @@ export default function UserListPageClient(): React.JSX.Element {
           <AdminSelect
             value={role}
             onChange={(value) => {
-              setRole(value as (typeof ROLE_OPTIONS)[number]["value"]);
+              if (value === "ADMIN" || value === "USER" || value === "all") {
+                setRole(value);
+              }
               setPage(1);
             }}
           >

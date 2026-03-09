@@ -7,6 +7,7 @@ const Pagination = t.Object({
   totalCount: t.Integer({ minimum: 0 }),
   totalPages: t.Integer({ minimum: 0 }),
 });
+const IsoDateTimeString = t.String();
 
 const UserRole = t.Union([t.Literal("ADMIN"), t.Literal("USER")]);
 const AdminUserStatus = t.Literal("ACTIVE");
@@ -51,7 +52,7 @@ const ParamByName = t.Object({
 const ErrorLogListItem = t.Object({
   id: t.String(),
   errorName: t.String(),
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
   endpoint: t.String(),
   method: t.String(),
   functionName: t.Nullable(t.String()),
@@ -71,9 +72,9 @@ const ErrorLogDetail = t.Object({
   headers: t.Nullable(t.Any()),
   userId: t.Nullable(t.String()),
   environment: t.Union([t.Literal("development"), t.Literal("production")]),
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
   isRead: t.Boolean(),
-  readAt: t.Nullable(t.String({ format: "date-time" })),
+  readAt: t.Nullable(IsoDateTimeString),
   readByUserId: t.Nullable(t.String()),
   readByUser: t.Nullable(ReadByUser),
 });
@@ -91,7 +92,7 @@ const AdminUserListItem = t.Object({
   resumeCount: t.Integer({ minimum: 0 }),
   credits: AdminUserCredits,
   status: AdminUserStatus,
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
 });
 
 const UserActivityItem = t.Object({
@@ -103,7 +104,7 @@ const UserActivityItem = t.Object({
   resourceId: t.Nullable(t.String()),
   endpoint: t.Nullable(t.String()),
   method: t.Nullable(t.String()),
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
 });
 
 const AdminUserDetail = t.Object({
@@ -114,8 +115,8 @@ const AdminUserDetail = t.Object({
   role: UserRole,
   emailVerified: t.Boolean(),
   status: AdminUserStatus,
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
+  updatedAt: IsoDateTimeString,
   resumeCount: t.Integer({ minimum: 0 }),
   credits: AdminUserCredits,
   recentActivity: t.Array(UserActivityItem),
@@ -132,8 +133,8 @@ const SystemConfigurationEntry = t.Object({
   name: t.String(),
   description: t.Nullable(t.String()),
   value: t.Any(),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
+  updatedAt: IsoDateTimeString,
   isEditable: t.Boolean(),
   validationMode: t.Union([t.Literal("KNOWN_SCHEMA"), t.Literal("RAW_JSON")]),
 });
@@ -150,8 +151,8 @@ const AdminAiModel = t.Object({
   providerId: t.String(),
   providerName: t.String(),
   isActive: t.Boolean(),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
+  updatedAt: IsoDateTimeString,
 });
 
 const AuditLogActor = t.Object({
@@ -171,7 +172,7 @@ const AuditLogListItem = t.Object({
   method: t.Nullable(t.String()),
   serviceName: t.Nullable(t.String()),
   actor: t.Nullable(AuditLogActor),
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
 });
 
 const AuditLogDetail = t.Object({
@@ -188,7 +189,7 @@ const AuditLogDetail = t.Object({
   requestMetadata: t.Nullable(t.Any()),
   beforeValues: t.Nullable(t.Any()),
   afterValues: t.Nullable(t.Any()),
-  createdAt: t.String({ format: "date-time" }),
+  createdAt: IsoDateTimeString,
   actor: t.Nullable(AuditLogActor),
 });
 
@@ -202,7 +203,7 @@ const AnalyticsSummary = t.Object({
 });
 
 const AnalyticsTimeseriesPoint = t.Object({
-  bucketStart: t.String({ format: "date-time" }),
+  bucketStart: IsoDateTimeString,
   label: t.String(),
   requestCount: t.Integer({ minimum: 0 }),
   errorCount: t.Integer({ minimum: 0 }),
@@ -226,7 +227,7 @@ const AnalyticsBackgroundJob = t.Object({
   successCount: t.Integer({ minimum: 0 }),
   failureCount: t.Integer({ minimum: 0 }),
   averageDurationMs: t.Number({ minimum: 0 }),
-  lastRunAt: t.Nullable(t.String({ format: "date-time" })),
+  lastRunAt: t.Nullable(IsoDateTimeString),
 });
 
 const AnalyticsDashboard = t.Object({

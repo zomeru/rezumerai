@@ -3,6 +3,7 @@ import { toPrismaJsonValue } from "./redaction";
 import { getRequestContext } from "./request-context";
 
 export type AuditLogCategoryValue = "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE";
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 
 export interface CreateAuditLogInput {
   category: AuditLogCategoryValue;
@@ -17,7 +18,7 @@ export interface CreateAuditLogInput {
   requestMetadata?: unknown;
   beforeValues?: unknown;
   afterValues?: unknown;
-  db?: PrismaClient;
+  db?: DatabaseClient;
 }
 
 export interface RequestAuditInput {
@@ -43,6 +44,10 @@ const REQUEST_METHOD_ACTIONS: Record<string, string> = {
 const DEFAULT_REQUEST_AUDIT_EXCLUDE = new Set<string>(["/api/health", "/api"]);
 const AUDITABLE_GET_PREFIXES = ["/api/admin"];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function normalizeResourceType(pathname: string): string {
   const segments = pathname
     .split("/")
@@ -57,14 +62,14 @@ function normalizeResourceType(pathname: string): string {
 }
 
 function resolveResourceId(params: unknown): string | null {
-  if (!params || typeof params !== "object") {
+  if (!isRecord(params)) {
     return null;
   }
 
   const candidateKeys = ["id", "userId", "resumeId", "errorId", "auditId"] as const;
 
   for (const key of candidateKeys) {
-    const value = (params as Record<string, unknown>)[key];
+    const value = params[key];
 
     if (typeof value === "string" && value.length > 0) {
       return value;

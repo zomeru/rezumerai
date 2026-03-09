@@ -9,6 +9,13 @@ import type {
   ResumeCopilotTailorInput,
   ResumeCopilotTailorResponse,
 } from "@rezumerai/types";
+import {
+  AiSettingsSchema,
+  AssistantChatResponseSchema,
+  ResumeCopilotOptimizeResponseSchema,
+  ResumeCopilotReviewResponseSchema,
+  ResumeCopilotTailorResponseSchema,
+} from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { api } from "@/lib/api";
@@ -43,7 +50,7 @@ export function useAiSettings(
         throw new Error(ERROR_MESSAGES.AI_SETTINGS_INVALID_RESPONSE);
       }
 
-      return data as AiSettings;
+      return AiSettingsSchema.parse(data);
     },
     ...options,
   });
@@ -64,7 +71,7 @@ export function useUpdateSelectedAiModel() {
         throw new Error(ERROR_MESSAGES.AI_MODEL_UPDATE_INVALID_RESPONSE);
       }
 
-      return data as AiSettings;
+      return AiSettingsSchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: AI_SETTINGS_QUERY_KEY });
@@ -85,7 +92,7 @@ export function useAssistantChat() {
         throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
       }
 
-      return data as AssistantChatResponse;
+      return AssistantChatResponseSchema.parse(data);
     },
   });
 }
@@ -103,7 +110,7 @@ export function useCopilotOptimizeSection() {
         throw new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
       }
 
-      return data as ResumeCopilotOptimizeResponse;
+      return ResumeCopilotOptimizeResponseSchema.parse(data);
     },
   });
 }
@@ -121,7 +128,7 @@ export function useCopilotTailorResume() {
         throw new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
       }
 
-      return data as ResumeCopilotTailorResponse;
+      return ResumeCopilotTailorResponseSchema.parse(data);
     },
   });
 }
@@ -139,7 +146,7 @@ export function useCopilotReviewResume() {
         throw new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
       }
 
-      return data as ResumeCopilotReviewResponse;
+      return ResumeCopilotReviewResponseSchema.parse(data);
     },
   });
 }

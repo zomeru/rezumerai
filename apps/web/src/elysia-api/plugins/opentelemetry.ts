@@ -26,9 +26,9 @@ function buildSpanProcessors(): BatchSpanProcessor[] {
       .split(",")
       .map((h) => h.trim())
       .filter(Boolean)
-      .map((h) => {
+      .map((h): [string, string] => {
         const idx = h.indexOf("=");
-        return [h.slice(0, idx).trim(), h.slice(idx + 1).trim()] as [string, string];
+        return [h.slice(0, idx).trim(), h.slice(idx + 1).trim()];
       }),
   );
 

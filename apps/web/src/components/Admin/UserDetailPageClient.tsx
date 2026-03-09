@@ -186,7 +186,11 @@ export default function UserDetailPageClient({ userId }: { userId: string }): Re
                   <AdminFieldLabel label="Assigned role">
                     <AdminSelect
                       value={selectedRole}
-                      onChange={(value) => setSelectedRole(value as (typeof ROLE_OPTIONS)[number])}
+                      onChange={(value) => {
+                        if (value === "ADMIN" || value === "USER") {
+                          setSelectedRole(value);
+                        }
+                      }}
                     >
                       {ROLE_OPTIONS.map((role) => (
                         <option key={role} value={role}>

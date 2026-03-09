@@ -1,5 +1,15 @@
 import type { PrismaClient } from "@rezumerai/database";
-import { AssistantChatInputSchema, type AssistantChatResponse } from "@rezumerai/types";
+
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
+
+import type {
+  AssistantChatResponse,
+  ResumeCopilotOptimizeResponse,
+  ResumeCopilotReviewResponse,
+  ResumeCopilotTailorResponse,
+} from "@rezumerai/types";
+import { AssistantChatInputSchema } from "@rezumerai/types";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { createAuditLog } from "../../observability/audit";
 import { resolveSessionUser } from "../../plugins/auth";
@@ -12,12 +22,29 @@ import {
 } from "./assistant-chat";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "./service";
-import type { CopilotRunResult, OptimizationContext } from "./types";
+import type { ActiveAiModel, CopilotRunResult, OptimizationContext, UserAiSettings } from "./types";
 
-interface RouteResult<T> {
-  status: number;
-  body: T;
-  headers?: Record<string, string>;
+type RouteHeaders = Record<string, string>;
+type StatusMap = Record<number, unknown>;
+
+export type RouteResult<TCases extends StatusMap> = {
+  [TStatus in keyof TCases & number]: {
+    status: TStatus;
+    body: TCases[TStatus];
+    headers?: RouteHeaders;
+  };
+}[keyof TCases & number];
+
+function routeResult<TStatus extends number, TBody>(
+  status: TStatus,
+  body: TBody,
+  headers?: RouteHeaders,
+): {
+  status: TStatus;
+  body: TBody;
+  headers?: RouteHeaders;
+} {
+  return headers ? { status, body, headers } : { status, body };
 }
 
 interface TrackAiHandledErrorOptions {
@@ -143,7 +170,7 @@ async function ensureVerifiedAiUser(options: {
   request: Request;
   route: string;
   user: VerifiedAiUser;
-}): Promise<RouteResult<string> | null> {
+}): Promise<RouteResult<{ 403: string }> | null> {
   if (options.user.emailVerified) {
     return null;
   }
@@ -154,14 +181,11 @@ async function ensureVerifiedAiUser(options: {
     userId: options.user.id,
   });
 
-  return {
-    status: 403,
-    body: ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED,
-  };
+  return routeResult(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
 }
 
 async function persistOptimizationSafely(
-  db: PrismaClient,
+  db: TransactionCapableDatabaseClient,
   payload: Parameters<typeof AiService.saveOptimization>[1],
 ): Promise<void> {
   try {
@@ -173,14 +197,14 @@ async function persistOptimizationSafely(
 }
 
 async function runCopilotRequest<TInput extends { resumeId: string }, TResponse extends { modelId: string }>(options: {
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   route: string;
   userId: string;
   body: TInput;
   operation: "optimize" | "tailor" | "review";
-  run: (db: PrismaClient, userId: string, body: TInput) => Promise<CopilotRunResult<TResponse>>;
-}): Promise<RouteResult<TResponse | string>> {
+  run: (db: TransactionCapableDatabaseClient, userId: string, body: TInput) => Promise<CopilotRunResult<TResponse>>;
+}): Promise<RouteResult<{ 200: TResponse; 422: string; 429: string; 500: string }>> {
   const startedAt = Date.now();
   let runtime: OptimizationContext | null = null;
 
@@ -201,10 +225,7 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
       Date.now() - startedAt,
     );
 
-    return {
-      status: 200,
-      body: result.response,
-    };
+    return routeResult(200, result.response);
   } catch (error: unknown) {
     const normalizedError = error instanceof Error ? error : new Error(ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
 
@@ -235,42 +256,30 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
     }
 
     if (error instanceof AiCreditsExhaustedError) {
-      return {
-        status: 429,
-        body: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED,
-      };
+      return routeResult(429, ERROR_MESSAGES.AI_CREDITS_EXHAUSTED);
     }
 
     if (error instanceof AiModelUnavailableError || error instanceof AiModelPolicyRestrictedError) {
-      return {
-        status: 422,
-        body: normalizedError.message,
-      };
+      return routeResult(422, normalizedError.message);
     }
 
-    return {
-      status: 500,
-      body: ERROR_MESSAGES.AI_COPILOT_RUN_FAILED,
-    };
+    return routeResult(500, ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
   }
 }
 
 export async function handleAssistantChatRequest(options: {
   body: unknown;
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
-}): Promise<RouteResult<AssistantChatResponse>> {
+}): Promise<RouteResult<{ 200: AssistantChatResponse; 422: AssistantChatResponse }>> {
   const parsedInput = AssistantChatInputSchema.safeParse(options.body);
 
   if (!parsedInput.success) {
-    return {
-      status: 422,
-      body: buildAssistantFailureResponse("PUBLIC"),
-    };
+    return routeResult(422, buildAssistantFailureResponse("PUBLIC"));
   }
 
   const sessionUser = await resolveSessionUser();
-  const role = resolveUserRole((sessionUser as { role?: unknown } | null)?.role);
+  const role = resolveUserRole(sessionUser?.role);
   const assistantSession = resolveAssistantSession(options.request);
 
   try {
@@ -289,11 +298,11 @@ export async function handleAssistantChatRequest(options: {
       });
     }
 
-    return {
-      status: 200,
-      body: result,
-      headers: assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
-    };
+    return routeResult(
+      200,
+      result,
+      assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
+    );
   } catch (error: unknown) {
     await trackAiHandledError({
       request: options.request,
@@ -306,15 +315,19 @@ export async function handleAssistantChatRequest(options: {
       },
     });
 
-    return {
-      status: 422,
-      body: buildAssistantFailureResponse(role ? AiService.toAssistantScope(role) : "PUBLIC"),
-      headers: assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
-    };
+    return routeResult(
+      422,
+      buildAssistantFailureResponse(role ? AiService.toAssistantScope(role) : "PUBLIC"),
+      assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
+    );
   }
 }
 
-export async function handleListModelsRequest(options: { db: PrismaClient; request: Request; user: VerifiedAiUser }) {
+export async function handleListModelsRequest(options: {
+  db: TransactionCapableDatabaseClient;
+  request: Request;
+  user: VerifiedAiUser;
+}): Promise<RouteResult<{ 200: ActiveAiModel[]; 403: string }>> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/models",
@@ -325,13 +338,14 @@ export async function handleListModelsRequest(options: { db: PrismaClient; reque
     return verificationResult;
   }
 
-  return {
-    status: 200,
-    body: await AiService.listActiveModels(options.db),
-  };
+  return routeResult(200, await AiService.listActiveModels(options.db));
 }
 
-export async function handleGetSettingsRequest(options: { db: PrismaClient; request: Request; user: VerifiedAiUser }) {
+export async function handleGetSettingsRequest(options: {
+  db: TransactionCapableDatabaseClient;
+  request: Request;
+  user: VerifiedAiUser;
+}): Promise<RouteResult<{ 200: UserAiSettings; 403: string }>> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/settings",
@@ -342,18 +356,21 @@ export async function handleGetSettingsRequest(options: { db: PrismaClient; requ
     return verificationResult;
   }
 
-  return {
-    status: 200,
-    body: await AiService.getUserAiSettings(options.db, options.user.id),
-  };
+  return routeResult(200, await AiService.getUserAiSettings(options.db, options.user.id));
 }
 
 export async function handleUpdateSelectedModelRequest(options: {
   body: SelectModelBody;
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}): Promise<RouteResult<unknown>> {
+}): Promise<
+  RouteResult<{
+    200: UserAiSettings;
+    403: string;
+    422: { code: typeof AI_MODEL_UNAVAILABLE_CODE; message: string };
+  }>
+> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/settings/model",
@@ -367,10 +384,7 @@ export async function handleUpdateSelectedModelRequest(options: {
   try {
     await AiService.updateUserSelectedModel(options.db, options.user.id, options.body.modelId.trim());
 
-    return {
-      status: 200,
-      body: await AiService.getUserAiSettings(options.db, options.user.id),
-    };
+    return routeResult(200, await AiService.getUserAiSettings(options.db, options.user.id));
   } catch (error: unknown) {
     if (error instanceof AiModelUnavailableError) {
       await trackAiHandledError({
@@ -385,13 +399,15 @@ export async function handleUpdateSelectedModelRequest(options: {
         },
       });
 
-      return {
-        status: 422,
-        body: {
-          code: AI_MODEL_UNAVAILABLE_CODE,
-          message: error.message,
-        },
+      const unavailableBody = {
+        code: AI_MODEL_UNAVAILABLE_CODE,
+        message: error.message,
+      } satisfies {
+        code: typeof AI_MODEL_UNAVAILABLE_CODE;
+        message: string;
       };
+
+      return routeResult(422, unavailableBody);
     }
 
     throw error;
@@ -404,10 +420,10 @@ export async function handleCopilotOptimizeRequest(options: {
     target: Parameters<typeof AiService.runCopilotOptimize>[2]["target"];
     intent?: Parameters<typeof AiService.runCopilotOptimize>[2]["intent"];
   };
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}) {
+}): Promise<RouteResult<{ 200: ResumeCopilotOptimizeResponse; 403: string; 422: string; 429: string; 500: string }>> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/optimize-section",
@@ -434,10 +450,10 @@ export async function handleCopilotOptimizeRequest(options: {
 
 export async function handleCopilotTailorRequest(options: {
   body: Parameters<typeof AiService.runCopilotTailor>[2];
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}) {
+}): Promise<RouteResult<{ 200: ResumeCopilotTailorResponse; 403: string; 422: string; 429: string; 500: string }>> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/tailor",
@@ -461,10 +477,10 @@ export async function handleCopilotTailorRequest(options: {
 
 export async function handleCopilotReviewRequest(options: {
   body: Parameters<typeof AiService.runCopilotReview>[2];
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}) {
+}): Promise<RouteResult<{ 200: ResumeCopilotReviewResponse; 403: string; 422: string; 429: string; 500: string }>> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/review",
@@ -488,10 +504,25 @@ export async function handleCopilotReviewRequest(options: {
 
 export async function handleOptimizeTextRequest(options: {
   body: OptimizeTextBody;
-  db: PrismaClient;
+  db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}): Promise<RouteResult<unknown>> {
+}): Promise<
+  RouteResult<{
+    200: AsyncGenerator<string, void, unknown>;
+    403: string;
+    422:
+      | string
+      | {
+          code: typeof AI_MODEL_POLICY_RESTRICTED_CODE | typeof AI_MODEL_UNAVAILABLE_CODE;
+          message: string;
+        };
+    429: {
+      code: typeof AI_CREDITS_EXHAUSTED_CODE;
+      message: string;
+    };
+  }>
+> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/optimize",
@@ -512,10 +543,7 @@ export async function handleOptimizeTextRequest(options: {
   } as const;
 
   if (!input) {
-    return {
-      status: 422,
-      body: ERROR_MESSAGES.AI_EMPTY_INPUT,
-    };
+    return routeResult(422, ERROR_MESSAGES.AI_EMPTY_INPUT);
   }
 
   let optimizationContext: OptimizationContext;
@@ -534,10 +562,7 @@ export async function handleOptimizeTextRequest(options: {
         },
       });
 
-      return {
-        status: 422,
-        body: error.message,
-      };
+      return routeResult(422, error.message);
     }
 
     throw error;
@@ -561,13 +586,13 @@ export async function handleOptimizeTextRequest(options: {
         },
       });
 
-      return {
-        status: 429,
-        body: {
-          code: AI_CREDITS_EXHAUSTED_CODE,
-          message: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED,
-        },
-      };
+      return routeResult(429, {
+        code: AI_CREDITS_EXHAUSTED_CODE,
+        message: ERROR_MESSAGES.AI_CREDITS_EXHAUSTED,
+      } satisfies {
+        code: typeof AI_CREDITS_EXHAUSTED_CODE;
+        message: string;
+      });
     }
 
     throw error;
@@ -617,13 +642,10 @@ export async function handleOptimizeTextRequest(options: {
       usage: usageMetrics,
     });
 
-    return {
-      status: 422,
-      body: {
-        code: responseCode,
-        message: normalizedError.message,
-      },
-    };
+    return routeResult(422, {
+      code: responseCode,
+      message: normalizedError.message,
+    });
   }
 
   const headers = {
@@ -633,10 +655,9 @@ export async function handleOptimizeTextRequest(options: {
     "x-ai-credits-remaining": String(remainingCredits),
   };
 
-  return {
-    status: 200,
-    headers,
-    body: (async function* (): AsyncGenerator<string, void, unknown> {
+  return routeResult(
+    200,
+    (async function* (): AsyncGenerator<string, void, unknown> {
       let optimizedText = "";
       let chunkCount = 0;
       let optimizationStatus: "success" | "failed" | "aborted" = "success";
@@ -691,5 +712,6 @@ export async function handleOptimizeTextRequest(options: {
         });
       }
     })(),
-  };
+    headers,
+  );
 }

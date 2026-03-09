@@ -1,9 +1,3 @@
-import type {
-  AssistantChatResponse,
-  ResumeCopilotOptimizeResponse,
-  ResumeCopilotReviewResponse,
-  ResumeCopilotTailorResponse,
-} from "@rezumerai/types";
 import Elysia, { t } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
@@ -19,20 +13,14 @@ import {
   handleUpdateSelectedModelRequest,
 } from "./controller";
 import { AiModel } from "./model";
-import type { ActiveAiModel, UserAiSettings } from "./service";
-
-function applyResponseHeaders(
-  target: Record<string, string | number | undefined>,
-  headers?: Record<string, string>,
-): void {
-  if (!headers) {
-    return;
-  }
-
-  for (const [name, value] of Object.entries(headers)) {
-    target[name] = value;
-  }
-}
+import {
+  applyResponseHeaders,
+  respondAssistantChat,
+  respondCopilot,
+  respondOkOrForbidden,
+  respondOptimizeText,
+  respondSelectedModelUpdate,
+} from "./route-response";
 
 export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(prismaPlugin)
@@ -48,9 +36,10 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
 
       applyResponseHeaders(set.headers, response.headers);
 
-      return response.status === 200
-        ? status(200, response.body as AssistantChatResponse)
-        : status(422, response.body as AssistantChatResponse);
+      return respondAssistantChat(response, {
+        200: (body) => status(200, body),
+        422: (body) => status(422, body),
+      });
     },
     {
       body: "ai.AssistantChatInput",
@@ -74,9 +63,10 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      return response.status === 200
-        ? status(200, response.body as ActiveAiModel[])
-        : status(403, response.body as string);
+      return respondOkOrForbidden(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+      });
     },
     {
       response: {
@@ -98,9 +88,10 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      return response.status === 200
-        ? status(200, response.body as UserAiSettings)
-        : status(403, response.body as string);
+      return respondOkOrForbidden(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+      });
     },
     {
       response: {
@@ -123,13 +114,11 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      if (response.status === 200) {
-        return status(200, response.body as UserAiSettings);
-      }
-
-      return response.status === 403
-        ? status(403, response.body as string)
-        : status(422, response.body as { code: typeof AI_MODEL_UNAVAILABLE_CODE; message: string });
+      return respondSelectedModelUpdate(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+        422: (body) => status(422, body),
+      });
     },
     {
       body: "ai.SelectModelInput",
@@ -157,19 +146,13 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      if (response.status === 200) {
-        return status(200, response.body as ResumeCopilotOptimizeResponse);
-      }
-
-      if (response.status === 403) {
-        return status(403, response.body as string);
-      }
-
-      if (response.status === 429) {
-        return status(429, response.body as string);
-      }
-
-      return response.status === 422 ? status(422, response.body as string) : status(500, response.body as string);
+      return respondCopilot(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+        422: (body) => status(422, body),
+        429: (body) => status(429, body),
+        500: (body) => status(500, body),
+      });
     },
     {
       body: "ai.CopilotOptimizeInput",
@@ -196,19 +179,13 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      if (response.status === 200) {
-        return status(200, response.body as ResumeCopilotTailorResponse);
-      }
-
-      if (response.status === 403) {
-        return status(403, response.body as string);
-      }
-
-      if (response.status === 429) {
-        return status(429, response.body as string);
-      }
-
-      return response.status === 422 ? status(422, response.body as string) : status(500, response.body as string);
+      return respondCopilot(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+        422: (body) => status(422, body),
+        429: (body) => status(429, body),
+        500: (body) => status(500, body),
+      });
     },
     {
       body: "ai.CopilotTailorInput",
@@ -235,19 +212,13 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         user,
       });
 
-      if (response.status === 200) {
-        return status(200, response.body as ResumeCopilotReviewResponse);
-      }
-
-      if (response.status === 403) {
-        return status(403, response.body as string);
-      }
-
-      if (response.status === 429) {
-        return status(429, response.body as string);
-      }
-
-      return response.status === 422 ? status(422, response.body as string) : status(500, response.body as string);
+      return respondCopilot(response, {
+        200: (body) => status(200, body),
+        403: (body) => status(403, body),
+        422: (body) => status(422, body),
+        429: (body) => status(429, body),
+        500: (body) => status(500, body),
+      });
     },
     {
       body: "ai.CopilotReviewInput",
@@ -276,24 +247,12 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
 
       applyResponseHeaders(set.headers, response.headers);
 
-      if (response.status === 200) {
-        return response.body as AsyncGenerator<string, void, unknown>;
-      }
-
-      if (response.status === 403) {
-        return status(403, response.body as string);
-      }
-
-      if (response.status === 429) {
-        return status(429, response.body as { code: typeof AI_CREDITS_EXHAUSTED_CODE; message: string });
-      }
-
-      return status(
-        422,
-        response.body as
-          | string
-          | { code: typeof AI_MODEL_POLICY_RESTRICTED_CODE | typeof AI_MODEL_UNAVAILABLE_CODE; message: string },
-      );
+      return respondOptimizeText(response, {
+        200: (body) => body,
+        403: (body) => status(403, body),
+        422: (body) => status(422, body),
+        429: (body) => status(429, body),
+      });
     },
     {
       body: "ai.OptimizeInput",

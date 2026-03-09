@@ -1,4 +1,5 @@
 import type { UpdateUserAccountInput, UserAccountSettings } from "@rezumerai/types";
+import { UserAccountSettingsSchema } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
@@ -36,7 +37,7 @@ export function useAccountSettings(
         throw new Error("Invalid account settings response.");
       }
 
-      return data as UserAccountSettings;
+      return UserAccountSettingsSchema.parse(data);
     },
     ...options,
   });
@@ -57,7 +58,7 @@ export function useUpdateAccountSettings() {
         throw new Error("Invalid account update response.");
       }
 
-      return data as UserAccountSettings;
+      return UserAccountSettingsSchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEY });

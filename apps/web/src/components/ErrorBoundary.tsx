@@ -26,6 +26,10 @@ import { type ErrorContext, type ErrorSeverity, getUserFriendlyMessage, logError
 
 export type ErrorWithDigest = Error & { digest?: string };
 
+function getErrorDigest(error: Error): string | undefined {
+  return "digest" in error && typeof error.digest === "string" ? error.digest : undefined;
+}
+
 export interface ErrorBoundaryProps {
   /** Child components to render */
   children: ReactNode;
@@ -98,9 +102,9 @@ function DefaultFallback({
               <p className="font-mono text-red-800 text-xs">
                 <strong>Error:</strong> {error.message}
               </p>
-              {"digest" in error && (
+              {getErrorDigest(error) && (
                 <p className="font-mono text-red-800 text-xs">
-                  <strong>Digest:</strong> {(error as ErrorWithDigest).digest}
+                  <strong>Digest:</strong> {getErrorDigest(error)}
                 </p>
               )}
               {error.stack && (

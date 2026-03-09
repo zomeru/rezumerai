@@ -27,6 +27,15 @@ class OptimizeRequestError extends Error {
   }
 }
 
+function isAsyncGenerator(value: unknown): value is AsyncGenerator<unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Symbol.asyncIterator in value &&
+    typeof value[Symbol.asyncIterator] === "function"
+  );
+}
+
 function getApiError(value: unknown): OptimizeApiError {
   if (typeof value === "string") {
     return { code: null, message: value };
@@ -116,7 +125,11 @@ export default function TestSitePage(): React.JSX.Element {
         throw new OptimizeRequestError({ code: null, message: data });
       }
 
-      const stream = data as AsyncGenerator<unknown>;
+      if (!isAsyncGenerator(data)) {
+        throw new OptimizeRequestError({ code: null, message: ERROR_MESSAGES.AI_OPTIMIZE_INVALID_RESPONSE });
+      }
+
+      const stream = data;
       activeStreamRef.current = stream;
 
       try {

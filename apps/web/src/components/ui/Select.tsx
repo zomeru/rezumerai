@@ -246,7 +246,11 @@ export function Select({
     updateDropdownPosition(true, true);
 
     function handleOutsidePointerDown(event: MouseEvent): void {
-      const target = event.target as Node;
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      const target = event.target;
 
       if (triggerRef.current?.contains(target)) return;
       if (listRef.current?.contains(target)) return;

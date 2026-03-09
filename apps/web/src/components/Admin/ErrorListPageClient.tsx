@@ -120,7 +120,11 @@ export default function ErrorListPageClient(): React.JSX.Element {
             <span className="font-medium text-slate-700">Filter</span>
             <select
               value={readFilter}
-              onChange={(event) => onChangeFilter(event.target.value as ReadFilter)}
+              onChange={(event) =>
+                onChangeFilter(
+                  event.target.value === "read" || event.target.value === "unread" ? event.target.value : "all",
+                )
+              }
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm"
             >
               {READ_FILTER_OPTIONS.map((option) => (

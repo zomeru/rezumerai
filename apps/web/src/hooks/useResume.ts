@@ -32,9 +32,8 @@ export function useResumeById(
 export function useResumeList(search?: string) {
   return useQuery({
     queryKey: ["resumes", { search }],
-    queryFn: async ({ queryKey }) => {
-      const [, params] = queryKey as [string, { search?: string }];
-      const queryParams = params.search ? { search: params.search } : {};
+    queryFn: async () => {
+      const queryParams = search ? { search } : {};
       const { data, error } = await api.resumes.get({
         query: queryParams,
       });
@@ -71,7 +70,7 @@ export function useCreateResume() {
         throw new Error("Failed to create resume: Invalid response");
       }
 
-      return data.data as ResumeWithRelations;
+      return data.data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["resumes"] });
@@ -92,7 +91,11 @@ export function useUpdateResume() {
         throw new Error(errorMessage);
       }
 
-      return data as ResumeWithRelations;
+      if (!data) {
+        throw new Error("Failed to update resume: Invalid response");
+      }
+
+      return data;
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["resumes"] });

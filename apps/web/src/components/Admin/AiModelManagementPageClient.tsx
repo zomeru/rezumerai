@@ -694,7 +694,11 @@ export default function AiModelManagementPageClient(): React.JSX.Element {
             <Select
               label="Status filter"
               value={statusFilter}
-              onChange={(value) => setStatusFilter(value as (typeof STATUS_FILTER_OPTIONS)[number]["value"])}
+              onChange={(value) => {
+                if (value === "all" || value === "active" || value === "inactive") {
+                  setStatusFilter(value);
+                }
+              }}
               options={[...STATUS_FILTER_OPTIONS]}
               placeholder="All statuses"
             />

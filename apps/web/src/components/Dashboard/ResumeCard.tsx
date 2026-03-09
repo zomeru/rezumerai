@@ -45,8 +45,7 @@ function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: Res
   const [isDownloading, setIsDownloading] = useState(false);
   const formatDate = (date: string | Date): string => new Date(date).toLocaleDateString();
 
-  async function handleDownload(e: React.MouseEvent): Promise<void> {
-    e.stopPropagation();
+  async function startDownload(): Promise<void> {
     if (!onDownload || isDownloading) return;
 
     setIsDownloading(true);
@@ -92,11 +91,14 @@ function ResumeCard({ resume, color, onOpen, onEdit, onDelete, onDownload }: Res
               <span
                 role="button"
                 tabIndex={0}
-                onClick={handleDownload}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void startDownload();
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.stopPropagation();
-                    handleDownload(e as unknown as React.MouseEvent);
+                    void startDownload();
                   }
                 }}
                 className="rounded-lg bg-white p-2 text-slate-600 shadow-md transition-all hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"

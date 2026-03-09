@@ -3,6 +3,7 @@ import type { Prisma } from "@rezumerai/database";
 export const REDACTED_VALUE = "[REDACTED]";
 const MAX_STRING_LENGTH = 10_000;
 const MAX_DEPTH = 8;
+type SerializableJson = string | number | boolean | null | SerializableJson[] | { [key: string]: SerializableJson };
 
 const SENSITIVE_KEYWORDS = [
   "password",
@@ -36,7 +37,7 @@ export function shouldRedactKey(key: string): boolean {
   return SENSITIVE_KEYWORDS.some((keyword) => normalized.includes(keyword));
 }
 
-export function toSerializableValue(value: unknown, depth = 0): unknown {
+export function toSerializableValue(value: unknown, depth = 0): SerializableJson {
   if (depth > MAX_DEPTH) {
     return "[Max depth reached]";
   }
@@ -74,7 +75,7 @@ export function toSerializableValue(value: unknown, depth = 0): unknown {
   }
 
   if (typeof value === "object") {
-    const result: Record<string, unknown> = {};
+    const result: Record<string, SerializableJson> = {};
 
     for (const [key, nestedValue] of Object.entries(value)) {
       result[key] = shouldRedactKey(key) ? REDACTED_VALUE : toSerializableValue(nestedValue, depth + 1);
@@ -97,11 +98,7 @@ export function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue | Prism
     return null;
   }
 
-  try {
-    return JSON.parse(JSON.stringify(serialized)) as Prisma.InputJsonValue;
-  } catch {
-    return truncateString(String(serialized));
-  }
+  return serialized;
 }
 
 export function toPrettyJson(value: unknown): string {

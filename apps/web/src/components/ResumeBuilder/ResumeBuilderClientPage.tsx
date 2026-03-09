@@ -30,7 +30,6 @@ import {
   TemplateSelector,
 } from "@/components/ResumeBuilder";
 import { ROUTES } from "@/constants/routing";
-import type { TemplateType } from "@/templates";
 import { RESUME_BUILDER_SECTIONS } from "./constants";
 import { useResumeBuilderController } from "./hooks/useResumeBuilderController";
 
@@ -47,6 +46,19 @@ interface ResumeBuilderClientProps {
   serverResume: ResumeWithRelations;
   resumeId: string;
 }
+
+const EMPTY_PERSONAL_INFO: NonNullable<ResumeWithRelations["personalInfo"]> = {
+  id: "",
+  resumeId: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  location: "",
+  linkedin: "",
+  website: "",
+  profession: "",
+  image: "",
+};
 
 export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBuilderClientProps) {
   const resumePreviewRef = useRef<HTMLDivElement>(null);
@@ -95,21 +107,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
           id: "personal",
           render: () => (
             <PersonalInfoForm
-              data={
-                draftResume.personalInfo ??
-                ({
-                  id: "",
-                  resumeId: "",
-                  fullName: "",
-                  email: "",
-                  phone: "",
-                  location: "",
-                  linkedin: "",
-                  website: "",
-                  profession: "",
-                  image: "",
-                } as NonNullable<ResumeWithRelations["personalInfo"]>)
-              }
+              data={draftResume.personalInfo ?? EMPTY_PERSONAL_INFO}
               onChangeAction={updateResumeData}
               removeBackground={removeBackground}
               setRemoveBackgroundAction={setRemoveBackground}
@@ -205,10 +203,7 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                 <div className="border-slate-100 border-b bg-linear-to-br from-slate-50 to-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <TemplateSelector
-                        selectedTemplate={draftResume.template}
-                        onChange={handleTemplateChange as (value: TemplateType) => void}
-                      />
+                      <TemplateSelector selectedTemplate={draftResume.template} onChange={handleTemplateChange} />
                       <ColorPickerModal selectedColor={draftResume.accentColor} onChange={handleColorChange} />
                       <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
                     </div>

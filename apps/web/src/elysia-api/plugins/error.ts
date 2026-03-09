@@ -10,6 +10,7 @@ const isDev = serverEnv?.NODE_ENV === "development";
 const REDACTED_VALUE = "[REDACTED]";
 const MAX_STRING_LENGTH = 10_000;
 const MAX_DEPTH = 8;
+type SerializableJson = string | number | boolean | null | SerializableJson[] | { [key: string]: SerializableJson };
 
 const SENSITIVE_KEYWORDS = [
   "password",
@@ -183,7 +184,7 @@ function getFunctionNameFromStack(stack: string | null): string | null {
   return null;
 }
 
-function toSerializableValue(value: unknown, depth = 0): unknown {
+function toSerializableValue(value: unknown, depth = 0): SerializableJson {
   if (depth > MAX_DEPTH) {
     return "[Max depth reached]";
   }
@@ -221,7 +222,7 @@ function toSerializableValue(value: unknown, depth = 0): unknown {
   }
 
   if (typeof value === "object") {
-    const result: Record<string, unknown> = {};
+    const result: Record<string, SerializableJson> = {};
 
     for (const [key, nestedValue] of Object.entries(value)) {
       result[key] = shouldRedactKey(key) ? REDACTED_VALUE : toSerializableValue(nestedValue, depth + 1);
@@ -245,7 +246,7 @@ function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.Nulla
   }
 
   try {
-    return JSON.parse(JSON.stringify(serialized)) as Prisma.InputJsonValue;
+    return serialized;
   } catch {
     return truncateString(String(serialized));
   }
@@ -341,8 +342,10 @@ function extractCapturedError(context: ErrorTrackingContext): CapturedUnhandledE
     process.env.NODE_ENV === "production" ? "production" : "development";
   const serializedExtraMetadata = toSerializableValue(context.extraMetadata ?? {});
   const extraMetadata =
-    typeof serializedExtraMetadata === "object" && serializedExtraMetadata !== null
-      ? (serializedExtraMetadata as Record<string, unknown>)
+    typeof serializedExtraMetadata === "object" &&
+    serializedExtraMetadata !== null &&
+    !Array.isArray(serializedExtraMetadata)
+      ? serializedExtraMetadata
       : {
           extra: serializedExtraMetadata,
         };
@@ -449,15 +452,36 @@ export async function trackHandledError(options: TrackHandledErrorOptions): Prom
   }
 }
 
+function getErrorContextBody(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "body" in context ? context.body : undefined;
+}
+
+function getErrorContextQuery(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "query" in context ? context.query : undefined;
+}
+
+function getErrorContextParams(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "params" in context ? context.params : undefined;
+}
+
+function getErrorContextUser(context: unknown): { id?: string } | null {
+  if (typeof context !== "object" || context === null || !("user" in context)) {
+    return null;
+  }
+
+  const { user } = context;
+  return typeof user === "object" && user !== null ? user : null;
+}
+
 /**
  * Centralized error-handling plugin
  */
 export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "global" }, async (context) => {
   const { code, error, status, request } = context;
-  const body = (context as { body?: unknown }).body;
-  const query = (context as { query?: unknown }).query;
-  const params = (context as { params?: unknown }).params;
-  const user = (context as { user?: { id?: string } | null }).user;
+  const body = getErrorContextBody(context);
+  const query = getErrorContextQuery(context);
+  const params = getErrorContextParams(context);
+  const user = getErrorContextUser(context);
 
   // ─────────────────────────────────────────────
   // Elysia-native errors

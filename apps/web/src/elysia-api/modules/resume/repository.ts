@@ -5,6 +5,8 @@ import { CustomResumeWithRelationsInputUpdate } from "./model";
 import type { ResumeCreateInput, ResumeSearchInput, ResumeUpdateInput, SyncPromiseReturn } from "./types";
 
 const SyncEducation = t.Pick(CustomResumeWithRelationsInputUpdate, ["education"]);
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 const SyncExperience = t.Pick(CustomResumeWithRelationsInputUpdate, ["experience"]);
 const SyncProject = t.Pick(CustomResumeWithRelationsInputUpdate, ["project"]);
 
@@ -22,7 +24,7 @@ type SyncableRelation = {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally groups stateless Prisma helpers for the resume module.
 export abstract class ResumeRepository {
-  static async search(db: PrismaClient, userId: string, query: ResumeSearchInput): Promise<ResumeWithRelations[]> {
+  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeWithRelations[]> {
     const where: Prisma.ResumeWhereInput = {
       userId,
     };
@@ -43,7 +45,7 @@ export abstract class ResumeRepository {
     });
   }
 
-  static async findById(db: PrismaClient, userId: string, resumeId: string): Promise<ResumeWithRelations | null> {
+  static async findById(db: DatabaseClient, userId: string, resumeId: string): Promise<ResumeWithRelations | null> {
     return db.resume.findFirst({
       where: { id: resumeId, userId },
       include: {
@@ -55,7 +57,7 @@ export abstract class ResumeRepository {
     });
   }
 
-  static async create(db: PrismaClient, userId: string, data: ResumeCreateInput): Promise<ResumeWithRelations> {
+  static async create(db: DatabaseClient, userId: string, data: ResumeCreateInput): Promise<ResumeWithRelations> {
     const { personalInfo, project, experience, education, ...rest } = data;
 
     return db.resume.create({
@@ -86,7 +88,11 @@ export abstract class ResumeRepository {
     });
   }
 
-  static async update(db: PrismaClient, resumeId: string, data: ResumeUpdateInput): Promise<ResumeWithRelations> {
+  static async update(
+    db: TransactionCapableDatabaseClient,
+    resumeId: string,
+    data: ResumeUpdateInput,
+  ): Promise<ResumeWithRelations> {
     const { education, experience, project, personalInfo, ...scalarFields } = data;
 
     return db.$transaction(async (tx) => {
@@ -132,7 +138,7 @@ export abstract class ResumeRepository {
     });
   }
 
-  static async delete(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
+  static async delete(db: DatabaseClient, userId: string, resumeId: string): Promise<boolean> {
     const result = await db.resume.deleteMany({
       where: {
         id: resumeId,
@@ -145,7 +151,7 @@ export abstract class ResumeRepository {
     return result.count > 0;
   }
 
-  static async exists(db: PrismaClient, userId: string, resumeId: string): Promise<boolean> {
+  static async exists(db: DatabaseClient, userId: string, resumeId: string): Promise<boolean> {
     const existing = await db.resume.findFirst({
       where: { id: resumeId, userId },
       select: { id: true },

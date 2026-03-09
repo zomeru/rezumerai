@@ -12,11 +12,13 @@ import {
   matchResumeSnapshotToJob,
 } from "./utils";
 
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+
 type UserRole = "ADMIN" | "USER";
 type ToolEntityRecord = Record<string, unknown>;
 
 interface AssistantToolOptions {
-  db: PrismaClient;
+  db: DatabaseClient;
   scope: AssistantRoleScope;
   userId: string | null;
   role: UserRole | null;
@@ -31,7 +33,7 @@ interface AssistantToolOptions {
 }
 
 interface CopilotToolOptions {
-  db: PrismaClient;
+  db: DatabaseClient;
   userId: string;
   getOptimizationCredits: () => Promise<{
     remainingCredits: number;
@@ -55,7 +57,7 @@ const resumeIdSchema = z.object({
   resumeId: z.string().trim().min(1),
 });
 
-async function getOwnedResume(db: PrismaClient, userId: string, resumeId: string) {
+async function getOwnedResume(db: DatabaseClient, userId: string, resumeId: string) {
   const resume = await db.resume.findFirst({
     where: { id: resumeId, userId },
     include: {

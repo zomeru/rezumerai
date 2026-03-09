@@ -17,6 +17,7 @@ import {
   type ResumeCopilotTailorResponse,
   ResumeCopilotTailorResponseSchema,
   type ResumeSectionTarget,
+  ResumeSectionTargetSchema,
 } from "@rezumerai/types";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
@@ -108,6 +109,8 @@ const reviewModelSchema = z.object({
 });
 
 const defaultAiProvider: AiProvider = openRouterAiProvider;
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
 export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
 export type {
@@ -140,11 +143,11 @@ export abstract class AiService {
     return emptyAiUsageMetrics();
   }
 
-  static async listActiveModels(db: PrismaClient): Promise<ActiveAiModel[]> {
+  static async listActiveModels(db: DatabaseClient): Promise<ActiveAiModel[]> {
     return AiRepository.listActiveModels(db);
   }
 
-  static async getAiConfiguration(db: PrismaClient): Promise<AiConfiguration> {
+  static async getAiConfiguration(db: DatabaseClient): Promise<AiConfiguration> {
     const configurationValue = await AiRepository.getAiConfigurationValue(db);
 
     if (!configurationValue) {
@@ -154,7 +157,7 @@ export abstract class AiService {
     return AiService.parseAiConfiguration(configurationValue);
   }
 
-  static async getUserAiSettings(db: PrismaClient, userId: string): Promise<UserAiSettings> {
+  static async getUserAiSettings(db: DatabaseClient, userId: string): Promise<UserAiSettings> {
     const [models, user] = await Promise.all([
       AiService.listActiveModels(db),
       AiRepository.getUserSelectedModelRecord(db, userId),
@@ -173,7 +176,7 @@ export abstract class AiService {
     };
   }
 
-  static async updateUserSelectedModel(db: PrismaClient, userId: string, modelId: string): Promise<string> {
+  static async updateUserSelectedModel(db: DatabaseClient, userId: string, modelId: string): Promise<string> {
     const models = await AiService.listActiveModels(db);
     const selectedModel = models.find((model) => model.modelId === modelId);
 
@@ -187,7 +190,7 @@ export abstract class AiService {
   }
 
   static async resolveOptimizationContext(
-    db: PrismaClient,
+    db: DatabaseClient,
     userId: string | null,
     requestedModelId?: string | null,
   ): Promise<OptimizationContext> {
@@ -208,7 +211,7 @@ export abstract class AiService {
   }
 
   static async consumeDailyCredit(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     dailyLimit: number,
     now: Date = new Date(),
@@ -216,7 +219,11 @@ export abstract class AiService {
     return AiRepository.consumeDailyCredit(db, userId, dailyLimit, now);
   }
 
-  static async getDailyCredits(db: PrismaClient, userId: string, now: Date = new Date()): Promise<DailyCreditsStatus> {
+  static async getDailyCredits(
+    db: TransactionCapableDatabaseClient,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<DailyCreditsStatus> {
     const config = await AiService.getAiConfiguration(db);
     return AiRepository.getDailyCredits(db, userId, config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT, now);
   }
@@ -234,7 +241,7 @@ export abstract class AiService {
   }
 
   static async runAssistantChat(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     input: AssistantChatInput,
     identity: AssistantConversationIdentity,
   ): Promise<AssistantChatResponse> {
@@ -303,7 +310,7 @@ export abstract class AiService {
         userId: identity.userId,
         userMessage: latestUserTurn.content,
         assistantMessage: result.reply,
-        blocks: blocks as unknown as Prisma.JsonValue,
+        blocks,
         toolNames: result.toolNames,
         persistenceAvailable: conversation.persistenceAvailable,
       });
@@ -320,7 +327,7 @@ export abstract class AiService {
   }
 
   static async runCopilotOptimize(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     input: ResumeCopilotOptimizeInput,
   ): Promise<CopilotRunResult<ResumeCopilotOptimizeResponse>> {
@@ -380,7 +387,7 @@ export abstract class AiService {
   }
 
   static async runCopilotTailor(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     input: ResumeCopilotTailorInput,
   ): Promise<CopilotRunResult<ResumeCopilotTailorResponse>> {
@@ -428,7 +435,7 @@ export abstract class AiService {
         gaps: result.data.gaps,
         suggestions: result.data.suggestions.map((item) => ({
           ...item,
-          draftPatch: item.draftPatch ?? buildDraftPatch(item.target as ResumeSectionTarget, item.suggestion),
+          draftPatch: item.draftPatch ?? buildDraftPatch(ResumeSectionTargetSchema.parse(item.target), item.suggestion),
         })),
       }),
       usage: result.usage,
@@ -437,7 +444,7 @@ export abstract class AiService {
   }
 
   static async runCopilotReview(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     userId: string,
     input: ResumeCopilotReviewInput,
   ): Promise<CopilotRunResult<ResumeCopilotReviewResponse>> {
@@ -522,12 +529,12 @@ export abstract class AiService {
     return new Error(normalizedMessage);
   }
 
-  static async saveOptimization(db: PrismaClient, payload: SaveOptimizationInput): Promise<void> {
+  static async saveOptimization(db: DatabaseClient, payload: SaveOptimizationInput): Promise<void> {
     await AiRepository.saveOptimization(db, payload);
   }
 
   static async saveCopilotResult(
-    db: PrismaClient,
+    db: DatabaseClient,
     userId: string,
     resumeId: string,
     operation: "optimize" | "tailor" | "review",
@@ -554,7 +561,7 @@ export abstract class AiService {
   }
 
   static async saveCopilotFailure(
-    db: PrismaClient,
+    db: DatabaseClient,
     userId: string,
     resumeId: string,
     operation: "optimize" | "tailor" | "review",
@@ -581,7 +588,7 @@ export abstract class AiService {
   }
 
   private static async answerAssistantDataRequest(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     options: {
       scope: AssistantRoleScope;
       role: "ADMIN" | "USER" | null;
@@ -726,7 +733,7 @@ export abstract class AiService {
     });
   }
 
-  private static async buildPublicAssistantFallback(db: PrismaClient, query: string): Promise<string> {
+  private static async buildPublicAssistantFallback(db: DatabaseClient, query: string): Promise<string> {
     const [landing, faqMatches] = await Promise.all([getPublicAppContent("landing", db), searchPublicFaq(query, db)]);
 
     if (faqMatches.length > 0) {
@@ -805,6 +812,12 @@ export abstract class AiService {
       }
     }
 
-    return models[0] as ActiveAiModel;
+    const [fallbackModel] = models;
+
+    if (!fallbackModel) {
+      throw new AiModelUnavailableError(ERROR_MESSAGES.AI_NO_ACTIVE_MODELS);
+    }
+
+    return fallbackModel;
   }
 }

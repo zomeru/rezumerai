@@ -20,6 +20,27 @@ function resolveStatusCode(setStatus: unknown, response: unknown): number {
   return 200;
 }
 
+function getRequestUser(context: unknown): { id?: string; role?: string } | null {
+  if (typeof context !== "object" || context === null || !("user" in context)) {
+    return null;
+  }
+
+  const { user } = context;
+  return typeof user === "object" && user !== null ? user : null;
+}
+
+function getRequestBody(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "body" in context ? context.body : undefined;
+}
+
+function getRequestQuery(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "query" in context ? context.query : undefined;
+}
+
+function getRequestParams(context: unknown): unknown {
+  return typeof context === "object" && context !== null && "params" in context ? context.params : undefined;
+}
+
 export const observabilityPlugin = new Elysia({ name: "plugin/observability" })
   .onRequest(({ request }) => {
     const url = new URL(request.url);
@@ -42,7 +63,7 @@ export const observabilityPlugin = new Elysia({ name: "plugin/observability" })
     });
   })
   .onAfterResponse({ as: "global" }, async (context) => {
-    const user = (context as { user?: { id?: string; role?: string } | null }).user;
+    const user = getRequestUser(context);
 
     if (user?.id) {
       updateRequestContext({
@@ -54,9 +75,9 @@ export const observabilityPlugin = new Elysia({ name: "plugin/observability" })
     const requestContext = getRequestContext();
     const statusCode = resolveStatusCode(context.set.status, context.response);
     const durationMs = Math.max(0, Math.round(performance.now() - (requestContext?.startedAt ?? performance.now())));
-    const body = (context as { body?: unknown }).body;
-    const query = (context as { query?: unknown }).query;
-    const params = (context as { params?: unknown }).params;
+    const body = getRequestBody(context);
+    const query = getRequestQuery(context);
+    const params = getRequestParams(context);
     const metadata = requestContext?.metadata ?? {};
 
     await Promise.allSettled([

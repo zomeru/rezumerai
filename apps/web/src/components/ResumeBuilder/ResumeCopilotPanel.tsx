@@ -11,6 +11,11 @@ import { useSession } from "@/lib/auth-client";
 import { DisabledTooltip } from "../ui/DisabledTooltip";
 
 type CopilotMode = "optimize" | "tailor" | "review";
+const COPILOT_MODES: CopilotMode[] = ["optimize", "tailor", "review"];
+
+function isCopilotIntent(value: string): value is "clarity" | "impact" | "ats" | "concise" | "grammar" {
+  return ["clarity", "impact", "ats", "concise", "grammar"].includes(value);
+}
 
 interface ResumeCopilotPanelProps {
   resumeId: string;
@@ -155,7 +160,7 @@ export default function ResumeCopilotPanel({
         )}
 
         <div className="grid grid-cols-3 gap-2">
-          {(["optimize", "tailor", "review"] as CopilotMode[]).map((value) => (
+          {COPILOT_MODES.map((value) => (
             <button
               key={value}
               type="button"
@@ -196,7 +201,11 @@ export default function ResumeCopilotPanel({
               <select
                 id="copilot-intent"
                 value={intent}
-                onChange={(event) => setIntent(event.target.value as typeof intent)}
+                onChange={(event) => {
+                  if (isCopilotIntent(event.target.value)) {
+                    setIntent(event.target.value);
+                  }
+                }}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
               >
                 <option value="clarity">Clarity</option>

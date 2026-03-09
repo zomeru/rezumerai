@@ -17,9 +17,17 @@ interface RequestMeta {
   contentLength: number;
 }
 
-const REQUEST_META = Symbol("request_meta");
+const requestMetadata = new WeakMap<Request, RequestMeta>();
 
-type AugmentedRequest = Request & { [REQUEST_META]?: RequestMeta };
+function getErrorStatus(error: unknown): number {
+  return typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+    ? error.status
+    : 500;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
 
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
@@ -36,11 +44,10 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
-      const req = request as AugmentedRequest;
-      req[REQUEST_META] = {
+      requestMetadata.set(request, {
         start: performance.now(),
         contentLength: Number(request.headers.get("content-length") ?? 0),
-      };
+      });
 
       if (logIncoming) {
         const ip = request.headers.get("x-forwarded-for") ?? "unknown";
@@ -56,8 +63,7 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
-      const req = request as AugmentedRequest;
-      const meta = req[REQUEST_META];
+      const meta = requestMetadata.get(request);
       const duration = performance.now() - (meta?.start ?? performance.now());
 
       const status = typeof set.status === "number" ? set.status : 200;
@@ -85,16 +91,14 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
-      const status = "status" in error ? (error as { status: number }).status : 500;
-
       console.error(
         [
           timestamp(),
           colorizeMethod(request.method),
           bold(url.pathname),
-          colorizeStatus(status),
+          colorizeStatus(getErrorStatus(error)),
           paint("red", `[${code}]`),
-          paint("red", (error as Error).message ?? "Unknown error"),
+          paint("red", getErrorMessage(error)),
         ].join("  "),
       );
     });

@@ -21,7 +21,9 @@ async function seedResumes(): Promise<void> {
 
   const userEmail = process.env.DB_SEED_USER_EMAIL;
 
-  const emailsToSeed = [userEmail, "test@test.com", "testadmin@test.com"].filter(Boolean) as string[];
+  const emailsToSeed = [userEmail, "test@test.com", "testadmin@test.com"].filter(
+    (email): email is string => typeof email === "string" && email.length > 0,
+  );
 
   // if (!userEmail) {
   //   throw new Error("❌ DB_SEED_USER_EMAIL environment variable is not set");

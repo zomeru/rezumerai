@@ -36,6 +36,10 @@ export interface LoggedError {
   digest?: string;
 }
 
+function getErrorDigest(error: Error): string | undefined {
+  return "digest" in error && typeof error.digest === "string" ? error.digest : undefined;
+}
+
 /**
  * Logs an error with structured context.
  * In production, this should integrate with monitoring services (Sentry, Datadog, etc.).
@@ -57,7 +61,7 @@ export function logError(
     severity,
     timestamp: new Date(),
     context,
-    digest: "digest" in errorObj ? (errorObj as Error & { digest?: string }).digest : undefined,
+    digest: getErrorDigest(errorObj),
   };
 
   // Development: Log to console with full details

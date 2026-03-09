@@ -15,8 +15,20 @@ import type {
   SystemConfigurationListResponse,
   UpdateSystemConfigurationInput,
 } from "@rezumerai/types";
+import {
+  AdminAiModelCatalogSchema,
+  AdminAiModelSchema,
+  AdminUserDetailSchema,
+  AdminUserListResponseSchema,
+  AnalyticsDashboardSchema,
+  AuditLogDetailSchema,
+  AuditLogListResponseSchema,
+  DeleteAdminAiModelResponseSchema,
+  SystemConfigurationEntrySchema,
+  SystemConfigurationListResponseSchema,
+} from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { apiWithoutDateParsing } from "@/lib/api";
 
 const ADMIN_USERS_QUERY_KEY = ["admin", "users"] as const;
 const ADMIN_SYSTEM_CONFIG_QUERY_KEY = ["admin", "system-config"] as const;
@@ -70,7 +82,7 @@ export function useAdminUsers(
         requestQuery.role = query.role;
       }
 
-      const { data, error } = await api.admin.users.get({ query: requestQuery });
+      const { data, error } = await apiWithoutDateParsing.admin.users.get({ query: requestQuery });
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load users."));
@@ -80,7 +92,7 @@ export function useAdminUsers(
         throw new Error("Invalid users response.");
       }
 
-      return data as AdminUserListResponse;
+      return AdminUserListResponseSchema.parse(data);
     },
     ...options,
   });
@@ -94,7 +106,7 @@ export function useAdminUserDetail(
     queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", userId],
     enabled: userId.length > 0,
     queryFn: async (): Promise<AdminUserDetail> => {
-      const { data, error } = await api.admin.users({ id: userId }).get();
+      const { data, error } = await apiWithoutDateParsing.admin.users({ id: userId }).get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load user detail."));
@@ -104,7 +116,7 @@ export function useAdminUserDetail(
         throw new Error("Invalid user detail response.");
       }
 
-      return data as AdminUserDetail;
+      return AdminUserDetailSchema.parse(data);
     },
     ...options,
   });
@@ -121,7 +133,7 @@ export function useUpdateAdminUserRole() {
       userId: string;
       role: AdminUserRoleUpdateInput["role"];
     }): Promise<AdminUserDetail> => {
-      const { data, error } = await api.admin.users({ id: userId }).role.patch({ role });
+      const { data, error } = await apiWithoutDateParsing.admin.users({ id: userId }).role.patch({ role });
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update user role."));
@@ -131,7 +143,7 @@ export function useUpdateAdminUserRole() {
         throw new Error("Invalid user role update response.");
       }
 
-      return data as AdminUserDetail;
+      return AdminUserDetailSchema.parse(data);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
@@ -153,7 +165,7 @@ export function useUpdateAdminUserPassword() {
       userId: string;
       input: AdminUserPasswordUpdateInput;
     }): Promise<AdminUserDetail> => {
-      const { data, error } = await api.admin.users({ id: userId }).password.patch(input);
+      const { data, error } = await apiWithoutDateParsing.admin.users({ id: userId }).password.patch(input);
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update user password."));
@@ -163,7 +175,7 @@ export function useUpdateAdminUserPassword() {
         throw new Error("Invalid user password update response.");
       }
 
-      return data as AdminUserDetail;
+      return AdminUserDetailSchema.parse(data);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
@@ -180,7 +192,7 @@ export function useSystemConfigurations(
   return useQuery({
     queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY,
     queryFn: async (): Promise<SystemConfigurationListResponse> => {
-      const { data, error } = await api.admin["system-config"].get();
+      const { data, error } = await apiWithoutDateParsing.admin["system-config"].get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load system configuration."));
@@ -190,7 +202,7 @@ export function useSystemConfigurations(
         throw new Error("Invalid system configuration response.");
       }
 
-      return data as SystemConfigurationListResponse;
+      return SystemConfigurationListResponseSchema.parse(data);
     },
     ...options,
   });
@@ -207,7 +219,7 @@ export function useUpdateSystemConfiguration() {
       name: string;
       value: UpdateSystemConfigurationInput["value"];
     }): Promise<SystemConfigurationEntry> => {
-      const { data, error } = await api.admin["system-config"]({ name }).patch({ value });
+      const { data, error } = await apiWithoutDateParsing.admin["system-config"]({ name }).patch({ value });
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update system configuration."));
@@ -217,7 +229,7 @@ export function useUpdateSystemConfiguration() {
         throw new Error("Invalid system configuration update response.");
       }
 
-      return data as SystemConfigurationEntry;
+      return SystemConfigurationEntrySchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY });
@@ -231,7 +243,7 @@ export function useAdminAiModels(options?: Omit<QueryOptions<AdminAiModelCatalog
   return useQuery({
     queryKey: ADMIN_AI_MODELS_QUERY_KEY,
     queryFn: async (): Promise<AdminAiModelCatalog> => {
-      const { data, error } = await api.admin["ai-models"].get();
+      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load AI models."));
@@ -241,7 +253,7 @@ export function useAdminAiModels(options?: Omit<QueryOptions<AdminAiModelCatalog
         throw new Error("Invalid AI models response.");
       }
 
-      return data as AdminAiModelCatalog;
+      return AdminAiModelCatalogSchema.parse(data);
     },
     ...options,
   });
@@ -252,7 +264,7 @@ export function useCreateAdminAiModel() {
 
   return useMutation({
     mutationFn: async (input: AdminAiModelMutationInput): Promise<AdminAiModel> => {
-      const { data, error } = await api.admin["ai-models"].post(input);
+      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].post(input);
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to create AI model."));
@@ -262,7 +274,7 @@ export function useCreateAdminAiModel() {
         throw new Error("Invalid AI model create response.");
       }
 
-      return data as AdminAiModel;
+      return AdminAiModelSchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
@@ -277,7 +289,7 @@ export function useUpdateAdminAiModel() {
 
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: AdminAiModelMutationInput }): Promise<AdminAiModel> => {
-      const { data, error } = await api.admin["ai-models"]({ id }).patch(input);
+      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).patch(input);
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update AI model."));
@@ -287,7 +299,7 @@ export function useUpdateAdminAiModel() {
         throw new Error("Invalid AI model update response.");
       }
 
-      return data as AdminAiModel;
+      return AdminAiModelSchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
@@ -302,7 +314,7 @@ export function useDeleteAdminAiModel() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<DeleteAdminAiModelResponse> => {
-      const { data, error } = await api.admin["ai-models"]({ id }).delete();
+      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).delete();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to delete AI model."));
@@ -312,7 +324,7 @@ export function useDeleteAdminAiModel() {
         throw new Error("Invalid AI model delete response.");
       }
 
-      return data as DeleteAdminAiModelResponse;
+      return DeleteAdminAiModelResponseSchema.parse(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
@@ -352,7 +364,7 @@ export function useAuditLogs(
         requestQuery.category = query.category;
       }
 
-      const { data, error } = await api.admin["audit-logs"].get({ query: requestQuery });
+      const { data, error } = await apiWithoutDateParsing.admin["audit-logs"].get({ query: requestQuery });
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load audit logs."));
@@ -362,7 +374,7 @@ export function useAuditLogs(
         throw new Error("Invalid audit logs response.");
       }
 
-      return data as AuditLogListResponse;
+      return AuditLogListResponseSchema.parse(data);
     },
     ...options,
   });
@@ -376,7 +388,7 @@ export function useAuditLogDetail(
     queryKey: [...ADMIN_AUDIT_LOGS_QUERY_KEY, "detail", auditId],
     enabled: auditId.length > 0,
     queryFn: async (): Promise<AuditLogDetail> => {
-      const { data, error } = await api.admin["audit-logs"]({ id: auditId }).get();
+      const { data, error } = await apiWithoutDateParsing.admin["audit-logs"]({ id: auditId }).get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load audit log detail."));
@@ -386,7 +398,7 @@ export function useAuditLogDetail(
         throw new Error("Invalid audit log detail response.");
       }
 
-      return data as AuditLogDetail;
+      return AuditLogDetailSchema.parse(data);
     },
     ...options,
   });
@@ -399,7 +411,7 @@ export function useAdminAnalytics(
   return useQuery({
     queryKey: [...ADMIN_ANALYTICS_QUERY_KEY, timeframeDays],
     queryFn: async (): Promise<AnalyticsDashboard> => {
-      const { data, error } = await api.admin.analytics.get({
+      const { data, error } = await apiWithoutDateParsing.admin.analytics.get({
         query: {
           timeframeDays: String(timeframeDays),
         },
@@ -413,7 +425,7 @@ export function useAdminAnalytics(
         throw new Error("Invalid analytics dashboard response.");
       }
 
-      return data as AnalyticsDashboard;
+      return AnalyticsDashboardSchema.parse(data);
     },
     ...options,
   });

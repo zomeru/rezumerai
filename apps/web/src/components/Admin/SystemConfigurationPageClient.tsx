@@ -49,7 +49,7 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
     }
 
     try {
-      const parsed = JSON.parse(editorValue) as unknown;
+      const parsed = JSON.parse(editorValue);
       setLocalError(null);
       await updateConfiguration.mutateAsync({ name: selectedConfig.name, value: parsed });
       toast.success(`${selectedConfig.name} updated.`);

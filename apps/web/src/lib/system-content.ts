@@ -50,10 +50,10 @@ const PUBLIC_CONTENT_CONFIG = {
   },
 } as const;
 
-type PublicContentConfigMap = typeof PUBLIC_CONTENT_CONFIG;
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 
 async function readConfigurationValue<T>(
-  db: PrismaClient,
+  db: DatabaseClient,
   name: string,
   schema: { safeParse: (value: Prisma.JsonValue) => { success: true; data: T } | { success: false } },
   fallback: T,
@@ -71,9 +71,15 @@ async function readConfigurationValue<T>(
   return parsed.success ? parsed.data : fallback;
 }
 
+export function getPublicContentByTopic(topic: "landing", db?: DatabaseClient): Promise<LandingPageInformation>;
+export function getPublicContentByTopic(topic: "faq", db?: DatabaseClient): Promise<FaqInformation>;
+export function getPublicContentByTopic(
+  topic: Exclude<PublicContentTopic, "landing" | "faq">,
+  db?: DatabaseClient,
+): Promise<ContentPage>;
 export async function getPublicContentByTopic(
   topic: PublicContentTopic,
-  db: PrismaClient = prisma,
+  db: DatabaseClient = prisma,
 ): Promise<LandingPageInformation | ContentPage | FaqInformation> {
   const parsedTopic = PublicContentTopicSchema.parse(topic);
   const entry = PUBLIC_CONTENT_CONFIG[parsedTopic];
@@ -81,31 +87,32 @@ export async function getPublicContentByTopic(
   return readConfigurationValue(db, entry.key, entry.schema, entry.fallback);
 }
 
-export async function getLandingPageContent(db: PrismaClient = prisma): Promise<LandingPageInformation> {
-  return getPublicContentByTopic("landing", db) as Promise<LandingPageInformation>;
+export async function getLandingPageContent(db: DatabaseClient = prisma): Promise<LandingPageInformation> {
+  return getPublicContentByTopic("landing", db);
 }
 
-export async function getContentPage(topic: Exclude<PublicContentTopic, "landing" | "faq">, db: PrismaClient = prisma) {
-  return getPublicContentByTopic(topic, db) as Promise<ContentPage>;
+export async function getContentPage(
+  topic: Exclude<PublicContentTopic, "landing" | "faq">,
+  db: DatabaseClient = prisma,
+): Promise<ContentPage> {
+  return getPublicContentByTopic(topic, db);
 }
 
-export async function getFaqInformation(db: PrismaClient = prisma): Promise<FaqInformation> {
-  return getPublicContentByTopic("faq", db) as Promise<FaqInformation>;
+export async function getFaqInformation(db: DatabaseClient = prisma): Promise<FaqInformation> {
+  return getPublicContentByTopic("faq", db);
 }
 
 export async function getPublicAppContent(
   topic: PublicContentTopic,
-  db: PrismaClient = prisma,
+  db: DatabaseClient = prisma,
 ): Promise<{
   topic: PublicContentTopic;
   title: string;
   summary: string;
   sections: Array<{ heading: string; points: string[] }>;
 }> {
-  const content = await getPublicContentByTopic(topic, db);
-
   if (topic === "landing") {
-    const landing = content as LandingPageInformation;
+    const landing = await getLandingPageContent(db);
     return {
       topic,
       title: landing.hero.title,
@@ -124,7 +131,7 @@ export async function getPublicAppContent(
   }
 
   if (topic === "faq") {
-    const faq = content as FaqInformation;
+    const faq = await getFaqInformation(db);
     return {
       topic,
       title: faq.title,
@@ -136,7 +143,7 @@ export async function getPublicAppContent(
     };
   }
 
-  const page = content as ContentPage;
+  const page = await getContentPage(topic, db);
   return {
     topic,
     title: page.title,
@@ -150,7 +157,7 @@ export async function getPublicAppContent(
 
 export async function searchPublicFaq(
   query: string,
-  db: PrismaClient = prisma,
+  db: DatabaseClient = prisma,
 ): Promise<Array<{ question: string; answer: string; category: string }>> {
   const trimmed = query.trim().toLowerCase();
   if (!trimmed) {
@@ -181,5 +188,5 @@ export async function searchPublicFaq(
 }
 
 export function listConfiguredPublicTopics(): PublicContentTopic[] {
-  return Object.keys(PUBLIC_CONTENT_CONFIG) as Array<keyof PublicContentConfigMap>;
+  return PublicContentTopicSchema.options.filter((topic) => topic in PUBLIC_CONTENT_CONFIG);
 }

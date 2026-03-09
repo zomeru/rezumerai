@@ -48,7 +48,6 @@ export function getFirstErrorMessage(
 
   if (typeof first === "string") return first;
 
-  // here we know first is Record<string, string>
-  const nestedFirst = Object.values(first as Record<string, string>)[0];
+  const nestedFirst = Object.values(first).find((value): value is string => typeof value === "string");
   return nestedFirst ?? null;
 }

@@ -23,10 +23,13 @@ import {
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
+import { toSerializableValue } from "../../observability/redaction";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
 
 const GLOBAL_CONFIGURATION_NAME = SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG;
+type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 const DEFAULT_ERROR_LOG_RETENTION_DAYS = 90;
 const DEFAULT_PAGE_SIZE = 50;
 const MIN_PAGE_SIZE = 1;
@@ -83,6 +86,14 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
     schema: LandingPageInformationSchema,
   },
 } as const;
+
+function isManagedConfigurationName(name: string): name is keyof typeof SYSTEM_CONFIGURATION_DEFINITIONS {
+  return name in SYSTEM_CONFIGURATION_DEFINITIONS;
+}
+
+function isAuditLogCategoryValue(value: string): value is AuditLogCategoryValue {
+  return value === "USER_ACTION" || value === "SYSTEM_ACTIVITY" || value === "DATABASE_CHANGE";
+}
 
 const ADMIN_AI_MODEL_SELECT = {
   id: true,
@@ -384,29 +395,19 @@ function toUserActivityItem(
 }
 
 function resolveConfigurationDescription(name: string, description: string | null): string | null {
-  return (
-    description ??
-    SYSTEM_CONFIGURATION_DEFINITIONS[name as keyof typeof SYSTEM_CONFIGURATION_DEFINITIONS]?.description ??
-    null
-  );
+  return description ?? (isManagedConfigurationName(name) ? SYSTEM_CONFIGURATION_DEFINITIONS[name].description : null);
 }
 
 function resolveConfigurationValidationMode(name: string): "KNOWN_SCHEMA" | "RAW_JSON" {
   return name in SYSTEM_CONFIGURATION_DEFINITIONS ? "KNOWN_SCHEMA" : "RAW_JSON";
 }
 
-function parseConfigurationValue(name: string, value: unknown): Prisma.InputJsonValue {
-  const definition = SYSTEM_CONFIGURATION_DEFINITIONS[name as keyof typeof SYSTEM_CONFIGURATION_DEFINITIONS];
+function parseConfigurationValue(name: string, value: unknown) {
+  const definition = isManagedConfigurationName(name) ? SYSTEM_CONFIGURATION_DEFINITIONS[name] : null;
+  const parsedValue = definition ? definition.schema.parse(value) : JSON.parse(JSON.stringify(value));
+  const serialized = toSerializableValue(parsedValue);
 
-  if (definition) {
-    return definition.schema.parse(value) as Prisma.InputJsonValue;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-  } catch {
-    throw new Error("Configuration value must be valid JSON serializable data.");
-  }
+  return serialized === null ? Prisma.JsonNull : serialized;
 }
 
 function toSystemConfigurationEntry(record: {
@@ -485,7 +486,7 @@ function buildTimeSeries(
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class ErrorLogService {
-  static async isAdmin(db: PrismaClient, userId: string): Promise<boolean> {
+  static async isAdmin(db: DatabaseClient, userId: string): Promise<boolean> {
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {
@@ -496,7 +497,10 @@ export abstract class ErrorLogService {
     return user?.role === "ADMIN";
   }
 
-  static async listErrorLogs(db: PrismaClient, input: ListErrorLogsInput = {}): Promise<ErrorLogListResponse> {
+  static async listErrorLogs(
+    db: TransactionCapableDatabaseClient,
+    input: ListErrorLogsInput = {},
+  ): Promise<ErrorLogListResponse> {
     mergeRequestContextMetadata({ serviceName: "ErrorLogService.listErrorLogs" });
     const page = toPage(input.page);
     const pageSize = toPageSize(input.pageSize);
@@ -545,7 +549,7 @@ export abstract class ErrorLogService {
     };
   }
 
-  static async getErrorLogById(db: PrismaClient, id: string): Promise<ErrorLogDetail | null> {
+  static async getErrorLogById(db: DatabaseClient, id: string): Promise<ErrorLogDetail | null> {
     mergeRequestContextMetadata({ serviceName: "ErrorLogService.getErrorLogById" });
     const record = await db.errorLog.findUnique({
       where: { id },
@@ -567,7 +571,7 @@ export abstract class ErrorLogService {
     return ErrorLogService.toErrorLogDetail(record);
   }
 
-  static async markAsRead(db: PrismaClient, id: string, adminUserId: string): Promise<ErrorLogDetail | null> {
+  static async markAsRead(db: DatabaseClient, id: string, adminUserId: string): Promise<ErrorLogDetail | null> {
     mergeRequestContextMetadata({ serviceName: "ErrorLogService.markAsRead" });
     const existing = await db.errorLog.findUnique({
       where: { id },
@@ -619,7 +623,7 @@ export abstract class ErrorLogService {
     return ErrorLogService.toErrorLogDetail(updated);
   }
 
-  static async getErrorLogRetentionDays(db: PrismaClient): Promise<number> {
+  static async getErrorLogRetentionDays(db: DatabaseClient): Promise<number> {
     const configuration = await db.systemConfiguration.findUnique({
       where: { name: GLOBAL_CONFIGURATION_NAME },
       select: {
@@ -640,7 +644,7 @@ export abstract class ErrorLogService {
     return parsedConfiguration.data.ERROR_LOG_RETENTION_DAYS;
   }
 
-  static async cleanupExpiredErrorLogs(db: PrismaClient, now: Date = new Date()): Promise<ErrorLogCleanupResult> {
+  static async cleanupExpiredErrorLogs(db: DatabaseClient, now: Date = new Date()): Promise<ErrorLogCleanupResult> {
     const retentionDays = await ErrorLogService.getErrorLogRetentionDays(db);
 
     const cutoffDate = new Date(now);
@@ -686,7 +690,10 @@ export abstract class ErrorLogService {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class AdminService {
-  static async listUsers(db: PrismaClient, input: ListAdminUsersInput = {}): Promise<AdminUserListResponse> {
+  static async listUsers(
+    db: TransactionCapableDatabaseClient,
+    input: ListAdminUsersInput = {},
+  ): Promise<AdminUserListResponse> {
     mergeRequestContextMetadata({ serviceName: "AdminService.listUsers" });
     const page = toPage(input.page);
     const pageSize = toPageSize(input.pageSize);
@@ -754,7 +761,7 @@ export abstract class AdminService {
     };
   }
 
-  static async getUserById(db: PrismaClient, userId: string): Promise<AdminUserDetail | null> {
+  static async getUserById(db: DatabaseClient, userId: string): Promise<AdminUserDetail | null> {
     mergeRequestContextMetadata({ serviceName: "AdminService.getUserById" });
     const aiConfiguration = await AiService.getAiConfiguration(db);
     const dailyLimit = aiConfiguration.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT;
@@ -846,7 +853,7 @@ export abstract class AdminService {
   }
 
   static async updateUserRole(
-    db: PrismaClient,
+    db: TransactionCapableDatabaseClient,
     actorUserId: string,
     targetUserId: string,
     role: AdminUserRole,
@@ -892,7 +899,7 @@ export abstract class AdminService {
       });
 
       return {
-        user: await AdminService.getUserById(tx as PrismaClient, targetUserId),
+        user: await AdminService.getUserById(tx, targetUserId),
         error: null,
       } as const;
     });
@@ -918,7 +925,7 @@ export abstract class AdminService {
   }
 
   static async updateUserPassword(
-    db: PrismaClient,
+    db: DatabaseClient,
     actorUserId: string,
     targetUserId: string,
     newPassword: string,
@@ -966,7 +973,7 @@ export abstract class AdminService {
     };
   }
 
-  static async listSystemConfigurations(db: PrismaClient): Promise<SystemConfigurationListResponse> {
+  static async listSystemConfigurations(db: DatabaseClient): Promise<SystemConfigurationListResponse> {
     mergeRequestContextMetadata({ serviceName: "AdminService.listSystemConfigurations" });
     const rows = await db.systemConfiguration.findMany({
       orderBy: [{ name: "asc" }],
@@ -978,7 +985,7 @@ export abstract class AdminService {
   }
 
   static async updateSystemConfiguration(
-    db: PrismaClient,
+    db: DatabaseClient,
     actorUserId: string,
     name: string,
     value: unknown,
@@ -1037,7 +1044,7 @@ export abstract class AdminService {
     };
   }
 
-  static async listAiModels(db: PrismaClient): Promise<AdminAiModelCatalog> {
+  static async listAiModels(db: TransactionCapableDatabaseClient): Promise<AdminAiModelCatalog> {
     mergeRequestContextMetadata({ serviceName: "AdminService.listAiModels" });
 
     const [models, providers] = await db.$transaction([
@@ -1061,7 +1068,7 @@ export abstract class AdminService {
   }
 
   static async createAiModel(
-    db: PrismaClient,
+    db: DatabaseClient,
     actorUserId: string,
     input: AdminAiModelMutationInput,
   ): Promise<{ model: AdminAiModel | null; error: string | null }> {
@@ -1130,7 +1137,7 @@ export abstract class AdminService {
   }
 
   static async updateAiModel(
-    db: PrismaClient,
+    db: DatabaseClient,
     actorUserId: string,
     id: string,
     input: AdminAiModelMutationInput,
@@ -1217,7 +1224,7 @@ export abstract class AdminService {
   }
 
   static async deleteAiModel(
-    db: PrismaClient,
+    db: DatabaseClient,
     actorUserId: string,
     id: string,
   ): Promise<{ result: DeleteAdminAiModelResponse | null; error: string | null }> {
@@ -1259,7 +1266,10 @@ export abstract class AdminService {
     };
   }
 
-  static async listAuditLogs(db: PrismaClient, input: ListAuditLogsInput = {}): Promise<AuditLogListResponse> {
+  static async listAuditLogs(
+    db: TransactionCapableDatabaseClient,
+    input: ListAuditLogsInput = {},
+  ): Promise<AuditLogListResponse> {
     mergeRequestContextMetadata({ serviceName: "AdminService.listAuditLogs" });
     const page = toPage(input.page);
     const pageSize = toPageSize(input.pageSize);
@@ -1314,8 +1324,18 @@ export abstract class AdminService {
       DATABASE_CHANGE: 0,
     };
 
-    for (const record of categoryCounts as Array<{ category: AuditLogCategoryValue; _count: { _all: number } }>) {
-      countsByCategory[record.category] = record._count._all;
+    for (const record of categoryCounts) {
+      if (isAuditLogCategoryValue(record.category)) {
+        const total =
+          typeof record._count === "object" &&
+          record._count !== null &&
+          "_all" in record._count &&
+          typeof record._count._all === "number"
+            ? record._count._all
+            : 0;
+
+        countsByCategory[record.category] = total;
+      }
     }
 
     return {
@@ -1330,7 +1350,7 @@ export abstract class AdminService {
     };
   }
 
-  static async getAuditLogById(db: PrismaClient, auditId: string): Promise<AuditLogDetail | null> {
+  static async getAuditLogById(db: DatabaseClient, auditId: string): Promise<AuditLogDetail | null> {
     mergeRequestContextMetadata({ serviceName: "AdminService.getAuditLogById" });
     const record = await db.auditLog.findUnique({
       where: { id: auditId },
@@ -1366,7 +1386,7 @@ export abstract class AdminService {
     return toAuditLogDetail(record);
   }
 
-  static async getAnalyticsDashboard(db: PrismaClient, timeframeDaysInput?: number): Promise<AnalyticsDashboard> {
+  static async getAnalyticsDashboard(db: DatabaseClient, timeframeDaysInput?: number): Promise<AnalyticsDashboard> {
     mergeRequestContextMetadata({ serviceName: "AdminService.getAnalyticsDashboard" });
     const timeframeDays = toTimeframeDays(timeframeDaysInput);
     const granularity: "hour" | "day" = timeframeDays <= 2 ? "hour" : "day";

@@ -11,6 +11,13 @@ interface ErrorDetailPageClientProps {
   errorId: string;
 }
 
+function isParsedStackTrace(value: unknown): value is {
+  rawStack?: string | null;
+  stackLines?: string[];
+} {
+  return typeof value === "object" && value !== null;
+}
+
 function formatDateTime(value: string | null): string {
   if (!value) {
     return "N/A";
@@ -42,10 +49,11 @@ function formatJson(value: unknown): string {
 
 function resolveStackTrace(stackTraceJson: string): string {
   try {
-    const parsed = JSON.parse(stackTraceJson) as {
-      rawStack?: string | null;
-      stackLines?: string[];
-    };
+    const parsed = JSON.parse(stackTraceJson);
+
+    if (!isParsedStackTrace(parsed)) {
+      return stackTraceJson;
+    }
 
     if (typeof parsed.rawStack === "string" && parsed.rawStack.length > 0) {
       return parsed.rawStack;
