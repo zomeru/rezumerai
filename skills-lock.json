@@ -1,56 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "Bun Bundler": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "c5cc9aef8069e07db1c9dca3b0f99add19c187e254205d0b475a9b89caaf1a9c"
-    },
-    "Bun Next.js": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "27373d0b866ff1d38b7f35481be35ffffa521d86fcd2822d98ad0d7f9d7d106c"
-    },
-    "api-authentication": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "f606790afd53a442a2f701748b27093deb3e0e1a5c7aa5a1a7978d7c7d87fb7a"
-    },
-    "api-error-handling": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "dc82c03aa59f51525cb26c12514a165a26f6c6d68c68a7c3014a6a555d4a4655"
-    },
-    "api-filtering-sorting": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "032d37166ed7c9343791455b86491b95f26e383b7aa4479158ea5ea26ea5b122"
-    },
-    "api-pagination": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "367229e3423ea7fe557045640aeeb04b16813d007d86444d2a1ff537e86eabe7"
-    },
-    "api-rate-limiting": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "69e54ee86fed194bdc942d72bd2c39415a41bf78fe504d47f1143d7c0b415cc2"
-    },
-    "api-reference-documentation": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "ee948058e9f1f06a29f5367d1b81bbe52c1b24f43cac9f9e45b087a679613bb2"
-    },
-    "api-response-optimization": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "8480f7b0698bad1d674970476c5577192fc2ebf7d6692f6e7136a5f50f5813ad"
-    },
-    "api-security-hardening": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "ddfc46495c098199afed06b85cca20092912e7b29a095cd7f989e3f0dc2ff471"
-    },
     "architecture-patterns": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
@@ -61,25 +11,60 @@
       "sourceType": "github",
       "computedHash": "dbf750eb5f48f712c2a5c01473ccbb23b5d19c2d4cac932470ae8e333e733e5c"
     },
+    "better-auth-best-practices": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "d67a75a83202355fe76e2db21775cce12e4948189c7b51106989e824bb1da43c"
+    },
+    "better-auth-security-best-practices": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "5124e42ccce39e04996fc4aa273154fdc2ff3827d174901913d777a72b3bbcd7"
+    },
+    "bun": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "7c5deb273e49ca7e8a604b72ca943902f37d4351808a3daee10f0fe9107537b2"
+    },
+    "bun-bundler": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "c5cc9aef8069e07db1c9dca3b0f99add19c187e254205d0b475a9b89caaf1a9c"
+    },
+    "bun-next.js": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "27373d0b866ff1d38b7f35481be35ffffa521d86fcd2822d98ad0d7f9d7d106c"
+    },
     "create-agent": {
       "source": "OpenRouterTeam/agent-skills",
       "sourceType": "github",
       "computedHash": "7232cfa7d012008bf12fa33815af49db10e7ddd5549c75c501168875a5334e11"
     },
-    "csrf-protection": {
+    "create-auth-skill": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
-      "computedHash": "8b20d60ecd523b86e13afdb98092bde8abe17dbb4b5dafe1b639050731e40ed0"
+      "computedHash": "7334700b51f3bc9e52fdacf346d12eb3379fb2a572079784a78782af96714b22"
     },
-    "database-schema-design": {
+    "elysiajs": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
-      "computedHash": "c6610fe36f64adaf22a24eee2d9f0f12ba4f5424233da816890a1dfe0ba32c33"
+      "computedHash": "c553412bafe02012b323ae7d118841375e58810be4f6984a3970d83bf7988355"
     },
-    "database-sharding": {
+    "email-and-password-best-practices": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
-      "computedHash": "5c8ec3416f3e6e51276365bd2e5eecfc7b3fa57b2b6ac63ebb97e5562d83e468"
+      "computedHash": "81768dc0ac2a40f528aa7f527d8fa9e1ebafa810ff05019357d1d0d2d60045e9"
+    },
+    "mastra": {
+      "source": "mastra-ai/skills",
+      "sourceType": "github",
+      "computedHash": "e252375a8efb764c7015eabe5deae8d387422a167da47eb20f326ccb7d697eb0"
+    },
+    "mobile-responsiveness": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "d7f9da2c9be93e113ca0c4554d8e7292018443c558c799200adf2acf8b17b69c"
     },
     "nextjs-senior-dev": {
       "source": "georgekhananaev/claude-skills-vault",
@@ -91,10 +76,30 @@
       "sourceType": "github",
       "computedHash": "0cb0e2f07f6b42fb8974c2ee89ca3ba3a103dfe565f12bc7ca9f41945fc7227a"
     },
+    "organization-best-practices": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "8f717ab6cfbda9a37500f9db6880714fafb16c9ffc4878d64b30286f01114a60"
+    },
+    "owasp-security": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "c73880511ba405f12244573607e1c8cd2ae1fe2bf10bcb3c4551fda8bc8596f0"
+    },
     "playwright": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
       "computedHash": "073a6b405e6050d945c1b579fab087507d986d740378c1cbc6f5b96f696c4b5a"
+    },
+    "prisma-cli": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "d9e4a20e39b2119eee98c847fcedc6d91317a8aeb825427370a7d0bbab95978c"
+    },
+    "prisma-client-api": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "fc1741b0e0da04732a3eca4a953bc9dceca8353260639e8fcc642a787205c14c"
     },
     "prisma-expert": {
       "source": "davila7/claude-code-templates",
@@ -151,6 +156,16 @@
       "sourceType": "github",
       "computedHash": "ee8991b4e732efa583907a4caa70d18ab57675d209efed2ce1fec266d6ea85db"
     },
+    "turborepo": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "18e412c93f0812dac27deca0cf697e4311e39cbf0655da07fad5b4bbde599a69"
+    },
+    "two-factor-authentication-best-practices": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "3cc2649bc89d3254b3473546ce7688715b9cbae3e64ace8c749631f75aad27ca"
+    },
     "typescript": {
       "source": "lobehub/lobehub",
       "sourceType": "github",
@@ -166,10 +181,25 @@
       "sourceType": "github",
       "computedHash": "0ea3c2b9be8387f9143c07b73652b36cf3116fa03167f44ca4eb8b9679d33c63"
     },
+    "vercel-composition-patterns": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "e38e0eaa609316b10423a9a138ed95e35099accd3f735585295c8a8f165c28a3"
+    },
     "vercel-react-best-practices": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
       "computedHash": "f813d80f7cf4455e1de92473eb39c38c6d1be1a84928820454f6f79960852054"
+    },
+    "web-accessibility": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "fb3418ae0f2ad37b788fec511186abd525abd685f464054760e37c00e54e45cf"
+    },
+    "web-design-guidelines": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "computedHash": "f4647ca866a3accf763777f83e7682954f0187cd6bea7eea0399796652414e8f"
     },
     "web-performance-optimization": {
       "source": "secondsky/claude-skills",

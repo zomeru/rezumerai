@@ -21,7 +21,7 @@ import {
 } from "@rezumerai/types";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { getPublicAppContent, searchPublicFaq } from "@/lib/system-content";
+import { runMastraAssistantChat } from "./assistant-agent";
 import {
   buildAssistantSessionKey,
   buildDeterministicConversationReply,
@@ -34,7 +34,6 @@ import { emptyAiUsageMetrics } from "./mapper";
 import { openRouterAiProvider } from "./providers/openrouter-provider";
 import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
 import { AiRepository } from "./repository";
-import { createAssistantTools } from "./tools";
 import type {
   ActiveAiModel,
   AiUsageMetrics,
@@ -601,11 +600,10 @@ export abstract class AiService {
       history: AssistantChatMessage[];
     },
   ): Promise<{ reply: string; toolNames: string[] }> {
-    const tools = createAssistantTools({
+    const result = await runMastraAssistantChat({
       db,
       scope: options.scope,
       userId: options.userId,
-      role: options.role,
       getOptimizationCredits: async () => (options.userId ? AiService.getDailyCredits(db, options.userId) : null),
       getCurrentModelSettings: async () => {
         if (!options.userId) {
@@ -619,28 +617,17 @@ export abstract class AiService {
           models: settings.models.map((item) => item.modelId),
         };
       },
-    });
-
-    const result = await AiService.runTextModel({
+      getAiConfiguration: async () => AiService.getAiConfiguration(db),
       modelId: options.modelId,
-      instructions: AiService.buildAssistantInstructions({
-        scope: options.scope,
-        systemPrompt: options.systemPrompt,
-        currentPath: options.currentPath,
-        allowTools: true,
-      }),
-      input: options.history,
-      tools,
+      systemPrompt: options.systemPrompt,
       maxSteps: options.maxSteps,
+      latestUserMessage: options.latestUserMessage,
+      currentPath: options.currentPath,
+      history: options.history,
     });
-
-    const reply =
-      options.scope === "PUBLIC" && result.toolNames.length === 0
-        ? await AiService.buildPublicAssistantFallback(db, options.latestUserMessage)
-        : formatAssistantReply(result.text, 4000);
 
     return {
-      reply,
+      reply: formatAssistantReply(result.reply, 4000),
       toolNames: result.toolNames,
     };
   }
@@ -731,22 +718,6 @@ export abstract class AiService {
         currentText: compactText(source.originalText, 500),
       };
     });
-  }
-
-  private static async buildPublicAssistantFallback(db: DatabaseClient, query: string): Promise<string> {
-    const [landing, faqMatches] = await Promise.all([getPublicAppContent("landing", db), searchPublicFaq(query, db)]);
-
-    if (faqMatches.length > 0) {
-      return compactText(
-        faqMatches
-          .slice(0, 2)
-          .map((item) => `${item.question} ${item.answer}`)
-          .join(" "),
-        4000,
-      );
-    }
-
-    return compactText(`${landing.title}. ${landing.summary}`, 4000);
   }
 
   private static getErrorMessage(error: unknown): string {
