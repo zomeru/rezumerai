@@ -58,9 +58,9 @@ export function formatAssistantReply(value: string, maxLength: number): string {
   const normalized = compactMultilineText(value, maxLength)
     .replace(/([^\n])([ \t]+)(\*\*[^*\n]{1,80}:\*\*)/g, "$1\n\n$3")
     .replace(/(\*\*[^*\n]{1,80}:\*\*)([ \t]+)([-*]|\d+\.)/g, "$1\n$3")
-    .replace(/([^\n])([ \t]+)((?:[-*]|\d+\.)\s+)/g, "$1\n$3")
+    .replace(/([^\n])([ \t]+)((?:[-*•]|\d+\.)\s+)/g, "$1\n$3")
     .replace(
-      /((?:^|\n)(?:[-*]|\d+\.)[^\n]+)([ \t]+)(Your current|Current selection|Selected model|Only |Showing |Note:)/gm,
+      /((?:^|\n)(?:[-*•]|\d+\.)[^\n]+)([ \t]+)(Your current|Current selection|Selected model|Only |Showing |Note:)/gm,
       "$1\n\n$3",
     )
     .replace(/\n{3,}/g, "\n\n")
@@ -115,12 +115,12 @@ export function parseAssistantReplyBlocks(content: string): AssistantReplyBlock[
       continue;
     }
 
-    if (/^[-*]\s+/.test(line)) {
+    if (/^[-*•]\s+/.test(line)) {
       flushParagraph();
       const items: string[] = [];
 
-      while (index < lines.length && /^[-*]\s+/.test(lines[index] ?? "")) {
-        items.push((lines[index] ?? "").replace(/^[-*]\s+/, "").trim());
+      while (index < lines.length && /^[-*•]\s+/.test(lines[index] ?? "")) {
+        items.push((lines[index] ?? "").replace(/^[-*•]\s+/, "").trim());
         index += 1;
       }
 

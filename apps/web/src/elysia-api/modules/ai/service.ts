@@ -686,7 +686,7 @@ export abstract class AiService {
       `${options.systemPrompt} ` +
       `Scope=${options.scope}. ${options.allowTools ? "Use tools only when real application data is required." : "Do not call tools."}` +
       pathInstruction +
-      " Keep the reply short. Tool results use a structured JSON envelope with `type`, `entity`, and `summary`; when listing records, prefer readable labels and omit raw IDs unless the user explicitly asks for them. Format replies as: short intro line, blank line, optional `**Section:**` headers on their own lines, list items one per line, blank line, short closing line if needed."
+      " Keep the reply short. Tool results use a structured JSON envelope with `type`, `entity`, and `summary`; when listing records, prefer readable labels and omit raw IDs unless the user explicitly asks for them. Never expose raw database field names or JSON-style keys in the final reply. Format replies as: short intro line, blank line, optional `**Section:**` headers on their own lines, list items one per line, blank line, short closing line if needed."
     );
   }
 

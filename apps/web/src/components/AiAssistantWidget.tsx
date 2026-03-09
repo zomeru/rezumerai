@@ -47,7 +47,7 @@ function normalizeAssistantContent(content: string): string {
     .replace(/\r\n/g, "\n")
     .replace(/[ \t]+(\d+\.\s+\*\*?)/g, "\n$1")
     .replace(/[ \t]+(\d+\.\s+)/g, "\n$1")
-    .replace(/[ \t]+([-*]\s+)/g, "\n$1")
+    .replace(/[ \t]+([-*•]\s+)/g, "\n$1")
     .trim();
 }
 
@@ -94,12 +94,12 @@ function parseMessageBlocks(content: string): AssistantReplyBlock[] {
       continue;
     }
 
-    if (/^[-*]\s+/.test(line)) {
+    if (/^[-*•]\s+/.test(line)) {
       flushParagraph();
       const items: string[] = [];
 
-      while (index < lines.length && /^[-*]\s+/.test(lines[index] ?? "")) {
-        items.push((lines[index] ?? "").replace(/^[-*]\s+/, "").trim());
+      while (index < lines.length && /^[-*•]\s+/.test(lines[index] ?? "")) {
+        items.push((lines[index] ?? "").replace(/^[-*•]\s+/, "").trim());
         index += 1;
       }
 
@@ -165,16 +165,18 @@ function AssistantMessageContent({
   const messageBlocks = blocks && blocks.length > 0 ? blocks : parseMessageBlocks(content);
 
   return (
-    <div className="space-y-2 break-words [overflow-wrap:anywhere]">
+    <div className="space-y-3 break-words text-[0.95rem] leading-6 [overflow-wrap:anywhere]">
       {messageBlocks.map((block) => {
         if (block.type === "ordered-list") {
           const normalizedItems = block.items.map((item) => normalizeInlineContent(item));
           const blockKey = `ordered-${normalizedItems.join("|")}`;
 
           return (
-            <ol key={blockKey} className="list-decimal space-y-1 pl-5">
+            <ol key={blockKey} className="list-decimal space-y-2 pl-5 marker:text-slate-400">
               {normalizedItems.map((item) => (
-                <li key={`ordered-item-${item}`}>{renderInlineText(item)}</li>
+                <li key={`ordered-item-${item}`} className="break-words [overflow-wrap:anywhere]">
+                  {renderInlineText(item)}
+                </li>
               ))}
             </ol>
           );
@@ -185,9 +187,11 @@ function AssistantMessageContent({
           const blockKey = `unordered-${normalizedItems.join("|")}`;
 
           return (
-            <ul key={blockKey} className="list-disc space-y-1 pl-5">
+            <ul key={blockKey} className="list-disc space-y-2 pl-5 marker:text-slate-400">
               {normalizedItems.map((item) => (
-                <li key={`unordered-item-${item}`}>{renderInlineText(item)}</li>
+                <li key={`unordered-item-${item}`} className="break-words [overflow-wrap:anywhere]">
+                  {renderInlineText(item)}
+                </li>
               ))}
             </ul>
           );
@@ -196,7 +200,7 @@ function AssistantMessageContent({
         const paragraphContent = normalizeInlineContent(block.content);
 
         return (
-          <p key={`paragraph-${paragraphContent}`} className="whitespace-pre-wrap">
+          <p key={`paragraph-${paragraphContent}`} className="whitespace-pre-wrap text-slate-700">
             {renderInlineText(paragraphContent)}
           </p>
         );
