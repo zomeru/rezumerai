@@ -21,12 +21,13 @@ fi
 # Validate required environment variables
 REQUIRED_ENV_VARS=(
   "DATABASE_URL"
-  "NEXT_PUBLIC_API_URL"
+  "DIRECT_URL"
   "NEXT_PUBLIC_SITE_URL"
   "BETTER_AUTH_URL"
   "BETTER_AUTH_SECRET"
   "BETTER_AUTH_GITHUB_CLIENT_ID"
   "BETTER_AUTH_GITHUB_CLIENT_SECRET"
+  "OPENROUTER_API_KEY"
 )
 
 for var in "${REQUIRED_ENV_VARS[@]}"; do
@@ -41,12 +42,13 @@ echo "All required environment variables validated successfully"
 # Build Web
 echo "Building Web service..."
 docker build \
-  --secret id=next_public_api_url,env=NEXT_PUBLIC_API_URL \
   --secret id=next_public_site_url,env=NEXT_PUBLIC_SITE_URL \
-  --secret id=BETTER_AUTH_SECRET,env=BETTER_AUTH_SECRET \
-  --secret id=BETTER_AUTH_GITHUB_CLIENT_ID,env=BETTER_AUTH_GITHUB_CLIENT_ID \
-  --secret id=BETTER_AUTH_GITHUB_CLIENT_SECRET,env=BETTER_AUTH_GITHUB_CLIENT_SECRET \
+  --secret id=better_auth_secret,env=BETTER_AUTH_SECRET \
+  --secret id=better_auth_github_client_id,env=BETTER_AUTH_GITHUB_CLIENT_ID \
+  --secret id=better_auth_github_client_secret,env=BETTER_AUTH_GITHUB_CLIENT_SECRET \
   --secret id=database_url,env=DATABASE_URL \
+  --secret id=direct_url,env=DIRECT_URL \
+  --secret id=openrouter_api_key,env=OPENROUTER_API_KEY \
   -f apps/web/Dockerfile \
   -t rezumerai-web:latest \
   .

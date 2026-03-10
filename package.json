@@ -1,20 +1,29 @@
 {
   "name": "rezumerai",
   "devDependencies": {
-    "@biomejs/biome": "2.4.5",
-    "@changesets/changelog-github": "^0.5.2",
-    "@changesets/cli": "^2.29.8",
+    "@biomejs/biome": "2.4.6",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
     "@happy-dom/global-registrator": "^20.8.3",
     "husky": "^9.1.7",
-    "lint-staged": "16.3.1",
+    "lint-staged": "16.3.3",
     "postcss": "^8.5.8",
     "rimraf": "^6.1.3",
-    "turbo": "^2.8.12",
+    "turbo": "^2.8.15",
     "typescript": "^5.9.3"
   },
+  "lint-staged": {
+    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
+      "biome check --write --staged"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
   "overrides": {
+    "@hono/node-server": "^1.19.11",
     "body-parser": "^2.2.1",
-    "hono": "^4.10.3",
+    "hono": "^4.12.5",
     "valibot": "^1.2.0",
     "lodash": "4.17.23"
   },
@@ -45,7 +54,11 @@
     "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
     "db:migrate:status": "cd packages/database && bun run db:migrate:status",
     "db:seed": "cd packages/database && bun run db:seed",
+    "db:seed:ai": "cd packages/database && bun run db:seed:ai",
+    "assistant:reindex-memory": "cd apps/web && bun run assistant:reindex-memory",
     "db:pull": "cd packages/database && bun run db:pull",
+    "db:psql": "cd packages/database && bun run db:psql",
+    "db:inspect-vectors": "cd packages/database && bun run db:inspect-vectors",
     "db:setup": "cd packages/database && bun run db:push && bun run db:generate",
     "db:studio": "cd packages/database && bun run db:studio",
     "db:reset": "cd packages/database && bun run with-env prisma migrate reset --force",
@@ -53,22 +66,16 @@
     "docker:build:standalone": "./scripts/docker-build.sh",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
+    "start:redis": "docker compose up -d redis",
     "install:modules": "bun install && turbo run build --filter=./packages/*",
-    "update:modules": "bun update --latest && bun update --latest --interactive --recursive",
+    "update:modules:1": "bun scripts/update-modules.ts",
+    "update:modules:2": "bun update --latest && bun update --latest --interactive --recursive",
     "clean": "turbo clean && rimraf node_modules .turbo tsconfig.tsbuildinfo .playwright-mcp coverage",
     "clean:install": "turbo clean && rimraf node_modules .turbo && bun install && turbo run build --filter=./packages/*",
     "outdated": "bun outdated",
     "security:audit": "bun audit --production",
     "security:check": "bunx audit-ci --config .audit-ci.json",
     "prepare": "husky"
-  },
-  "lint-staged": {
-    "{apps,packages}/**/*.{js,jsx,ts,tsx}": [
-      "biome check --write --staged"
-    ],
-    "*.{json,md,yaml,yml}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
   },
   "trustedDependencies": [
     "@prisma/client",
@@ -80,10 +87,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "@elysiajs/opentelemetry": "^1.4.10",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.212.0",
-    "@opentelemetry/sdk-trace-node": "^2.5.1"
-  }
+  ]
 }

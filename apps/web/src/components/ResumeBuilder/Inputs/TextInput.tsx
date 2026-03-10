@@ -12,6 +12,8 @@ export interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   onValueChange: (value: string) => void;
   /** Container class name for the wrapper div */
   containerClassName?: string;
+  /** Error message to display */
+  error?: string;
 }
 
 /**
@@ -40,6 +42,7 @@ export default function TextInput({
   className,
   id,
   type = "text",
+  error,
   ...props
 }: TextInputProps) {
   return (
@@ -47,7 +50,7 @@ export default function TextInput({
       {label && (
         <label htmlFor={id} className="mb-1.5 block font-medium text-slate-700 text-sm">
           {label}
-          {required && " *"}
+          {required && <span className="text-red-500"> *</span>}
         </label>
       )}
       <input
@@ -57,9 +60,11 @@ export default function TextInput({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onValueChange(e.target.value)}
         className={cn(
           "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20",
+          error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : "",
           className,
         )}
       />
+      {error && <p className="mt-1 text-red-500 text-xs">{error}</p>}
     </div>
   );
 }

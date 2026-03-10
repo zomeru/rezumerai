@@ -5,6 +5,14 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.js"
+    },
+    "./generated/prismabox/*": {
+      "types": "./generated/prismabox/*.ts",
+      "import": "./generated/prismabox/*.ts"
+    },
+    "./generated/prisma/*": {
+      "types": "./generated/prisma/*.ts",
+      "import": "./generated/prisma/*.ts"
     }
   },
   "type": "module",
@@ -16,15 +24,18 @@
     "db:push": "bun run with-env prisma db push",
     "db:push:preview": "bun run with-env:preview prisma db push",
     "db:push:prod": "bun run with-env:prod prisma db push",
-    "db:migrate": "bun run prisma migrate deploy",
+    "db:migrate": "bun run with-env prisma migrate deploy --schema ./prisma",
     "db:migrate:status": "bun run with-env prisma migrate status",
     "db:migrate:dev": "bun run with-env prisma migrate dev --schema ./prisma",
     "db:migrate:preview": "bun run with-env:preview prisma migrate deploy",
     "db:migrate:prod": "bun run with-env:prod prisma migrate deploy",
     "db:reset": "bun run with-env prisma migrate reset",
     "db:studio": "bun run with-env prisma studio --port 5556",
+    "db:psql": "bun run with-env sh -lc 'psql \"$DATABASE_URL\"'",
+    "db:inspect-vectors": "bun run with-env sh -lc 'psql \"$DATABASE_URL\" -c \"SELECT \\\"id\\\", \\\"conversationId\\\", \\\"messageId\\\", \\\"userId\\\", \\\"scope\\\", \\\"role\\\", LEFT(\\\"content\\\", 120) AS preview, vector_dims(\\\"embedding\\\") AS dims, \\\"createdAt\\\" FROM \\\"ai_assistant_conversation_embedding\\\" ORDER BY \\\"createdAt\\\" DESC LIMIT 20;\"'",
     "db:pull": "bun run with-env prisma db pull",
-    "db:seed": "bun run db:pull && bun run with-env bun ./scripts/seed.ts",
+    "db:seed:ai": "bun run with-env bun ./scripts/ai-seed.ts",
+    "db:seed": "bun run db:pull && bun run db:seed:ai && bun run with-env bun ./scripts/seed.ts",
     "check:types": "bun run db:generate && tsc --noEmit",
     "check": "biome check --write .",
     "format": "bun run with-env prisma format",
@@ -36,19 +47,20 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-neon": "^7.4.2",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "@prisma/client-runtime-utils": "7.4.2",
     "elysia": "^1.4.27",
-    "pg": "^8.19.0",
+    "pg": "^8.20.0",
     "prismabox": "^1.1.26"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.4",
+    "@biomejs/biome": "2.4.6",
     "@rezumerai/tsconfig": "workspace:*",
-    "@types/node": "^25.3.3",
+    "@types/bun": "^1.3.10",
+    "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
-    "bun-types": "^1.3.10",
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "prisma": "^7.4.2",

@@ -1,0 +1,86 @@
+import { ERROR_MESSAGES } from "@/constants/errors";
+import { detectResumeQualityIssues } from "@/lib/resume-quality";
+import type { ResumeUpdateInput } from "./types";
+
+export type ValidationError = {
+  message: string;
+};
+
+export function validateResumeUpdate(input: ResumeUpdateInput): ValidationError | null {
+  const { experience, personalInfo, project, education } = input;
+
+  if (experience) {
+    for (const exp of experience) {
+      if (!exp.position || exp.position.trim() === "") {
+        return { message: ERROR_MESSAGES.EXPERIENCE_POSITION_REQUIRED };
+      }
+      if (!exp.company || exp.company.trim() === "") {
+        return { message: ERROR_MESSAGES.EXPERIENCE_COMPANY_REQUIRED };
+      }
+      if (!exp.startDate) {
+        return { message: ERROR_MESSAGES.EXPERIENCE_START_DATE_REQUIRED };
+      }
+      if (!exp.isCurrent && !exp.endDate) {
+        return { message: ERROR_MESSAGES.EXPERIENCE_END_DATE_REQUIRED };
+      }
+    }
+  }
+
+  if (personalInfo) {
+    if (!personalInfo.fullName || personalInfo.fullName.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_FULL_NAME_REQUIRED };
+    }
+    if (!personalInfo.email || personalInfo.email.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_EMAIL_REQUIRED };
+    }
+    if (!personalInfo.phone || personalInfo.phone.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_PHONE_REQUIRED };
+    }
+    if (!personalInfo.location || personalInfo.location.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_LOCATION_REQUIRED };
+    }
+    if (!personalInfo.profession || personalInfo.profession.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_PROFESSION_REQUIRED };
+    }
+    if (!personalInfo.linkedin || personalInfo.linkedin.trim() === "") {
+      return { message: ERROR_MESSAGES.PERSONAL_INFO_LINKEDIN_REQUIRED };
+    }
+  }
+
+  if (project) {
+    for (const proj of project) {
+      if (!proj.name || proj.name.trim() === "") {
+        return { message: ERROR_MESSAGES.PROJECT_NAME_REQUIRED };
+      }
+    }
+  }
+
+  if (education) {
+    for (const edu of education) {
+      if (!edu.institution || edu.institution.trim() === "") {
+        return { message: ERROR_MESSAGES.EDUCATION_INSTITUTION_REQUIRED };
+      }
+      if (!edu.degree || edu.degree.trim() === "") {
+        return { message: ERROR_MESSAGES.EDUCATION_DEGREE_REQUIRED };
+      }
+      if (!edu.schoolYearStartDate) {
+        return {
+          message: ERROR_MESSAGES.EDUCATION_SCHOOL_YEAR_START_DATE_REQUIRED,
+        };
+      }
+      if (!edu.isCurrent && !edu.graduationDate) {
+        return {
+          message: ERROR_MESSAGES.EXPERIENCE_END_DATE_REQUIRED,
+        };
+      }
+    }
+  }
+
+  if (detectResumeQualityIssues(input).length > 0) {
+    return {
+      message: ERROR_MESSAGES.RESUME_LOW_QUALITY_TEXT,
+    };
+  }
+
+  return null;
+}

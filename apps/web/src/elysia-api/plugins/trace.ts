@@ -1,29 +1,5 @@
 import Elysia from "elysia";
-
-// ─── ANSI helpers (reused from logger) ───────────────────────────────────────
-
-const c = {
-  reset: "\x1b[0m",
-  bold: "\x1b[1m",
-  dim: "\x1b[2m",
-  cyan: "\x1b[36m",
-  yellow: "\x1b[33m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  magenta: "\x1b[35m",
-} as const;
-
-const paint = (color: keyof typeof c, text: string): string => `${c[color]}${text}${c.reset}`;
-const dim = (text: string): string => `${c.dim}${text}${c.reset}`;
-const bold = (text: string): string => `${c.bold}${text}${c.reset}`;
-
-function colorizeElapsed(ms: number): string {
-  const label = `${ms.toFixed(2)}ms`;
-  if (ms < 10) return paint("green", label);
-  if (ms < 50) return paint("cyan", label);
-  if (ms < 200) return paint("yellow", label);
-  return paint("red", label);
-}
+import { bold, colorizeElapsed, dim, paint } from "../utils/ansi";
 
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
@@ -130,7 +106,7 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
             bold(path),
             paint("red", "error"),
             colorizeElapsed(elapsed),
-            paint("red", (error as Error).message ?? "unknown"),
+            paint("red", error instanceof Error ? error.message : "unknown"),
           ].join("  "),
         );
       });

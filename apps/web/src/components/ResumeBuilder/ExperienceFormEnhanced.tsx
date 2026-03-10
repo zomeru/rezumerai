@@ -3,7 +3,9 @@
 import type { ResumeWithRelations } from "@rezumerai/types";
 import { generateUuidKey } from "@rezumerai/utils";
 import { formatDateRange } from "@rezumerai/utils/date";
-import { useState } from "react";
+import { cn } from "@rezumerai/utils/styles";
+import { useEffect, useState } from "react";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import DatePicker from "./DatePicker";
 import DraggableList from "./DraggableList";
 import { DeleteButton, EmptyState, SectionHeader, TextInput } from "./Inputs";
@@ -16,10 +18,12 @@ type Experience = ResumeWithRelations["experience"];
  *
  * @property experience - Array of work experience entries
  * @property onChange - Callback with updated experience array
+ * @property invalidIndices - Set of entry indices that failed end date validation; triggers auto-expand and inline error. Callers must pass a new Set reference on each validation cycle for the auto-expand effect to fire.
  */
 export interface ExperienceFormEnhancedProps {
   experience: Experience;
   onChange: (experience: Experience) => void;
+  invalidIndices?: Set<number>;
 }
 
 /**
@@ -31,8 +35,14 @@ export interface ExperienceFormEnhancedProps {
  * @returns Experience form with DnD reordering and accordion entries
  */
 
-export default function ExperienceFormEnhanced({ experience, onChange }: ExperienceFormEnhancedProps) {
+export default function ExperienceFormEnhanced({ experience, onChange, invalidIndices }: ExperienceFormEnhancedProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+
+  useEffect(() => {
+    if (!invalidIndices || invalidIndices.size === 0) return;
+    const firstInvalid = [...invalidIndices].sort((a, b) => a - b)[0];
+    if (firstInvalid !== undefined) setExpandedIndex(firstInvalid);
+  }, [invalidIndices]);
 
   const handleAdd = () => {
     const newExperience: Experience[number] = {
@@ -109,22 +119,41 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">Start Date *</p>
+                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">
+                      Start Date<span className="text-red-500"> *</span>
+                    </p>
                     <DatePicker
                       selected={exp.startDate ?? undefined}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", date ?? new Date())}
+                      onSelect={(date: Date | undefined) => handleUpdate(index, "startDate", date ?? null)}
                       placeholder="Select start date"
                     />
                   </div>
                   <div>
-                    <p className="mb-1.5 block font-medium text-slate-700 text-sm">End Date</p>
-                    <DatePicker
-                      selected={exp.endDate ?? undefined}
-                      onSelect={(date: Date | undefined) => handleUpdate(index, "endDate", date ?? null)}
-                      placeholder="Select end date"
-                      disabled={exp.isCurrent}
-                      minDate={exp.startDate ?? undefined}
-                    />
+                    {(() => {
+                      const isInvalid = !exp.isCurrent && !exp.endDate && (invalidIndices?.has(index) ?? false);
+                      return (
+                        <>
+                          <p
+                            className={cn(
+                              "mb-1.5 block font-medium text-sm",
+                              isInvalid ? "text-red-500" : "text-slate-700",
+                            )}
+                          >
+                            End Date{!exp.isCurrent && <span className="text-red-500"> *</span>}
+                          </p>
+                          <DatePicker
+                            selected={exp.endDate ?? undefined}
+                            onSelect={(date: Date | undefined) => handleUpdate(index, "endDate", date ?? null)}
+                            placeholder="Select end date"
+                            disabled={exp.isCurrent}
+                            minDate={exp.startDate ?? undefined}
+                          />
+                          {isInvalid && (
+                            <p className="mt-1 text-red-500 text-xs">{ERROR_MESSAGES.EXPERIENCE_END_DATE_REQUIRED}</p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -137,7 +166,11 @@ export default function ExperienceFormEnhanced({ experience, onChange }: Experie
                       const newValue = !exp.isCurrent;
                       const updated = experience.map((expItem, i) =>
                         i === index
-                          ? { ...expItem, isCurrent: newValue, endDate: newValue ? null : expItem.endDate }
+                          ? {
+                              ...expItem,
+                              isCurrent: newValue,
+                              endDate: newValue ? null : expItem.endDate,
+                            }
                           : expItem,
                       );
                       onChange(updated);

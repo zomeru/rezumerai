@@ -10,7 +10,6 @@ const isServer = typeof window === "undefined";
 
 // Client-side schema (only public variables)
 const clientSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.url().default("http://localhost:8080").describe("Public API URL for client-side requests"),
   NEXT_PUBLIC_SITE_URL: z
     .url()
     .default("http://localhost:3000") // Will be used as BETTER_AUTH_URL for client-side auth requests
@@ -28,6 +27,9 @@ const serverSchema = clientSchema.extend({
   BETTER_AUTH_GOOGLE_CLIENT_ID: z.string().optional().describe("Google OAuth client ID"),
   BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string().optional().describe("Google OAuth client secret"),
   DATABASE_URL: z.url().describe("Database connection URL (server-only)"),
+
+  // AI (server-side only)
+  OPENROUTER_API_KEY: z.string().describe("OpenRouter API key for AI text optimization"),
 
   // Optional analytics/monitoring (server-side only)
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),

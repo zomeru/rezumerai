@@ -1,0 +1,154 @@
+model AiProvider {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  models    AiModel[]
+
+  @@map("ai_provider")
+}
+
+model AiModel {
+  id              String     @id @default(cuid())
+  name            String
+  modelId         String
+  providerId      String
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  provider        AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  selectedByUsers User[]     @relation("UserSelectedAiModel")
+
+  @@unique([providerId, modelId])
+  @@index([providerId])
+  @@index([isActive])
+  @@map("ai_model")
+}
+
+model SystemConfiguration {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  value       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
+
+  @@map("system_configuration")
+}
+
+model AiOptimization {
+  id               String               @id @default(cuid())
+  userId           String
+  resumeId         String?
+  inputText        String
+  optimizedText    String
+  provider         String               @default("openrouter")
+  model            String
+  promptVersion    String               @default("optimize-v1")
+  status           AiOptimizationStatus @default(success)
+  inputCharCount   Int
+  outputCharCount  Int
+  chunkCount       Int                  @default(0)
+  durationMs       Int
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  reasoningTokens  Int?
+  errorMessage     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([resumeId])
+  @@index([status])
+  @@map("ai_optimization")
+}
+
+model AiTextOptimizerCredits {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  credits     Int      @default(100)
+  lastResetAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastResetAt])
+  @@map("ai_text_optimizer_credits")
+}
+
+model AiAssistantConversation {
+  id                String                             @id @default(cuid())
+  scope             AiAssistantConversationScope
+  userId            String
+  lastUserMessageAt DateTime?
+  createdAt         DateTime                           @default(now())
+  updatedAt         DateTime                           @updatedAt
+  user              User                               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  embeddings        AiAssistantConversationEmbedding[]
+  messages          AiAssistantConversationMessage[]
+
+  @@unique([userId, scope])
+  @@index([userId, updatedAt])
+  @@index([scope, updatedAt])
+  @@map("ai_assistant_conversation")
+}
+
+model AiAssistantConversationMessage {
+  id             String                            @id @default(cuid())
+  conversationId String
+  role           AiAssistantConversationRole
+  content        String
+  blocks         Json?
+  toolNames      String[]                          @default([])
+  createdAt      DateTime                          @default(now())
+  embedding      AiAssistantConversationEmbedding?
+  conversation   AiAssistantConversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_assistant_conversation_message")
+}
+
+model AiAssistantConversationEmbedding {
+  id             String                         @id
+  conversationId String
+  messageId      String                         @unique
+  userId         String
+  scope          AiAssistantConversationScope
+  role           AiAssistantConversationRole
+  content        String
+  metadata       Json
+  embedding      Unsupported("vector")
+  createdAt      DateTime                       @default(now())
+  conversation   AiAssistantConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message        AiAssistantConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user           User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, scope, userId, createdAt])
+  @@index([userId, scope, createdAt])
+  @@map("ai_assistant_conversation_embedding")
+}
+
+enum AiOptimizationStatus {
+  success
+  failed
+  aborted
+
+  @@map("ai_optimization_status")
+}
+
+enum AiAssistantConversationScope {
+  PUBLIC
+  USER
+  ADMIN
+
+  @@map("ai_assistant_conversation_scope")
+}
+
+enum AiAssistantConversationRole {
+  user
+  assistant
+
+  @@map("ai_assistant_conversation_role")
+}

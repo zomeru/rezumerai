@@ -1,5 +1,7 @@
 import { initBotId } from "botid/client/core";
 
+const isBotIdEnabled = process.env.NEXT_PUBLIC_BOTID_ENABLED === "true";
+
 // Define the paths that need bot protection.
 // These are paths that are routed to by your app.
 // These can be:
@@ -7,23 +9,25 @@ import { initBotId } from "botid/client/core";
 // - Server actions invoked from a page (e.g., '/dashboard')
 // - Dynamic routes (e.g., '/api/create/*')
 
-initBotId({
-  protect: [
-    {
-      path: "/api/resumes",
-      method: "POST",
-    },
-    {
-      path: "/api/auth/*",
-      method: "POST",
-    },
-    {
-      path: "/workspace*",
-      method: "POST",
-    },
-    {
-      path: "/signup",
-      method: "POST",
-    },
-  ],
-});
+if (isBotIdEnabled) {
+  initBotId({
+    protect: [
+      {
+        path: "/api/*",
+        method: "POST",
+      },
+      {
+        path: "/api/*",
+        method: "PUT",
+      },
+      {
+        path: "/api/*",
+        method: "PATCH",
+      },
+      {
+        path: "/api/*",
+        method: "DELETE",
+      },
+    ],
+  });
+}

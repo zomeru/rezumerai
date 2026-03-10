@@ -16,10 +16,8 @@ export default async function ResumeBuilderPage({ params }: ResumeBuilderPagePro
     notFound();
   }
 
-  const headersList = (await headers()) as unknown as Record<string, string>;
-
   const { data, error } = await api.resumes({ id: resumeId }).get({
-    headers: headersList,
+    headers: Object.fromEntries((await headers()).entries()),
   });
 
   if (error || !data) {

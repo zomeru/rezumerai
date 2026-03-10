@@ -15,12 +15,14 @@ type PersonalInfo = NonNullable<ResumeWithRelations["personalInfo"]>;
  * @property onChangeAction - Callback when any personal info field changes
  * @property removeBackground - Whether to remove the profile image background
  * @property setRemoveBackgroundAction - Callback to toggle background removal
+ * @property errors - Field-level error messages
  */
 export interface PersonalInfoFormProps {
   data: PersonalInfo;
   onChangeAction: (data: PersonalInfo) => void;
   removeBackground: boolean;
   setRemoveBackgroundAction: (value: boolean) => void;
+  errors?: Record<string, string>;
 }
 
 /**
@@ -55,6 +57,7 @@ export default function PersonalInfoForm({
   onChangeAction,
   removeBackground,
   setRemoveBackgroundAction,
+  errors = {},
 }: PersonalInfoFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,9 +129,10 @@ export default function PersonalInfoForm({
       </div>
 
       {FIELDS.map(({ icon: Icon, key, label, type, required }) => {
+        const error = errors[key];
         return (
           <div key={key} className="mt-5 space-y-1">
-            <label htmlFor={key} className="flex items-center gap-2 font-medium text-slate-600 text-sm">
+            <label htmlFor={key} className="flex items-center gap-2 font-medium text-sm" key={key}>
               <Icon className="size-4" />
               {label}
               {required && <span className="text-red-500">*</span>}
@@ -139,9 +143,12 @@ export default function PersonalInfoForm({
               value={data[key]}
               required={required}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageChange(key, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500"
+              className={`mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-primary-500 focus:ring focus:ring-primary-500 ${
+                error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+              }`}
               placeholder={`Enter your ${label.toLowerCase()}`}
             />
+            {error && <p className="mt-1 text-red-500 text-xs">{error}</p>}
           </div>
         );
       })}

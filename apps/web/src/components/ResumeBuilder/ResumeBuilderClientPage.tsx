@@ -1,45 +1,37 @@
 "use client";
 
-import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { cn } from "@rezumerai/utils/styles";
 import {
   ArrowLeftIcon,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
   DownloadIcon,
   EyeIcon,
   EyeOffIcon,
-  FileText,
-  FolderIcon,
-  GraduationCap,
   Loader2,
   SaveIcon,
   Share2Icon,
-  Sparkles,
-  User,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Activity as ReactActivity, useEffect, useMemo, useRef } from "react";
+import { Activity as ReactActivity, useMemo, useRef } from "react";
 import {
   ColorPickerModal,
   EducationFormEnhanced,
   ExperienceFormEnhanced,
   FontSizeSelector,
-  type FontSizeValue,
   PersonalInfoForm,
   ProfessionalSummaryFormEnhanced,
   ProjectFormEnhanced,
+  ResumeCopilotPanel,
   ResumePreview,
   SkillsFormEnhanced,
   TemplateSelector,
 } from "@/components/ResumeBuilder";
 import { ROUTES } from "@/constants/routing";
-import { usePdfGenerator } from "@/hooks/usePdfGenerator";
-import { useResumeById, useUpdateResume } from "@/hooks/useResume";
-import { useBuilderStore } from "@/store/useBuilderStore";
-import type { TemplateType } from "@/templates";
+import { RESUME_BUILDER_SECTIONS } from "./constants";
+import { useResumeBuilderController } from "./hooks/useResumeBuilderController";
 
 const PDFPreview = dynamic(() => import("@/components/ResumeBuilder/PDFPreview"), {
   ssr: false,
@@ -50,230 +42,141 @@ const PDFPreview = dynamic(() => import("@/components/ResumeBuilder/PDFPreview")
   ),
 });
 
-type SectionType = {
-  id: "personal" | "summary" | "experience" | "education" | "projects" | "skills";
-  name: string;
-  icon: typeof ArrowLeftIcon;
-};
-
-const sections: SectionType[] = [
-  { id: "personal", name: "Personal Information", icon: User },
-  { id: "summary", name: "Summary", icon: FileText },
-  { id: "experience", name: "Experience", icon: Briefcase },
-  { id: "education", name: "Education", icon: GraduationCap },
-  { id: "projects", name: "Projects", icon: FolderIcon },
-  { id: "skills", name: "Skills", icon: Sparkles },
-];
-
 interface ResumeBuilderClientProps {
   serverResume: ResumeWithRelations;
   resumeId: string;
 }
 
+const EMPTY_PERSONAL_INFO: NonNullable<ResumeWithRelations["personalInfo"]> = {
+  id: "",
+  resumeId: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  location: "",
+  linkedin: "",
+  website: "",
+  profession: "",
+  image: "",
+};
+
 export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBuilderClientProps) {
   const resumePreviewRef = useRef<HTMLDivElement>(null);
-
-  // React Query for keeping server data fresh - uses server data as initial data to prevent hydration mismatch
-  const { data: freshResume } = useResumeById(resumeId, {
-    initialData: serverResume,
-  });
-
-  // Draft state is stored in Zustand to keep it available across builder UI boundaries
-  const storedDraftResume = useBuilderStore((state) => state.draftResume);
-  const setDraftResume = useBuilderStore((state) => state.setDraftResume);
-  const updateDraftResume = useBuilderStore((state) => state.updateDraftResume);
-  const draftResume = storedDraftResume ?? serverResume;
-
-  // Sync store with server/fresh data
-  useEffect(() => {
-    setDraftResume(freshResume ?? serverResume);
-  }, [freshResume, serverResume, setDraftResume]);
-
-  // Use React Query mutation for saving
-  const updateResumeMutation = useUpdateResume();
-
-  // Builder UI store
-  const activeSectionIndex = useBuilderStore((state) => state.activeSectionIndex);
-  const setActiveSectionIndex = useBuilderStore((state) => state.setActiveSectionIndex);
-  const removeBackground = useBuilderStore((state) => state.removeBackground);
-  const setRemoveBackground = useBuilderStore((state) => state.setRemoveBackground);
-  const isSaving = useBuilderStore((state) => state.isSaving);
-  const setIsSaving = useBuilderStore((state) => state.setIsSaving);
-  const lastSaved = useBuilderStore((state) => state.lastSaved);
-  const setLastSaved = useBuilderStore((state) => state.setLastSaved);
-  const previewMode = useBuilderStore((state) => state.previewMode);
-  const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
-
-  const effectiveFontSize: FontSizeValue =
-    draftResume.fontSize === "custom" ? (draftResume.customFontSize ?? 1) : draftResume.fontSize;
-
-  // PDF generation hook
-  const { pdfBlob, isGeneratingPdf, isExporting, downloadResume } = usePdfGenerator({
-    resumeData: draftResume,
+  const {
+    activeSectionIndex,
+    applyCopilotPatch,
+    changeResumeVisibility,
+    draftResume,
+    downloadResume,
+    educationErrors,
+    effectiveFontSize,
+    handleColorChange,
+    handleEducationChange,
+    handleExperienceChange,
+    handleFontSizeChange,
+    handleProjectChange,
+    handleSaveResume,
+    handleShareResume,
+    handleSkillsChange,
+    handleSummaryChange,
+    handleTemplateChange,
+    invalidExperienceIndices,
+    isExporting,
+    isGeneratingPdf,
+    isSaving,
+    lastSaved,
+    pdfBlob,
+    personalInfoErrors,
     previewMode,
+    projectErrors,
+    removeBackground,
+    setActiveSectionIndex,
+    setPreviewMode,
+    setRemoveBackground,
+    updateResumeData,
+  } = useResumeBuilderController({
+    serverResume,
+    resumeId,
     resumePreviewRef,
-    fontSize: effectiveFontSize,
-    accentColor: draftResume.accentColor,
   });
 
-  // Immutable update helper for draft state
-  function updateDraft(updates: Partial<ResumeWithRelations>): void {
-    updateDraftResume(updates);
-  }
+  const builderSections = useMemo(
+    () =>
+      [
+        {
+          id: "personal",
+          render: () => (
+            <PersonalInfoForm
+              data={draftResume.personalInfo ?? EMPTY_PERSONAL_INFO}
+              onChangeAction={updateResumeData}
+              removeBackground={removeBackground}
+              setRemoveBackgroundAction={setRemoveBackground}
+              errors={personalInfoErrors}
+            />
+          ),
+        },
+        {
+          id: "summary",
+          render: () => (
+            <ProfessionalSummaryFormEnhanced
+              summary={draftResume.professionalSummary ?? ""}
+              onChange={handleSummaryChange}
+            />
+          ),
+        },
+        {
+          id: "experience",
+          render: () => (
+            <ExperienceFormEnhanced
+              experience={draftResume.experience}
+              onChange={handleExperienceChange}
+              invalidIndices={invalidExperienceIndices}
+            />
+          ),
+        },
+        {
+          id: "education",
+          render: () => (
+            <EducationFormEnhanced
+              education={draftResume.education}
+              onChange={handleEducationChange}
+              errors={educationErrors}
+            />
+          ),
+        },
+        {
+          id: "projects",
+          render: () => (
+            <ProjectFormEnhanced project={draftResume.project} onChange={handleProjectChange} errors={projectErrors} />
+          ),
+        },
+        {
+          id: "skills",
+          render: () => <SkillsFormEnhanced skills={draftResume.skills} onChange={handleSkillsChange} />,
+        },
+      ] as const,
+    [
+      draftResume,
+      educationErrors,
+      handleEducationChange,
+      handleExperienceChange,
+      handleProjectChange,
+      handleSkillsChange,
+      handleSummaryChange,
+      invalidExperienceIndices,
+      personalInfoErrors,
+      projectErrors,
+      removeBackground,
+      setRemoveBackground,
+      updateResumeData,
+    ],
+  );
 
-  function updateResumeData(data: NonNullable<ResumeWithRelations["personalInfo"]>) {
-    updateDraft({ personalInfo: data });
-  }
-
-  function handleTemplateChange(template: TemplateType) {
-    updateDraft({ template });
-  }
-
-  function handleColorChange(color: string) {
-    updateDraft({ accentColor: color });
-  }
-
-  function handleFontSizeChange(size: FontSizeValue) {
-    if (typeof size === "number") {
-      updateDraft({ fontSize: "custom", customFontSize: size });
-    } else if (size !== "custom") {
-      updateDraft({ fontSize: size, customFontSize: 1 });
-    } else {
-      updateDraft({ fontSize: "custom" });
-    }
-  }
-
-  function handleSummaryChange(summary: string) {
-    updateDraft({ professionalSummary: summary });
-  }
-
-  function handleExperienceChange(experience: ResumeWithRelations["experience"]) {
-    updateDraft({ experience });
-  }
-
-  function handleEducationChange(education: ResumeWithRelations["education"]) {
-    updateDraft({ education });
-  }
-
-  function handleProjectChange(project: ResumeWithRelations["project"]) {
-    updateDraft({ project });
-  }
-
-  function handleSkillsChange(skills: string[]) {
-    updateDraft({ skills });
-  }
-
-  function changeResumeVisibility() {
-    updateDraft({ public: !draftResume.public });
-  }
-
-  async function handleSaveResume(): Promise<void> {
-    setIsSaving(true);
-    try {
-      const updates: ResumeWithRelationsInputUpdate = {
-        title: draftResume.title,
-        public: draftResume.public,
-        professionalSummary: draftResume.professionalSummary,
-        template: draftResume.template,
-        accentColor: draftResume.accentColor,
-        fontSize: draftResume.fontSize,
-        customFontSize: draftResume.customFontSize,
-        skills: draftResume.skills,
-        personalInfo: draftResume.personalInfo ?? undefined,
-        experience: draftResume.experience,
-        education: draftResume.education,
-        project: draftResume.project,
-      };
-
-      await updateResumeMutation.mutateAsync({ id: resumeId, updates });
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error("Failed to save resume:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleShareResume(): Promise<void> {
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const resumeUrl = `${baseUrl}${ROUTES.PREVIEW}/${draftResume.id}`;
-
-    try {
-      await navigator.share({
-        title: "Check out my resume",
-        text: "Here's a link to my resume:",
-        url: resumeUrl,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        console.debug("Share cancelled or failed:", error);
-      }
-    }
-  }
-
-  const builderSections = useMemo(() => {
-    const _sections = [
-      {
-        id: "personal",
-        render: () => (
-          <PersonalInfoForm
-            data={
-              draftResume.personalInfo ??
-              ({
-                id: "",
-                resumeId: "",
-                fullName: "",
-                email: "",
-                phone: "",
-                location: "",
-                linkedin: "",
-                website: "",
-                profession: "",
-                image: "",
-              } as NonNullable<ResumeWithRelations["personalInfo"]>)
-            }
-            onChangeAction={updateResumeData}
-            removeBackground={removeBackground}
-            setRemoveBackgroundAction={setRemoveBackground}
-          />
-        ),
-      },
-      {
-        id: "summary",
-        render: () => (
-          <ProfessionalSummaryFormEnhanced
-            summary={draftResume.professionalSummary ?? ""}
-            onChange={handleSummaryChange}
-          />
-        ),
-      },
-      {
-        id: "experience",
-        render: () => <ExperienceFormEnhanced experience={draftResume.experience} onChange={handleExperienceChange} />,
-      },
-      {
-        id: "education",
-        render: () => <EducationFormEnhanced education={draftResume.education} onChange={handleEducationChange} />,
-      },
-      {
-        id: "projects",
-        render: () => <ProjectFormEnhanced project={draftResume.project} onChange={handleProjectChange} />,
-      },
-      {
-        id: "skills",
-        render: () => <SkillsFormEnhanced skills={draftResume.skills} onChange={handleSkillsChange} />,
-      },
-    ] as const;
-
-    return _sections;
-  }, [draftResume, removeBackground]);
-
-  const activeSection = sections[activeSectionIndex];
-  const progressPercentage = (activeSectionIndex / (sections.length - 1)) * 100;
+  const activeSection = RESUME_BUILDER_SECTIONS[activeSectionIndex];
+  const progressPercentage = (activeSectionIndex / (RESUME_BUILDER_SECTIONS.length - 1)) * 100;
 
   return (
     <main className="flex min-h-screen flex-1 flex-col bg-linear-to-br from-slate-50 to-slate-100">
-      {/* Redesigned Header */}
       <div className="border-slate-200/60 border-b bg-white/80 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-400 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -292,25 +195,16 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="mx-auto w-full max-w-400 flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12">
-          {/* Left Panel - Editor */}
           <div className="w-full lg:col-span-5">
             <div className="sticky top-8 space-y-6">
-              {/* Controls Card */}
               <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
                 <div className="border-slate-100 border-b bg-linear-to-br from-slate-50 to-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <TemplateSelector
-                        selectedTemplate={draftResume.template}
-                        onChange={(template: TemplateType) => handleTemplateChange(template)}
-                      />
-                      <ColorPickerModal
-                        selectedColor={draftResume.accentColor}
-                        onChange={(color: string) => handleColorChange(color)}
-                      />
+                      <TemplateSelector selectedTemplate={draftResume.template} onChange={handleTemplateChange} />
+                      <ColorPickerModal selectedColor={draftResume.accentColor} onChange={handleColorChange} />
                       <FontSizeSelector selectedSize={effectiveFontSize} onChange={handleFontSizeChange} />
                     </div>
                     <div className="flex items-center gap-2">
@@ -325,11 +219,11 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                           <ChevronLeft className="size-4" />
                         </button>
                       )}
-                      {activeSectionIndex < sections.length - 1 && (
+                      {activeSectionIndex < RESUME_BUILDER_SECTIONS.length - 1 && (
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveSectionIndex(Math.min(activeSectionIndex + 1, sections.length - 1));
+                            setActiveSectionIndex(Math.min(activeSectionIndex + 1, RESUME_BUILDER_SECTIONS.length - 1));
                           }}
                           className="flex items-center gap-1 rounded-lg bg-slate-100 p-2 font-medium text-slate-700 text-sm transition-all hover:bg-slate-200 active:scale-95"
                         >
@@ -340,7 +234,6 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   </div>
                 </div>
 
-                {/* Progress Bar */}
                 <div className="h-1.5 w-full bg-slate-100">
                   <div
                     className="h-full bg-linear-to-r from-primary-500 to-primary-600 transition-all duration-500"
@@ -348,9 +241,8 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   />
                 </div>
 
-                {/* Section Steps */}
                 <div className="flex items-center justify-center gap-2 border-slate-100 border-b p-4">
-                  {sections.map((section, index) => (
+                  {RESUME_BUILDER_SECTIONS.map((section, index) => (
                     <button
                       key={section.id}
                       type="button"
@@ -370,7 +262,6 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   ))}
                 </div>
 
-                {/* Form Content */}
                 <div className="max-w-full overflow-hidden p-6">
                   <div className="mb-4">
                     <h2 className="font-semibold text-slate-900 text-xl">{activeSection?.name}</h2>
@@ -387,7 +278,6 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                 </div>
               </div>
 
-              {/* Save Button */}
               <button
                 type="button"
                 onClick={handleSaveResume}
@@ -406,15 +296,14 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                   </>
                 )}
               </button>
+
+              <ResumeCopilotPanel resumeId={resumeId} resume={draftResume} onApplyPatch={applyCopilotPatch} />
             </div>
           </div>
 
-          {/* Right Panel - Preview */}
           <div className="w-full lg:col-span-7">
             <div className="sticky top-8 space-y-4">
-              {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-2">
-                {/* Preview Mode Toggle */}
                 <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
                   <button
                     type="button"
@@ -479,7 +368,6 @@ export default function ResumeBuilderClient({ serverResume, resumeId }: ResumeBu
                 </div>
               </div>
 
-              {/* Resume Preview */}
               <ReactActivity mode="visible">
                 <div
                   className={cn(

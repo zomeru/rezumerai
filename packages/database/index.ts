@@ -1,30 +1,77 @@
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "prisma/config";
 import { PrismaClient } from "./generated/prisma/client";
 
 export * from "./generated/prisma/client";
 
+// ─── Globals ──────────────────────────────────────────────────────────────────
+
+declare global {
+  var __rezumeraiPrisma: PrismaClient | undefined;
+}
+
 /**
- * Global reference to hold the Prisma client singleton across hot reloads.
- * Prevents connection exhaustion in development by reusing the same client instance.
+ * Global reference to hold the BASE Prisma client across hot reloads.
+ * We intentionally cache the base client (not the extended one) so that
+ * the perf extension is never applied more than once per process.
  */
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+const globalForPrisma = globalThis;
+
+const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
+
+/**
+ * Selects the appropriate Prisma adapter based on the database connection string.
+ * Uses PrismaNeon for Neon serverless PostgreSQL (WebSocket-based), and PrismaPg
+ * for standard PostgreSQL connections (e.g. local Docker).
+ */
+const adapter = connectionString.includes(".neon.tech")
+  ? new PrismaNeon({ connectionString })
+  : new PrismaPg({ connectionString });
+
+// ─── Inline ANSI helpers ──────────────────────────────────────────────────────
+// Kept local to this package to avoid a cross-package dependency on app-layer utils.
+
+const _c = {
+  reset: "\x1b[0m",
+  dim: "\x1b[2m",
+  bold: "\x1b[1m",
+  cyan: "\x1b[36m",
+  magenta: "\x1b[35m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+} as const;
+
+const _p = (code: string, text: string): string => `${code}${text}${_c.reset}`;
+const _ts = (): string => _p(_c.dim, new Date().toISOString());
+const _dur = (ms: number): string => {
+  const label = `${ms.toFixed(2)}ms`;
+  if (ms < 100) return _p(_c.green, label);
+  if (ms < 500) return _p(_c.yellow, label);
+  return _p(_c.red, label);
 };
 
-/**
- * PostgreSQL adapter for Prisma using the Neon adapter, which is compatible with serverless environments.
- * Reads the connection string from the DATABASE_URL environment variable.
- */
+const isDev = process.env.NODE_ENV === "development";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? env("DATABASE_URL"),
-});
+/**
+ * Base Prisma client. Cached in `globalForPrisma` to prevent reconnect churn
+ * across hot reloads.
+ */
+const baseClient =
+  globalForPrisma.__rezumeraiPrisma ||
+  new PrismaClient({
+    adapter,
+    log: isDev ? ["query", "error", "warn"] : ["error"],
+  });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.__rezumeraiPrisma = baseClient;
 
 /**
  * Shared Prisma client singleton for database access.
- * Uses a global reference in non-production environments to survive hot reloads.
- * Logs queries, errors, and warnings in development; only errors in production.
+ *
+ * This export intentionally stays as the base Prisma client so every consumer
+ * sees one stable type across environments.
  *
  * @example
  * ```ts
@@ -32,11 +79,4 @@ const adapter = new PrismaPg({
  * const users = await prisma.user.findMany();
  * ```
  */
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma = baseClient;

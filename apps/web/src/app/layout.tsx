@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
-import "./globals.css";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
+import { Outfit } from "next/font/google";
+import { Toaster } from "sonner";
+import AiAssistantWidget from "@/components/AiAssistantWidget";
+import "./globals.css";
 import { clientEnv } from "@/env";
 import { ReactQueryProvider } from "@/providers";
 
@@ -69,7 +71,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+        <ReactQueryProvider>
+          {children}
+          <AiAssistantWidget />
+        </ReactQueryProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

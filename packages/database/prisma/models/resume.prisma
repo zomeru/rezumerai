@@ -55,14 +55,16 @@ model Experience {
 }
 
 model Education {
-  id             String   @id @default(cuid())
-  resumeId       String
-  institution    String   @default("")
-  degree         String   @default("")
-  field          String   @default("")
-  gpa            String   @default("")
-  graduationDate DateTime
-  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  resumeId            String
+  institution         String    @default("")
+  degree              String    @default("")
+  field               String    @default("")
+  gpa                 String    @default("")
+  graduationDate      DateTime?
+  schoolYearStartDate DateTime
+  isCurrent           Boolean   @default(false)
+  resume              Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([resumeId])
   @@map("education")

@@ -1,9 +1,15 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import HtmlContent from "./HtmlContent";
-import type { TemplateProps } from "./types";
+import type {
+  EducationTemplateItem,
+  ExperienceTemplateItem,
+  ProjectTemplateItem,
+  SkillTemplateItem,
+  TemplateProps,
+} from "./types";
 
 /**
  * Minimal resume template with a profile image sidebar and three-column grid layout.
@@ -84,13 +90,15 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
             <section className="mb-8">
               <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">EDUCATION</h2>
               <div className="space-y-4 text-[0.875em]">
-                {data.education.map((edu) => {
+                {data.education.map((edu: EducationTemplateItem) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>
                       <p className="font-semibold uppercase">{edu.degree}</p>
                       <p className="text-zinc-600">{edu.institution}</p>
-                      <p className="text-[0.75em] text-zinc-500">{formatShortDate(edu.graduationDate)}</p>
+                      <p className="text-[0.75em] text-zinc-500">
+                        {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                      </p>
                     </div>
                   );
                 })}
@@ -103,7 +111,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
             <section>
               <h2 className="mb-3 font-semibold text-[0.875em] text-zinc-600 tracking-widest">SKILLS</h2>
               <ul className="space-y-1 text-[0.875em]">
-                {data.skills.map((skill) => {
+                {data.skills.map((skill: SkillTemplateItem) => {
                   const key = generateUuidKey();
                   return <li key={key}>{skill}</li>;
                 })}
@@ -134,7 +142,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                 EXPERIENCE
               </h2>
               <div className="mb-8 space-y-6">
-                {data.experience.map((exp) => {
+                {data.experience.map((exp: ExperienceTemplateItem) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>
@@ -167,7 +175,7 @@ const MinimalImageTemplate = ({ data, accentColor }: TemplateProps) => {
                 PROJECTS
               </h2>
               <div className="space-y-4">
-                {data.project.map((project) => {
+                {data.project.map((project: ProjectTemplateItem) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>

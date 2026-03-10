@@ -1,5 +1,6 @@
+import type { LandingPageInformation } from "@rezumerai/types";
 import { Badge, SectionTitle } from "@rezumerai/ui/components";
-import { FileText, Sparkles, Target } from "lucide-react";
+import { FileText } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface CardData {
@@ -9,71 +10,34 @@ interface CardData {
   icon: ReactNode;
 }
 
-const cards: CardData[] = [
-  {
-    id: "paste-resume",
-    title: "Paste your current resume",
-    description: "Start from what you already have — no blank-page pressure.",
-    icon: <FileText className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "rewrite-bullets",
-    title: "Rewrite bullet points",
-    description: "Get suggestions that make your experience sound clearer and more specific.",
-    icon: <Sparkles className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "impact-statements",
-    title: "Add impact statements",
-    description: "Turn responsibilities into outcomes with measurable, credible phrasing.",
-    icon: <Sparkles className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "tailor-job-post",
-    title: "Tailor to a job post",
-    description: "Paste a job description and see which skills/keywords to emphasize.",
-    icon: <Target className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "structure-consistency",
-    title: "Improve structure and consistency",
-    description: "Keep tense, punctuation, and formatting consistent across sections.",
-    icon: <FileText className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "keep-voice",
-    title: "Stay in control",
-    description: "Suggestions are optional — edit them, ignore them, or use them as a starting point.",
-    icon: <Sparkles className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "templates",
-    title: "Use clean templates",
-    description: "Pick a layout that looks professional and keeps content easy to scan.",
-    icon: <FileText className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-  {
-    id: "export-pdf",
-    title: "Export when you're ready",
-    description: "Generate a polished PDF and apply with confidence.",
-    icon: <FileText className="size-5 text-primary-600" aria-hidden="true" />,
-  },
-];
+interface TestimonialProps {
+  content: LandingPageInformation["workflowSection"];
+}
 
-const topCardsData: Array<CardData[][number] & { id: string }> = cards.flatMap((card) => [
-  { ...card, id: `${card.id}-top-1` },
-  { ...card, id: `${card.id}-top-2` },
-]);
-
-const bottomCardsData: Array<CardData[][number] & { id: string }> = [...cards].reverse().flatMap((card) => [
-  { ...card, id: `${card.id}-bottom-1` },
-  { ...card, id: `${card.id}-bottom-2` },
-]);
+function createCards(items: LandingPageInformation["workflowSection"]["items"]): CardData[] {
+  return items.map((item, index) => ({
+    id: `workflow-${index}`,
+    title: item.title,
+    description: item.description,
+    icon: <FileText className="size-5 text-primary-600" aria-hidden="true" />,
+  }));
+}
 
 /**
  * How it works" marquee section showing Rezumer workflows.
  */
-export default function Testimonial() {
+export default function Testimonial({ content }: TestimonialProps) {
+  const cards = createCards(content.items);
+  const topCardsData: Array<CardData[][number] & { id: string }> = cards.flatMap((card) => [
+    { ...card, id: `${card.id}-top-1` },
+    { ...card, id: `${card.id}-top-2` },
+  ]);
+
+  const bottomCardsData: Array<CardData[][number] & { id: string }> = [...cards].reverse().flatMap((card) => [
+    { ...card, id: `${card.id}-bottom-1` },
+    { ...card, id: `${card.id}-bottom-2` },
+  ]);
+
   return (
     <>
       <style>{`
@@ -92,10 +56,7 @@ export default function Testimonial() {
         `}</style>
       <div className="flex scroll-mt-12 flex-col items-center" id="how-it-works">
         <Badge title="How it works" style="text-primary-600" svgStyle="fill-primary-600" />
-        <SectionTitle
-          title="What you can do in Rezumer"
-          description="These are the real workflows the Rezumer is designed for."
-        />
+        <SectionTitle title={content.title} description={content.description} />
         <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-linear-to-r from-white to-transparent"></div>
           <div className="marquee-inner flex min-w-[200%] transform-gpu pt-10 pb-5">

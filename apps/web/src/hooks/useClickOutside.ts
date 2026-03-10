@@ -16,7 +16,11 @@ export function useClickOutside<T extends HTMLElement = HTMLElement>(
     if (!isActive) return;
 
     function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (ref.current && !ref.current.contains(event.target)) {
         handler();
       }
     }

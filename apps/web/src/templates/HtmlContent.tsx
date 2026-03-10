@@ -55,11 +55,8 @@ export default function HtmlContent({ html, className }: HtmlContentProps) {
         ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
       };
 
-      const domPurifyModule = await import("dompurify");
-      const domPurifyDefault = domPurifyModule.default as {
-        sanitize?: (dirty: string, cfg?: DOMPurifyConfig) => string;
-      };
-      const sanitize = typeof domPurifyDefault?.sanitize === "function" ? domPurifyDefault.sanitize : null;
+      const { default: domPurify } = await import("dompurify");
+      const sanitize = typeof domPurify.sanitize === "function" ? domPurify.sanitize : null;
 
       if (!sanitize) {
         if (isActive) {

@@ -82,6 +82,10 @@ function compressBuffer(
   }
 }
 
+function toArrayBuffer(data: Uint8Array): ArrayBuffer {
+  return Uint8Array.from(data).buffer;
+}
+
 function negotiateEncoding(acceptEncoding: string, preferred: CompressionEncoding[]): CompressionEncoding | null {
   const lower = acceptEncoding.toLowerCase();
   for (const enc of preferred) {
@@ -111,7 +115,7 @@ function unwrapElysiaResponse(
   if (responseValue instanceof ElysiaCustomStatusResponse) {
     return {
       value: responseValue.response,
-      status: responseValue.code as number,
+      status: typeof responseValue.code === "number" ? responseValue.code : Number(responseValue.code),
     };
   }
   return {
@@ -182,9 +186,12 @@ export const compressPlugin = (options?: CompressPluginOptions): Elysia => {
           // Only use compressed version if it's actually smaller
           if (compressed.byteLength < raw.byteLength) {
             set.headers["Content-Encoding"] = encoding;
-            set.headers.Vary = appendVary(set.headers.Vary as string | undefined, "Accept-Encoding");
+            set.headers.Vary =
+              typeof set.headers.Vary === "string"
+                ? appendVary(set.headers.Vary, "Accept-Encoding")
+                : "Accept-Encoding";
 
-            return new Response(compressed.buffer as ArrayBuffer, {
+            return new Response(toArrayBuffer(compressed), {
               status: statusCode,
               headers: { "Content-Type": contentType },
             });

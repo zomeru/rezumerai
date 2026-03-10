@@ -114,11 +114,15 @@ export default function ColorPickerModal({ selectedColor, onChange }: ColorPicke
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
       if (
         modalRef.current &&
-        !modalRef.current.contains(event.target as Node) &&
+        !modalRef.current.contains(event.target) &&
         buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
+        !buttonRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }

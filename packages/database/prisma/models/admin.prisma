@@ -1,0 +1,64 @@
+model AuditLog {
+  id              String           @id @default(cuid())
+  category        AuditLogCategory
+  eventType       String
+  action          String
+  resourceType    String
+  resourceId      String?
+  userId          String?
+  endpoint        String?
+  method          String?
+  serviceName     String?
+  requestMetadata Json?
+  beforeValues    Json?
+  afterValues     Json?
+  createdAt       DateTime         @default(now())
+  user            User?            @relation("AuditLogActor", fields: [userId], references: [id])
+
+  @@index([category, createdAt])
+  @@index([userId, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([eventType, createdAt])
+  @@index([endpoint, createdAt])
+  @@map("audit_log")
+}
+
+model AnalyticsEvent {
+  id         String               @id @default(cuid())
+  source     AnalyticsEventSource
+  eventType  String
+  endpoint   String?
+  method     String?
+  statusCode Int?
+  durationMs Int
+  userId     String?
+  isAdmin    Boolean              @default(false)
+  errorCode  String?
+  errorName  String?
+  metadata   Json?
+  createdAt  DateTime             @default(now())
+  user       User?                @relation("AnalyticsEventUser", fields: [userId], references: [id])
+
+  @@index([source, createdAt])
+  @@index([endpoint, createdAt])
+  @@index([userId, createdAt])
+  @@index([statusCode, createdAt])
+  @@index([isAdmin, createdAt])
+  @@index([eventType, createdAt])
+  @@map("analytics_event")
+}
+
+enum AuditLogCategory {
+  USER_ACTION
+  SYSTEM_ACTIVITY
+  DATABASE_CHANGE
+
+  @@map("audit_log_category")
+}
+
+enum AnalyticsEventSource {
+  API_REQUEST
+  BACKGROUND_JOB
+
+  @@map("analytics_event_source")
+}

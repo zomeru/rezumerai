@@ -1,0 +1,12 @@
+import { DEFAULT_AI_CONFIGURATION, SYSTEM_CONFIGURATION_KEYS } from "@rezumerai/types";
+
+export const openRouterProviderName = "openrouter";
+export const aiConfigurationName = SYSTEM_CONFIGURATION_KEYS.AI_CONFIG;
+export const asiaManilaUtcOffsetMs = 8 * 60 * 60 * 1000;
+
+export const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
+export const AI_MODEL_UNAVAILABLE_CODE = "AI_MODEL_UNAVAILABLE";
+export const AI_MODEL_POLICY_RESTRICTED_CODE = "AI_MODEL_POLICY_RESTRICTED";
+export const AI_ASSISTANT_FORBIDDEN_CODE = "AI_ASSISTANT_FORBIDDEN";
+
+export const DEFAULT_AI_SETTINGS = DEFAULT_AI_CONFIGURATION;

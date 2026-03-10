@@ -1,7 +1,7 @@
 import { generateUuidKey } from "@rezumerai/utils";
-import { formatDateRange, formatShortDate } from "@rezumerai/utils/date";
+import { formatDateRange } from "@rezumerai/utils/date";
 import HtmlContent from "./HtmlContent";
-import type { TemplateProps } from "./types";
+import type { EducationTemplateItem, ExperienceTemplateItem, ProjectTemplateItem, TemplateProps } from "./types";
 
 /**
  * Minimal resume template with clean typography and subtle accent lines.
@@ -40,7 +40,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-6">
-            {data.experience.map((exp) => {
+            {data.experience.map((exp: ExperienceTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key}>
@@ -69,12 +69,14 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-4">
-            {data.project.map((proj) => {
+            {data.project.map((proj: ProjectTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="flex flex-col items-baseline justify-between gap-2">
                   <h3 className="font-medium text-[1.125em]">{proj.name}</h3>
-                  <HtmlContent html={proj.description} className="rich-text-content text-gray-600" />
+                  {proj.description && (
+                    <HtmlContent html={proj.description} className="rich-text-content text-gray-600" />
+                  )}
                 </div>
               );
             })}
@@ -90,7 +92,7 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-4">
-            {data.education.map((edu) => {
+            {data.education.map((edu: EducationTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="flex items-baseline justify-between">
@@ -101,7 +103,9 @@ const MinimalTemplate = ({ data, accentColor }: TemplateProps) => {
                     <p className="text-gray-600">{edu.institution}</p>
                     {edu.gpa && <p className="text-[0.875em] text-gray-500">GPA: {edu.gpa}</p>}
                   </div>
-                  <span className="text-[0.875em] text-gray-500">{formatShortDate(edu.graduationDate)}</span>
+                  <span className="text-[0.875em] text-gray-500">
+                    {formatDateRange(edu.schoolYearStartDate, edu.graduationDate, edu.isCurrent ?? false)}
+                  </span>
                 </div>
               );
             })}

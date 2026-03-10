@@ -20,6 +20,11 @@ export interface TemplateProps {
   accentColor: string;
 }
 
+export type ExperienceTemplateItem = ResumeWithRelations["experience"][number];
+export type ProjectTemplateItem = ResumeWithRelations["project"][number];
+export type EducationTemplateItem = ResumeWithRelations["education"][number];
+export type SkillTemplateItem = ResumeWithRelations["skills"][number];
+
 /**
  * Available resume template identifiers.
  * Each template has a unique visual design and layout.
@@ -29,4 +34,4 @@ export interface TemplateProps {
  * - "minimal": Clean, content-focused design
  * - "minimal_image": Minimal layout with profile image
  */
-export type TemplateType = "classic" | "modern" | "minimal" | "minimal_image";
+export type TemplateType = ResumeWithRelations["template"];

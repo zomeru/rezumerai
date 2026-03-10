@@ -1,0 +1,5 @@
+-- RenameIndex
+ALTER INDEX "ai_assistant_conversation_embedding_conversationId_createdAt_id" RENAME TO "ai_assistant_conversation_embedding_conversationId_createdA_idx";
+
+-- RenameIndex
+ALTER INDEX "ai_assistant_conversation_embedding_conversationId_scope_userId" RENAME TO "ai_assistant_conversation_embedding_conversationId_scope_us_idx";

@@ -1,0 +1,2 @@
+-- This migration became a no-op after the canonical embedding migration
+-- was committed with the final Prisma index names already in place.
