@@ -59,10 +59,12 @@ Do **not** read every file under `.agents/instructions/` automatically. Load onl
 | Task type | Load these files |
 | --- | --- |
 | UI / frontend work | `code-style.md`, `architecture.md`, `testing-guidelines.md` |
-| Backend / API work | `architecture.md`, `code-style.md`, `testing-guidelines.md` |
+| Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
 | Database / schema work | `database-commands.md`, `architecture.md`, `security-guidelines.md` |
-| Auth / security work | `security-guidelines.md`, `architecture.md` |
+| Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md` |
+| AI / LLM integration | `ai-integration-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md`, `testing-guidelines.md` |
 | CI / tooling work | `build-test-commands.md`, `development-workflow.md`, `monorepo-guidelines.md` |
+| Monorepo / packages work | `monorepo-guidelines.md`, `repository-layout.md`, `typescript-guidelines.md` |
 | New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md` |
 | Commit / PR work | `commit-and-pr-guidelines.md` |
 
@@ -78,8 +80,10 @@ Detailed guidance is split into modular files under `.agents/instructions/`. Loa
 - **Docker commands:** `.agents/instructions/docker-commands.md`
 - **Code style and conventions:** `.agents/instructions/code-style.md`
 - **Module architecture:** `.agents/instructions/architecture.md`
+- **Elysia API guidelines:** `.agents/instructions/elysia-api-guidelines.md`
 - **TypeScript guidelines:** `.agents/instructions/typescript-guidelines.md`
 - **Testing guidelines:** `.agents/instructions/testing-guidelines.md`
+- **AI integration guidelines:** `.agents/instructions/ai-integration-guidelines.md`
 - **AI agent workflow:** `.agents/instructions/ai-agent-workflow.md`
 - **Security guidelines:** `.agents/instructions/security-guidelines.md`
 - **Commit and PR guidelines:** `.agents/instructions/commit-and-pr-guidelines.md`

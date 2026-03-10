@@ -10,8 +10,11 @@ bun run db:migrate:status
 bun run db:seed
 bun run db:seed:ai
 bun run db:pull
+bun run db:psql
+bun run db:inspect-vectors
 bun run db:studio
 bun run db:reset
+bun run assistant:reindex-memory
 ```
 
 ## Notes
@@ -19,4 +22,7 @@ bun run db:reset
 - After schema or model changes, run `bun run db:generate` and/or `bun run db:migrate:dev`.
 - Source of truth for env validation (including `DATABASE_URL`): `apps/web/src/env.ts`.
 - Prisma schema lives in `packages/database/prisma/`.
+- Prisma models are split across `packages/database/prisma/models/*.prisma`.
 - Generated client output lives in `packages/database/generated/` — do not edit manually.
+- `bun run db:seed:ai` seeds AI providers/models plus default system configuration and public content.
+- Assistant memory embeddings use PostgreSQL + `pgvector`; inspect them with `bun run db:inspect-vectors`.

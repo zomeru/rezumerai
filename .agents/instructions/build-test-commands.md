@@ -29,7 +29,9 @@ bun run code:verify
 
 ```sh
 bun run install:modules
-bun run update:modules
+bun run update:modules:1
+bun run update:modules:2
+bun run assistant:reindex-memory
 bun run clean
 bun run clean:install
 bun run outdated
