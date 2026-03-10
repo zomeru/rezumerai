@@ -14,7 +14,7 @@ describe("EmbeddingService.createProvider", () => {
       {
         ...DEFAULT_AI_CONFIGURATION,
         EMBEDDING_PROVIDER: "openrouter",
-        EMBEDDING_MODEL: "openai/text-embedding-3-small",
+        EMBEDDING_MODEL: "nvidia/llama-nemotron-embed-vl-1b-v2:free",
       },
       {
         createOpenRouterProvider: () => provider,

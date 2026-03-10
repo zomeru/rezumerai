@@ -8,67 +8,10 @@ import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAiSettings } from "@/hooks/useAi";
 import { getAiFeatureAccessMessage } from "@/lib/ai-access";
-import { api } from "@/lib/api";
 import { isAnonymousSession, useSession } from "@/lib/auth-client";
+import { consumeOptimizeResponse, OptimizeRequestError } from "./optimize-stream";
 
 const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
-
-interface OptimizeApiError {
-  code: string | null;
-  message: string;
-}
-
-class OptimizeRequestError extends Error {
-  readonly code: string | null;
-
-  constructor(payload: OptimizeApiError) {
-    super(payload.message);
-    this.name = "OptimizeRequestError";
-    this.code = payload.code;
-  }
-}
-
-function isAsyncGenerator(value: unknown): value is AsyncGenerator<unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    Symbol.asyncIterator in value &&
-    typeof value[Symbol.asyncIterator] === "function"
-  );
-}
-
-function getApiError(value: unknown): OptimizeApiError {
-  if (typeof value === "string") {
-    return { code: null, message: value };
-  }
-
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "message" in value &&
-    typeof value.message === "string" &&
-    value.message.length > 0
-  ) {
-    const apiCode = "code" in value && typeof value.code === "string" && value.code.length > 0 ? value.code : null;
-    return {
-      code: apiCode,
-      message: value.message,
-    };
-  }
-
-  return {
-    code: null,
-    message: ERROR_MESSAGES.AI_OPTIMIZE_UNKNOWN_ERROR,
-  };
-}
-
-function getStreamChunk(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  return String(value);
-}
 
 export default function TestSitePage(): React.JSX.Element {
   const { data: session, isPending: isSessionPending } = useSession();
@@ -90,7 +33,7 @@ export default function TestSitePage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
-  const activeStreamRef = useRef<AsyncGenerator<unknown> | null>(null);
+  const activeRequestControllerRef = useRef<AbortController | null>(null);
   const stopRequestedRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -117,37 +60,23 @@ export default function TestSitePage(): React.JSX.Element {
       modelId: string;
       onChunk: (chunk: string) => void;
     }): Promise<void> => {
-      const { data, error } = await api.ai.optimize.post({ text, modelId });
-
-      if (error) {
-        throw new OptimizeRequestError(getApiError(error.value));
-      }
-
-      if (!data) {
-        throw new OptimizeRequestError({ code: null, message: ERROR_MESSAGES.AI_OPTIMIZE_INVALID_RESPONSE });
-      }
-
-      if (typeof data === "string") {
-        throw new OptimizeRequestError({ code: null, message: data });
-      }
-
-      if (!isAsyncGenerator(data)) {
-        throw new OptimizeRequestError({ code: null, message: ERROR_MESSAGES.AI_OPTIMIZE_INVALID_RESPONSE });
-      }
-
-      const stream = data;
-      activeStreamRef.current = stream;
+      const abortController = new AbortController();
+      activeRequestControllerRef.current = abortController;
 
       try {
-        for await (const chunk of stream) {
-          if (stopRequestedRef.current) {
-            await stream.return(undefined);
-            break;
-          }
-          onChunk(getStreamChunk(chunk));
-        }
+        const response = await fetch("/api/ai/optimize", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ text, modelId }),
+          signal: abortController.signal,
+        });
+
+        await consumeOptimizeResponse(response, onChunk, abortController.signal);
       } finally {
-        activeStreamRef.current = null;
+        activeRequestControllerRef.current = null;
       }
     },
   });
@@ -194,12 +123,12 @@ export default function TestSitePage(): React.JSX.Element {
     setIsStreaming(false);
     optimizeMutation.reset();
 
-    if (!activeStreamRef.current) {
+    if (!activeRequestControllerRef.current) {
       return;
     }
 
-    await activeStreamRef.current.return(undefined);
-    activeStreamRef.current = null;
+    activeRequestControllerRef.current.abort();
+    activeRequestControllerRef.current = null;
   }
 
   return (

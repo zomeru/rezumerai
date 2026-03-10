@@ -4,7 +4,9 @@ import { buildRequestContext } from "../request-context";
 import { assistantToolEnvelopeSchema, createAssistantTools } from "../tools";
 import type { AssistantAgentContext, AssistantAgentRunOptions, AssistantToolName } from "../types";
 
-function buildAssistantToolInput(requestedLimit: number | null): { limit?: number } {
+function buildAssistantToolInput(requestedLimit: number | null): {
+  limit?: number;
+} {
   return requestedLimit ? { limit: requestedLimit } : {};
 }
 

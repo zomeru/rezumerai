@@ -23,7 +23,6 @@ import {
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
-import { toSerializableValue } from "../../observability/redaction";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
 
@@ -402,10 +401,20 @@ function resolveConfigurationValidationMode(name: string): "KNOWN_SCHEMA" | "RAW
   return name in SYSTEM_CONFIGURATION_DEFINITIONS ? "KNOWN_SCHEMA" : "RAW_JSON";
 }
 
+function toStoredConfigurationValue(value: unknown): Prisma.JsonValue | null {
+  const serialized = JSON.stringify(value);
+
+  if (serialized === undefined) {
+    return null;
+  }
+
+  return JSON.parse(serialized) as Prisma.JsonValue | null;
+}
+
 function parseConfigurationValue(name: string, value: unknown) {
   const definition = isManagedConfigurationName(name) ? SYSTEM_CONFIGURATION_DEFINITIONS[name] : null;
   const parsedValue = definition ? definition.schema.parse(value) : JSON.parse(JSON.stringify(value));
-  const serialized = toSerializableValue(parsedValue);
+  const serialized = toStoredConfigurationValue(parsedValue);
 
   return serialized === null ? Prisma.JsonNull : serialized;
 }

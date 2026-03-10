@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { AssistantHistoryResponseSchema } from "../ai/schema";
+import { AssistantHistoryResponseSchema, DEFAULT_AI_CONFIGURATION } from "../ai/schema";
 
 describe("AssistantHistoryResponseSchema", () => {
   it("accepts history responses when createdAt has already been parsed into Date objects", () => {
@@ -18,5 +18,12 @@ describe("AssistantHistoryResponseSchema", () => {
     });
 
     expect(parsed.messages[0]?.createdAt).toBe("2026-03-10T03:06:24.200Z");
+  });
+});
+
+describe("DEFAULT_AI_CONFIGURATION", () => {
+  it("uses a plain-text optimize prompt instead of requesting JSON output", () => {
+    expect(DEFAULT_AI_CONFIGURATION.OPTIMIZE_SYSTEM_PROMPT.toLowerCase()).not.toContain("json");
+    expect(DEFAULT_AI_CONFIGURATION.OPTIMIZE_SYSTEM_PROMPT.toLowerCase()).toContain("plain text");
   });
 });

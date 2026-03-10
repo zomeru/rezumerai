@@ -1,12 +1,39 @@
 import { describe, expect, it } from "bun:test";
+import { ERROR_MESSAGES } from "@/constants/errors";
 import {
   ASSISTANT_ACCESS_DENIED_REPLY,
   ASSISTANT_SAFE_RETRIEVAL_REPLY,
+  buildAssistantInstructions,
   classifyAssistantIntent,
   renderToolEnvelopeReply,
   resolveAssistantExecutionStrategy,
   runMastraAssistantChat,
 } from "../assistant-agent";
+
+type ExecutionStrategy = ReturnType<typeof resolveAssistantExecutionStrategy>;
+
+function expectForcedToolStrategy(strategy: ExecutionStrategy): Extract<ExecutionStrategy, { mode: "forced-tool" }> {
+  expect(strategy.mode).toBe("forced-tool");
+
+  if (strategy.mode !== "forced-tool") {
+    throw new Error(`Expected a forced-tool strategy, received "${strategy.mode}".`);
+  }
+
+  return strategy;
+}
+
+function expectReplyStrategy(
+  strategy: ExecutionStrategy,
+  mode: "access-denied" | "sign-in-required",
+): Extract<ExecutionStrategy, { mode: "access-denied" | "sign-in-required" }> {
+  expect(strategy.mode).toBe(mode);
+
+  if (strategy.mode !== mode) {
+    throw new Error(`Expected a "${mode}" strategy, received "${strategy.mode}".`);
+  }
+
+  return strategy;
+}
 
 const baseOptions = {
   db: {} as never,
@@ -22,8 +49,8 @@ const baseOptions = {
     ASSISTANT_SYSTEM_PROMPT: "Assistant prompt",
     COPILOT_SYSTEM_PROMPT: "Copilot prompt",
     EMBEDDING_PROVIDER: "openrouter",
-    EMBEDDING_MODEL: "openai/text-embedding-3-small",
-    EMBEDDING_DIMENSIONS: 1536,
+    EMBEDDING_MODEL: "nvidia/llama-nemotron-embed-vl-1b-v2:free",
+    EMBEDDING_DIMENSIONS: 2048,
     OPTIMIZE_SYSTEM_PROMPT: "Optimize prompt",
   }),
   getCurrentModelSettings: async () => ({
@@ -109,54 +136,84 @@ describe("resolveAssistantExecutionStrategy", () => {
   });
 
   it("routes recent error requests to the error log tool", () => {
-    const result = resolveAssistantExecutionStrategy({
-      message: "Show the 5 most recent errors",
-      scope: "ADMIN",
-      userId: "admin_123",
-    });
+    const result = expectForcedToolStrategy(
+      resolveAssistantExecutionStrategy({
+        message: "Show the 5 most recent errors",
+        scope: "ADMIN",
+        userId: "admin_123",
+      }),
+    );
 
-    expect(result.mode).toBe("forced-tool");
     expect(result.requestedLimit).toBe(5);
     expect(result.classification.category).toBe("admin_private");
     expect(result.toolName).toBe("listRecentErrorLogs");
   });
 
   it("routes broader registered-users phrasing to the registered users tool", () => {
-    const result = resolveAssistantExecutionStrategy({
-      message: "Show all the users registered on this website.",
-      scope: "ADMIN",
-      userId: "admin_123",
-    });
+    const result = expectForcedToolStrategy(
+      resolveAssistantExecutionStrategy({
+        message: "Show all the users registered on this website.",
+        scope: "ADMIN",
+        userId: "admin_123",
+      }),
+    );
 
-    expect(result.mode).toBe("forced-tool");
     expect(result.classification.category).toBe("admin_private");
     expect(result.requestedLimit).toBe(100);
     expect(result.toolName).toBe("listRegisteredUsers");
   });
 
   it("routes public privacy policy requests to the public content tool", () => {
-    const result = resolveAssistantExecutionStrategy({
-      message: "What's the website privacy policy?",
-      scope: "PUBLIC",
-      userId: null,
-    });
+    const result = expectForcedToolStrategy(
+      resolveAssistantExecutionStrategy({
+        message: "What's the website privacy policy?",
+        scope: "PUBLIC",
+        userId: null,
+      }),
+    );
 
-    expect(result.mode).toBe("forced-tool");
     expect(result.classification.category).toBe("public");
     expect(result.toolName).toBe("getPublicPrivacyPolicy");
   });
 
   it("blocks admin-only data for non-admin scopes", () => {
-    const result = resolveAssistantExecutionStrategy({
-      message: "Show all registered users",
-      scope: "USER",
-      userId: "user_123",
-    });
+    const result = expectReplyStrategy(
+      resolveAssistantExecutionStrategy({
+        message: "Show all registered users",
+        scope: "USER",
+        userId: "user_123",
+      }),
+      "access-denied",
+    );
 
-    expect(result.mode).toBe("access-denied");
     expect(result.reply).toBe(ASSISTANT_ACCESS_DENIED_REPLY);
     expect(result.classification.category).toBe("admin_private");
     expect(result.requestedLimit).toBe(100);
+  });
+});
+
+describe("buildAssistantInstructions", () => {
+  it("separates current world-fact limitations from app data retrieval failures", () => {
+    const instructions = buildAssistantInstructions({
+      get(key) {
+        switch (key) {
+          case "scope":
+            return "PUBLIC";
+          case "currentPath":
+            return "/assistant";
+          case "systemPrompt":
+            return "You are Rezumerai Assistant.";
+          case "latestUserMessage":
+            return "Who is the richest person in the world as of March 10, 2026?";
+          default:
+            return undefined;
+        }
+      },
+    } as never);
+
+    expect(instructions).toContain("without web access");
+    expect(instructions).toContain(ASSISTANT_SAFE_RETRIEVAL_REPLY);
+    expect(instructions).not.toContain("LatestUserMessage=");
   });
 });
 
@@ -269,8 +326,8 @@ describe("renderToolEnvelopeReply", () => {
         ASSISTANT_RAG_RECENT_LIMIT: 8,
         ASSISTANT_CONTEXT_TOKEN_LIMIT: 1200,
         EMBEDDING_PROVIDER: "openrouter",
-        EMBEDDING_MODEL: "openai/text-embedding-3-small",
-        EMBEDDING_DIMENSIONS: 1536,
+        EMBEDDING_MODEL: "nvidia/llama-nemotron-embed-vl-1b-v2:free",
+        EMBEDDING_DIMENSIONS: 2048,
       },
     });
 
@@ -455,6 +512,29 @@ describe("runMastraAssistantChat", () => {
     expect("activeTools" in (receivedOptions ?? {})).toBe(false);
     expect("toolChoice" in (receivedOptions ?? {})).toBe(false);
     expect(result.reply).toContain("Rezumerai helps");
+    expect(result.toolNames).toEqual([]);
+  });
+
+  it("uses the generic assistant fallback when a general model response is blank", async () => {
+    const result = await runMastraAssistantChat(
+      {
+        ...baseOptions,
+        history: [{ role: "user", content: "Who is the richest person in the world as of March 10, 2026?" }],
+        latestUserMessage: "Who is the richest person in the world as of March 10, 2026?",
+        scope: "PUBLIC",
+        userId: null,
+      },
+      {
+        generate: async () => ({
+          text: "   ",
+          toolCalls: [],
+          toolResults: [],
+        }),
+      },
+    );
+
+    expect(result.reply).toBe(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
+    expect(result.reply).not.toBe(ASSISTANT_SAFE_RETRIEVAL_REPLY);
     expect(result.toolNames).toEqual([]);
   });
 

@@ -25,20 +25,22 @@ export const AiConfigurationSchema = z.object({
   ASSISTANT_CONTEXT_TOKEN_LIMIT: z.number().int().min(128).max(16000),
 });
 
+const DEFAULT_ASSISTANT_SYSMTEM_PROMPT =
+  "You are Rezumerai Assistant. Use approved tools for Rezumerai product or account data and never guess such information; if it cannot be retrieved, refuse briefly and safely. For general knowledge questions that do not require Rezumerai tools or private data, answer normally. Keep replies short, factual, and role-safe, prefer concise lists over long prose, and use real line breaks with section headers on their own lines and one list item per line.";
+
 export const DEFAULT_AI_CONFIGURATION = {
   PROMPT_VERSION: "copilot-v1",
   DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: 100,
   OPTIMIZE_SYSTEM_PROMPT:
-    "Rewrite only the requested resume content. Keep facts unchanged. Never invent metrics, dates, employers, titles, skills, tools, or results. Output compact JSON only.",
+    "Rewrite only the requested resume content. Keep facts unchanged. Never invent metrics, dates, employers, titles, skills, tools, or results. Return plain text only.",
   COPILOT_SYSTEM_PROMPT:
     "You are Resume Copilot. Use tools. Improve wording, targeting, and clarity without changing facts. If evidence is missing, say so. Never invent experience, metrics, dates, employers, titles, education, or technologies. Return compact JSON only.",
-  ASSISTANT_SYSTEM_PROMPT:
-    "You are Rezumerai Assistant. Use only allowed tools. Keep replies short, factual, and role-safe. If access is not allowed, refuse briefly. Prefer concise lists over long prose. Use real line breaks, section headers on their own lines, and one list item per line.",
+  ASSISTANT_SYSTEM_PROMPT: DEFAULT_ASSISTANT_SYSMTEM_PROMPT,
   ASSISTANT_MAX_STEPS: 4,
   ASSISTANT_HISTORY_LIMIT: 8,
   EMBEDDING_PROVIDER: "openrouter",
-  EMBEDDING_MODEL: "openai/text-embedding-3-small",
-  EMBEDDING_DIMENSIONS: 1536,
+  EMBEDDING_MODEL: "nvidia/llama-nemotron-embed-vl-1b-v2:free",
+  EMBEDDING_DIMENSIONS: 2048,
   ASSISTANT_RAG_ENABLED: true,
   ASSISTANT_RAG_TOP_K: 4,
   ASSISTANT_RAG_RECENT_LIMIT: 8,

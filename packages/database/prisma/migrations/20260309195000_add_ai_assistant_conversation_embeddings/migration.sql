@@ -9,7 +9,9 @@ CREATE TABLE "ai_assistant_conversation_embedding" (
   "role" "ai_assistant_conversation_role" NOT NULL,
   "content" TEXT NOT NULL,
   "metadata" JSONB NOT NULL,
-  "embedding" VECTOR NOT NULL,
+  -- Keep dimensions fixed so pgvector similarity operators cannot hit
+  -- mixed-length rows at query time.
+  "embedding" VECTOR(2048) NOT NULL,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT "ai_assistant_conversation_embedding_pkey" PRIMARY KEY ("id")

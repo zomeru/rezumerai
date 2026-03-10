@@ -1,5 +1,5 @@
+import { ERROR_MESSAGES } from "@/constants/errors";
 import { assistantTextAgent } from "./agent";
-import { ASSISTANT_SAFE_RETRIEVAL_REPLY } from "./constants";
 import { executeAssistantTool, resolveAssistantExecutionStrategy } from "./execution";
 import { buildRequestContext } from "./request-context";
 import type { AssistantAgentRunOptions, AssistantRunDependencies } from "./types";
@@ -30,6 +30,7 @@ export async function runMastraAssistantChat(
   }
 
   const requestContext = buildRequestContext(options, strategy.requestedLimit);
+
   const generate =
     dependencies?.generate ??
     (async (messages, agentOptions) => {
@@ -54,7 +55,7 @@ export async function runMastraAssistantChat(
   const text = generation.text.trim();
 
   return {
-    reply: text.length > 0 ? text : ASSISTANT_SAFE_RETRIEVAL_REPLY,
+    reply: text.length > 0 ? text : ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
     toolNames,
   };
 }
