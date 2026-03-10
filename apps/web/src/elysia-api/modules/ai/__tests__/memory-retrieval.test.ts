@@ -37,11 +37,7 @@ describe("assembleConversationContext", () => {
       tokenLimit: 200,
     });
 
-    expect(context.messages.map((message) => message.id)).toEqual([
-      "msg_semantic_old",
-      "msg_recent_1",
-      "msg_recent_2",
-    ]);
+    expect(context.messages.map((message) => message.id)).toEqual(["msg_semantic_old", "msg_recent_1", "msg_recent_2"]);
     expect(context.semanticMatchIds).toEqual(["msg_semantic_old"]);
   });
 

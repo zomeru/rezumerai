@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { DEFAULT_AI_CONFIGURATION } from "@rezumerai/types";
-import { EmbeddingConfigurationError, EmbeddingService } from "../embeddings/service";
 import type { EmbeddingProvider } from "../embeddings/provider";
+import { EmbeddingConfigurationError, EmbeddingService } from "../embeddings/service";
 
 describe("EmbeddingService.createProvider", () => {
   it("resolves the configured embedding provider independently from chat models", () => {

@@ -13,23 +13,15 @@ function parseLimit(rawValue: string | undefined): number {
 }
 
 async function main(): Promise<void> {
-  const limit = parseLimit(
-    process.argv[2] ?? process.env.AI_MEMORY_REINDEX_LIMIT,
-  );
+  const limit = parseLimit(process.argv[2] ?? process.env.AI_MEMORY_REINDEX_LIMIT);
 
   await prisma.$connect();
 
   try {
     const config = await AiService.getAiConfiguration(prisma);
-    const result = await ConversationMemoryService.reindexMissingEmbeddings(
-      prisma,
-      config,
-      limit,
-    );
+    const result = await ConversationMemoryService.reindexMissingEmbeddings(prisma, config, limit);
 
-    console.info(
-      `[AI][RAG] reindex complete indexed=${result.indexedCount} limit=${limit}`,
-    );
+    console.info(`[AI][RAG] reindex complete indexed=${result.indexedCount} limit=${limit}`);
   } finally {
     await prisma.$disconnect();
   }

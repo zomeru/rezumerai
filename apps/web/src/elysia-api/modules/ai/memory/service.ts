@@ -1,12 +1,12 @@
-import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
 import type { PrismaClient } from "@rezumerai/database";
+import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
 import { EmbeddingService } from "../embeddings/service";
 import type { SavedAssistantConversationMessage } from "../types";
 import { buildMessageChunks } from "./chunking";
 import { ConversationMemoryRepository } from "./repository";
 import {
-  assembleConversationContext,
   type AssembledConversationContext,
+  assembleConversationContext,
   type ConversationContextMessage,
 } from "./retrieval";
 

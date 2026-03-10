@@ -46,7 +46,9 @@ export function assembleConversationContext(options: {
     mergedById.set(message.id, message);
   }
 
-  const orderedMessages = [...mergedById.values()].sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime());
+  const orderedMessages = [...mergedById.values()].sort(
+    (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+  );
   const withinBudget = [...orderedMessages];
 
   while (withinBudget.length > 0 && sumTokenCount(withinBudget) > options.tokenLimit) {
