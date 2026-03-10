@@ -24,11 +24,14 @@
 - `BETTER_AUTH_GOOGLE_CLIENT_ID`
 - `BETTER_AUTH_GOOGLE_CLIENT_SECRET`
 - `CRON_SECRET`
-- `REDIS_URL`
+- `DB_SEED_USER_EMAIL`
+- `BOTID_ENABLED`
+- `NEXT_PUBLIC_BOTID_ENABLED`
 - `SENTRY_DSN`
 - `ANALYTICS_ID`
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
 - `OTEL_EXPORTER_OTLP_HEADERS`
+- `AI_MEMORY_REINDEX_LIMIT`
 
 Source of truth for env validation: `apps/web/src/env.ts`.
 
@@ -44,4 +47,5 @@ bun run dev
 
 - `bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
+- `bun run db:seed:ai` seeds AI models, system configuration, and public content defaults.
 - Workspace-local commands should still be run with Bun from the relevant package directory.

@@ -60,5 +60,6 @@
   "breadcrumbs.showFiles": true,
   "breadcrumbs.showModules": true,
 
-  "chat.useAgentSkills": true
+  "chat.useAgentSkills": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

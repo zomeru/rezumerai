@@ -25,6 +25,7 @@
 
 ## Current Elysia Modules
 
+- `apps/web/src/elysia-api/modules/admin`
 - `apps/web/src/elysia-api/modules/user`
 - `apps/web/src/elysia-api/modules/resume`
 - `apps/web/src/elysia-api/modules/ai`
@@ -45,6 +46,7 @@
 ```txt
 apps/web/src/
   app/
+    admin/
     api/[[...slugs]]/
     api/auth/[...all]/
     signin/
@@ -55,7 +57,8 @@ apps/web/src/
       settings/
   elysia-api/
     app.ts
-    modules/{ai,resume,user}
+    modules/{admin,ai,resume,user}
+    observability/
     plugins/
   components/
   hooks/
@@ -63,6 +66,7 @@ apps/web/src/
   providers/
   store/
   templates/
+  test/
   constants/
 packages/
   database/
