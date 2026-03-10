@@ -1,13 +1,13 @@
+import { DEFAULT_AI_CONFIGURATION } from "../../types/src/ai/schema";
 import {
   DEFAULT_ABOUT_CONTENT,
-  DEFAULT_AI_CONFIGURATION,
   DEFAULT_CONTACT_CONTENT,
   DEFAULT_FAQ_CONTENT,
   DEFAULT_LANDING_PAGE_CONTENT,
   DEFAULT_PRIVACY_CONTENT,
   DEFAULT_TERMS_CONTENT,
   SYSTEM_CONFIGURATION_KEYS,
-} from "@rezumerai/types";
+} from "../../types/src/content/schema";
 import { type Prisma, prisma } from "../";
 
 const AI_PROVIDER_SEED = [

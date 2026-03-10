@@ -29,7 +29,7 @@ export const ERROR_MESSAGES = {
   RESUME_LOW_QUALITY_TEXT: "Your resume contains suspicious or low-quality text. Please review before saving.",
 
   // AI feature validation - need to be signed in to access
-  AI_AUTH_REQUIRED: "You must be signed in to access this feature.",
+  AI_AUTH_REQUIRED: "Please sign in to use AI features.",
   AI_EMAIL_VERIFICATION_REQUIRED: "You must verify your email before using AI features.",
   AI_EMPTY_INPUT: "Text input cannot be empty.",
   AI_CREDITS_EXHAUSTED: "You have reached the daily AI text optimization limit. Please try again tomorrow.",

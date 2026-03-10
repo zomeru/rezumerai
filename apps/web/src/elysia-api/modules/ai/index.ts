@@ -4,6 +4,7 @@ import { prismaPlugin } from "../../plugins/prisma";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import {
   handleAssistantChatRequest,
+  handleAssistantHistoryRequest,
   handleCopilotOptimizeRequest,
   handleCopilotReviewRequest,
   handleCopilotTailorRequest,
@@ -16,6 +17,7 @@ import { AiModel } from "./model";
 import {
   applyResponseHeaders,
   respondAssistantChat,
+  respondAssistantHistory,
   respondCopilot,
   respondOkOrForbidden,
   respondOptimizeText,
@@ -49,6 +51,34 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       },
       detail: {
         summary: "Run the unified AI assistant widget",
+        tags: ["AI"],
+      },
+    },
+  )
+  .get(
+    "/assistant/history",
+    async ({ db, query, status, request, set }) => {
+      const response = await handleAssistantHistoryRequest({
+        db,
+        query,
+        request,
+      });
+
+      applyResponseHeaders(set.headers, response.headers);
+
+      return respondAssistantHistory(response, {
+        200: (body) => status(200, body),
+        422: (body) => status(422, body),
+      });
+    },
+    {
+      query: "ai.AssistantHistoryQuery",
+      response: {
+        200: "ai.AssistantHistoryResponse",
+        422: "ai.AssistantHistoryResponse",
+      },
+      detail: {
+        summary: "Fetch assistant chat history for the current identity",
         tags: ["AI"],
       },
     },
@@ -258,7 +288,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
       body: "ai.OptimizeInput",
       response: {
         401: t.String({ default: "Authentication required." }),
-        403: t.String({ default: "Please verify your email before using AI features." }),
+        403: t.String({ default: "AI access is not available for the current account state." }),
         422: t.Union([
           t.String(),
           t.Object({

@@ -7,6 +7,7 @@ import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/a
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
+import { anonymous } from "better-auth/plugins/anonymous";
 import { serverEnv } from "@/env";
 import { formatPasswordCooldownMessage, getPasswordManagementState } from "./password-policy";
 
@@ -50,6 +51,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    anonymous(),
     admin({
       defaultRole: "USER",
       adminRoles: ["ADMIN"],

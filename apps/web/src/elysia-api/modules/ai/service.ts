@@ -5,6 +5,9 @@ import {
   type AssistantChatInput,
   type AssistantChatMessage,
   type AssistantChatResponse,
+  type AssistantHistoryQuery,
+  type AssistantHistoryResponse,
+  type AssistantReplyBlock,
   type AssistantRoleScope,
   DEFAULT_AI_CONFIGURATION,
   type ResumeCopilotOptimizeInput,
@@ -23,17 +26,19 @@ import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { runMastraAssistantChat } from "./assistant-agent";
 import {
-  buildAssistantSessionKey,
+  buildAssistantThreadCursor,
   buildDeterministicConversationReply,
+  buildIdentityThreadKey,
   getLatestUserMessage,
   isConversationMemoryIntent,
+  parseAssistantThreadCursor,
 } from "./assistant-chat";
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
 import { AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
 import { emptyAiUsageMetrics } from "./mapper";
+import { ConversationMemoryService } from "./memory/service";
 import { openRouterAiProvider } from "./providers/openrouter-provider";
 import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
-import { ConversationMemoryService } from "./memory/service";
 import { AiRepository } from "./repository";
 import type {
   ActiveAiModel,
@@ -228,7 +233,11 @@ export abstract class AiService {
     return AiRepository.getDailyCredits(db, userId, config.DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT, now);
   }
 
-  static toAssistantScope(role: string | null | undefined): AssistantRoleScope {
+  static toAssistantScope(role: string | null | undefined, isAnonymous = false): AssistantRoleScope {
+    if (isAnonymous) {
+      return "PUBLIC";
+    }
+
     if (role === "ADMIN") {
       return "ADMIN";
     }
@@ -245,7 +254,7 @@ export abstract class AiService {
     input: AssistantChatInput,
     identity: AssistantConversationIdentity,
   ): Promise<AssistantChatResponse> {
-    const scope = AiService.toAssistantScope(identity.role);
+    const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
     const runtime = await AiService.resolveOptimizationContext(db, identity.userId, null);
     const latestUserTurn = getLatestUserMessage(input.messages);
 
@@ -261,12 +270,10 @@ export abstract class AiService {
         content: message.content,
       }));
     const conversation = await AiRepository.getAssistantConversationState(db, {
-      sessionKey: buildAssistantSessionKey({
+      conversationKey: buildIdentityThreadKey({
         scope,
         userId: identity.userId,
-        sessionId: identity.sessionId,
       }),
-      requestedConversationId: input.conversationId ?? null,
       scope,
       userId: identity.userId,
       historyLimit: Math.max(runtime.config.ASSISTANT_HISTORY_LIMIT, runtime.config.ASSISTANT_RAG_RECENT_LIMIT),
@@ -283,7 +290,7 @@ export abstract class AiService {
       recentMessages: [
         ...conversation.recentMessages,
         {
-          id: `pending:${conversation.conversationId ?? conversation.sessionKey}:${currentTurnTimestamp.getTime()}`,
+          id: `pending:${conversation.conversationId ?? conversation.conversationKey}:${currentTurnTimestamp.getTime()}`,
           role: "user",
           content: latestUserTurn.content,
           createdAt: currentTurnTimestamp,
@@ -322,7 +329,7 @@ export abstract class AiService {
     if (conversation.conversationId) {
       const savedExchange = await AiRepository.saveAssistantConversationExchange(db, {
         conversationId: conversation.conversationId,
-        sessionKey: conversation.sessionKey,
+        conversationKey: conversation.conversationKey,
         scope,
         userId: identity.userId,
         userMessage: latestUserTurn.content,
@@ -344,7 +351,49 @@ export abstract class AiService {
       blocks,
       toolNames: result.toolNames,
       usedConversationMemory: isConversationRequest || context.messages.length > 1,
-      conversationId: conversation.conversationId,
+    };
+  }
+
+  static async getAssistantHistory(
+    db: DatabaseClient,
+    identity: AssistantConversationIdentity,
+    query: AssistantHistoryQuery,
+  ): Promise<AssistantHistoryResponse> {
+    const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
+    const parsedCursor = parseAssistantThreadCursor(query.cursor);
+    const cursor =
+      parsedCursor && !Number.isNaN(new Date(parsedCursor.createdAt).getTime())
+        ? {
+            createdAt: new Date(parsedCursor.createdAt),
+            id: parsedCursor.id,
+          }
+        : null;
+
+    const page = await AiRepository.getAssistantConversationHistory(db, {
+      scope,
+      userId: identity.userId,
+      cursor,
+      limit: query.limit,
+    });
+    const oldestMessage = page.messages[0] ?? null;
+
+    return {
+      scope,
+      messages: page.messages.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        blocks: Array.isArray(message.blocks) ? (message.blocks as AssistantReplyBlock[]) : undefined,
+        createdAt: message.createdAt.toISOString(),
+      })),
+      nextCursor:
+        page.hasMore && oldestMessage
+          ? buildAssistantThreadCursor({
+              createdAt: oldestMessage.createdAt.toISOString(),
+              id: oldestMessage.id,
+            })
+          : null,
+      hasMore: page.hasMore,
     };
   }
 

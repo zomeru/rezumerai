@@ -2,6 +2,7 @@ import type {
   AiSettings,
   AssistantChatInput,
   AssistantChatResponse,
+  AssistantHistoryResponse,
   ResumeCopilotOptimizeInput,
   ResumeCopilotOptimizeResponse,
   ResumeCopilotReviewInput,
@@ -12,15 +13,24 @@ import type {
 import {
   AiSettingsSchema,
   AssistantChatResponseSchema,
+  AssistantHistoryResponseSchema,
   ResumeCopilotOptimizeResponseSchema,
   ResumeCopilotReviewResponseSchema,
   ResumeCopilotTailorResponseSchema,
 } from "@rezumerai/types";
-import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  type QueryOptions,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { api } from "@/lib/api";
 
 const AI_SETTINGS_QUERY_KEY = ["aiSettings"] as const;
+const ASSISTANT_HISTORY_QUERY_KEY = ["assistantHistory"] as const;
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -80,6 +90,8 @@ export function useUpdateSelectedAiModel() {
 }
 
 export function useAssistantChat() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (input: AssistantChatInput): Promise<AssistantChatResponse> => {
       const { data, error } = await api.ai.assistant.chat.post(input);
@@ -94,6 +106,47 @@ export function useAssistantChat() {
 
       return AssistantChatResponseSchema.parse(data);
     },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ASSISTANT_HISTORY_QUERY_KEY });
+    },
+  });
+}
+
+export function useAssistantHistory(options?: { enabled?: boolean; limit?: number }) {
+  const limit = options?.limit ?? 20;
+
+  return useInfiniteQuery<
+    AssistantHistoryResponse,
+    Error,
+    InfiniteData<AssistantHistoryResponse>,
+    readonly ["assistantHistory", number],
+    string | null
+  >({
+    queryKey: [...ASSISTANT_HISTORY_QUERY_KEY, limit],
+    enabled: options?.enabled ?? true,
+    initialPageParam: null,
+    queryFn: async ({ pageParam }): Promise<AssistantHistoryResponse> => {
+      const query: { limit: number; cursor?: string } = {
+        limit,
+      };
+
+      if (pageParam) {
+        query.cursor = pageParam;
+      }
+
+      const { data, error } = await api.ai.assistant.history.get({ query });
+
+      if (error) {
+        throw new Error(getApiErrorMessage(error.value, ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR));
+      }
+
+      if (!data) {
+        throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
+      }
+
+      return AssistantHistoryResponseSchema.parse(data);
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
 }
 

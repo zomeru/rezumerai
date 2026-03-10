@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useCopilotOptimizeSection, useCopilotReviewResume, useCopilotTailorResume } from "@/hooks/useAi";
-import { useSession } from "@/lib/auth-client";
+import { getAiFeatureAccessMessage } from "@/lib/ai-access";
+import { isAnonymousSession, useSession } from "@/lib/auth-client";
 import { DisabledTooltip } from "../ui/DisabledTooltip";
 
 type CopilotMode = "optimize" | "tailor" | "review";
@@ -65,8 +66,9 @@ export default function ResumeCopilotPanel({
   onApplyPatch,
 }: ResumeCopilotPanelProps): React.JSX.Element {
   const { data: session } = useSession();
+  const isAnonymous = isAnonymousSession(session);
   const accountSettings = useAccountSettings({
-    enabled: Boolean(session?.user?.id),
+    enabled: Boolean(session?.user?.id) && !isAnonymous,
     retry: false,
   });
   const optimizeMutation = useCopilotOptimizeSection();
@@ -84,7 +86,11 @@ export default function ResumeCopilotPanel({
 
   const isBusy = optimizeMutation.isPending || tailorMutation.isPending || reviewMutation.isPending;
   const trimmedJobDescription = jobDescription.trim();
-  const isAiRestricted = accountSettings.data?.user.emailVerified === false;
+  const aiAccessMessage = getAiFeatureAccessMessage({
+    isAnonymous,
+    emailVerified: accountSettings.data?.user.emailVerified,
+  });
+  const isAiRestricted = aiAccessMessage !== null;
   const tailorNeedsMoreDetail =
     mode === "tailor" && trimmedJobDescription.length > 0 && trimmedJobDescription.length < 20;
   const tailorValidationMessage =
@@ -153,9 +159,9 @@ export default function ResumeCopilotPanel({
       </div>
 
       <div className="space-y-5 p-5">
-        {isAiRestricted && (
+        {aiAccessMessage && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
-            {ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}
+            {aiAccessMessage}
           </div>
         )}
 
@@ -216,8 +222,8 @@ export default function ResumeCopilotPanel({
               </select>
             </div>
 
-            {isAiRestricted ? (
-              <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED} className="w-full">
+            {aiAccessMessage ? (
+              <DisabledTooltip message={aiAccessMessage} className="w-full">
                 <button
                   type="button"
                   disabled
@@ -293,8 +299,8 @@ export default function ResumeCopilotPanel({
 
             {tailorValidationMessage && <p className="text-amber-700 text-xs">{tailorValidationMessage}</p>}
 
-            {isAiRestricted ? (
-              <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED} className="w-full">
+            {aiAccessMessage ? (
+              <DisabledTooltip message={aiAccessMessage} className="w-full">
                 <button
                   type="button"
                   disabled

@@ -1,8 +1,5 @@
 import type { AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
 
-export const AI_ASSISTANT_SESSION_COOKIE_NAME = "rezumerai_ai_chat_session";
-export const AI_ASSISTANT_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-
 const PREVIOUS_QUESTION_PATTERN =
   /\b(previous question|last question|what did i ask|what was my question|what did i just ask)\b/i;
 const PREVIOUS_REPLY_PATTERN =
@@ -10,74 +7,42 @@ const PREVIOUS_REPLY_PATTERN =
 const CONVERSATION_REFERENCE_PATTERN =
   /\b(previous|earlier|again|just said|you said|you showed|we discussed|conversation|chat|summari[sz]e|repeat|explain that)\b/i;
 
-function decodeCookieValue(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
+export function buildIdentityThreadKey(options: { scope: AssistantRoleScope; userId: string | null }): string {
+  if (options.userId) {
+    return `user:${options.userId}:${options.scope}`;
   }
+
+  throw new Error("Assistant thread identity requires a userId.");
 }
 
-export function readCookieValue(cookieHeader: string | null, name: string): string | null {
-  if (!cookieHeader) {
+export function buildAssistantThreadCursor(value: { createdAt: string; id: string }): string {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+
+export function parseAssistantThreadCursor(
+  cursor: string | null | undefined,
+): { createdAt: string; id: string } | null {
+  if (!cursor) {
     return null;
   }
 
-  for (const segment of cookieHeader.split(";")) {
-    const [rawName, ...rawValueParts] = segment.trim().split("=");
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Partial<{
+      createdAt: string;
+      id: string;
+    }>;
 
-    if (rawName !== name) {
-      continue;
+    if (typeof decoded.createdAt !== "string" || typeof decoded.id !== "string") {
+      return null;
     }
 
-    const rawValue = rawValueParts.join("=");
-    return rawValue ? decodeCookieValue(rawValue) : null;
+    return {
+      createdAt: decoded.createdAt,
+      id: decoded.id,
+    };
+  } catch {
+    return null;
   }
-
-  return null;
-}
-
-export function serializeCookie(
-  name: string,
-  value: string,
-  options: {
-    httpOnly?: boolean;
-    maxAge?: number;
-    path?: string;
-    sameSite?: "Lax" | "Strict" | "None";
-    secure?: boolean;
-  } = {},
-): string {
-  const segments = [`${name}=${encodeURIComponent(value)}`];
-
-  if (options.maxAge) {
-    segments.push(`Max-Age=${options.maxAge}`);
-  }
-
-  segments.push(`Path=${options.path ?? "/"}`);
-  segments.push(`SameSite=${options.sameSite ?? "Lax"}`);
-
-  if (options.httpOnly ?? true) {
-    segments.push("HttpOnly");
-  }
-
-  if (options.secure) {
-    segments.push("Secure");
-  }
-
-  return segments.join("; ");
-}
-
-export function buildAssistantSessionKey(options: {
-  scope: AssistantRoleScope;
-  userId: string | null;
-  sessionId: string;
-}): string {
-  if (options.scope === "PUBLIC" || !options.userId) {
-    return `public:${options.sessionId}`;
-  }
-
-  return `${options.scope.toLowerCase()}:${options.userId}:${options.sessionId}`;
 }
 
 export function getLatestUserMessage(messages: AssistantChatMessage[]): AssistantChatMessage | null {

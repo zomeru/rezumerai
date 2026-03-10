@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const IsoDatetimeStringSchema = z.preprocess((value) => {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return value;
+}, z.string().datetime());
+
 export const AiConfigurationSchema = z.object({
   PROMPT_VERSION: z.string().trim().min(1).max(100),
   DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: z.number().int().min(1).max(1000),
@@ -64,7 +72,6 @@ export const AssistantChatMessageSchema = z.object({
 export const AssistantChatInputSchema = z.object({
   messages: z.array(AssistantChatMessageSchema).min(1).max(12),
   currentPath: z.string().trim().max(200).optional(),
-  conversationId: z.string().trim().min(1).max(100).optional(),
 });
 
 export const AssistantReplyParagraphBlockSchema = z.object({
@@ -94,7 +101,31 @@ export const AssistantChatResponseSchema = z.object({
   blocks: z.array(AssistantReplyBlockSchema).max(40),
   toolNames: z.array(z.string().trim().min(1).max(80)).max(20),
   usedConversationMemory: z.boolean(),
-  conversationId: z.string().trim().min(1).max(100).nullable(),
+});
+
+export const AssistantHistoryCursorSchema = z.object({
+  createdAt: IsoDatetimeStringSchema,
+  id: z.string().trim().min(1).max(100),
+});
+
+export const AssistantHistoryQuerySchema = z.object({
+  cursor: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export const AssistantHistoryMessageSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  role: z.enum(["user", "assistant"]),
+  content: z.string().trim().min(1).max(4000),
+  blocks: z.array(AssistantReplyBlockSchema).max(40).optional(),
+  createdAt: IsoDatetimeStringSchema,
+});
+
+export const AssistantHistoryResponseSchema = z.object({
+  scope: AssistantRoleScopeSchema,
+  messages: z.array(AssistantHistoryMessageSchema).max(50),
+  nextCursor: z.string().trim().min(1).nullable(),
+  hasMore: z.boolean(),
 });
 
 export const ResumeSectionSchema = z.enum(["professionalSummary", "skills", "experience", "education", "project"]);
@@ -186,6 +217,10 @@ export type AssistantReplyUnorderedListBlock = z.infer<typeof AssistantReplyUnor
 export type AssistantReplyOrderedListBlock = z.infer<typeof AssistantReplyOrderedListBlockSchema>;
 export type AssistantReplyBlock = z.infer<typeof AssistantReplyBlockSchema>;
 export type AssistantChatResponse = z.infer<typeof AssistantChatResponseSchema>;
+export type AssistantHistoryCursor = z.infer<typeof AssistantHistoryCursorSchema>;
+export type AssistantHistoryQuery = z.infer<typeof AssistantHistoryQuerySchema>;
+export type AssistantHistoryMessage = z.infer<typeof AssistantHistoryMessageSchema>;
+export type AssistantHistoryResponse = z.infer<typeof AssistantHistoryResponseSchema>;
 export type ResumeSection = z.infer<typeof ResumeSectionSchema>;
 export type ResumeSectionTarget = z.infer<typeof ResumeSectionTargetSchema>;
 export type ResumeCopilotIntent = z.infer<typeof ResumeCopilotIntentSchema>;

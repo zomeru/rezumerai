@@ -3,11 +3,11 @@
 import type { AssistantChatMessage, AssistantReplyBlock } from "@rezumerai/types";
 import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAccountSettings } from "@/hooks/useAccount";
-import { useAssistantChat } from "@/hooks/useAi";
-import { useSession } from "@/lib/auth-client";
+import { useAssistantChat, useAssistantHistory } from "@/hooks/useAi";
+import { ensureAnonymousSession, hasSessionIdentity, isAnonymousSession, useSession } from "@/lib/auth-client";
 
 type WidgetMessage = AssistantChatMessage & {
   id: string;
@@ -212,19 +212,24 @@ function AssistantMessageContent({
 export default function AiAssistantWidget(): React.JSX.Element {
   const pathname = usePathname();
   const assistantChat = useAssistantChat();
-  const { data: session } = useSession();
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollRestoreHeightRef = useRef<number | null>(null);
+  const shouldScrollToBottomRef = useRef(false);
+  const { data: session, isPending: isSessionPending } = useSession();
+  const hasAssistantIdentity = hasSessionIdentity(session);
+  const isAnonymous = isAnonymousSession(session);
   const accountSettings = useAccountSettings({
-    enabled: Boolean(session?.user?.id),
+    enabled: hasAssistantIdentity && !isAnonymous,
     retry: false,
   });
 
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<WidgetMessage[]>(INITIAL_MESSAGES);
+  const [pendingMessages, setPendingMessages] = useState<WidgetMessage[]>([]);
   const [responseScope, setResponseScope] = useState<"PUBLIC" | "USER" | "ADMIN" | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
   const [isResizing, setIsResizing] = useState(false);
+  const [isPreparingSession, setIsPreparingSession] = useState(false);
   const resizeStateRef = useRef<{
     startX: number;
     startY: number;
@@ -233,8 +238,50 @@ export default function AiAssistantWidget(): React.JSX.Element {
   } | null>(null);
 
   const role = accountSettings.data?.user.role;
+  const history = useAssistantHistory({
+    enabled: isOpen && hasAssistantIdentity,
+    limit: 20,
+  });
+  const historyMessages = useMemo<WidgetMessage[]>(() => {
+    const pages = history.data?.pages ?? [];
+
+    return pages
+      .slice()
+      .reverse()
+      .flatMap((page) =>
+        page.messages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          blocks: message.blocks,
+        })),
+      );
+  }, [history.data]);
+  const messages =
+    historyMessages.length > 0 || pendingMessages.length > 0
+      ? [...historyMessages, ...pendingMessages]
+      : INITIAL_MESSAGES;
   const scope =
-    responseScope ?? (role === "ADMIN" ? "ADMIN" : role === "USER" || session?.user?.id ? "USER" : "PUBLIC");
+    responseScope ??
+    history.data?.pages[0]?.scope ??
+    (role === "ADMIN" ? "ADMIN" : role === "USER" && !isAnonymous ? "USER" : "PUBLIC");
+
+  useEffect(() => {
+    if (!isOpen || isSessionPending || hasAssistantIdentity || isPreparingSession) {
+      return;
+    }
+
+    setIsPreparingSession(true);
+
+    void ensureAnonymousSession(session)
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Unable to prepare the assistant.";
+        toast.error(message);
+      })
+      .finally(() => {
+        setIsPreparingSession(false);
+      });
+  }, [hasAssistantIdentity, isOpen, isPreparingSession, isSessionPending, session]);
 
   useEffect(() => {
     if (!isResizing) {
@@ -287,6 +334,36 @@ export default function AiAssistantWidget(): React.JSX.Element {
     };
   }, [isResizing]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    shouldScrollToBottomRef.current = true;
+  }, [isOpen]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    if (pendingScrollRestoreHeightRef.current != null) {
+      const previousHeight = pendingScrollRestoreHeightRef.current;
+      pendingScrollRestoreHeightRef.current = null;
+      container.scrollTop += container.scrollHeight - previousHeight;
+      return;
+    }
+
+    if (!shouldScrollToBottomRef.current) {
+      return;
+    }
+
+    shouldScrollToBottomRef.current = false;
+    container.scrollTop = container.scrollHeight;
+  }, [messages, history.isFetchingNextPage]);
+
   function onResizeHandlePointerDown(event: React.PointerEvent<HTMLButtonElement>): void {
     event.preventDefault();
     event.stopPropagation();
@@ -306,21 +383,34 @@ export default function AiAssistantWidget(): React.JSX.Element {
     event.preventDefault();
 
     const nextInput = input.trim();
-    if (!nextInput || assistantChat.isPending) {
+    if (!nextInput || assistantChat.isPending || isPreparingSession || isSessionPending) {
       return;
     }
 
-    const nextMessages: WidgetMessage[] = [
-      ...messages,
-      {
-        id: `user-${Date.now()}`,
-        role: "user",
-        content: nextInput,
-      },
-    ];
+    if (!hasAssistantIdentity) {
+      setIsPreparingSession(true);
 
-    setMessages(nextMessages);
+      try {
+        await ensureAnonymousSession(session);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unable to prepare the assistant.";
+        toast.error(message);
+        setIsPreparingSession(false);
+        return;
+      }
+
+      setIsPreparingSession(false);
+    }
+
+    const optimisticUserMessage: WidgetMessage = {
+      id: `pending-user-${Date.now()}`,
+      role: "user",
+      content: nextInput,
+    };
+
+    setPendingMessages([optimisticUserMessage]);
     setInput("");
+    shouldScrollToBottomRef.current = true;
 
     try {
       const response = await assistantChat.mutateAsync({
@@ -331,24 +421,37 @@ export default function AiAssistantWidget(): React.JSX.Element {
           },
         ],
         currentPath: pathname ?? "/",
-        conversationId: conversationId ?? undefined,
       });
 
       setResponseScope(response.scope);
-      setConversationId(response.conversationId ?? null);
-      setMessages((current) => [
-        ...current,
+      setPendingMessages([
+        optimisticUserMessage,
         {
-          id: `assistant-${Date.now()}`,
+          id: `pending-assistant-${Date.now()}`,
           role: "assistant",
           content: response.reply,
           blocks: response.blocks,
         },
       ]);
+      await history.refetch();
+      setPendingMessages([]);
+      shouldScrollToBottomRef.current = true;
     } catch (error) {
+      setPendingMessages([]);
       const message = error instanceof Error ? error.message : "Assistant request failed.";
       toast.error(message);
     }
+  }
+
+  async function onMessagesScroll(event: React.UIEvent<HTMLDivElement>): Promise<void> {
+    const container = event.currentTarget;
+
+    if (container.scrollTop > 48 || !history.hasNextPage || history.isFetchingNextPage) {
+      return;
+    }
+
+    pendingScrollRestoreHeightRef.current = container.scrollHeight;
+    await history.fetchNextPage();
   }
 
   return (
@@ -380,23 +483,52 @@ export default function AiAssistantWidget(): React.JSX.Element {
             </button>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`min-w-0 max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] ${
-                  message.role === "assistant"
-                    ? "mr-auto bg-white text-slate-700 shadow-sm"
-                    : "ml-auto bg-primary-600 text-white"
-                }`}
-              >
-                {message.role === "assistant" ? (
-                  <AssistantMessageContent content={message.content} blocks={message.blocks} />
-                ) : (
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                )}
+          <div
+            ref={scrollContainerRef}
+            onScroll={(event) => {
+              void onMessagesScroll(event);
+            }}
+            className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-4"
+          >
+            {history.isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-2 py-1 text-slate-500 text-xs">
+                <Loader2 className="size-3 animate-spin" />
+                Loading older messages...
               </div>
-            ))}
+            )}
+
+            {(isSessionPending || isPreparingSession) &&
+            historyMessages.length === 0 &&
+            pendingMessages.length === 0 ? (
+              <div className="flex h-full items-center justify-center gap-2 text-slate-500 text-sm">
+                <Loader2 className="size-4 animate-spin" />
+                Preparing assistant...
+              </div>
+            ) : history.isLoading && historyMessages.length === 0 && pendingMessages.length === 0 ? (
+              <div className="flex h-full items-center justify-center gap-2 text-slate-500 text-sm">
+                <Loader2 className="size-4 animate-spin" />
+                Loading conversation...
+              </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`min-w-0 max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] ${
+                      message.role === "assistant"
+                        ? "mr-auto bg-white text-slate-700 shadow-sm"
+                        : "ml-auto bg-primary-600 text-white"
+                    }`}
+                  >
+                    {message.role === "assistant" ? (
+                      <AssistantMessageContent content={message.content} blocks={message.blocks} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
 
             {assistantChat.isPending && (
               <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-slate-600 text-sm shadow-sm">
@@ -419,10 +551,11 @@ export default function AiAssistantWidget(): React.JSX.Element {
                 }}
                 placeholder="Ask the assistant..."
                 className="min-h-24 flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-primary-500"
+                disabled={isSessionPending || isPreparingSession}
               />
               <button
                 type="submit"
-                disabled={assistantChat.isPending || !input.trim()}
+                disabled={assistantChat.isPending || isSessionPending || isPreparingSession || !input.trim()}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {assistantChat.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

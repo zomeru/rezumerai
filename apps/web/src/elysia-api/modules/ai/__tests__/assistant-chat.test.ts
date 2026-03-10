@@ -1,10 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
-  buildAssistantSessionKey,
+  buildAssistantThreadCursor,
   buildDeterministicConversationReply,
+  buildIdentityThreadKey,
   isConversationMemoryIntent,
-  readCookieValue,
+  parseAssistantThreadCursor,
 } from "../assistant-chat";
+import { AiService } from "../service";
 
 describe("isConversationMemoryIntent", () => {
   it("flags prompts about the conversation itself", () => {
@@ -62,28 +64,39 @@ describe("buildDeterministicConversationReply", () => {
 });
 
 describe("assistant chat session helpers", () => {
-  it("builds session keys that stay user and scope specific", () => {
+  it("builds identity keys for authenticated users", () => {
     expect(
-      buildAssistantSessionKey({
+      buildIdentityThreadKey({
         scope: "ADMIN",
         userId: "user_123",
-        sessionId: "session_abc",
       }),
-    ).toBe("admin:user_123:session_abc");
-
-    expect(
-      buildAssistantSessionKey({
-        scope: "PUBLIC",
-        userId: null,
-        sessionId: "session_abc",
-      }),
-    ).toBe("public:session_abc");
+    ).toBe("user:user_123:ADMIN");
   });
 
-  it("reads the assistant session cookie safely", () => {
-    expect(
-      readCookieValue("foo=bar; rezumerai_ai_chat_session=session-123; hello=world", "rezumerai_ai_chat_session"),
-    ).toBe("session-123");
-    expect(readCookieValue(null, "rezumerai_ai_chat_session")).toBeNull();
+  it("rejects guest-specific identity keys because assistant threads are user-owned", () => {
+    expect(() =>
+      buildIdentityThreadKey({
+        scope: "PUBLIC",
+        userId: null,
+      }),
+    ).toThrow("Assistant thread identity requires a userId.");
+  });
+
+  it("treats anonymous users as public-scope assistant users", () => {
+    expect(AiService.toAssistantScope("USER", true)).toBe("PUBLIC");
+    expect(AiService.toAssistantScope("ADMIN", true)).toBe("PUBLIC");
+  });
+
+  it("round-trips assistant history cursors", () => {
+    const cursor = buildAssistantThreadCursor({
+      createdAt: "2026-03-09T12:00:00.000Z",
+      id: "message_123",
+    });
+
+    expect(parseAssistantThreadCursor(cursor)).toEqual({
+      createdAt: "2026-03-09T12:00:00.000Z",
+      id: "message_123",
+    });
+    expect(parseAssistantThreadCursor("not-base64")).toBeNull();
   });
 });

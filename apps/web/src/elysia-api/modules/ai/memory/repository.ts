@@ -8,7 +8,7 @@ type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends"
 export interface ConversationEmbeddingRecord {
   id: string;
   conversationId: string;
-  userId: string | null;
+  userId: string;
   scope: AssistantRoleScope;
   role: "user" | "assistant";
   content: string;
@@ -25,7 +25,10 @@ interface SimilarConversationQueryRow {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Conversation memory persistence is intentionally grouped behind stateless helpers.
 export abstract class ConversationMemoryRepository {
-  static async listMessagesMissingEmbeddings(db: DatabaseClient, limit: number): Promise<ConversationEmbeddingRecord[]> {
+  static async listMessagesMissingEmbeddings(
+    db: DatabaseClient,
+    limit: number,
+  ): Promise<ConversationEmbeddingRecord[]> {
     return db.$queryRaw<ConversationEmbeddingRecord[]>(Prisma.sql`
       SELECT
         message."id" AS "id",

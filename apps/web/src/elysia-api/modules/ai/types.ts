@@ -1,4 +1,9 @@
-import type { AiConfiguration, AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
+import type {
+  AiConfiguration,
+  AssistantChatMessage,
+  AssistantHistoryMessage,
+  AssistantRoleScope,
+} from "@rezumerai/types";
 
 export interface AiUsageMetrics {
   promptTokens: number | null;
@@ -72,9 +77,9 @@ export interface CopilotRunResult<T> {
 }
 
 export interface AssistantConversationIdentity {
-  userId: string | null;
+  userId: string;
+  isAnonymous: boolean;
   role: "ADMIN" | "USER" | null;
-  sessionId: string;
 }
 
 export interface AssistantConversationState {
@@ -82,16 +87,16 @@ export interface AssistantConversationState {
   history: AssistantChatMessage[];
   recentMessages: AssistantConversationMemoryMessage[];
   persistenceAvailable: boolean;
-  sessionKey: string;
+  conversationKey: string;
 }
 
 export type AiModelInput = AssistantChatMessage[] | Array<{ role: "user" | "assistant"; content: string }>;
 
 export interface AssistantConversationRecord {
   conversationId: string;
-  sessionKey: string;
+  conversationKey: string;
   scope: AssistantRoleScope;
-  userId: string | null;
+  userId: string;
   history: AssistantChatMessage[];
 }
 
@@ -105,5 +110,11 @@ export interface AssistantConversationMemoryMessage {
 export interface SavedAssistantConversationMessage extends AssistantConversationMemoryMessage {
   conversationId: string;
   scope: AssistantRoleScope;
-  userId: string | null;
+  userId: string;
+}
+
+export interface AssistantHistoryPage {
+  messages: AssistantHistoryMessage[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }

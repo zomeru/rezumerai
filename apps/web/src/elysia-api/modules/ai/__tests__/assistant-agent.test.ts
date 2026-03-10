@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
   ASSISTANT_ACCESS_DENIED_REPLY,
-  ASSISTANT_GREETING_REPLY,
   ASSISTANT_SAFE_RETRIEVAL_REPLY,
   classifyAssistantIntent,
   renderToolEnvelopeReply,
@@ -98,15 +97,14 @@ describe("classifyAssistantIntent", () => {
 });
 
 describe("resolveAssistantExecutionStrategy", () => {
-  it("uses a direct greeting for simple hellos", () => {
+  it("routes simple greetings through the model", () => {
     const result = resolveAssistantExecutionStrategy({
       message: "Hello",
       scope: "PUBLIC",
       userId: null,
     });
 
-    expect(result.mode).toBe("direct-reply");
-    expect(result.reply).toBe(ASSISTANT_GREETING_REPLY);
+    expect(result.mode).toBe("model");
     expect(result.classification.category).toBe("general");
   });
 
@@ -285,7 +283,7 @@ describe("renderToolEnvelopeReply", () => {
 });
 
 describe("runMastraAssistantChat", () => {
-  it("returns the deterministic greeting without calling the model", async () => {
+  it("lets the model generate greeting replies", async () => {
     let modelCalls = 0;
 
     const result = await runMastraAssistantChat(
@@ -297,10 +295,11 @@ describe("runMastraAssistantChat", () => {
         userId: null,
       },
       {
-        generate: async () => {
+        generate: async (messages) => {
           modelCalls += 1;
+          expect(messages).toEqual([{ role: "user", content: "Hello" }]);
           return {
-            text: "Should not be used",
+            text: "Hello! How can I help today?",
             toolCalls: [],
             toolResults: [],
           };
@@ -308,8 +307,8 @@ describe("runMastraAssistantChat", () => {
       },
     );
 
-    expect(modelCalls).toBe(0);
-    expect(result.reply).toBe(ASSISTANT_GREETING_REPLY);
+    expect(modelCalls).toBe(1);
+    expect(result.reply).toBe("Hello! How can I help today?");
     expect(result.toolNames).toEqual([]);
   });
 

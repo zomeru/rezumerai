@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { signOut, useSession } from "@/lib/auth-client";
+import { isAnonymousSession, signOut, useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
 
 function getInitials(name: string): string {
@@ -61,7 +61,10 @@ function normalizePath(path: string): string {
  */
 export default function Navbar(): React.JSX.Element {
   const { data: session } = useSession();
-  const { data: accountSettings, isLoading } = useAccountSettings();
+  const isAnonymous = isAnonymousSession(session);
+  const { data: accountSettings, isLoading } = useAccountSettings({
+    enabled: !isAnonymous,
+  });
   const router = useRouter();
   const pathname = usePathname();
 
@@ -69,12 +72,16 @@ export default function Navbar(): React.JSX.Element {
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
   const displayName = useMemo(() => {
-    return accountSettings?.user.name || session?.user.name || session?.user.email || "User";
-  }, [accountSettings?.user.name, session?.user.email, session?.user.name]);
+    if (isAnonymous) {
+      return "Guest";
+    }
 
-  const displayEmail = accountSettings?.user.email || session?.user.email || "";
+    return accountSettings?.user.name || session?.user.name || session?.user.email || "User";
+  }, [accountSettings?.user.name, isAnonymous, session?.user.email, session?.user.name]);
+
+  const displayEmail = isAnonymous ? "" : accountSettings?.user.email || session?.user.email || "";
   const avatarUrl = accountSettings?.user.image ?? session?.user.image;
-  const isAdmin = accountSettings?.user.role === "ADMIN";
+  const isAdmin = !isAnonymous && accountSettings?.user.role === "ADMIN";
 
   async function onLogout(): Promise<void> {
     try {

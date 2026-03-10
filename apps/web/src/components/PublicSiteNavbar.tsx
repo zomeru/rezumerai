@@ -4,7 +4,7 @@ import { Skeleton } from "@rezumerai/ui";
 import Link from "next/link";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
-import { useSession } from "@/lib/auth-client";
+import { isAnonymousSession, useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
 
 interface PublicSiteNavbarProps {
@@ -22,6 +22,7 @@ const menuItems = [
 export default function PublicSiteNavbar({ primaryCtaLabel }: PublicSiteNavbarProps): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session, isPending } = useSession();
+  const hasRegisteredSession = Boolean(session && !isAnonymousSession(session));
 
   return (
     <>
@@ -38,7 +39,7 @@ export default function PublicSiteNavbar({ primaryCtaLabel }: PublicSiteNavbarPr
 
         <div className="flex gap-2">
           {isPending && <Skeleton width={80} height={28} borderRadius={14} />}
-          {!isPending && session && (
+          {!isPending && hasRegisteredSession && (
             <Link
               href={ROUTES.WORKSPACE}
               className="hidden rounded-full bg-primary-500 px-6 py-2 text-white transition-all hover:bg-primary-700 active:scale-95 md:block"
@@ -46,7 +47,7 @@ export default function PublicSiteNavbar({ primaryCtaLabel }: PublicSiteNavbarPr
               Workspace
             </Link>
           )}
-          {!isPending && !session && (
+          {!isPending && !hasRegisteredSession && (
             <>
               <Link
                 href={ROUTES.SIGNUP}

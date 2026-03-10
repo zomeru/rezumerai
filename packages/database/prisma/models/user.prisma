@@ -1,43 +1,44 @@
 model User {
-  id                     String                  @id
-  name                   String
-  email                  String                  @unique
-  emailVerified          Boolean
-  image                  String?
-  createdAt              DateTime
-  updatedAt              DateTime
-  lastPasswordChangeAt   DateTime?
-  role                   UserRole                @default(USER)
-  banned                 Boolean                 @default(false)
-  banReason              String?
-  banExpires             DateTime?
-  selectedAiModelId      String?
-  accounts               Account[]
-  aiTextOptimizerCredits AiTextOptimizerCredits?
-  assistantConversations AiAssistantConversation[]
+  id                              String                             @id
+  name                            String
+  email                           String                             @unique
+  emailVerified                   Boolean
+  image                           String?
+  createdAt                       DateTime
+  updatedAt                       DateTime
+  role                            UserRole                           @default(USER)
+  selectedAiModelId               String?
+  lastPasswordChangeAt            DateTime?
+  banned                          Boolean                            @default(false)
+  banReason                       String?
+  banExpires                      DateTime?
+  isAnonymous                     Boolean                            @default(false)
+  accounts                        Account[]
+  assistantConversations          AiAssistantConversation[]
   assistantConversationEmbeddings AiAssistantConversationEmbedding[]
-  analyticsEvents        AnalyticsEvent[]        @relation("AnalyticsEventUser")
-  auditLogs              AuditLog[]              @relation("AuditLogActor")
-  readErrorLogs          ErrorLog[]              @relation("ErrorLogReadByUser")
-  errorLogs              ErrorLog[]              @relation("ErrorLogUser")
-  resumes                Resume[]
-  sessions               Session[]
-  selectedAiModel        AiModel?                @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id])
+  aiTextOptimizerCredits          AiTextOptimizerCredits?
+  analyticsEvents                 AnalyticsEvent[]                   @relation("AnalyticsEventUser")
+  auditLogs                       AuditLog[]                         @relation("AuditLogActor")
+  readErrorLogs                   ErrorLog[]                         @relation("ErrorLogReadByUser")
+  errorLogs                       ErrorLog[]                         @relation("ErrorLogUser")
+  resumes                         Resume[]
+  sessions                        Session[]
+  selectedAiModel                 AiModel?                           @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id])
 
   @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   impersonatedBy String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }

@@ -1,5 +1,2 @@
--- RenameIndex
-ALTER INDEX "ai_assistant_conversation_embedding_conversationId_createdAt_id" RENAME TO "ai_assistant_conversation_embedding_conversationId_createdA_idx";
-
--- RenameIndex
-ALTER INDEX "ai_assistant_conversation_embedding_conversationId_scope_userId" RENAME TO "ai_assistant_conversation_embedding_conversationId_scope_us_idx";
+-- This migration became a no-op after the canonical embedding migration
+-- was committed with the final Prisma index names already in place.

@@ -5,21 +5,17 @@ type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$tr
 
 import type {
   AssistantChatResponse,
+  AssistantHistoryResponse,
   ResumeCopilotOptimizeResponse,
   ResumeCopilotReviewResponse,
   ResumeCopilotTailorResponse,
 } from "@rezumerai/types";
-import { AssistantChatInputSchema } from "@rezumerai/types";
+import { AssistantChatInputSchema, AssistantHistoryQuerySchema } from "@rezumerai/types";
 import { ERROR_MESSAGES } from "@/constants/errors";
+import { getAiFeatureAccessMessage } from "@/lib/ai-access";
 import { createAuditLog } from "../../observability/audit";
 import { resolveSessionUser } from "../../plugins/auth";
 import { trackHandledError } from "../../plugins/error";
-import {
-  AI_ASSISTANT_SESSION_COOKIE_MAX_AGE_SECONDS,
-  AI_ASSISTANT_SESSION_COOKIE_NAME,
-  readCookieValue,
-  serializeCookie,
-} from "./assistant-chat";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "./service";
 import type { ActiveAiModel, CopilotRunResult, OptimizationContext, UserAiSettings } from "./types";
@@ -61,6 +57,7 @@ interface TrackAiHandledErrorOptions {
 interface VerifiedAiUser {
   id: string;
   emailVerified: boolean;
+  isAnonymous: boolean;
 }
 
 interface SelectModelBody {
@@ -85,7 +82,6 @@ function buildAssistantFailureResponse(scope: AssistantChatResponse["scope"]): A
     ],
     toolNames: [],
     usedConversationMemory: false,
-    conversationId: null,
   };
 }
 
@@ -119,29 +115,50 @@ async function trackUnverifiedAiAccess(options: { request: Request; route: strin
   });
 }
 
+async function trackAnonymousAiAccess(options: { request: Request; route: string; userId: string }): Promise<void> {
+  await trackAiHandledError({
+    request: options.request,
+    route: options.route,
+    userId: options.userId,
+    error: new Error(ERROR_MESSAGES.AI_AUTH_REQUIRED),
+    metadata: {
+      responseStatus: 403,
+      reason: "AI_AUTH_REQUIRED",
+    },
+  });
+}
+
 function resolveUserRole(value: unknown): "ADMIN" | "USER" | null {
   return value === "ADMIN" || value === "USER" ? value : null;
 }
 
-function resolveAssistantSession(request: Request): { sessionId: string; setCookie: string | null } {
-  const cookieValue = readCookieValue(request.headers.get("cookie"), AI_ASSISTANT_SESSION_COOKIE_NAME);
-
-  if (cookieValue) {
-    return {
-      sessionId: cookieValue,
-      setCookie: null,
-    };
-  }
-
-  const sessionId = crypto.randomUUID();
-
+function resolveAssistantIdentity(options: {
+  user: VerifiedAiUser;
+  role: "ADMIN" | "USER" | null;
+  isAnonymous: boolean;
+}): {
+  userId: string;
+  role: "ADMIN" | "USER" | null;
+  isAnonymous: boolean;
+} {
   return {
-    sessionId,
-    setCookie: serializeCookie(AI_ASSISTANT_SESSION_COOKIE_NAME, sessionId, {
-      maxAge: AI_ASSISTANT_SESSION_COOKIE_MAX_AGE_SECONDS,
-      secure: process.env.NODE_ENV === "production",
-    }),
+    userId: options.user.id,
+    role: options.role,
+    isAnonymous: options.isAnonymous,
   };
+}
+
+function buildEmptyAssistantHistoryResponse(scope: AssistantChatResponse["scope"]): AssistantHistoryResponse {
+  return {
+    scope,
+    messages: [],
+    nextCursor: null,
+    hasMore: false,
+  };
+}
+
+function getAssistantScopeFromRole(role: "ADMIN" | "USER" | null, isAnonymous = false): AssistantChatResponse["scope"] {
+  return role ? AiService.toAssistantScope(role, isAnonymous) : "PUBLIC";
 }
 
 async function auditAdminAssistantUsage(options: {
@@ -171,17 +188,30 @@ async function ensureVerifiedAiUser(options: {
   route: string;
   user: VerifiedAiUser;
 }): Promise<RouteResult<{ 403: string }> | null> {
-  if (options.user.emailVerified) {
+  const accessMessage = getAiFeatureAccessMessage({
+    isAnonymous: options.user.isAnonymous,
+    emailVerified: options.user.emailVerified,
+  });
+
+  if (!accessMessage) {
     return null;
   }
 
-  await trackUnverifiedAiAccess({
-    request: options.request,
-    route: options.route,
-    userId: options.user.id,
-  });
+  if (options.user.isAnonymous) {
+    await trackAnonymousAiAccess({
+      request: options.request,
+      route: options.route,
+      userId: options.user.id,
+    });
+  } else {
+    await trackUnverifiedAiAccess({
+      request: options.request,
+      route: options.route,
+      userId: options.user.id,
+    });
+  }
 
-  return routeResult(403, ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED);
+  return routeResult(403, accessMessage);
 }
 
 async function persistOptimizationSafely(
@@ -280,14 +310,19 @@ export async function handleAssistantChatRequest(options: {
 
   const sessionUser = await resolveSessionUser();
   const role = resolveUserRole(sessionUser?.role);
-  const assistantSession = resolveAssistantSession(options.request);
+
+  if (!sessionUser) {
+    return routeResult(422, buildAssistantFailureResponse("PUBLIC"));
+  }
+
+  const identity = resolveAssistantIdentity({
+    user: sessionUser,
+    role,
+    isAnonymous: sessionUser.isAnonymous === true,
+  });
 
   try {
-    const result = await AiService.runAssistantChat(options.db, parsedInput.data, {
-      userId: sessionUser?.id ?? null,
-      role,
-      sessionId: assistantSession.sessionId,
-    });
+    const result = await AiService.runAssistantChat(options.db, parsedInput.data, identity);
 
     if (role === "ADMIN" && sessionUser?.id) {
       await auditAdminAssistantUsage({
@@ -298,11 +333,7 @@ export async function handleAssistantChatRequest(options: {
       });
     }
 
-    return routeResult(
-      200,
-      result,
-      assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
-    );
+    return routeResult(200, result);
   } catch (error: unknown) {
     await trackAiHandledError({
       request: options.request,
@@ -317,9 +348,50 @@ export async function handleAssistantChatRequest(options: {
 
     return routeResult(
       422,
-      buildAssistantFailureResponse(role ? AiService.toAssistantScope(role) : "PUBLIC"),
-      assistantSession.setCookie ? { "set-cookie": assistantSession.setCookie } : undefined,
+      buildAssistantFailureResponse(getAssistantScopeFromRole(role, sessionUser.isAnonymous === true)),
     );
+  }
+}
+
+export async function handleAssistantHistoryRequest(options: {
+  db: TransactionCapableDatabaseClient;
+  query: unknown;
+  request: Request;
+}): Promise<RouteResult<{ 200: AssistantHistoryResponse; 422: AssistantHistoryResponse }>> {
+  const parsedQuery = AssistantHistoryQuerySchema.safeParse(options.query);
+  const sessionUser = await resolveSessionUser();
+  const role = resolveUserRole(sessionUser?.role);
+  const scope = getAssistantScopeFromRole(role, sessionUser?.isAnonymous === true);
+
+  if (!parsedQuery.success) {
+    return routeResult(422, buildEmptyAssistantHistoryResponse(scope));
+  }
+
+  if (!sessionUser) {
+    return routeResult(422, buildEmptyAssistantHistoryResponse("PUBLIC"));
+  }
+
+  const identity = resolveAssistantIdentity({
+    user: sessionUser,
+    role,
+    isAnonymous: sessionUser.isAnonymous === true,
+  });
+
+  try {
+    return routeResult(200, await AiService.getAssistantHistory(options.db, identity, parsedQuery.data));
+  } catch (error: unknown) {
+    await trackAiHandledError({
+      request: options.request,
+      route: "/ai/assistant/history",
+      userId: sessionUser?.id ?? null,
+      query: options.query,
+      error,
+      metadata: {
+        responseStatus: 422,
+      },
+    });
+
+    return routeResult(422, buildEmptyAssistantHistoryResponse(scope));
   }
 }
 

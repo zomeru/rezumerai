@@ -7,8 +7,9 @@ import { DisabledTooltip } from "@/components/ui/DisabledTooltip";
 import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAiSettings } from "@/hooks/useAi";
+import { getAiFeatureAccessMessage } from "@/lib/ai-access";
 import { api } from "@/lib/api";
-import { useSession } from "@/lib/auth-client";
+import { isAnonymousSession, useSession } from "@/lib/auth-client";
 
 const AI_CREDITS_EXHAUSTED_CODE = "AI_CREDITS_EXHAUSTED";
 
@@ -71,13 +72,18 @@ function getStreamChunk(value: unknown): string {
 
 export default function TestSitePage(): React.JSX.Element {
   const { data: session, isPending: isSessionPending } = useSession();
-  const isAiRestricted = session?.user ? !session.user.emailVerified : false;
+  const isAnonymous = isAnonymousSession(session);
+  const aiAccessMessage = getAiFeatureAccessMessage({
+    isAnonymous,
+    emailVerified: session?.user?.emailVerified,
+  });
+  const isAiRestricted = aiAccessMessage !== null;
   const {
     data: aiSettings,
     isLoading: isAiSettingsLoading,
     error: aiSettingsError,
   } = useAiSettings({
-    enabled: !isSessionPending && !isAiRestricted,
+    enabled: !isSessionPending && !isAnonymous && !isAiRestricted,
   });
   const [inputText, setInputText] = useState<string>("");
   const [result, setResult] = useState<string>("");
@@ -216,7 +222,7 @@ export default function TestSitePage(): React.JSX.Element {
           disabled={isAiRestricted || isStreaming || isAiSettingsLoading || !aiSettings?.models.length}
         />
         {isAiSettingsLoading && <p className="text-gray-500 text-xs">{ERROR_MESSAGES.AI_MODELS_LOADING}</p>}
-        {isAiRestricted && <p className="text-amber-700 text-xs">{ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}</p>}
+        {aiAccessMessage && <p className="text-amber-700 text-xs">{aiAccessMessage}</p>}
         {aiSettingsError && <p className="text-red-600 text-xs">{ERROR_MESSAGES.AI_MODELS_LOAD_FAILED}</p>}
       </div>
 
@@ -236,8 +242,8 @@ export default function TestSitePage(): React.JSX.Element {
       </div>
 
       {/* Action */}
-      {isAiRestricted ? (
-        <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED} className="w-full">
+      {aiAccessMessage ? (
+        <DisabledTooltip message={aiAccessMessage} className="w-full">
           <button
             type="button"
             disabled

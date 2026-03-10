@@ -1,4 +1,4 @@
-import type { AssistantChatResponse } from "@rezumerai/types";
+import type { AssistantChatResponse, AssistantHistoryResponse } from "@rezumerai/types";
 import type {
   AI_CREDITS_EXHAUSTED_CODE,
   AI_MODEL_POLICY_RESTRICTED_CODE,
@@ -8,6 +8,7 @@ import type { RouteResult } from "./controller";
 import type { UserAiSettings } from "./types";
 
 type AssistantChatRouteResult = RouteResult<{ 200: AssistantChatResponse; 422: AssistantChatResponse }>;
+type AssistantHistoryRouteResult = RouteResult<{ 200: AssistantHistoryResponse; 422: AssistantHistoryResponse }>;
 type OkOrForbiddenRouteResult<TBody> = RouteResult<{ 200: TBody; 403: string }>;
 type CopilotRouteResult<TBody> = RouteResult<{ 200: TBody; 403: string; 422: string; 429: string; 500: string }>;
 type UpdateSelectedModelRouteResult = RouteResult<{
@@ -55,6 +56,23 @@ export function respondAssistantChat<TOk, TInvalid>(
   handlers: {
     200: (body: Extract<AssistantChatRouteResult, { status: 200 }>["body"]) => TOk;
     422: (body: Extract<AssistantChatRouteResult, { status: 422 }>["body"]) => TInvalid;
+  },
+): TOk | TInvalid {
+  switch (response.status) {
+    case 200:
+      return handlers[200](response.body);
+    case 422:
+      return handlers[422](response.body);
+    default:
+      return assertNever(response);
+  }
+}
+
+export function respondAssistantHistory<TOk, TInvalid>(
+  response: AssistantHistoryRouteResult,
+  handlers: {
+    200: (body: Extract<AssistantHistoryRouteResult, { status: 200 }>["body"]) => TOk;
+    422: (body: Extract<AssistantHistoryRouteResult, { status: 422 }>["body"]) => TInvalid;
   },
 ): TOk | TInvalid {
   switch (response.status) {

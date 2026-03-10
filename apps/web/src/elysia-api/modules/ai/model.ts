@@ -33,6 +33,14 @@ const AssistantReplyBlock = t.Union([
   }),
 ]);
 
+const AssistantHistoryMessage = t.Object({
+  id: t.String({ minLength: 1, maxLength: 100 }),
+  role: t.Union([t.Literal("user"), t.Literal("assistant")]),
+  content: t.String({ minLength: 1, maxLength: 4000 }),
+  blocks: t.Optional(t.Array(AssistantReplyBlock, { maxItems: 40 })),
+  createdAt: t.String(),
+});
+
 const ResumeSectionTarget = t.Object({
   section: t.Union([
     t.Literal("professionalSummary"),
@@ -83,7 +91,6 @@ export const AiModel = new Elysia().model({
   "ai.AssistantChatInput": t.Object({
     messages: t.Array(AssistantMessage, { minItems: 1, maxItems: 12 }),
     currentPath: t.Optional(t.String({ maxLength: 200 })),
-    conversationId: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
   }),
   "ai.AssistantChatResponse": t.Object({
     scope: t.Union([t.Literal("PUBLIC"), t.Literal("USER"), t.Literal("ADMIN")]),
@@ -91,7 +98,17 @@ export const AiModel = new Elysia().model({
     blocks: t.Array(AssistantReplyBlock, { maxItems: 40 }),
     toolNames: t.Array(t.String()),
     usedConversationMemory: t.Boolean(),
-    conversationId: t.Nullable(t.String({ minLength: 1, maxLength: 100 })),
+  }),
+  "ai.AssistantHistoryQuery": t.Object({
+    cursor: t.Optional(t.String({ minLength: 1 })),
+    limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
+  }),
+  "ai.AssistantHistoryMessage": AssistantHistoryMessage,
+  "ai.AssistantHistoryResponse": t.Object({
+    scope: t.Union([t.Literal("PUBLIC"), t.Literal("USER"), t.Literal("ADMIN")]),
+    messages: t.Array(AssistantHistoryMessage, { maxItems: 50 }),
+    nextCursor: t.Nullable(t.String({ minLength: 1 })),
+    hasMore: t.Boolean(),
   }),
   "ai.ResumeSectionTarget": ResumeSectionTarget,
   "ai.CopilotOptimizeInput": t.Object({

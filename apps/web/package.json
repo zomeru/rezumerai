@@ -5,8 +5,8 @@
   "scripts": {
     "predev": "bun scripts/download-pdf-worker.ts",
     "prebuild": "bun scripts/download-pdf-worker.ts",
-    "dev": "bun run with-env bun --bun next dev",
-    "build": "bun run with-env bun --bun next build",
+    "dev": "bun run with-env next dev",
+    "build": "bun run with-env next build",
     "start": "bun run prepare:standalone && bun run with-env node .next/standalone/apps/web/server.js",
     "prepare:standalone": "bun scripts/prepare-standalone-assets.ts",
     "assistant:reindex-memory": "bun run with-env bun ./scripts/reindex-assistant-memory.ts",

@@ -5,8 +5,8 @@ import { AiCreditsExhaustedError } from "./errors";
 import { toActiveAiModel } from "./mapper";
 import type {
   ActiveAiModel,
-  AssistantConversationRecord,
   AssistantConversationMemoryMessage,
+  AssistantConversationRecord,
   AssistantConversationState,
   ConsumeDailyCreditResult,
   DailyCreditsStatus,
@@ -21,24 +21,33 @@ type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$tr
 const assistantConversationFallbackStore = new Map<string, AssistantConversationRecord>();
 
 interface ConversationStateOptions {
-  sessionKey: string;
-  requestedConversationId: string | null;
+  conversationKey: string;
   scope: AssistantRoleScope;
-  userId: string | null;
+  userId: string;
   historyLimit: number;
   fallbackHistory: AssistantChatMessage[];
 }
 
 interface SaveConversationExchangeOptions {
   conversationId: string;
-  sessionKey: string;
+  conversationKey: string;
   scope: AssistantRoleScope;
-  userId: string | null;
+  userId: string;
   userMessage: string;
   assistantMessage: string;
   blocks: Prisma.InputJsonValue;
   toolNames: string[];
   persistenceAvailable: boolean;
+}
+
+interface AssistantHistoryQueryOptions {
+  scope: AssistantRoleScope;
+  userId: string;
+  cursor: {
+    createdAt: Date;
+    id: string;
+  } | null;
+  limit: number;
 }
 
 interface SaveConversationExchangeResult {
@@ -169,15 +178,10 @@ export abstract class AiRepository {
   ): Promise<AssistantConversationState> {
     try {
       const existingConversation = await db.aiAssistantConversation.findFirst({
-        where: options.requestedConversationId
-          ? {
-              id: options.requestedConversationId,
-              scope: options.scope,
-              ...(options.userId ? { userId: options.userId } : { sessionKey: options.sessionKey }),
-            }
-          : {
-              sessionKey: options.sessionKey,
-            },
+        where: {
+          scope: options.scope,
+          userId: options.userId,
+        },
         select: {
           id: true,
           messages: {
@@ -194,7 +198,10 @@ export abstract class AiRepository {
       });
 
       if (existingConversation) {
-        const recentMessages = existingConversation.messages.slice().reverse().map(AiRepository.toConversationMemoryMessage);
+        const recentMessages = existingConversation.messages
+          .slice()
+          .reverse()
+          .map(AiRepository.toConversationMemoryMessage);
 
         return {
           conversationId: existingConversation.id,
@@ -204,13 +211,12 @@ export abstract class AiRepository {
           })),
           recentMessages,
           persistenceAvailable: true,
-          sessionKey: options.sessionKey,
+          conversationKey: options.conversationKey,
         };
       }
 
       const conversation = await db.aiAssistantConversation.create({
         data: {
-          sessionKey: options.sessionKey,
           scope: options.scope,
           userId: options.userId,
         },
@@ -224,21 +230,18 @@ export abstract class AiRepository {
         history: [],
         recentMessages: [],
         persistenceAvailable: true,
-        sessionKey: options.sessionKey,
+        conversationKey: options.conversationKey,
       };
     } catch {
-      const existingFallbackConversation = options.requestedConversationId
-        ? (assistantConversationFallbackStore.get(options.requestedConversationId) ?? null)
-        : ([...assistantConversationFallbackStore.values()].find(
-            (conversation) => conversation.sessionKey === options.sessionKey,
-          ) ?? null);
+      const existingFallbackConversation =
+        [...assistantConversationFallbackStore.values()].find(
+          (conversation) => conversation.conversationKey === options.conversationKey,
+        ) ?? null;
 
       const canReuseFallbackConversation =
         existingFallbackConversation &&
         existingFallbackConversation.scope === options.scope &&
-        (options.userId
-          ? existingFallbackConversation.userId === options.userId
-          : existingFallbackConversation.sessionKey === options.sessionKey);
+        existingFallbackConversation.userId === options.userId;
 
       if (canReuseFallbackConversation && existingFallbackConversation) {
         return {
@@ -251,7 +254,7 @@ export abstract class AiRepository {
             createdAt: new Date(0),
           })),
           persistenceAvailable: false,
-          sessionKey: existingFallbackConversation.sessionKey,
+          conversationKey: existingFallbackConversation.conversationKey,
         };
       }
 
@@ -259,7 +262,7 @@ export abstract class AiRepository {
 
       assistantConversationFallbackStore.set(conversationId, {
         conversationId,
-        sessionKey: options.sessionKey,
+        conversationKey: options.conversationKey,
         scope: options.scope,
         userId: options.userId,
         history: options.fallbackHistory,
@@ -275,7 +278,7 @@ export abstract class AiRepository {
           createdAt: new Date(0),
         })),
         persistenceAvailable: false,
-        sessionKey: options.sessionKey,
+        conversationKey: options.conversationKey,
       };
     }
   }
@@ -294,7 +297,7 @@ export abstract class AiRepository {
 
       assistantConversationFallbackStore.set(options.conversationId, {
         conversationId: options.conversationId,
-        sessionKey: options.sessionKey,
+        conversationKey: options.conversationKey,
         scope: existingConversation?.scope ?? options.scope,
         userId: existingConversation?.userId ?? options.userId,
         history: nextHistory,
@@ -365,6 +368,86 @@ export abstract class AiRepository {
     } catch {
       return { messages: [] };
     }
+  }
+
+  static async getAssistantConversationHistory(
+    db: DatabaseClient,
+    options: AssistantHistoryQueryOptions,
+  ): Promise<{
+    messages: Array<{
+      id: string;
+      role: AssistantChatMessage["role"];
+      content: string;
+      blocks?: Prisma.JsonValue;
+      createdAt: Date;
+    }>;
+    hasMore: boolean;
+  }> {
+    const conversation = await db.aiAssistantConversation.findFirst({
+      where: {
+        scope: options.scope,
+        userId: options.userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!conversation) {
+      return {
+        messages: [],
+        hasMore: false,
+      };
+    }
+
+    const rows = await db.aiAssistantConversationMessage.findMany({
+      where: {
+        conversationId: conversation.id,
+        ...(options.cursor
+          ? {
+              OR: [
+                {
+                  createdAt: {
+                    lt: options.cursor.createdAt,
+                  },
+                },
+                {
+                  createdAt: options.cursor.createdAt,
+                  id: {
+                    lt: options.cursor.id,
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        blocks: true,
+        createdAt: true,
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: options.limit + 1,
+    });
+
+    const hasMore = rows.length > options.limit;
+    const pageRows = hasMore ? rows.slice(0, options.limit) : rows;
+
+    return {
+      messages: pageRows
+        .slice()
+        .reverse()
+        .map((message) => ({
+          id: message.id,
+          role: AiRepository.toAssistantMessageRole(message.role),
+          content: message.content,
+          blocks: message.blocks ?? undefined,
+          createdAt: message.createdAt,
+        })),
+      hasMore,
+    };
   }
 
   private static toConversationMemoryMessage(message: {

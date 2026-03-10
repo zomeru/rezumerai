@@ -150,12 +150,6 @@ type AssistantIntentClassification = z.infer<typeof assistantIntentClassificatio
 
 type AssistantExecutionStrategy =
   | {
-      mode: "direct-reply";
-      classification: AssistantIntentClassification;
-      reply: string;
-      requestedLimit: number | null;
-    }
-  | {
       mode: "sign-in-required";
       classification: AssistantIntentClassification;
       reply: string;
@@ -313,7 +307,6 @@ const assistantToolEnvelopeSchema = z.union([
 export const ASSISTANT_SAFE_RETRIEVAL_REPLY = "I couldn't retrieve that information.";
 export const ASSISTANT_ACCESS_DENIED_REPLY = "I don't have access to that information.";
 export const ASSISTANT_SIGN_IN_REPLY = "Sign in to access your account data.";
-export const ASSISTANT_GREETING_REPLY = "Hello! How can I help with your resume or account today?";
 
 function buildAssistantInstructions(requestContext: RequestContext<AssistantAgentContext>): string {
   const scope = requestContext.get("scope");
@@ -682,15 +675,6 @@ function resolveAssistantExecutionStrategy(options: {
   const { message, scope, userId } = options;
   const requestedLimit = extractRequestedLimit(message);
   const classification = classifyAssistantIntent(message);
-
-  if (classification.category === "general" && isSimpleGreeting(message)) {
-    return {
-      mode: "direct-reply",
-      classification,
-      reply: ASSISTANT_GREETING_REPLY,
-      requestedLimit,
-    };
-  }
 
   if (classification.category === "user_private" && !userId) {
     return {
@@ -1714,7 +1698,7 @@ export async function runMastraAssistantChat(
     userId: options.userId,
   });
 
-  if (strategy.mode === "direct-reply" || strategy.mode === "sign-in-required" || strategy.mode === "access-denied") {
+  if (strategy.mode === "sign-in-required" || strategy.mode === "access-denied") {
     return {
       reply: strategy.reply,
       toolNames: [],

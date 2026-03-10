@@ -3,8 +3,7 @@ import Elysia from "elysia";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { updateRequestContext } from "../observability/request-context";
-
-const AUTH_OPTIONAL_PATHS = new Set(["/api/ai/assistant/chat"]);
+import { isAuthOptionalPath } from "./auth-paths";
 
 /**
  * Auth plugin — validates the Better Auth session and injects the authenticated
@@ -31,7 +30,7 @@ export const authPlugin = new Elysia({ name: "plugin/auth" })
   .derive({ as: "scoped" }, async ({ request, set }) => {
     const pathname = new URL(request.url).pathname;
 
-    if (AUTH_OPTIONAL_PATHS.has(pathname)) {
+    if (isAuthOptionalPath(pathname)) {
       return {
         user: null as unknown as User,
         __unauthorized: false as const,
