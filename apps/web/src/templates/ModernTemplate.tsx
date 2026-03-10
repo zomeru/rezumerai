@@ -2,7 +2,13 @@ import { generateUuidKey } from "@rezumerai/utils";
 import { formatDateRange } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
-import type { TemplateProps } from "./types";
+import type {
+  EducationTemplateItem,
+  ExperienceTemplateItem,
+  ProjectTemplateItem,
+  SkillTemplateItem,
+  TemplateProps,
+} from "./types";
 
 /**
  * Modern resume template with a full-width colored header and two-column contact layout.
@@ -74,7 +80,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             <h2 className="mb-6 border-gray-200 border-b pb-2 font-light text-[1.5em]">Experience</h2>
 
             <div className="space-y-6">
-              {data.experience.map((exp) => {
+              {data.experience.map((exp: ExperienceTemplateItem) => {
                 const key = generateUuidKey();
                 return (
                   <div key={key} className="relative border-gray-200 border-l pl-6">
@@ -108,7 +114,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-[1.5em]">Projects</h2>
 
             <div className="space-y-6">
-              {data.project.map((p) => {
+              {data.project.map((p: ProjectTemplateItem) => {
                 const key = generateUuidKey();
                 return (
                   <div
@@ -141,7 +147,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
               <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-[1.5em]">Education</h2>
 
               <div className="space-y-4">
-                {data.education.map((edu) => {
+                {data.education.map((edu: EducationTemplateItem) => {
                   const key = generateUuidKey();
                   return (
                     <div key={key}>
@@ -168,7 +174,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
               <h2 className="mb-4 border-gray-200 border-b pb-2 font-light text-[1.5em]">Skills</h2>
 
               <div className="flex flex-wrap gap-2">
-                {data.skills.map((skill) => {
+                {data.skills.map((skill: SkillTemplateItem) => {
                   const key = generateUuidKey();
                   return (
                     <span

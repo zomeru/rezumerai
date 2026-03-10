@@ -4,8 +4,6 @@ This file is the canonical guide for AI coding agents working in this repository
 
 ## Scope And Precedence
 
-- This file applies repo-wide unless a deeper `AGENTS.md` exists closer to the file being changed.
-- Follow instructions in this order: direct user request, nearest `AGENTS.md`, parent `AGENTS.md`.
 - Verify behavior against code, scripts, and config before changing anything. Docs can lag behind implementation.
 - Update this file in the same change when architecture, scripts, conventions, or agent workflows change.
 
@@ -16,8 +14,7 @@ Run this checklist at the start of every task:
 1. Discover local skills by listing `.agents/skills/`.
 2. Open `SKILL.md` for every skill that matches the task before editing.
 3. Inspect the relevant code, scripts, and config first.
-4. Check for a nearer `AGENTS.md` if you are working outside the repo root.
-5. Load only the instruction files from `.agents/instructions/` that are relevant to your task (see below).
+4. Load only the instruction files from `.agents/instructions/` that are relevant to your task (see below).
 
 Required commands:
 

@@ -2,7 +2,13 @@ import { generateUuidKey } from "@rezumerai/utils";
 import { formatDateRange } from "@rezumerai/utils/date";
 import { Globe, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import HtmlContent from "./HtmlContent";
-import type { TemplateProps } from "./types";
+import type {
+  EducationTemplateItem,
+  ExperienceTemplateItem,
+  ProjectTemplateItem,
+  SkillTemplateItem,
+  TemplateProps,
+} from "./types";
 
 /**
  * Classic resume template with a centered header and bordered sections.
@@ -71,7 +77,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-4">
-            {data.experience.map((exp) => {
+            {data.experience.map((exp: ExperienceTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="border-l-3 pl-4" style={{ borderColor: accentColor }}>
@@ -102,13 +108,15 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <ul className="space-y-3">
-            {data.project.map((proj) => {
+            {data.project.map((proj: ProjectTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="flex items-start justify-between border-gray-300 border-l-3 pl-6">
                   <div>
                     <li className="font-semibold text-gray-800">{proj.name}</li>
-                    <HtmlContent html={proj.description} className="rich-text-content text-gray-600" />
+                    {proj.description && (
+                      <HtmlContent html={proj.description} className="rich-text-content text-gray-600" />
+                    )}
                   </div>
                 </div>
               );
@@ -125,7 +133,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="space-y-3">
-            {data.education.map((edu) => {
+            {data.education.map((edu: EducationTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="flex items-start justify-between">
@@ -158,7 +166,7 @@ const ClassicTemplate = ({ data, accentColor }: TemplateProps) => {
           </h2>
 
           <div className="flex flex-wrap gap-4">
-            {data.skills.map((skill) => {
+            {data.skills.map((skill: SkillTemplateItem) => {
               const key = generateUuidKey();
               return (
                 <div key={key} className="text-gray-700">
