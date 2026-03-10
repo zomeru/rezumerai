@@ -4,7 +4,6 @@ import type { ResumeSectionTarget, ResumeWithRelations } from "@rezumerai/types"
 import { Bot, Loader2, Sparkles, Target as TargetIcon, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useCopilotOptimizeSection, useCopilotReviewResume, useCopilotTailorResume } from "@/hooks/useAi";
 import { getAiFeatureAccessMessage } from "@/lib/ai-access";
