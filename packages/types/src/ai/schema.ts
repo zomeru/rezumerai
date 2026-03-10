@@ -65,6 +65,7 @@ export const SelectAiModelInputSchema = z.object({
 });
 
 export const AssistantRoleScopeSchema = z.enum(["PUBLIC", "USER", "ADMIN"]);
+export const AssistantThreadIdSchema = z.string().trim().min(1).max(120);
 
 export const AssistantChatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -72,6 +73,7 @@ export const AssistantChatMessageSchema = z.object({
 });
 
 export const AssistantChatInputSchema = z.object({
+  threadId: AssistantThreadIdSchema,
   messages: z.array(AssistantChatMessageSchema).min(1).max(12),
   currentPath: z.string().trim().max(200).optional(),
 });
@@ -111,6 +113,7 @@ export const AssistantHistoryCursorSchema = z.object({
 });
 
 export const AssistantHistoryQuerySchema = z.object({
+  threadId: AssistantThreadIdSchema,
   cursor: z.string().trim().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

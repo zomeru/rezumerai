@@ -11,8 +11,10 @@ export const assistantRequestContextSchema = z.object({
   latestUserMessage: z.string().min(1),
   modelId: z.string().min(1),
   requestedLimit: z.number().int().min(1).max(100).nullable(),
+  resourceId: z.string().min(1),
   scope: z.enum(["PUBLIC", "USER", "ADMIN"]),
   systemPrompt: z.string().min(1),
+  threadId: z.string().min(1),
   userId: z.string().nullable(),
 });
 
@@ -26,8 +28,10 @@ export function buildRequestContext(options: AssistantAgentRunOptions, requested
     ["latestUserMessage", options.latestUserMessage],
     ["modelId", options.modelId],
     ["requestedLimit", requestedLimit],
+    ["resourceId", options.resourceId],
     ["scope", options.scope],
     ["systemPrompt", options.systemPrompt],
+    ["threadId", options.threadId],
     ["userId", options.userId],
   ]);
 }

@@ -34,52 +34,6 @@ mock.module("@/lib/ai-access", () => ({
   getAiFeatureAccessMessage: getAiFeatureAccessMessageMock,
 }));
 
-mock.module("../service", () => ({
-  AiCreditsExhaustedError: class AiCreditsExhaustedError extends Error {},
-  AiModelPolicyRestrictedError: class AiModelPolicyRestrictedError extends Error {},
-  AiModelUnavailableError: class AiModelUnavailableError extends Error {},
-  AiService: {
-    emptyUsageMetrics: () => ({
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      reasoningTokens: 0,
-    }),
-    getAssistantHistory: mock(async () => ({
-      scope: "USER",
-      messages: [],
-      nextCursor: null,
-      hasMore: false,
-    })),
-    getUserAiSettings: mock(async () => ({
-      selectedModelId: "openai/gpt-5-nano",
-      models: [],
-    })),
-    listActiveModels: mock(async () => []),
-    resolveOptimizationContext: mock(async () => ({
-      model: {
-        modelId: "openai/gpt-5-nano",
-        providerName: "openrouter",
-      },
-      config: {
-        DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: 100,
-        OPTIMIZE_SYSTEM_PROMPT: "Optimize",
-        PROMPT_VERSION: "v1",
-      },
-    })),
-    runAssistantChat: mock(async () => ({
-      scope: "USER",
-      reply: "Hello",
-      blocks: [{ type: "paragraph", content: "Hello" }],
-      toolNames: [],
-      usedConversationMemory: false,
-    })),
-    toAssistantScope: (role: string | null | undefined, isAnonymous = false) =>
-      isAnonymous ? "PUBLIC" : role === "ADMIN" ? "ADMIN" : role === "USER" ? "USER" : "PUBLIC",
-    updateUserSelectedModel: mock(async () => "openai/gpt-5-nano"),
-  },
-}));
-
 const controllerModule = await import("../controller");
 
 describe("controller public handlers", () => {

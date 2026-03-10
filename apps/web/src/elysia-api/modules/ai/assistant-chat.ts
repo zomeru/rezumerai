@@ -7,12 +7,43 @@ const PREVIOUS_REPLY_PATTERN =
 const CONVERSATION_REFERENCE_PATTERN =
   /\b(previous|earlier|again|just said|you said|you showed|we discussed|conversation|chat|summari[sz]e|repeat|explain that)\b/i;
 
-export function buildIdentityThreadKey(options: { scope: AssistantRoleScope; userId: string | null }): string {
-  if (options.userId) {
-    return `user:${options.userId}:${options.scope}`;
+export function buildAssistantResourceId(options: {
+  isAnonymous: boolean;
+  role: "ADMIN" | "USER" | null;
+  userId: string;
+}): string {
+  if (options.isAnonymous) {
+    return `assistant:guest:${options.userId}`;
   }
 
-  throw new Error("Assistant thread identity requires a userId.");
+  if (options.role === "ADMIN") {
+    return `assistant:admin:${options.userId}`;
+  }
+
+  return `assistant:user:${options.userId}`;
+}
+
+export function resolveAssistantScope(
+  role: "ADMIN" | "USER" | null | undefined,
+  isAnonymous = false,
+): AssistantRoleScope {
+  if (isAnonymous) {
+    return "PUBLIC";
+  }
+
+  if (role === "ADMIN") {
+    return "ADMIN";
+  }
+
+  if (role === "USER") {
+    return "USER";
+  }
+
+  return "PUBLIC";
+}
+
+export function buildAssistantScopedThreadId(options: { resourceId: string; threadId: string }): string {
+  return `${options.resourceId}:${options.threadId}`;
 }
 
 export function buildAssistantThreadCursor(value: { createdAt: string; id: string }): string {
@@ -70,7 +101,10 @@ export function buildDeterministicConversationReply(options: {
   latestUserMessage: string;
 }): string | null {
   const { history, latestUserMessage } = options;
-  const previousMessages = history.slice(0, -1);
+  const latestHistoryMessage = history.at(-1) ?? null;
+  const historyIncludesLatestUserTurn =
+    latestHistoryMessage?.role === "user" && latestHistoryMessage.content === latestUserMessage;
+  const previousMessages = historyIncludesLatestUserTurn ? history.slice(0, -1) : history;
   const previousUserMessage = [...previousMessages].reverse().find((message) => message.role === "user");
   const previousAssistantMessage = [...previousMessages].reverse().find((message) => message.role === "assistant");
 

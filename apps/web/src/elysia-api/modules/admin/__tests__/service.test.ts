@@ -19,6 +19,9 @@ mock.module("../../../observability/audit", () => ({
 }));
 
 const aiServiceMock = {
+  AiCreditsExhaustedError: class AiCreditsExhaustedError extends Error {},
+  AiModelPolicyRestrictedError: class AiModelPolicyRestrictedError extends Error {},
+  AiModelUnavailableError: class AiModelUnavailableError extends Error {},
   AiService: {},
 };
 

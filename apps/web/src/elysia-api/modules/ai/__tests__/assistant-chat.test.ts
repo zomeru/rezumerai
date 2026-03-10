@@ -1,12 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
+  buildAssistantResourceId,
   buildAssistantThreadCursor,
   buildDeterministicConversationReply,
-  buildIdentityThreadKey,
   isConversationMemoryIntent,
   parseAssistantThreadCursor,
+  resolveAssistantScope,
 } from "../assistant-chat";
-import { AiService } from "../service";
 
 describe("isConversationMemoryIntent", () => {
   it("flags prompts about the conversation itself", () => {
@@ -64,27 +64,36 @@ describe("buildDeterministicConversationReply", () => {
 });
 
 describe("assistant chat session helpers", () => {
-  it("builds identity keys for authenticated users", () => {
+  it("builds assistant resource ids for authenticated users", () => {
     expect(
-      buildIdentityThreadKey({
-        scope: "ADMIN",
+      buildAssistantResourceId({
         userId: "user_123",
+        role: "USER",
+        isAnonymous: false,
       }),
-    ).toBe("user:user_123:ADMIN");
+    ).toBe("assistant:user:user_123");
   });
 
-  it("rejects guest-specific identity keys because assistant threads are user-owned", () => {
-    expect(() =>
-      buildIdentityThreadKey({
-        scope: "PUBLIC",
-        userId: null,
+  it("isolates admin and guest resource memory from normal user memory", () => {
+    expect(
+      buildAssistantResourceId({
+        userId: "user_123",
+        role: "ADMIN",
+        isAnonymous: false,
       }),
-    ).toThrow("Assistant thread identity requires a userId.");
+    ).toBe("assistant:admin:user_123");
+    expect(
+      buildAssistantResourceId({
+        userId: "guest_123",
+        role: null,
+        isAnonymous: true,
+      }),
+    ).toBe("assistant:guest:guest_123");
   });
 
   it("treats anonymous users as public-scope assistant users", () => {
-    expect(AiService.toAssistantScope("USER", true)).toBe("PUBLIC");
-    expect(AiService.toAssistantScope("ADMIN", true)).toBe("PUBLIC");
+    expect(resolveAssistantScope("USER", true)).toBe("PUBLIC");
+    expect(resolveAssistantScope("ADMIN", true)).toBe("PUBLIC");
   });
 
   it("round-trips assistant history cursors", () => {

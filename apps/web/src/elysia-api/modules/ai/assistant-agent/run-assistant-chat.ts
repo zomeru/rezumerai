@@ -4,14 +4,10 @@ import { executeAssistantTool, resolveAssistantExecutionStrategy } from "./execu
 import { buildRequestContext } from "./request-context";
 import type { AssistantAgentRunOptions, AssistantRunDependencies } from "./types";
 
-function toMastraMessageInput(history: AssistantAgentRunOptions["history"]): string[] {
-  return history.map((message) => `${message.role === "assistant" ? "Assistant" : "User"}: ${message.content}`);
-}
-
 export async function runMastraAssistantChat(
   options: AssistantAgentRunOptions,
   dependencies?: AssistantRunDependencies,
-): Promise<{ reply: string; toolNames: string[] }> {
+): Promise<{ persistedByMemory: boolean; reply: string; toolNames: string[]; usedMemory: boolean }> {
   const strategy = resolveAssistantExecutionStrategy({
     message: options.latestUserMessage,
     scope: options.scope,
@@ -20,13 +16,21 @@ export async function runMastraAssistantChat(
 
   if (strategy.mode === "sign-in-required" || strategy.mode === "access-denied") {
     return {
+      persistedByMemory: false,
       reply: strategy.reply,
       toolNames: [],
+      usedMemory: false,
     };
   }
 
   if (strategy.mode === "forced-tool") {
-    return executeAssistantTool(options, strategy.toolName, strategy.requestedLimit);
+    const result = await executeAssistantTool(options, strategy.toolName, strategy.requestedLimit);
+
+    return {
+      ...result,
+      persistedByMemory: false,
+      usedMemory: false,
+    };
   }
 
   const requestContext = buildRequestContext(options, strategy.requestedLimit);
@@ -34,7 +38,7 @@ export async function runMastraAssistantChat(
   const generate =
     dependencies?.generate ??
     (async (messages, agentOptions) => {
-      const result = await assistantTextAgent.generate(toMastraMessageInput(messages), agentOptions);
+      const result = await assistantTextAgent.generate(messages, agentOptions);
 
       return {
         text: result.text,
@@ -43,9 +47,15 @@ export async function runMastraAssistantChat(
       };
     });
 
-  const generation = await generate(options.history, {
+  const generation = await generate(options.latestUserMessage, {
+    context: options.contextMessages,
     requestContext,
     maxSteps: 1,
+    memory: {
+      thread: { id: options.threadId },
+      resource: options.resourceId,
+      options: options.memoryOptions,
+    },
     modelSettings: {
       temperature: 0,
     },
@@ -55,7 +65,9 @@ export async function runMastraAssistantChat(
   const text = generation.text.trim();
 
   return {
+    persistedByMemory: true,
     reply: text.length > 0 ? text : ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
     toolNames,
+    usedMemory: true,
   };
 }

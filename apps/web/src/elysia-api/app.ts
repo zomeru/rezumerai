@@ -27,7 +27,7 @@ import {
 import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
-const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
+// const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
 const errorLogRetentionCronPattern = Patterns.EVERY_DAY_AT_3AM;
 /**
  * Elysia application — single source of truth for the API.
@@ -73,118 +73,118 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .get("/", "Hello from Rezumer!")
 
   // ── Health check (root) ─────────────────────────────────────────────────
-  .use(
-    cron({
-      name: "heartbeat",
-      pattern: cronPattern,
-      async run() {
-        await runWithSystemContext(
-          {
-            requestId: `cron-heartbeat-${Date.now()}`,
-            source: "BACKGROUND_JOB",
-            endpoint: null,
-            method: null,
-            userId: null,
-            userRole: null,
-            metadata: { serviceName: "heartbeat" },
-          },
-          async () => {
-            const startedAt = performance.now();
+  // .use(
+  //   cron({
+  //     name: "heartbeat",
+  //     pattern: cronPattern,
+  //     async run() {
+  //       await runWithSystemContext(
+  //         {
+  //           requestId: `cron-heartbeat-${Date.now()}`,
+  //           source: "BACKGROUND_JOB",
+  //           endpoint: null,
+  //           method: null,
+  //           userId: null,
+  //           userRole: null,
+  //           metadata: { serviceName: "heartbeat" },
+  //         },
+  //         async () => {
+  //           const startedAt = performance.now();
 
-            try {
-              const sampleDbCall = await prisma.sampleTable.findFirst({
-                select: { id: true },
-              });
+  //           try {
+  //             const sampleDbCall = await prisma.sampleTable.findFirst({
+  //               select: { id: true },
+  //             });
 
-              const timestamp = formatDate(new Date(), {
-                dateStyle: "short",
-                timeStyle: "short",
-              });
-              const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+  //             const timestamp = formatDate(new Date(), {
+  //               dateStyle: "short",
+  //               timeStyle: "short",
+  //             });
+  //             const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
 
-              await Promise.allSettled([
-                recordSystemActivityLog({
-                  eventType: "CRON_HEARTBEAT",
-                  action: "RUN",
-                  resourceType: "HEARTBEAT",
-                  serviceName: "heartbeat",
-                  metadata: {
-                    status: "success",
-                  },
-                  afterValues: {
-                    sampleId: sampleDbCall?.id ?? null,
-                    durationMs,
-                  },
-                }),
-                recordAnalyticsEvent({
-                  source: "BACKGROUND_JOB",
-                  eventType: "CRON_HEARTBEAT",
-                  durationMs,
-                  metadata: {
-                    name: "heartbeat",
-                    status: "success",
-                  },
-                }),
-              ]);
+  //             await Promise.allSettled([
+  //               recordSystemActivityLog({
+  //                 eventType: "CRON_HEARTBEAT",
+  //                 action: "RUN",
+  //                 resourceType: "HEARTBEAT",
+  //                 serviceName: "heartbeat",
+  //                 metadata: {
+  //                   status: "success",
+  //                 },
+  //                 afterValues: {
+  //                   sampleId: sampleDbCall?.id ?? null,
+  //                   durationMs,
+  //                 },
+  //               }),
+  //               recordAnalyticsEvent({
+  //                 source: "BACKGROUND_JOB",
+  //                 eventType: "CRON_HEARTBEAT",
+  //                 durationMs,
+  //                 metadata: {
+  //                   name: "heartbeat",
+  //                   status: "success",
+  //                 },
+  //               }),
+  //             ]);
 
-              if (isDev) {
-                console.log(
-                  [
-                    ansiTimestamp(),
-                    paint("bgCyan", ` ${bold("CRON")} `),
-                    bold("heartbeat"),
-                    paint("green", "✓ check successful"),
-                    dim(`id=${sampleDbCall?.id ?? "N/A"}`),
-                    dim(timestamp),
-                  ].join("  "),
-                );
-              }
-            } catch (error: unknown) {
-              const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
-              const message = error instanceof Error ? error.message : "Unknown heartbeat error";
+  //             if (isDev) {
+  //               console.log(
+  //                 [
+  //                   ansiTimestamp(),
+  //                   paint("bgCyan", ` ${bold("CRON")} `),
+  //                   bold("heartbeat"),
+  //                   paint("green", "✓ check successful"),
+  //                   dim(`id=${sampleDbCall?.id ?? "N/A"}`),
+  //                   dim(timestamp),
+  //                 ].join("  "),
+  //               );
+  //             }
+  //           } catch (error: unknown) {
+  //             const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+  //             const message = error instanceof Error ? error.message : "Unknown heartbeat error";
 
-              await Promise.allSettled([
-                recordSystemActivityLog({
-                  eventType: "CRON_HEARTBEAT",
-                  action: "RUN_FAILED",
-                  resourceType: "HEARTBEAT",
-                  serviceName: "heartbeat",
-                  metadata: {
-                    status: "failed",
-                    message,
-                  },
-                  afterValues: {
-                    durationMs,
-                  },
-                }),
-                recordAnalyticsEvent({
-                  source: "BACKGROUND_JOB",
-                  eventType: "CRON_HEARTBEAT",
-                  durationMs,
-                  errorCode: "CRON_FAILURE",
-                  errorName: error instanceof Error ? error.name : "UnknownError",
-                  metadata: {
-                    name: "heartbeat",
-                    status: "failed",
-                  },
-                }),
-              ]);
+  //             await Promise.allSettled([
+  //               recordSystemActivityLog({
+  //                 eventType: "CRON_HEARTBEAT",
+  //                 action: "RUN_FAILED",
+  //                 resourceType: "HEARTBEAT",
+  //                 serviceName: "heartbeat",
+  //                 metadata: {
+  //                   status: "failed",
+  //                   message,
+  //                 },
+  //                 afterValues: {
+  //                   durationMs,
+  //                 },
+  //               }),
+  //               recordAnalyticsEvent({
+  //                 source: "BACKGROUND_JOB",
+  //                 eventType: "CRON_HEARTBEAT",
+  //                 durationMs,
+  //                 errorCode: "CRON_FAILURE",
+  //                 errorName: error instanceof Error ? error.name : "UnknownError",
+  //                 metadata: {
+  //                   name: "heartbeat",
+  //                   status: "failed",
+  //                 },
+  //               }),
+  //             ]);
 
-              console.error(
-                [
-                  ansiTimestamp(),
-                  paint("bgRed", ` ${bold("CRON")} `),
-                  bold("heartbeat"),
-                  paint("red", "✗ check failed"),
-                  dim(message),
-                ].join("  "),
-              );
-            }
-          },
-        );
-      },
-    }),
-  )
+  //             console.error(
+  //               [
+  //                 ansiTimestamp(),
+  //                 paint("bgRed", ` ${bold("CRON")} `),
+  //                 bold("heartbeat"),
+  //                 paint("red", "✗ check failed"),
+  //                 dim(message),
+  //               ].join("  "),
+  //             );
+  //           }
+  //         },
+  //       );
+  //     },
+  //   }),
+  // )
   .use(
     cron({
       name: "error-log-retention-cleanup",

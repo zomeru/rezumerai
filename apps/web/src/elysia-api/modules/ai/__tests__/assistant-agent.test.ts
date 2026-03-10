@@ -61,9 +61,14 @@ const baseOptions = {
     dailyLimit: 100,
     remainingCredits: 76,
   }),
+  memoryOptions: {
+    lastMessages: 8,
+  },
   maxSteps: 3,
   modelId: "openai/gpt-5-nano",
+  resourceId: "assistant:test:user_123",
   systemPrompt: "You are Rezumerai Assistant.",
+  threadId: "assistant:test:user_123:thread_123",
 };
 
 describe("classifyAssistantIntent", () => {
@@ -354,7 +359,7 @@ describe("runMastraAssistantChat", () => {
       {
         generate: async (messages) => {
           modelCalls += 1;
-          expect(messages).toEqual([{ role: "user", content: "Hello" }]);
+          expect(messages).toBe("Hello");
           return {
             text: "Hello! How can I help today?",
             toolCalls: [],

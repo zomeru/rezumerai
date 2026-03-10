@@ -89,6 +89,7 @@ export const AiModel = new Elysia().model({
     modelId: t.String({ minLength: 1 }),
   }),
   "ai.AssistantChatInput": t.Object({
+    threadId: t.String({ minLength: 1, maxLength: 120 }),
     messages: t.Array(AssistantMessage, { minItems: 1, maxItems: 12 }),
     currentPath: t.Optional(t.String({ maxLength: 200 })),
   }),
@@ -100,6 +101,7 @@ export const AiModel = new Elysia().model({
     usedConversationMemory: t.Boolean(),
   }),
   "ai.AssistantHistoryQuery": t.Object({
+    threadId: t.String({ minLength: 1, maxLength: 120 }),
     cursor: t.Optional(t.String({ minLength: 1 })),
     limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
   }),

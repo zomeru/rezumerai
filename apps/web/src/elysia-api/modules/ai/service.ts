@@ -7,7 +7,6 @@ import {
   type AssistantChatResponse,
   type AssistantHistoryQuery,
   type AssistantHistoryResponse,
-  type AssistantReplyBlock,
   type AssistantRoleScope,
   DEFAULT_AI_CONFIGURATION,
   type ResumeCopilotOptimizeInput,
@@ -26,16 +25,19 @@ import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { runMastraAssistantChat } from "./assistant-agent";
 import {
+  buildAssistantResourceId,
+  buildAssistantScopedThreadId,
   buildAssistantThreadCursor,
   buildDeterministicConversationReply,
-  buildIdentityThreadKey,
   getLatestUserMessage,
   isConversationMemoryIntent,
   parseAssistantThreadCursor,
+  resolveAssistantScope,
 } from "./assistant-chat";
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
-import { AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
+import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
 import { emptyAiUsageMetrics } from "./mapper";
+import { buildAssistantMemoryConfig } from "./memory/config";
 import { ConversationMemoryService } from "./memory/service";
 import { openRouterAiProvider } from "./providers/openrouter-provider";
 import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
@@ -117,7 +119,7 @@ const defaultAiProvider: AiProvider = openRouterAiProvider;
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
-export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
+export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError };
 export type {
   ActiveAiModel,
   AiUsageMetrics,
@@ -234,19 +236,7 @@ export abstract class AiService {
   }
 
   static toAssistantScope(role: string | null | undefined, isAnonymous = false): AssistantRoleScope {
-    if (isAnonymous) {
-      return "PUBLIC";
-    }
-
-    if (role === "ADMIN") {
-      return "ADMIN";
-    }
-
-    if (role === "USER") {
-      return "USER";
-    }
-
-    return "PUBLIC";
+    return resolveAssistantScope(role === "ADMIN" || role === "USER" ? role : null, isAnonymous);
   }
 
   static async runAssistantChat(
@@ -262,58 +252,41 @@ export abstract class AiService {
       throw new Error("Assistant chat requires a user message.");
     }
 
-    const fallbackHistory = input.messages
-      .slice(0, -1)
-      .slice(-Math.max(runtime.config.ASSISTANT_HISTORY_LIMIT, runtime.config.ASSISTANT_RAG_RECENT_LIMIT))
-      .map((message) => ({
-        role: message.role,
-        content: message.content,
-      }));
-    const conversation = await AiRepository.getAssistantConversationState(db, {
-      conversationKey: buildIdentityThreadKey({
-        scope,
-        userId: identity.userId,
-      }),
-      scope,
+    const resourceId = buildAssistantResourceId({
       userId: identity.userId,
-      historyLimit: Math.max(runtime.config.ASSISTANT_HISTORY_LIMIT, runtime.config.ASSISTANT_RAG_RECENT_LIMIT),
-      fallbackHistory,
+      role: identity.role,
+      isAnonymous: identity.isAnonymous,
     });
-    const currentTurnTimestamp = new Date();
-    const context = await ConversationMemoryService.buildConversationContext({
-      db,
+    const scopedThreadId = buildAssistantScopedThreadId({
+      resourceId,
+      threadId: input.threadId,
+    });
+    const ownerKind = identity.isAnonymous ? "guest" : identity.role === "ADMIN" ? "admin" : "user";
+
+    await ConversationMemoryService.ensureThread({
       config: runtime.config,
-      conversationId: conversation.conversationId,
+      ownerKind,
+      ownerUserId: identity.userId,
+      resourceId,
       scope,
-      userId: identity.userId,
-      latestUserMessage: latestUserTurn.content,
-      recentMessages: [
-        ...conversation.recentMessages,
-        {
-          id: `pending:${conversation.conversationId ?? conversation.conversationKey}:${currentTurnTimestamp.getTime()}`,
-          role: "user",
-          content: latestUserTurn.content,
-          createdAt: currentTurnTimestamp,
-        },
-      ],
+      threadId: scopedThreadId,
     });
-    const history: AssistantChatMessage[] = context.messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
     const isConversationRequest = isConversationMemoryIntent(latestUserTurn.content);
 
     const result = isConversationRequest
       ? await AiService.answerConversationFromHistory({
+          config: runtime.config,
           scope,
           modelId: runtime.model.modelId,
           systemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
           maxSteps: 1,
           latestUserMessage: latestUserTurn.content,
           currentPath: input.currentPath,
-          history,
+          resourceId,
+          threadId: scopedThreadId,
         })
       : await AiService.answerAssistantDataRequest(db, {
+          config: runtime.config,
           scope,
           role: identity.role,
           userId: identity.userId,
@@ -322,26 +295,18 @@ export abstract class AiService {
           maxSteps: runtime.config.ASSISTANT_MAX_STEPS,
           latestUserMessage: latestUserTurn.content,
           currentPath: input.currentPath,
-          history,
+          resourceId,
+          threadId: scopedThreadId,
         });
     const blocks = parseAssistantReplyBlocks(result.reply);
 
-    if (conversation.conversationId) {
-      const savedExchange = await AiRepository.saveAssistantConversationExchange(db, {
-        conversationId: conversation.conversationId,
-        conversationKey: conversation.conversationKey,
-        scope,
-        userId: identity.userId,
+    if (!result.persistedByMemory) {
+      await ConversationMemoryService.saveExchange({
+        config: runtime.config,
+        resourceId,
+        threadId: scopedThreadId,
         userMessage: latestUserTurn.content,
         assistantMessage: result.reply,
-        blocks,
-        toolNames: result.toolNames,
-        persistenceAvailable: conversation.persistenceAvailable,
-      });
-      ConversationMemoryService.scheduleEmbeddingIndex({
-        db,
-        config: runtime.config,
-        messages: savedExchange.messages,
       });
     }
 
@@ -350,7 +315,7 @@ export abstract class AiService {
       reply: result.reply,
       blocks,
       toolNames: result.toolNames,
-      usedConversationMemory: isConversationRequest || context.messages.length > 1,
+      usedConversationMemory: isConversationRequest || result.usedMemory,
     };
   }
 
@@ -360,6 +325,15 @@ export abstract class AiService {
     query: AssistantHistoryQuery,
   ): Promise<AssistantHistoryResponse> {
     const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
+    const resourceId = buildAssistantResourceId({
+      userId: identity.userId,
+      role: identity.role,
+      isAnonymous: identity.isAnonymous,
+    });
+    const scopedThreadId = buildAssistantScopedThreadId({
+      resourceId,
+      threadId: query.threadId,
+    });
     const parsedCursor = parseAssistantThreadCursor(query.cursor);
     const cursor =
       parsedCursor && !Number.isNaN(new Date(parsedCursor.createdAt).getTime())
@@ -368,12 +342,13 @@ export abstract class AiService {
             id: parsedCursor.id,
           }
         : null;
-
-    const page = await AiRepository.getAssistantConversationHistory(db, {
-      scope,
-      userId: identity.userId,
+    const config = await AiService.getAiConfiguration(db);
+    const page = await ConversationMemoryService.getHistory({
+      config,
       cursor,
       limit: query.limit,
+      resourceId,
+      threadId: scopedThreadId,
     });
     const oldestMessage = page.messages[0] ?? null;
 
@@ -383,7 +358,6 @@ export abstract class AiService {
         id: message.id,
         role: message.role,
         content: message.content,
-        blocks: Array.isArray(message.blocks) ? (message.blocks as AssistantReplyBlock[]) : undefined,
         createdAt: message.createdAt.toISOString(),
       })),
       nextCursor:
@@ -661,6 +635,7 @@ export abstract class AiService {
   private static async answerAssistantDataRequest(
     db: TransactionCapableDatabaseClient,
     options: {
+      config: AiConfiguration;
       scope: AssistantRoleScope;
       role: "ADMIN" | "USER" | null;
       userId: string | null;
@@ -669,13 +644,22 @@ export abstract class AiService {
       maxSteps: number;
       latestUserMessage: string;
       currentPath?: string;
-      history: AssistantChatMessage[];
+      resourceId: string;
+      threadId: string;
     },
-  ): Promise<{ reply: string; toolNames: string[] }> {
+  ): Promise<{ persistedByMemory: boolean; reply: string; toolNames: string[]; usedMemory: boolean }> {
+    const knowledgeContext = await ConversationMemoryService.buildKnowledgeContext({
+      config: options.config,
+      db,
+      latestUserMessage: options.latestUserMessage,
+    });
     const result = await runMastraAssistantChat({
       db,
       scope: options.scope,
       userId: options.userId,
+      resourceId: options.resourceId,
+      threadId: options.threadId,
+      memoryOptions: buildAssistantMemoryConfig(options.config),
       getOptimizationCredits: async () => (options.userId ? AiService.getDailyCredits(db, options.userId) : null),
       getCurrentModelSettings: async () => {
         if (!options.userId) {
@@ -695,33 +679,50 @@ export abstract class AiService {
       maxSteps: options.maxSteps,
       latestUserMessage: options.latestUserMessage,
       currentPath: options.currentPath,
-      history: options.history,
+      history: [],
+      contextMessages: knowledgeContext ? [knowledgeContext] : undefined,
     });
 
     return {
+      persistedByMemory: result.persistedByMemory,
       reply: formatAssistantReply(result.reply, 4000),
       toolNames: result.toolNames,
+      usedMemory: result.usedMemory || Boolean(knowledgeContext),
     };
   }
 
   private static async answerConversationFromHistory(options: {
+    config: AiConfiguration;
     scope: AssistantRoleScope;
     modelId: string;
     systemPrompt: string;
     maxSteps: number;
     latestUserMessage: string;
     currentPath?: string;
-    history: AssistantChatMessage[];
-  }): Promise<{ reply: string; toolNames: string[] }> {
+    resourceId: string;
+    threadId: string;
+  }): Promise<{ persistedByMemory: boolean; reply: string; toolNames: string[]; usedMemory: boolean }> {
+    const history = await ConversationMemoryService.buildConversationContext({
+      config: options.config,
+      latestUserMessage: options.latestUserMessage,
+      resourceId: options.resourceId,
+      threadId: options.threadId,
+    });
+    const normalizedHistory: AssistantChatMessage[] = history.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
     const directReply = buildDeterministicConversationReply({
-      history: options.history,
+      history: normalizedHistory,
       latestUserMessage: options.latestUserMessage,
     });
 
     if (directReply) {
       return {
+        persistedByMemory: false,
         reply: formatAssistantReply(directReply, 4000),
         toolNames: [],
+        usedMemory: normalizedHistory.length > 0,
       };
     }
 
@@ -735,14 +736,16 @@ export abstract class AiService {
           allowTools: false,
         })} ` +
         "Answer only from the conversation history already provided. If the answer is not in this chat, say so plainly.",
-      input: options.history,
+      input: normalizedHistory,
       tools: [],
       maxSteps: options.maxSteps,
     });
 
     return {
+      persistedByMemory: false,
       reply: formatAssistantReply(result.text, 4000),
       toolNames: result.toolNames,
+      usedMemory: normalizedHistory.length > 0,
     };
   }
 

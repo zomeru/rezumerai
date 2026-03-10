@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import type { RequestContext } from "@mastra/core/request-context";
-// import { Memory } from "@mastra/memory";
+import { getAssistantMemory } from "../memory/runtime";
 import { ASSISTANT_SAFE_RETRIEVAL_REPLY } from "./constants";
 import { assistantRequestContextSchema } from "./request-context";
 import type { AssistantAgentContext } from "./types";
@@ -39,10 +39,27 @@ function toMastraOpenRouterModelId(modelId: string): string {
   return modelId.startsWith("openrouter/") ? modelId : `openrouter/${modelId}`;
 }
 
-export const assistantTextAgent = new Agent({
+export const assistantTextAgent = new Agent<
+  "rezumerai-assistant",
+  Record<string, never>,
+  undefined,
+  AssistantAgentContext
+>({
   id: "rezumerai-assistant",
   name: "Rezumerai Assistant",
   requestContextSchema: assistantRequestContextSchema,
+  memory: async ({ requestContext }) => {
+    const getAiConfiguration = requestContext?.get<"getAiConfiguration", AssistantAgentContext["getAiConfiguration"]>(
+      "getAiConfiguration",
+    );
+    const config = getAiConfiguration ? await getAiConfiguration() : null;
+
+    if (!config) {
+      throw new Error("Assistant memory requires an AI configuration.");
+    }
+
+    return getAssistantMemory(config);
+  },
   model: ({ requestContext }) => toMastraOpenRouterModelId(requestContext.get("modelId")),
   instructions: ({ requestContext }) =>
     buildAssistantInstructions(requestContext as RequestContext<AssistantAgentContext>),

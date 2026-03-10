@@ -33,6 +33,7 @@ const MIN_PANEL_SIZE = {
 } as const;
 
 const MAX_PANEL_WIDTH = 640;
+const DEFAULT_ASSISTANT_THREAD_ID = "assistant-widget";
 type PanelSize = {
   width: number;
   height: number;
@@ -241,6 +242,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
   const history = useAssistantHistory({
     enabled: isOpen && hasAssistantIdentity,
     limit: 20,
+    threadId: DEFAULT_ASSISTANT_THREAD_ID,
   });
   const historyMessages = useMemo<WidgetMessage[]>(() => {
     const pages = history.data?.pages ?? [];
@@ -414,6 +416,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
 
     try {
       const response = await assistantChat.mutateAsync({
+        threadId: DEFAULT_ASSISTANT_THREAD_ID,
         messages: [
           {
             role: "user",

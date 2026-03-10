@@ -1,142 +1,193 @@
+import type { MastraDBMessage } from "@mastra/core/agent";
 import type { PrismaClient } from "@rezumerai/database";
 import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
-import { EmbeddingService } from "../embeddings/service";
-import type { SavedAssistantConversationMessage } from "../types";
-import { buildMessageChunks } from "./chunking";
-import { ConversationMemoryRepository } from "./repository";
-import {
-  type AssembledConversationContext,
-  assembleConversationContext,
-  type ConversationContextMessage,
-} from "./retrieval";
+import { buildAssistantMemoryConfig, buildAssistantThreadMetadata } from "./config";
+import { buildAssistantKnowledgeContext } from "./knowledge";
+import { createAssistantTextMessage, extractAssistantMessageText } from "./message-content";
+import { ensureAssistantStorageReady, getAssistantMemory } from "./runtime";
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 
-interface BuildConversationContextOptions {
-  db: DatabaseClient;
-  config: AiConfiguration;
-  conversationId: string | null;
-  scope: AssistantRoleScope;
-  userId: string | null;
-  latestUserMessage: string;
-  recentMessages: ConversationContextMessage[];
-}
+type AssistantHistoryMessage = {
+  content: string;
+  createdAt: Date;
+  id: string;
+  role: "assistant" | "user";
+};
 
-// biome-ignore lint/complexity/noStaticOnlyClass: Memory service coordinates retrieval and async indexing without carrying state.
+// biome-ignore lint/complexity/noStaticOnlyClass: Assistant memory service centralizes Mastra-backed history, retrieval, and knowledge context.
 export abstract class ConversationMemoryService {
-  static async buildConversationContext(
-    options: BuildConversationContextOptions,
-  ): Promise<AssembledConversationContext> {
-    if (!options.config.ASSISTANT_RAG_ENABLED || !options.conversationId) {
-      return assembleConversationContext({
-        recentMessages: options.recentMessages.slice(-options.config.ASSISTANT_RAG_RECENT_LIMIT),
-        semanticMatches: [],
-        tokenLimit: options.config.ASSISTANT_CONTEXT_TOKEN_LIMIT,
-      });
-    }
-
-    try {
-      const provider = EmbeddingService.createProvider(options.config);
-      const queryEmbedding = await provider.embed(options.latestUserMessage);
-      const retrievedMatches = await ConversationMemoryRepository.querySimilarConversationMessages(options.db, {
-        conversationId: options.conversationId,
-        scope: options.scope,
-        userId: options.userId,
-        queryEmbedding,
-        topK: options.config.ASSISTANT_RAG_TOP_K,
-        excludeMessageIds: options.recentMessages.map((message) => message.id),
-      });
-      const context = assembleConversationContext({
-        recentMessages: options.recentMessages.slice(-options.config.ASSISTANT_RAG_RECENT_LIMIT),
-        semanticMatches: retrievedMatches,
-        tokenLimit: options.config.ASSISTANT_CONTEXT_TOKEN_LIMIT,
-      });
-
-      console.info(
-        `[AI][RAG] retrieved=${retrievedMatches.length} scores=${retrievedMatches
-          .map((match) => match.score.toFixed(3))
-          .join(",")} contextMessages=${context.messages.length} approxTokens=${context.approxTokenCount}`,
-      );
-
-      return context;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown error";
-      console.error(`[AI][RAG] Failed to build semantic context: ${message}`);
-
-      return assembleConversationContext({
-        recentMessages: options.recentMessages.slice(-options.config.ASSISTANT_RAG_RECENT_LIMIT),
-        semanticMatches: [],
-        tokenLimit: options.config.ASSISTANT_CONTEXT_TOKEN_LIMIT,
-      });
-    }
-  }
-
-  static scheduleEmbeddingIndex(options: {
-    db: DatabaseClient;
+  static async ensureThread(options: {
     config: AiConfiguration;
-    messages: SavedAssistantConversationMessage[];
-  }): void {
-    if (!options.config.ASSISTANT_RAG_ENABLED || options.messages.length === 0) {
+    ownerKind: "admin" | "guest" | "user";
+    ownerUserId: string;
+    resourceId: string;
+    scope: AssistantRoleScope;
+    threadId: string;
+  }): Promise<void> {
+    const memory = await ConversationMemoryService.getMemory(options.config);
+    const existingThread = await memory.getThreadById({ threadId: options.threadId });
+
+    if (existingThread) {
+      if (existingThread.resourceId !== options.resourceId) {
+        throw new Error("Assistant thread does not belong to the current resource.");
+      }
+
       return;
     }
 
-    void ConversationMemoryService.indexMessages(options).catch((error) => {
-      const message = error instanceof Error ? error.message : "unknown error";
-      console.error(`[AI][RAG] Failed to index conversation embeddings: ${message}`);
+    await memory.createThread({
+      threadId: options.threadId,
+      resourceId: options.resourceId,
+      title: "Rezumerai Assistant",
+      metadata: buildAssistantThreadMetadata({
+        scope: options.scope,
+        ownerKind: options.ownerKind,
+        ownerUserId: options.ownerUserId,
+      }),
+    });
+  }
+
+  static async buildConversationContext(options: {
+    config: AiConfiguration;
+    latestUserMessage: string;
+    resourceId: string;
+    threadId: string;
+  }): Promise<AssistantHistoryMessage[]> {
+    const memory = await ConversationMemoryService.getMemory(options.config);
+    const recalled = await memory.recall({
+      threadId: options.threadId,
+      resourceId: options.resourceId,
+      perPage: false,
+      vectorSearchString: options.config.ASSISTANT_RAG_ENABLED ? options.latestUserMessage : undefined,
+      threadConfig: buildAssistantMemoryConfig(options.config),
+    });
+
+    return ConversationMemoryService.toAssistantHistoryMessages(recalled.messages);
+  }
+
+  static async buildKnowledgeContext(options: {
+    config: AiConfiguration;
+    db: DatabaseClient;
+    latestUserMessage: string;
+  }) {
+    return buildAssistantKnowledgeContext(options);
+  }
+
+  static async getHistory(options: {
+    config: AiConfiguration;
+    cursor?: { createdAt: Date; id: string } | null;
+    limit: number;
+    resourceId: string;
+    threadId: string;
+  }): Promise<{ hasMore: boolean; messages: AssistantHistoryMessage[] }> {
+    const memory = await ConversationMemoryService.getMemory(options.config);
+    const thread = await memory.getThreadById({ threadId: options.threadId });
+
+    if (!thread) {
+      return {
+        messages: [],
+        hasMore: false,
+      };
+    }
+
+    if (thread.resourceId !== options.resourceId) {
+      throw new Error("Assistant thread does not belong to the current resource.");
+    }
+
+    const recalled = await memory.recall({
+      threadId: options.threadId,
+      resourceId: options.resourceId,
+      perPage: false,
+      orderBy: {
+        field: "createdAt",
+        direction: "ASC",
+      },
+    });
+
+    const filteredMessages = ConversationMemoryService.toAssistantHistoryMessages(recalled.messages)
+      .filter((message) => {
+        if (!options.cursor) {
+          return true;
+        }
+
+        return (
+          message.createdAt.getTime() < options.cursor.createdAt.getTime() ||
+          (message.createdAt.getTime() === options.cursor.createdAt.getTime() && message.id < options.cursor.id)
+        );
+      })
+      .slice(-(options.limit + 1));
+    const hasMore = filteredMessages.length > options.limit;
+    const pageMessages = hasMore ? filteredMessages.slice(1) : filteredMessages;
+
+    return {
+      messages: pageMessages,
+      hasMore,
+    };
+  }
+
+  static async saveExchange(options: {
+    assistantMessage: string;
+    config: AiConfiguration;
+    resourceId: string;
+    threadId: string;
+    userMessage: string;
+  }): Promise<void> {
+    const memory = await ConversationMemoryService.getMemory(options.config);
+    const createdAt = new Date();
+
+    await memory.saveMessages({
+      memoryConfig: buildAssistantMemoryConfig(options.config),
+      messages: [
+        createAssistantTextMessage({
+          role: "user",
+          content: options.userMessage,
+          createdAt,
+          resourceId: options.resourceId,
+          threadId: options.threadId,
+        }),
+        createAssistantTextMessage({
+          role: "assistant",
+          content: options.assistantMessage,
+          createdAt: new Date(createdAt.getTime() + 1),
+          resourceId: options.resourceId,
+          threadId: options.threadId,
+        }),
+      ],
     });
   }
 
   static async reindexMissingEmbeddings(
     db: DatabaseClient,
     config: AiConfiguration,
-    limit: number,
+    _limit: number,
   ): Promise<{ indexedCount: number }> {
-    const records = await ConversationMemoryRepository.listMessagesMissingEmbeddings(db, limit);
-
-    if (records.length === 0) {
-      return { indexedCount: 0 };
-    }
-
-    await ConversationMemoryService.indexMessages({
-      db,
+    await ConversationMemoryService.buildKnowledgeContext({
       config,
-      messages: records.map((record) => ({
-        id: record.id,
-        conversationId: record.conversationId,
-        userId: record.userId,
-        scope: record.scope,
-        role: record.role,
-        content: record.content,
-        createdAt: record.createdAt,
-      })),
+      db,
+      latestUserMessage: "assistant public content reindex",
     });
 
-    return { indexedCount: records.length };
+    return { indexedCount: 0 };
   }
 
-  private static async indexMessages(options: {
-    db: DatabaseClient;
-    config: AiConfiguration;
-    messages: SavedAssistantConversationMessage[];
-  }): Promise<void> {
-    const chunks = buildMessageChunks(options.messages);
+  private static async getMemory(config: AiConfiguration) {
+    await ensureAssistantStorageReady();
+    return getAssistantMemory(config);
+  }
 
-    if (chunks.length === 0) {
-      return;
-    }
-
-    const provider = EmbeddingService.createProvider(options.config);
-    const embeddings = await EmbeddingService.embedInBatches({
-      provider,
-      texts: chunks.map((chunk) => chunk.content),
-      onBatchComplete: ({ batchIndex, batchSize, durationMs }) => {
-        console.info(`[AI][RAG] embeddings batch=${batchIndex} size=${batchSize} durationMs=${durationMs.toFixed(1)}`);
-      },
-    });
-
-    await ConversationMemoryRepository.upsertEmbeddings(options.db, {
-      chunks,
-      embeddings,
-    });
+  private static toAssistantHistoryMessages(messages: MastraDBMessage[]): AssistantHistoryMessage[] {
+    return messages
+      .filter(
+        (message): message is MastraDBMessage & { role: "assistant" | "user" } =>
+          message.role === "assistant" || message.role === "user",
+      )
+      .map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: extractAssistantMessageText(message),
+        createdAt: message.createdAt,
+      }))
+      .filter((message) => message.content.length > 0);
   }
 }

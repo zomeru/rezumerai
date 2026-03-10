@@ -1,6 +1,12 @@
+import type { MemoryConfig } from "@mastra/core/memory";
 import type { RequestContext } from "@mastra/core/request-context";
 import type { AiConfiguration, AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
 import type { DatabaseClient } from "./tooling";
+
+export interface AssistantContextMessage {
+  content: string;
+  role: "system";
+}
 
 export interface AssistantAgentContext {
   currentPath?: string;
@@ -17,8 +23,10 @@ export interface AssistantAgentContext {
   latestUserMessage: string;
   modelId: string;
   requestedLimit: number | null;
+  resourceId: string;
   scope: AssistantRoleScope;
   systemPrompt: string;
+  threadId: string;
   userId: string | null;
 }
 
@@ -36,11 +44,15 @@ export interface AssistantAgentRunOptions {
   } | null>;
   history: AssistantChatMessage[];
   latestUserMessage: string;
+  memoryOptions: MemoryConfig;
   maxSteps: number;
   modelId: string;
+  resourceId: string;
   scope: AssistantRoleScope;
   systemPrompt: string;
+  threadId: string;
   userId: string | null;
+  contextMessages?: AssistantContextMessage[];
 }
 
 export interface AssistantGenerateOutput {
@@ -51,9 +63,15 @@ export interface AssistantGenerateOutput {
 
 export interface AssistantRunDependencies {
   generate?: (
-    messages: AssistantChatMessage[],
+    messages: string,
     options: {
+      context?: AssistantContextMessage[];
       maxSteps: number;
+      memory: {
+        options: MemoryConfig;
+        resource: string;
+        thread: { id: string };
+      };
       modelSettings?: {
         temperature?: number;
       };

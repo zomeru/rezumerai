@@ -112,21 +112,27 @@ export function useAssistantChat() {
   });
 }
 
-export function useAssistantHistory(options?: { enabled?: boolean; limit?: number }) {
+export function useAssistantHistory(options?: { enabled?: boolean; limit?: number; threadId?: string | null }) {
   const limit = options?.limit ?? 20;
+  const threadId = options?.threadId ?? null;
 
   return useInfiniteQuery<
     AssistantHistoryResponse,
     Error,
     InfiniteData<AssistantHistoryResponse>,
-    readonly ["assistantHistory", number],
+    readonly ["assistantHistory", string, number],
     string | null
   >({
-    queryKey: [...ASSISTANT_HISTORY_QUERY_KEY, limit],
-    enabled: options?.enabled ?? true,
+    queryKey: [...ASSISTANT_HISTORY_QUERY_KEY, threadId ?? "missing-thread", limit],
+    enabled: (options?.enabled ?? true) && typeof threadId === "string" && threadId.length > 0,
     initialPageParam: null,
     queryFn: async ({ pageParam }): Promise<AssistantHistoryResponse> => {
-      const query: { limit: number; cursor?: string } = {
+      if (!threadId) {
+        throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
+      }
+
+      const query: { threadId: string; limit: number; cursor?: string } = {
+        threadId,
         limit,
       };
 
