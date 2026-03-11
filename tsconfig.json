@@ -30,5 +30,5 @@
       "@rezumerai/tsconfig/*": ["./packages/tsconfig/*"]
     }
   },
-  "exclude": ["node_modules", ".claude", ".agents", "dist", "build"]
+  "exclude": ["node_modules", "./.claude/**/*", "./.agents/**/*", "dist", "build"]
 }

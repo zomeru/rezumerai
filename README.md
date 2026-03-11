@@ -1,27 +1,27 @@
 # Rezumerai
 
-Rezumerai is an AI-powered resume builder for job seekers who want structured editing, faster iteration, and safer AI assistance. It helps users create, refine, review, and manage resumes in one workspace, with job-specific tailoring and a built-in assistant for product, account, and admin guidance based on the user's access level.
+Rezumerai is an AI-assisted resume builder for job seekers who want one workspace to draft, refine, tailor, and export resumes. It combines structured resume editing with AI-powered section optimization, job-description matching, and a scope-aware assistant that can answer public, account, or admin questions based on the current user's access.
 
 - Monorepo: Turborepo + Bun workspaces
 - App: Next.js 16 App Router + React 19 + embedded Elysia API
 - Data: PostgreSQL + Prisma 7
 - Auth: Better Auth
-- AI: OpenRouter + Mastra-backed assistant memory and resume workflows
+- AI: Vercel AI SDK + OpenRouter + pgvector-backed assistant memory
 
 ## Features
 
-- Resume dashboard to create, search, rename, delete, and manage saved resumes
+- Resume dashboard to create, search, rename, delete, and download saved resumes
 - Guided resume builder for personal info, summary, experience, education, projects, and skills
 - Four resume templates: `classic`, `modern`, `minimal`, and `minimal_image`
-- Accent color and font-size controls with live resume preview
+- Accent color and font-size controls with live HTML/PDF preview
 - Rich-text editing for summary, experience, and project content
 - Drag-and-drop reordering for experience, education, projects, and skills
 - PDF export and full-page preview
 - AI Resume Copilot for section optimization, job-description tailoring, and full resume review
-- AI text optimization endpoint with streamed responses
-- Built-in AI assistant with public, user, and admin scopes plus conversation history/memory
-- Better Auth accounts with email/password, GitHub OAuth, anonymous guest sessions, and admin roles
-- Account settings for profile updates, password changes, AI model selection, and daily AI credit visibility
+- Streamed AI text optimization with daily credit tracking
+- Built-in AI assistant with anonymous guest support, persisted thread history, and `PUBLIC` / `USER` / `ADMIN` scopes
+- Better Auth accounts with email/password, GitHub OAuth, anonymous sessions, and admin roles
+- Account settings for profile updates, password changes, AI model selection, and AI credit visibility
 - Admin console for users, AI model catalog, system configuration, audit logs, analytics, and error logs
 - Database-backed public content for the landing page, FAQ, about, contact, privacy, and terms pages
 
@@ -60,10 +60,11 @@ Rezumerai is an AI-powered resume builder for job seekers who want structured ed
 
 ### AI Infrastructure
 
-- OpenRouter for model calls and embeddings
-- Mastra agent + memory stack for the assistant
-- Database-backed AI provider/model catalog and system prompts
-- Per-user daily AI credit tracking for optimization flows
+- Vercel AI SDK Core in the embedded Elysia API
+- AI SDK UI hooks (`useChat`, `useCompletion`) on the frontend
+- OpenRouter via `@openrouter/ai-sdk-provider`
+- Database-backed AI provider/model catalog and system configuration
+- LangChain text splitters plus `pgvector` for assistant memory embeddings
 
 ### Observability And Operations
 
@@ -76,14 +77,14 @@ Rezumerai is an AI-powered resume builder for job seekers who want structured ed
 - Bun workspaces
 - Turborepo task orchestration
 - Biome for formatting and linting
-- Changesets for package versioning/publishing workflows
+- Changesets for package versioning and publishing workflows
 
 ## Prerequisites
 
 - [Bun](https://bun.sh/) `1.3.x`
 - PostgreSQL with `pgvector` support available for migrations
-- GitHub OAuth credentials (the current server env validation expects them)
-- Docker (optional, for container workflow)
+- GitHub OAuth credentials for local auth flows
+- Docker (optional, for the current web-only container workflow)
 
 ## Quick Start
 
@@ -105,27 +106,27 @@ Core variables for local development:
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Runtime PostgreSQL connection for the app, Prisma client, and assistant memory storage |
 | `DIRECT_URL` | Yes | Direct PostgreSQL connection for Prisma CLI commands such as `db push`, `migrate`, and `generate` |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Public app URL used by metadata, the auth client, and the Eden API client |
+| `NEXT_PUBLIC_SITE_URL` | Yes | Public app URL used by metadata, OpenRouter headers, and the Eden API client |
 | `BETTER_AUTH_URL` | Yes | Better Auth server base URL |
-| `BETTER_AUTH_SECRET` | Yes | Better Auth signing/encryption secret |
-| `BETTER_AUTH_GITHUB_CLIENT_ID` | Yes | GitHub OAuth client ID used by the current auth configuration |
-| `BETTER_AUTH_GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth client secret used by the current auth configuration |
+| `BETTER_AUTH_SECRET` | Yes | Better Auth signing and encryption secret |
+| `BETTER_AUTH_GITHUB_CLIENT_ID` | Yes | GitHub OAuth client ID |
+| `BETTER_AUTH_GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth client secret |
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for Copilot, assistant, and optimize-text flows |
 
-Optional variables recognized by the current repo:
+Optional variables used by the current codebase or reserved in the env template:
 
 | Variable | Purpose |
 | --- | --- |
-| `BETTER_AUTH_GOOGLE_CLIENT_ID` | Optional placeholder in the env schema/template; current auth pages wire GitHub only |
-| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | Optional placeholder in the env schema/template; current auth pages wire GitHub only |
-| `CRON_SECRET` | Reserved in `.env.example` for scheduled/background-job protection |
+| `BETTER_AUTH_GOOGLE_CLIENT_ID` | Optional placeholder in the env schema and template; the current auth config exposes GitHub only |
+| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | Optional placeholder in the env schema and template; the current auth config exposes GitHub only |
+| `CRON_SECRET` | Reserved in `.env.example` and Turbo env inputs for scheduled/background-job protection |
 | `DB_SEED_USER_EMAIL` | Extra email to include when running `bun run db:seed` |
 | `BOTID_ENABLED` | Enables BotID checks in the `/api/*` route bridge and Next.js config |
 | `NEXT_PUBLIC_BOTID_ENABLED` | Enables matching client-side BotID instrumentation for mutating `/api/*` requests |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint for OpenTelemetry trace export |
 | `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated auth headers for the OTLP exporter |
-| `SENTRY_DSN` | Optional env validated in `apps/web/src/env.ts`; no Sentry bootstrap is wired yet |
-| `ANALYTICS_ID` | Optional env validated in `apps/web/src/env.ts`; no external analytics provider is wired yet |
+| `SENTRY_DSN` | Optional env validated in `apps/web/src/env.ts`; no Sentry bootstrap is wired in the current app |
+| `ANALYTICS_ID` | Optional env validated in `apps/web/src/env.ts`; no external analytics provider is wired in the current app |
 | `AI_MEMORY_REINDEX_LIMIT` | Optional limit consumed by `bun run assistant:reindex-memory` |
 
 3. Initialize database
@@ -151,7 +152,7 @@ Notes:
 
 - Root `predev` builds `@rezumerai/database` before `turbo dev`.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:ai` seeds AI providers/models plus default system configuration and public content.
+- `bun run db:seed:ai` seeds AI providers/models, default AI/system configuration, and public content.
 - `bun run db:seed` seeds dummy resumes for existing users; it does not create auth users.
 
 ## Development Workflow
@@ -227,7 +228,7 @@ Notes:
 | `bun run db:migrate:dev` | Create and apply a development migration |
 | `bun run db:migrate:status` | Show Prisma migration status |
 | `bun run db:pull` | Pull schema changes from the database |
-| `bun run db:seed:ai` | Seed AI providers/models and default system configuration |
+| `bun run db:seed:ai` | Seed AI providers/models, default system configuration, and public content |
 | `bun run db:seed` | Seed dummy resume data for existing users |
 | `bun run assistant:reindex-memory` | Run the assistant memory reindex script |
 | `bun run db:psql` | Open `psql` against `DATABASE_URL` |
@@ -247,11 +248,12 @@ Notes:
 
 | Script | Description |
 | --- | --- |
-| `bun run docker:build` | Build and start Docker Compose services |
-| `bun run docker:build:standalone` | Build the standalone web Docker image |
+| `bun run docker:build` | Build and start Docker Compose services using `.env.local` |
+| `bun run docker:build:standalone` | Build the standalone web Docker image from `apps/web/Dockerfile` |
 | `bun run docker:up` | Start Docker Compose services |
 | `bun run docker:down` | Stop Docker Compose services |
 | `bun run start:redis` | Attempt to start a `redis` compose service if you add one |
+| `bun run ai:superpowers` | Refresh the repo-local `superpowers` skill bundle and Claude symlink |
 | `bun run install:modules` | Install dependencies and rebuild workspace packages |
 | `bun run update:modules:1` | Run the repository dependency update helper script |
 | `bun run update:modules:2` | Upgrade dependencies with Bun's latest update commands |
@@ -260,6 +262,7 @@ Notes:
 | `bun run outdated` | Show outdated dependencies |
 | `bun run security:audit` | Run Bun's production dependency audit |
 | `bun run security:check` | Run `audit-ci` with the repository config |
+| `bun run prepare` | Install Husky Git hooks |
 
 ## Architecture Overview
 
@@ -268,13 +271,13 @@ Notes:
 - UI routes live under `apps/web/src/app`.
 - `apps/web/src/app/api/[[...slugs]]/route.ts` forwards `/api/*` requests into the embedded Elysia app.
 - `apps/web/src/app/api/auth/[...all]/route.ts` is the dedicated Better Auth handler.
-- `apps/web/src/proxy.ts` enforces route protection, admin gating, and security/CSP headers for non-API requests.
+- `apps/web/src/proxy.ts` enforces route protection, admin gating, redirects, and security/CSP headers for non-API requests.
 
 ### Elysia API Composition
 
 - `apps/web/src/elysia-api/app.ts` is the API entrypoint and single composition root.
 - Security and infrastructure are registered first: OpenTelemetry, trace logging, observability, Helmet, CORS, rate limiting in production, CSRF, Prisma, request logging, and centralized error handling.
-- Dev-only Swagger/OpenAPI docs are enabled in development.
+- Dev-only Swagger and OpenAPI docs are enabled in development.
 - `GET /api/health` provides a basic health check.
 - A daily cron job cleans up expired error logs.
 
@@ -282,7 +285,7 @@ Notes:
 
 - `user`: authenticated user/account endpoints
 - `resume`: resume CRUD and search
-- `ai`: assistant chat/history, model settings, Copilot actions, and streamed text optimization
+- `ai`: assistant chat/messages, model settings, Copilot actions, and streamed text optimization
 - `admin`: users, AI models, system configuration, audit logs, analytics, and error log management
 
 ### Module Structure
@@ -291,7 +294,7 @@ Notes:
 - `model.ts` defines Elysia models and route contracts
 - `service.ts` owns business logic and orchestration
 - `repository.ts` is used where Prisma access is non-trivial
-- AI-specific integrations live under `assistant-agent/`, `memory/`, `providers/`, and `tools/`
+- AI-specific integrations live under `controller/`, `memory/`, `prompts/`, `providers/`, and `tools/`
 
 ### Shared Packages
 
@@ -308,14 +311,21 @@ apps/
   web/
     src/
       app/
+        about/
         admin/
         api/
           [[...slugs]]/
           auth/[...all]/
+        contact/
+        faq/
         preview/[resumeId]/
+        privacy/
         signin/
         signup/
+        terms/
         workspace/
+          builder/[resumeId]/
+          settings/
       components/
       constants/
       elysia-api/
@@ -355,13 +365,12 @@ packages/
   utils/
     src/
   tsconfig/
-scripts/
-  docker-build.sh
-  docker-compose-build.sh
-  update-biome-config-version.ts
-  update-modules.ts
-docs/
 .agents/
+  instructions/
+  skills/
+docs/
+  plans/
+scripts/
 .github/
 ```
 
@@ -378,8 +387,10 @@ docs/
 
 ## Docker Notes
 
+- The repository includes Docker assets for the `web` app only.
 - `docker-compose.yml` currently enables only the `web` service by default.
 - The PostgreSQL service is present only as commented reference configuration.
-- The Docker scripts load secrets from `.env.local`.
-- The web image uses Next.js standalone output.
+- The Docker helper scripts load secrets from `.env.local`.
+- `apps/web/Dockerfile` builds Next.js standalone output for the web app.
+- The root `Dockerfile` is a placeholder; use `apps/web/Dockerfile` for the actual application image.
 - `start:redis` exists as a helper script, but the default compose file does not define a `redis` service.

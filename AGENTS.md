@@ -58,14 +58,15 @@ Do **not** read every file under `.agents/instructions/` automatically. Load onl
 
 | Task type | Load these files |
 | --- | --- |
-| UI / frontend work | `code-style.md`, `architecture.md`, `testing-guidelines.md` |
-| Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
-| Database / schema work | `database-commands.md`, `architecture.md`, `security-guidelines.md` |
-| Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md` |
+| UI / frontend work | `project-overview.md`, `repository-layout.md`, `nextjs-app-router-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
+| Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `repository-layout.md`, `code-style.md`, `testing-guidelines.md` |
+| Database / schema work | `database-commands.md`, `architecture.md`, `repository-layout.md`, `security-guidelines.md` |
+| Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `nextjs-app-router-guidelines.md`, `repository-layout.md` |
 | AI / LLM integration | `ai-integration-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md`, `testing-guidelines.md` |
-| CI / tooling work | `build-test-commands.md`, `development-workflow.md`, `monorepo-guidelines.md` |
+| CI / tooling work | `build-test-commands.md`, `development-workflow.md`, `docker-commands.md`, `monorepo-guidelines.md` |
 | Monorepo / packages work | `monorepo-guidelines.md`, `repository-layout.md`, `typescript-guidelines.md` |
-| New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md` |
+| New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md`, `build-test-commands.md` |
+| Documentation / agent workflow | `ai-agent-workflow.md`, `project-overview.md`, `repository-layout.md` |
 | Commit / PR work | `commit-and-pr-guidelines.md` |
 
 ## AI Architecture
@@ -93,6 +94,7 @@ Detailed guidance is split into modular files under `.agents/instructions/`. Loa
 
 - **Project overview:** `.agents/instructions/project-overview.md`
 - **Repository layout:** `.agents/instructions/repository-layout.md`
+- **Next.js App Router guidelines:** `.agents/instructions/nextjs-app-router-guidelines.md`
 - **Development workflow:** `.agents/instructions/development-workflow.md`
 - **Build, lint, format, test:** `.agents/instructions/build-test-commands.md`
 - **Database commands:** `.agents/instructions/database-commands.md`
