@@ -54,11 +54,12 @@ export const DEFAULT_AI_CONFIGURATION = {
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
 
 export const AiModelOptionSchema = z.object({
-  id: z.string(),
+  id: z.string(), // OpenRouter model ID string
   name: z.string(),
-  modelId: z.string(),
-  providerName: z.string(),
-  providerDisplayName: z.string(),
+  contextLength: z.number().int().min(0),
+  inputModalities: z.array(z.string()),
+  outputModalities: z.array(z.string()),
+  supportedParameters: z.array(z.string()),
 });
 
 export const AiSettingsSchema = z.object({
