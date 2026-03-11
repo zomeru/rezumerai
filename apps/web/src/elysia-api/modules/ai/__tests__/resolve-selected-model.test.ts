@@ -75,4 +75,8 @@ describe("resolveSelectedModel with defaultModelId", () => {
   it("returns models[0] when defaultModelId is null and no user preference", () => {
     expect(resolveSelectedModel(MODELS, null, null, null)).toBe(FREE_MODEL);
   });
+
+  it("falls through to defaultModelId when selectedModelDbId does not match any active model", () => {
+    expect(resolveSelectedModel(MODELS, "stale-db-id", null, "openrouter/free")).toBe(FREE_MODEL);
+  });
 });
