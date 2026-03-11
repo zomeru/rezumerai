@@ -256,7 +256,12 @@ export abstract class AiService {
     }
 
     return {
-      model: AiService.resolveSelectedModel(models, user?.selectedAiModelId ?? null, requestedModelId ?? null),
+      model: AiService.resolveSelectedModel(
+        models,
+        user?.selectedAiModelId ?? null,
+        requestedModelId ?? null,
+        config.DEFAULT_MODEL_ID,
+      ),
       config,
     };
   }
