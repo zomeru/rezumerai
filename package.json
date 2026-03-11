@@ -67,6 +67,7 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "start:redis": "docker compose up -d redis",
+    "ai:superpowers": "./scripts/ai-superpowers.sh",
     "install:modules": "bun install && turbo run build --filter=./packages/*",
     "update:modules:1": "bun scripts/update-modules.ts",
     "update:modules:2": "bun update --latest && bun update --latest --interactive --recursive",

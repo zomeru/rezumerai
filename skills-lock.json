@@ -6,11 +6,6 @@
       "sourceType": "github",
       "computedHash": "58ce68f628890c3925aea2b5435a649251ac182057541045c68fc19a27aaa0ec"
     },
-    "architecture-patterns": {
-      "source": "secondsky/claude-skills",
-      "sourceType": "github",
-      "computedHash": "84d959fabf294f77a3cb87f499fb36b86229a81e23cf6b148de3194510d4cef2"
-    },
     "better-auth": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
@@ -40,11 +35,6 @@
       "source": "secondsky/claude-skills",
       "sourceType": "github",
       "computedHash": "27373d0b866ff1d38b7f35481be35ffffa521d86fcd2822d98ad0d7f9d7d106c"
-    },
-    "create-agent": {
-      "source": "OpenRouterTeam/agent-skills",
-      "sourceType": "github",
-      "computedHash": "7232cfa7d012008bf12fa33815af49db10e7ddd5549c75c501168875a5334e11"
     },
     "create-auth-skill": {
       "source": "secondsky/claude-skills",
@@ -136,30 +126,15 @@
       "sourceType": "github",
       "computedHash": "e53cc1a286987b7f28ba5cdd29e8ebacdde0d5822d40e938652fec8c47f33efa"
     },
-    "senior-backend": {
-      "source": "georgekhananaev/claude-skills-vault",
-      "sourceType": "github",
-      "computedHash": "487ffa9f11a2496285d1097bbd2959475bc700db73b4a1931acc19c1e66eb857"
-    },
     "store-data-structures": {
       "source": "lobehub/lobehub",
       "sourceType": "github",
       "computedHash": "df2b5007084cd015ea70d2318be20e4b6c104b807ac856dff07a3a4fe072951d"
     },
-    "system-architect": {
-      "source": "georgekhananaev/claude-skills-vault",
-      "sourceType": "github",
-      "computedHash": "566ba5c25546aeec23927b111f973110ea3b0719f2d39bbb37b82dd6d69bbd0a"
-    },
     "tailwind-v4-shadcn": {
       "source": "secondsky/claude-skills",
       "sourceType": "github",
       "computedHash": "dedaff41ff3331cfe9734eee4203a1e85c6a013eec46df83d9c00e3d36e421f9"
-    },
-    "token-optimizer": {
-      "source": "georgekhananaev/claude-skills-vault",
-      "sourceType": "github",
-      "computedHash": "ee8991b4e732efa583907a4caa70d18ab57675d209efed2ce1fec266d6ea85db"
     },
     "turborepo": {
       "source": "secondsky/claude-skills",
