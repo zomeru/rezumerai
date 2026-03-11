@@ -78,7 +78,8 @@ const ResumeCopilotReviewFinding = t.Object({
 
 export const AiModel = new Elysia().model({
   "ai.OptimizeInput": t.Object({
-    text: t.String({ minLength: 1, description: "Text to optimize" }),
+    prompt: t.Optional(t.String({ minLength: 1, description: "AI SDK completion prompt to optimize" })),
+    text: t.Optional(t.String({ minLength: 1, description: "Legacy text payload to optimize" })),
     resumeId: t.Optional(t.String({ minLength: 1, description: "Optional source resume ID" })),
     modelId: t.Optional(t.String({ minLength: 1, description: "Optional AI model override" })),
   }),

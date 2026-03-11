@@ -48,7 +48,7 @@ export async function handleOptimizeTextRequest(options: {
     return verificationResult;
   }
 
-  const input = options.body.text.trim();
+  const input = (options.body.prompt ?? options.body.text ?? "").trim();
   const modelId = options.body.modelId?.trim();
   const trackedRequestContext = {
     request: options.request,
