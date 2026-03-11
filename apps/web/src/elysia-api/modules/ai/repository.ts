@@ -2,9 +2,7 @@ import type { Prisma, PrismaClient } from "@rezumerai/database";
 import type { AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
 import { aiConfigurationName, asiaManilaUtcOffsetMs } from "./constants";
 import { AiCreditsExhaustedError } from "./errors";
-import { toActiveAiModel } from "./mapper";
 import type {
-  ActiveAiModel,
   AssistantConversationMemoryMessage,
   AssistantConversationRecord,
   AssistantConversationState,
@@ -80,27 +78,6 @@ export abstract class AiRepository {
     return role === "assistant" ? "assistant" : "user";
   }
 
-  static async listActiveModels(db: DatabaseClient): Promise<ActiveAiModel[]> {
-    const models = await db.aiModel.findMany({
-      where: {
-        isActive: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        modelId: true,
-        provider: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
-    });
-
-    return models.map(toActiveAiModel);
-  }
-
   static async getAiConfigurationValue(db: DatabaseClient): Promise<Prisma.JsonValue | null> {
     const configuration = await db.systemConfiguration.findUnique({
       where: { name: aiConfigurationName },
@@ -113,20 +90,20 @@ export abstract class AiRepository {
   static async getUserSelectedModelRecord(
     db: DatabaseClient,
     userId: string,
-  ): Promise<{ selectedAiModelId: string | null } | null> {
+  ): Promise<{ selectedAiModel: string } | null> {
     return db.user.findUnique({
       where: { id: userId },
       select: {
-        selectedAiModelId: true,
+        selectedAiModel: true,
       },
     });
   }
 
-  static async updateUserSelectedModel(db: DatabaseClient, userId: string, selectedAiModelId: string): Promise<void> {
+  static async updateUserSelectedModel(db: DatabaseClient, userId: string, modelId: string): Promise<void> {
     await db.user.update({
       where: { id: userId },
       data: {
-        selectedAiModelId,
+        selectedAiModel: modelId,
       },
     });
   }
