@@ -459,7 +459,7 @@ export abstract class AiService {
     const providerRegistry = createAiProviderRegistry();
     const modelMessages = await convertToModelMessages(originalMessages);
     const result = streamText({
-      model: providerRegistry.getChatModel(runtime.model.modelId),
+      model: providerRegistry.getChatModel(runtime.config.ASSISTANT_MODEL_ID),
       system: systemPrompt,
       messages: modelMessages,
       tools: toolRegistry.getAssistantTools(),
