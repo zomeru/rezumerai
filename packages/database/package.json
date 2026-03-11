@@ -50,7 +50,7 @@
     "@prisma/adapter-neon": "^7.4.2",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
-    "@prisma/client-runtime-utils": "7.4.2",
+    "@prisma/client-runtime-utils": "7.5.0",
     "elysia": "^1.4.27",
     "pg": "^8.20.0",
     "prismabox": "^1.1.26"
