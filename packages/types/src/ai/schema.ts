@@ -54,9 +54,9 @@ export const DEFAULT_AI_CONFIGURATION = {
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
 
 export const AiModelOptionSchema = z.object({
-  id: z.string(), // OpenRouter model ID string
-  name: z.string(),
-  contextLength: z.number().int().min(0),
+  id: z.string().trim().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
+  contextLength: z.number().int().min(0).max(10_000_000),
   inputModalities: z.array(z.string()),
   outputModalities: z.array(z.string()),
   supportedParameters: z.array(z.string()),
