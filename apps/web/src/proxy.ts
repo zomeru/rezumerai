@@ -4,10 +4,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ROUTES } from "@/constants/routing";
 import { auth } from "@/lib/auth";
+import { canAccessAuthPage, canAccessSessionRoute } from "@/lib/auth-route-access";
 
 /**
- * Protected routes that require authentication.
- * Users without a session will be redirected to the sign-in page.
+ * Routes that require a session identity.
+ * Anonymous and registered sessions are both allowed here.
  */
 const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS, ROUTES.TESTSITE];
 
@@ -97,15 +98,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !session) {
+  // Redirect users without any session identity from session-gated routes.
+  if (isProtectedRoute && !canAccessSessionRoute(session)) {
     const signInUrl = new URL(ROUTES.SIGNIN, request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (session && (pathname === ROUTES.SIGNIN || pathname === ROUTES.SIGNUP)) {
+  // Only redirect registered users away from auth pages.
+  if (!canAccessAuthPage(session) && (pathname === ROUTES.SIGNIN || pathname === ROUTES.SIGNUP)) {
     return NextResponse.redirect(new URL(ROUTES.WORKSPACE, request.url));
   }
 
