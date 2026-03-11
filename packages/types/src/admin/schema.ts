@@ -92,38 +92,6 @@ export const UpdateSystemConfigurationInputSchema = z.object({
   value: z.unknown(),
 });
 
-export const AdminAiProviderOptionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
-
-export const AdminAiModelSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  modelId: z.string(),
-  providerId: z.string(),
-  providerName: z.string(),
-  isActive: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-export const AdminAiModelCatalogSchema = z.object({
-  models: z.array(AdminAiModelSchema),
-  providers: z.array(AdminAiProviderOptionSchema),
-});
-
-export const AdminAiModelMutationInputSchema = z.object({
-  providerId: z.string().trim().min(1),
-  name: z.string().trim().min(1),
-  modelId: z.string().trim().min(1),
-  isActive: z.boolean(),
-});
-
-export const DeleteAdminAiModelResponseSchema = z.object({
-  id: z.string(),
-});
-
 export const AuditLogCategorySchema = z.enum(["USER_ACTION", "SYSTEM_ACTIVITY", "DATABASE_CHANGE"]);
 
 export const AuditLogActorSchema = z
@@ -230,11 +198,6 @@ export type AdminUserPasswordUpdateInput = z.infer<typeof AdminUserPasswordUpdat
 export type SystemConfigurationEntry = z.infer<typeof SystemConfigurationEntrySchema>;
 export type SystemConfigurationListResponse = z.infer<typeof SystemConfigurationListResponseSchema>;
 export type UpdateSystemConfigurationInput = z.infer<typeof UpdateSystemConfigurationInputSchema>;
-export type AdminAiProviderOption = z.infer<typeof AdminAiProviderOptionSchema>;
-export type AdminAiModel = z.infer<typeof AdminAiModelSchema>;
-export type AdminAiModelCatalog = z.infer<typeof AdminAiModelCatalogSchema>;
-export type AdminAiModelMutationInput = z.infer<typeof AdminAiModelMutationInputSchema>;
-export type DeleteAdminAiModelResponse = z.infer<typeof DeleteAdminAiModelResponseSchema>;
 export type AuditLogCategory = z.infer<typeof AuditLogCategorySchema>;
 export type AuditLogActor = z.infer<typeof AuditLogActorSchema>;
 export type AuditLogListItem = z.infer<typeof AuditLogListItemSchema>;
