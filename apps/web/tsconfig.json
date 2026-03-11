@@ -2,8 +2,6 @@
   "extends": "@rezumerai/tsconfig/next.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "declaration": false,
-    "declarationMap": false,
     "paths": {
       "@/*": ["./src/*"],
       "@rezumerai/ui": ["../../packages/ui/src"],
@@ -11,15 +9,8 @@
       "@rezumerai/types": ["../../packages/types/src"],
       "@rezumerai/types/*": ["../../packages/types/src/*"],
       "@rezumerai/utils": ["../../packages/utils/src"],
-      "@rezumerai/utils/*": ["../../packages/utils/src/*"],
-      "@rezumerai/database": ["../../packages/database"],
-      "@rezumerai/database/*": ["../../packages/database/*"]
-    },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+      "@rezumerai/utils/*": ["../../packages/utils/src/*"]
+    }
   },
   "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts", "postcss.config.mjs"],
   "exclude": ["node_modules", "**/*.test.*", "**/*.spec.*", "**/__tests__/**", "scripts/**", "src/test/**"]

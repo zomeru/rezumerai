@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Prisma, prisma } from "@rezumerai/database";
+import { type Prisma, prisma } from "@rezumerai/database";
 import Elysia from "elysia";
 import { serverEnv } from "@/env";
 
@@ -60,7 +60,24 @@ interface CapturedUnhandledError {
   metadata: Record<string, unknown>;
 }
 
-const prismaErrorResponse = (error: Prisma.PrismaClientKnownRequestError) => {
+type PrismaKnownRequestError = {
+  code: string;
+  clientVersion: string;
+  meta?: Record<string, unknown>;
+};
+
+function isPrismaKnownRequestError(error: unknown): error is PrismaKnownRequestError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    "clientVersion" in error &&
+    typeof error.clientVersion === "string"
+  );
+}
+
+const prismaErrorResponse = (error: PrismaKnownRequestError) => {
   switch (error.code) {
     case "P2002":
       return { status: 409, message: "Resource already exists" };
@@ -503,7 +520,7 @@ export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "g
   // ─────────────────────────────────────────────
   // Prisma errors
   // ─────────────────────────────────────────────
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  if (isPrismaKnownRequestError(error)) {
     const { status: code, message } = prismaErrorResponse(error);
     return status(code, message);
   }

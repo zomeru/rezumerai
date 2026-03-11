@@ -34,7 +34,6 @@ export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
   .use(authPlugin)
   .use(UserModel)
-  .prefix("model", "user.")
   .get(
     "/",
     async ({ db, status }) => {
@@ -64,6 +63,10 @@ export const userModule = new Elysia({ prefix: "/users" })
   .get(
     "/:id",
     async ({ db, params, status }) => {
+      if (!params.id) {
+        return userNotFound();
+      }
+
       const user = await UserService.findById(db, params.id);
       if (!user) return userNotFound();
       return status(200, user);
@@ -79,6 +82,10 @@ export const userModule = new Elysia({ prefix: "/users" })
   .get(
     "/email/:email",
     async ({ db, params, status }) => {
+      if (!params.email) {
+        return userNotFound();
+      }
+
       const user = await UserService.findByEmail(db, params.email);
       if (!user) return userNotFound();
       return status(200, user);
@@ -97,7 +104,7 @@ export const userModule = new Elysia({ prefix: "/users" })
       const accountSettings = await UserService.getAccountSettings(db, user.id);
       if (!accountSettings) return userNotFound();
 
-      const updates = sanitizeAccountUpdate(body);
+      const updates = sanitizeAccountUpdate(body as UserAccountUpdateInput);
       if (Object.keys(updates).length === 0) {
         return invalidAccountUpdate();
       }
@@ -132,7 +139,7 @@ export const userModule = new Elysia({ prefix: "/users" })
       const accountSettings = await UserService.getAccountSettings(db, user.id);
       if (!accountSettings) return userNotFound();
 
-      const updates = sanitizeAccountUpdate(body);
+      const updates = sanitizeAccountUpdate(body as UserAccountUpdateInput);
       if (Object.keys(updates).length === 0) {
         return invalidAccountUpdate();
       }

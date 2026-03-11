@@ -1,22 +1,35 @@
-import type { EducationPlain } from "@rezumerai/database/generated/prismabox/Education";
-import type { ExperiencePlain } from "@rezumerai/database/generated/prismabox/Experience";
-import type { PersonalInformationPlain } from "@rezumerai/database/generated/prismabox/PersonalInformation";
-import type { ProjectPlain } from "@rezumerai/database/generated/prismabox/Project";
-import type { Resume, ResumePlain } from "@rezumerai/database/generated/prismabox/Resume";
+import type { Prisma } from "@rezumerai/database";
 import { z } from "zod";
 import type { DeepPartial } from "../helpers";
 
-export type ResumeWithRelations = Omit<(typeof Resume)["static"], "user">;
+type ResumeRelationsInclude = {
+  education: true;
+  experience: true;
+  personalInfo: true;
+  project: true;
+};
 
-type _ResumeWithRelationsInputUpdate = typeof ResumePlain.static &
-  DeepPartial<{
-    personalInfo: typeof PersonalInformationPlain.static;
-    experience: (typeof ExperiencePlain.static)[];
-    education: (typeof EducationPlain.static)[];
-    project: (typeof ProjectPlain.static)[];
-  }>;
+export type ResumeWithRelations = Prisma.ResumeGetPayload<{
+  include: ResumeRelationsInclude;
+}>;
 
-export type ResumeWithRelationsInputUpdate = DeepPartial<_ResumeWithRelationsInputUpdate>;
+export type ResumeWithRelationsInputUpdate = DeepPartial<
+  Pick<
+    ResumeWithRelations,
+    | "title"
+    | "public"
+    | "professionalSummary"
+    | "template"
+    | "accentColor"
+    | "fontSize"
+    | "customFontSize"
+    | "skills"
+    | "personalInfo"
+    | "experience"
+    | "education"
+    | "project"
+  >
+>;
 
 const linkedinRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
 

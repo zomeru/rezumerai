@@ -1,7 +1,15 @@
 {
-  "extends": "@rezumerai/tsconfig/ui.json",
+  "extends": "@rezumerai/tsconfig/react-library.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/types": ["../types/src"],
+      "@rezumerai/types/*": ["../types/src/*"],
+      "@rezumerai/utils": ["../utils/src"],
+      "@rezumerai/utils/*": ["../utils/src/*"],
+      "@rezumerai/utils/styles": ["../utils/src/styles"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "postcss.config.mjs"],
   "exclude": ["node_modules", "dist", "**/*.test.*", "src/test/**"]

@@ -1,24 +1,30 @@
 {
   "name": "@rezumerai/database",
   "version": "1.0.0",
+  "files": [
+    "dist/**"
+  ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./generated/prismabox/*": {
-      "types": "./generated/prismabox/*.ts",
-      "import": "./generated/prismabox/*.ts"
+      "types": "./dist/generated/prismabox/*.d.ts",
+      "import": "./dist/generated/prismabox/*.js"
     },
     "./generated/prisma/*": {
-      "types": "./generated/prisma/*.ts",
-      "import": "./generated/prisma/*.ts"
+      "types": "./dist/generated/prisma/*.d.ts",
+      "import": "./dist/generated/prisma/*.js"
     }
   },
   "type": "module",
   "scripts": {
     "dev": "bun run with-env tsup --watch",
     "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
     "watch": "bun run db:generate && bun run with-env tsup --watch",
     "db:generate": "bun run with-env prisma generate",
     "db:push": "bun run with-env prisma db push",

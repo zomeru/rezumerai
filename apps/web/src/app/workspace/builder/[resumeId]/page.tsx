@@ -1,3 +1,4 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ResumeBuilderClient from "@/components/ResumeBuilder/ResumeBuilderClientPage";
@@ -24,5 +25,5 @@ export default async function ResumeBuilderPage({ params }: ResumeBuilderPagePro
     notFound();
   }
 
-  return <ResumeBuilderClient serverResume={data} resumeId={resumeId} />;
+  return <ResumeBuilderClient serverResume={data as ResumeWithRelations} resumeId={resumeId} />;
 }

@@ -41,16 +41,20 @@ const UserAccountSettings = t.Object({
   credits: UserCredits,
 });
 
+export type UserAccountUpdateInput = {
+  name?: string;
+  email?: string;
+  image?: string | null;
+};
+
 const UserAccountUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "image"]);
 
-export type UserAccountUpdateInput = typeof UserAccountUpdate.static;
-
 export const UserModel = new Elysia().model({
-  responseList: t.Array(UserPlain),
-  responseById: UserPlain,
-  responseAccount: UserAccountSettings,
-  paramById: t.Object({ id: t.String({ minLength: 1 }) }),
-  paramByEmail: t.Object({ email: t.String({ format: "email" }) }),
-  inputUpdate: UserAccountUpdate,
-  error: t.String(),
+  "user.ResponseList": t.Array(UserPlain),
+  "user.ResponseById": UserPlain,
+  "user.ResponseAccount": UserAccountSettings,
+  "user.ParamById": t.Object({ id: t.String({ minLength: 1 }) }),
+  "user.ParamByEmail": t.Object({ email: t.String({ format: "email" }) }),
+  "user.InputUpdate": UserAccountUpdate,
+  "user.Error": t.String(),
 } as const);

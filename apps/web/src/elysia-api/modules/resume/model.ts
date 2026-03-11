@@ -6,7 +6,18 @@ import {
 } from "@rezumerai/database/generated/prismabox/PersonalInformation";
 import { ProjectPlain, ProjectPlainInputCreate } from "@rezumerai/database/generated/prismabox/Project";
 import { Resume, ResumePlain, ResumePlainInputCreate } from "@rezumerai/database/generated/prismabox/Resume";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import Elysia, { t } from "elysia";
+
+export type ResumeCreateInput = Omit<
+  ResumeWithRelations,
+  "id" | "userId" | "createdAt" | "updatedAt" | "personalInfo" | "experience" | "education" | "project"
+> & {
+  personalInfo?: Omit<NonNullable<ResumeWithRelations["personalInfo"]>, "id" | "resumeId">;
+  experience: Array<Omit<ResumeWithRelations["experience"][number], "resumeId">>;
+  education: Array<Omit<ResumeWithRelations["education"][number], "resumeId">>;
+  project: Array<Omit<ResumeWithRelations["project"][number], "resumeId">>;
+};
 
 export const ResumeWithoutUser = t.Omit(Resume, ["user"]);
 
@@ -35,13 +46,13 @@ export const CustomResumeWithRelationsInputUpdate = t.Composite([
 ]);
 
 export const ResumeModel = new Elysia().model({
-  responseList: t.Array(ResumeWithoutUser),
-  responseById: ResumeWithoutUser,
-  queryList: t.Object({
+  "resume.ResponseList": t.Array(ResumeWithoutUser),
+  "resume.ResponseById": ResumeWithoutUser,
+  "resume.QueryList": t.Object({
     search: t.Optional(t.String()),
   }),
-  inputCreate: CustomResumeWithRelationsInputCreate,
-  inputUpdate: CustomResumeWithRelationsInputUpdate,
-  paramById: t.Object({ id: t.String() }),
-  error: t.String(),
+  "resume.InputCreate": CustomResumeWithRelationsInputCreate,
+  "resume.InputUpdate": CustomResumeWithRelationsInputUpdate,
+  "resume.ParamById": t.Object({ id: t.String() }),
+  "resume.Error": t.String(),
 } as const);

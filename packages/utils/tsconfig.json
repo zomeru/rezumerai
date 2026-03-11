@@ -1,8 +1,5 @@
 {
-  "extends": "@rezumerai/tsconfig/utils.json",
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
+  "extends": "@rezumerai/tsconfig/library.json",
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.*", "src/test/**"]
 }

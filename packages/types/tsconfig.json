@@ -1,5 +1,11 @@
 {
-  "extends": "@rezumerai/tsconfig/types.json",
+  "extends": "@rezumerai/tsconfig/library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@rezumerai/database/generated/*": ["../database/generated/*"]
+    }
+  },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,4 +1,5 @@
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@rezumerai/types";
+import type { Static } from "elysia";
 import Elysia, { t } from "elysia";
 
 const Pagination = t.Object({
@@ -239,10 +240,10 @@ const AnalyticsDashboard = t.Object({
   backgroundJobs: t.Array(AnalyticsBackgroundJob),
 });
 
-export type ErrorLogListQueryInput = typeof ErrorLogListQuery.static;
-export type UserListQueryInput = typeof UserListQuery.static;
-export type AuditLogListQueryInput = typeof AuditLogListQuery.static;
-export type AnalyticsQueryInput = typeof AnalyticsQuery.static;
+export type ErrorLogListQueryInput = Static<typeof ErrorLogListQuery>;
+export type UserListQueryInput = Static<typeof UserListQuery>;
+export type AuditLogListQueryInput = Static<typeof AuditLogListQuery>;
+export type AnalyticsQueryInput = Static<typeof AnalyticsQuery>;
 
 export const AdminModel = new Elysia().model({
   "adminError.QueryList": ErrorLogListQuery,

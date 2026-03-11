@@ -1,3 +1,4 @@
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { SamplePreview } from "@/components";
@@ -35,5 +36,5 @@ export default async function Preview({ params }: PreviewPageProps) {
     notFound();
   }
 
-  return <SamplePreview serverData={data} resumeId={resumeId} />;
+  return <SamplePreview serverData={data as ResumeWithRelations} resumeId={resumeId} />;
 }

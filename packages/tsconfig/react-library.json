@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Prisma Database",
+  "display": "React Library",
   "extends": "./library.json",
   "compilerOptions": {
-    "types": ["node"],
-    "ignoreDeprecations": "5.0"
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "jsx": "react-jsx"
   }
 }

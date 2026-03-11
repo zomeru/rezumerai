@@ -23,6 +23,21 @@ ls .agents/skills/
 cat .agents/skills/<skill-name>/SKILL.md
 ```
 
+## TypeScript Config Conventions
+
+- Shared TypeScript presets live in `packages/tsconfig/`.
+- The canonical preset layout is:
+  - `base.json`: common compiler semantics only
+  - `library.json`: internal non-React package defaults
+  - `react-library.json`: internal React package defaults
+  - `next.json`: Next.js app defaults
+  - `database.json`: Prisma/database package defaults
+- Keep project-local `tsconfig.json` files focused on project-relative concerns only:
+  - `include` / `exclude`
+  - local `baseUrl`
+  - local `paths` for source-level workspace aliases when a package must typecheck against sibling source
+- Do not put project-relative `baseUrl`, `paths`, `outDir`, or `tsBuildInfoFile` settings into shared presets under `packages/tsconfig/`.
+
 ### Serena (Optional)
 
 Serena provides semantic code navigation — symbol lookup, reference tracing, and structured edits. Use it when it helps; it is not required for every task.

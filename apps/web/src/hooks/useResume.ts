@@ -1,9 +1,10 @@
 import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DUMMY_RESUME_DATA_ID } from "@/constants/dummy";
+import type { ResumeCreateInput } from "@/elysia-api/modules/resume/types";
 import { api } from "@/lib/api";
 
-export type CreateResumeInput = Parameters<typeof api.resumes.post>[0];
+export type CreateResumeInput = ResumeCreateInput;
 
 export function useResumeById(
   id: string,
@@ -22,7 +23,7 @@ export function useResumeById(
         throw new Error(errorMessage);
       }
 
-      return data;
+      return data as ResumeWithRelations;
     },
     enabled: !!id && id !== DUMMY_RESUME_DATA_ID,
     ...options,
@@ -46,7 +47,7 @@ export function useResumeList(search?: string) {
         throw new Error(errorMessage);
       }
 
-      return data;
+      return (data ?? []) as ResumeWithRelations[];
     },
   });
 }
@@ -62,7 +63,8 @@ export function useCreateResume() {
         const errorMessage =
           typeof error.value === "string"
             ? error.value
-            : error.value.message || "An unknown error occurred while creating the resume.";
+            : ("message" in error.value ? error.value.message : undefined) ||
+              "An unknown error occurred while creating the resume.";
         throw new Error(errorMessage);
       }
 
@@ -70,7 +72,7 @@ export function useCreateResume() {
         throw new Error("Failed to create resume: Invalid response");
       }
 
-      return data.data;
+      return data.data as ResumeWithRelations;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["resumes"] });
@@ -83,7 +85,7 @@ export function useUpdateResume() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: ResumeWithRelationsInputUpdate }) => {
-      const { data, error } = await api.resumes({ id }).patch(updates);
+      const { data, error } = await api.resumes({ id }).patch(updates as never);
 
       if (error) {
         const errorMessage =
@@ -95,7 +97,7 @@ export function useUpdateResume() {
         throw new Error("Failed to update resume: Invalid response");
       }
 
-      return data;
+      return data as ResumeWithRelations;
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["resumes"] });

@@ -1,19 +1,11 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
 import type { ResumeWithRelations } from "@rezumerai/types";
-import { t } from "elysia";
-import { CustomResumeWithRelationsInputUpdate } from "./model";
 import type { ResumeCreateInput, ResumeSearchInput, ResumeUpdateInput, SyncPromiseReturn } from "./types";
 
-const SyncEducation = t.Pick(CustomResumeWithRelationsInputUpdate, ["education"]);
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
-const SyncExperience = t.Pick(CustomResumeWithRelationsInputUpdate, ["experience"]);
-const SyncProject = t.Pick(CustomResumeWithRelationsInputUpdate, ["project"]);
 
-type SyncItemsType =
-  | typeof SyncEducation.static.education
-  | typeof SyncExperience.static.experience
-  | typeof SyncProject.static.project;
+type SyncItemsType = ResumeUpdateInput["education"] | ResumeUpdateInput["experience"] | ResumeUpdateInput["project"];
 
 type SyncableRelation = {
   findMany(args: { where: { resumeId: string }; select: { id: true } }): Promise<{ id: string }[]>;

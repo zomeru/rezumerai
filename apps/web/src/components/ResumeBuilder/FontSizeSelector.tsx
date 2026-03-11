@@ -1,11 +1,13 @@
 "use client";
 
-import type { FontSizePreset as FontSizePresetType } from "@rezumerai/database/generated/prismabox/FontSizePreset";
 import { cn } from "@rezumerai/utils/styles";
+import type { Static } from "elysia";
 import { Check, Type } from "lucide-react";
 import { useState } from "react";
 
-export type FontSizePreset = typeof FontSizePresetType.static;
+type FontSizePresetSchema = typeof import("@rezumerai/database/generated/prismabox/FontSizePreset")["FontSizePreset"];
+
+export type FontSizePreset = Static<FontSizePresetSchema>;
 
 import { useClickOutside } from "@/hooks/useClickOutside";
 
@@ -85,7 +87,7 @@ export function getFontScale(size: FontSizeValue): number {
   if (typeof size === "number") {
     return size;
   }
-  return FONT_SIZE_SCALES[size];
+  return FONT_SIZE_SCALES[size] ?? 1;
 }
 
 /**
