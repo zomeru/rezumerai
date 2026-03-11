@@ -118,10 +118,9 @@ async function refreshModels(): Promise<OpenRouterModelOption[]> {
       return models;
     })
     .catch(() => {
-      // Clear stale cache on error so the next call triggers a fresh attempt.
-      cachedModels = null;
+      // Reset timestamp so the next call triggers a retry, but preserve stale data.
       cacheTimestamp = 0;
-      return [FALLBACK_FREE_ROUTER];
+      return cachedModels ?? [FALLBACK_FREE_ROUTER];
     })
     .finally(() => {
       inflightRefresh = null;
@@ -154,4 +153,11 @@ export function isValidFreeModel(modelId: string, models: OpenRouterModelOption[
 
 export function resolveEffectiveModel(savedModelId: string, models: OpenRouterModelOption[]): string {
   return isValidFreeModel(savedModelId, models) ? savedModelId : DEFAULT_AI_MODEL;
+}
+
+/** Reset module-level cache. Only for use in tests. */
+export function __resetCacheForTests(): void {
+  cachedModels = null;
+  cacheTimestamp = 0;
+  inflightRefresh = null;
 }

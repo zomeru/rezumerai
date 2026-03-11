@@ -3,7 +3,12 @@ import { DEFAULT_AI_MODEL } from "@rezumerai/types";
 
 // NOTE: The module under test does not exist yet (Task 7).
 // These tests are expected to fail with "Cannot find module" until the service is implemented.
-import { getAvailableModels, isValidFreeModel, resolveEffectiveModel } from "../openrouter-model-service";
+import {
+  __resetCacheForTests,
+  getAvailableModels,
+  isValidFreeModel,
+  resolveEffectiveModel,
+} from "../openrouter-model-service";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -91,8 +96,11 @@ describe("resolveEffectiveModel", () => {
 
 describe("getAvailableModels", () => {
   beforeEach(() => {
-    // Restore any fetch mock so each test starts clean
+    // Restore any fetch mock and reset module-level cache so each test starts clean.
+    // Without __resetCacheForTests(), stale cachedModels from a prior test would
+    // bleed into subsequent tests and produce incorrect results.
     mock.restore();
+    __resetCacheForTests();
   });
 
   it("always places openrouter/free first in results", async () => {
