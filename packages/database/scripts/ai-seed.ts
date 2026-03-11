@@ -15,6 +15,10 @@ const AI_PROVIDER_SEED = [
     name: "openrouter",
     models: [
       {
+        name: "Free Models Router",
+        modelId: "openrouter/free",
+      },
+      {
         name: "Arcee AI: Trinity Large Preview (free)",
         modelId: "arcee-ai/trinity-large-preview:free",
       },
