@@ -948,6 +948,7 @@ export abstract class AiService {
     models: ActiveAiModel[],
     selectedModelDbId: string | null,
     requestedModelId: string | null,
+    defaultModelId: string | null = null,
   ): ActiveAiModel {
     if (models.length === 0) {
       throw new AiModelUnavailableError(ERROR_MESSAGES.AI_NO_ACTIVE_MODELS);
@@ -969,6 +970,11 @@ export abstract class AiService {
       if (savedModel) {
         return savedModel;
       }
+    }
+
+    if (defaultModelId) {
+      const configDefault = models.find((model) => model.modelId === defaultModelId);
+      if (configDefault) return configDefault;
     }
 
     const [fallbackModel] = models;
