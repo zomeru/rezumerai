@@ -1,13 +1,5 @@
+import type { OpenRouterModelOption } from "./openrouter-model-service";
 import type { ActiveAiModel, AiUsageMetrics } from "./types";
-
-type ActiveAiModelRow = {
-  id: string;
-  name: string;
-  modelId: string;
-  provider: {
-    name: string;
-  };
-};
 
 type ChatUsage = {
   promptTokens?: number | null;
@@ -40,21 +32,14 @@ export function emptyAiUsageMetrics(): AiUsageMetrics {
   };
 }
 
-export function formatProviderName(providerName: string): string {
-  return providerName
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
-    .join(" ");
-}
-
-export function toActiveAiModel(record: ActiveAiModelRow): ActiveAiModel {
+export function mapOpenRouterModelToActiveAiModel(model: OpenRouterModelOption): ActiveAiModel {
   return {
-    id: record.id,
-    name: record.name,
-    modelId: record.modelId,
-    providerName: record.provider.name,
-    providerDisplayName: formatProviderName(record.provider.name),
+    id: model.id,
+    name: model.name,
+    contextLength: model.contextLength,
+    inputModalities: model.inputModalities,
+    outputModalities: model.outputModalities,
+    supportedParameters: model.supportedParameters,
   };
 }
 

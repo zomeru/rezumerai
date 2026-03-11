@@ -40,13 +40,14 @@ export interface DailyCreditsStatus {
   dailyLimit: number;
 }
 
-export interface ActiveAiModel {
+export type ActiveAiModel = {
   id: string;
   name: string;
-  modelId: string;
-  providerName: string;
-  providerDisplayName: string;
-}
+  contextLength: number;
+  inputModalities: string[];
+  outputModalities: string[];
+  supportedParameters: string[];
+};
 
 export interface UserAiSettings {
   models: ActiveAiModel[];
