@@ -23,6 +23,8 @@ export const AiConfigurationSchema = z.object({
   ASSISTANT_RAG_TOP_K: z.number().int().min(1).max(12),
   ASSISTANT_RAG_RECENT_LIMIT: z.number().int().min(1).max(20),
   ASSISTANT_CONTEXT_TOKEN_LIMIT: z.number().int().min(128).max(16000),
+  ASSISTANT_MODEL_ID: z.string().trim().min(1).max(200),
+  DEFAULT_MODEL_ID: z.string().trim().min(1).max(200),
 });
 
 const DEFAULT_ASSISTANT_SYSMTEM_PROMPT =
@@ -45,6 +47,8 @@ export const DEFAULT_AI_CONFIGURATION = {
   ASSISTANT_RAG_TOP_K: 4,
   ASSISTANT_RAG_RECENT_LIMIT: 8,
   ASSISTANT_CONTEXT_TOKEN_LIMIT: 1200,
+  ASSISTANT_MODEL_ID: "openrouter/free",
+  DEFAULT_MODEL_ID: "openrouter/free",
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
 
 export const AiModelOptionSchema = z.object({
