@@ -30,6 +30,8 @@ export const AiConfigurationSchema = z.object({
 const DEFAULT_ASSISTANT_SYSMTEM_PROMPT =
   "You are Rezumerai Assistant. Use approved tools for Rezumerai product or account data and never guess such information; if it cannot be retrieved, refuse briefly and safely. For general knowledge questions that do not require Rezumerai tools or private data, answer normally. Keep replies short, factual, and role-safe, prefer concise lists over long prose, and use real line breaks with section headers on their own lines and one list item per line.";
 
+export const DEFAULT_AI_MODEL = "openrouter/free";
+
 export const DEFAULT_AI_CONFIGURATION = {
   PROMPT_VERSION: "copilot-v1",
   DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: 100,
@@ -47,8 +49,8 @@ export const DEFAULT_AI_CONFIGURATION = {
   ASSISTANT_RAG_TOP_K: 4,
   ASSISTANT_RAG_RECENT_LIMIT: 8,
   ASSISTANT_CONTEXT_TOKEN_LIMIT: 1200,
-  ASSISTANT_MODEL_ID: "openrouter/free",
-  DEFAULT_MODEL_ID: "openrouter/free",
+  ASSISTANT_MODEL_ID: DEFAULT_AI_MODEL,
+  DEFAULT_MODEL_ID: DEFAULT_AI_MODEL,
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
 
 export const AiModelOptionSchema = z.object({
