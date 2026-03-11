@@ -7,13 +7,13 @@ import { usePathname } from "next/navigation";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import LLMMarkdownRenderer from "@/components/ai/LLMMarkdownRenderer";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useAssistantMessageHistory } from "@/hooks/useAi";
-import { toDisplaySafeUiMessageParts } from "@/lib/ai-message-parts";
+import { extractDisplayTextFromUiMessageParts, toDisplaySafeUiMessageParts } from "@/lib/ai-message-parts";
 import { ensureAnonymousSession, hasSessionIdentity, isAnonymousSession, useSession } from "@/lib/auth-client";
 
-const INITIAL_ASSISTANT_COPY =
-  "Ask about Rezumerai, your resumes, or admin data based on your current access.";
+const INITIAL_ASSISTANT_COPY = "Ask about Rezumerai, your resumes, or admin data based on your current access.";
 
 const DEFAULT_PANEL_SIZE = {
   width: 384,
@@ -57,22 +57,6 @@ function normalizeInlineContent(content: unknown): string {
   }
 }
 
-function renderInlineText(content: string): React.ReactNode {
-  const parts = content.split(/(\*\*.*?\*\*)/g).filter(Boolean);
-
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={`${part}-${index}`} className="font-semibold text-slate-900">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-
-    return <span key={`${part}-${index}`}>{part}</span>;
-  });
-}
-
 function mergeMessages(olderMessages: UIMessage[], currentMessages: UIMessage[]): UIMessage[] {
   const messageOrder: string[] = [];
   const mergedById = new Map<string, UIMessage>();
@@ -88,24 +72,23 @@ function mergeMessages(olderMessages: UIMessage[], currentMessages: UIMessage[])
   return messageOrder.map((id) => mergedById.get(id)).filter((message): message is UIMessage => Boolean(message));
 }
 
-function getVisibleMessageTextParts(parts: UIMessage["parts"]): string[] {
-  return toDisplaySafeUiMessageParts(parts).flatMap((part) =>
-    "text" in part && typeof part.text === "string" ? [part.text] : [],
-  );
+function getVisibleMessageTextParts(parts: UIMessage["parts"]): Array<{ key: string; text: string }> {
+  let characterOffset = 0;
+
+  return toDisplaySafeUiMessageParts(parts).flatMap((part) => {
+    if (!("text" in part) || typeof part.text !== "string") {
+      return [];
+    }
+
+    const key = `${characterOffset}-${part.text}`;
+    characterOffset += part.text.length;
+
+    return [{ key, text: part.text }];
+  });
 }
 
-function MessageBody({ message }: { message: UIMessage }): React.JSX.Element {
-  const visibleTextParts = getVisibleMessageTextParts(message.parts);
-
-  return (
-    <div className="space-y-3 break-words text-[0.95rem] leading-6 [overflow-wrap:anywhere]">
-      {visibleTextParts.map((text, index) => (
-        <p key={`text-${message.id}-${index}`} className="whitespace-pre-wrap text-slate-700">
-          {renderInlineText(normalizeInlineContent(text))}
-        </p>
-      ))}
-    </div>
-  );
+function MessageBody({ content }: { content: string }): React.JSX.Element {
+  return <LLMMarkdownRenderer className="text-slate-700" content={content} />;
 }
 
 export default function AiAssistantWidget(): React.JSX.Element {
@@ -133,9 +116,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
   const [isResizing, setIsResizing] = useState(false);
   const [isPreparingSession, setIsPreparingSession] = useState(false);
   const assistantIdentityKey =
-    hasAssistantIdentity && session?.user?.id
-      ? `${session.user.id}:${isAnonymous ? "anonymous" : "registered"}`
-      : null;
+    hasAssistantIdentity && session?.user?.id ? `${session.user.id}:${isAnonymous ? "anonymous" : "registered"}` : null;
   const previousAssistantIdentityKeyRef = useRef<string | null>(null);
 
   const history = useAssistantMessageHistory({
@@ -346,7 +327,9 @@ export default function AiAssistantWidget(): React.JSX.Element {
 
   const isChatBusy = status === "submitted" || status === "streaming";
   const showLoadingState =
-    (isSessionPending || isPreparingSession || history.isLoading) && messages.length === 0 && historyMessages.length === 0;
+    (isSessionPending || isPreparingSession || history.isLoading) &&
+    messages.length === 0 &&
+    historyMessages.length === 0;
 
   return (
     <aside aria-label="AI assistant" className="fixed right-4 bottom-4 z-100 flex flex-col items-end gap-3">
@@ -403,6 +386,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
             ) : (
               messages.map((message) => {
                 const visibleTextParts = getVisibleMessageTextParts(message.parts);
+                const assistantContent = extractDisplayTextFromUiMessageParts(message.parts);
 
                 if (message.role === "assistant" && visibleTextParts.length === 0) {
                   return null;
@@ -418,12 +402,12 @@ export default function AiAssistantWidget(): React.JSX.Element {
                     }`}
                   >
                     {message.role === "assistant" ? (
-                      <MessageBody message={message} />
+                      <MessageBody content={assistantContent} />
                     ) : (
                       <div className="space-y-2">
-                        {visibleTextParts.map((text, index) => (
-                          <p key={`${message.id}-${index}`} className="whitespace-pre-wrap">
-                            {normalizeInlineContent(text)}
+                        {visibleTextParts.map((part) => (
+                          <p key={`${message.id}-${part.key}`} className="whitespace-pre-wrap">
+                            {normalizeInlineContent(part.text)}
                           </p>
                         ))}
                       </div>
@@ -444,7 +428,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
                   {[0, 1, 2].map((dot) => (
                     <span
                       key={`assistant-typing-${dot}`}
-                      className="size-2 rounded-full bg-slate-400 animate-bounce"
+                      className="size-2 animate-bounce rounded-full bg-slate-400"
                       style={{ animationDelay: `${dot * 0.12}s` }}
                     />
                   ))}

@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import { DEFAULT_AI_CONFIGURATION } from "@rezumerai/types";
-import { ProviderConfigurationError, createAiProviderRegistry, ensureEmbeddingDimension } from "../providers/registry";
+import { createAiProviderRegistry, ensureEmbeddingDimension, ProviderConfigurationError } from "../providers/registry";
 
 describe("createAiProviderRegistry", () => {
   it("creates chat and embedding models independently from one OpenRouter provider factory", () => {

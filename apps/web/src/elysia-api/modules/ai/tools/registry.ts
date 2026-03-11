@@ -1,6 +1,6 @@
-import { tool, type Tool, type ToolSet } from "ai";
-import type { AssistantRoleScope, AiConfiguration, ResumeSectionTarget } from "@rezumerai/types";
+import type { AiConfiguration, AssistantRoleScope, ResumeSectionTarget } from "@rezumerai/types";
 import { ResumeSectionTargetSchema } from "@rezumerai/types";
+import { type ToolSet, tool } from "ai";
 import { z } from "zod";
 import { getPublicAppContent, searchPublicFaq } from "@/lib/system-content";
 import {
@@ -12,11 +12,7 @@ import {
   matchResumeSnapshotToJob,
 } from "../utils";
 import { getOwnedResume } from "./shared/helpers";
-import {
-  createToolCollectionResult,
-  createToolDetailResult,
-  createToolMetricResult,
-} from "./shared/result-builders";
+import { createToolCollectionResult, createToolDetailResult, createToolMetricResult } from "./shared/result-builders";
 import { limitSchema, resumeIdSchema, searchSchema, userIdSchema } from "./shared/schemas";
 import type { DatabaseClient, UserRole } from "./types/common";
 
@@ -44,7 +40,7 @@ interface AiToolDescriptor {
   kinds: readonly AiToolKind[];
   scopes: readonly AssistantRoleScope[];
   requiresAuth?: boolean;
-  create: (context: AiToolContext) => Tool<any, any>;
+  create: (context: AiToolContext) => ToolSet[string];
 }
 
 function canUseTool(descriptor: AiToolDescriptor, context: AiToolContext, kind: AiToolKind): boolean {
@@ -93,7 +89,7 @@ const toolDefinitions = {
         description: "Search the public FAQ content.",
         inputSchema: searchSchema,
         execute: async ({ query }) =>
-          createToolCollectionResult("faq_entry", await searchPublicFaq(query), `FAQ matches for \"${query}\".`, {
+          createToolCollectionResult("faq_entry", await searchPublicFaq(query), `FAQ matches for "${query}".`, {
             query,
           }),
       }),
@@ -234,7 +230,7 @@ const toolDefinitions = {
               updatedAt: row.updatedAt.toISOString(),
               summary: compactText(row.professionalSummary ?? "", 160),
             })),
-            `Resume search results for \"${query}\".`,
+            `Resume search results for "${query}".`,
             { query },
           );
         },
@@ -320,7 +316,11 @@ const toolDefinitions = {
         description: "Read the active AI configuration. Admin only.",
         inputSchema: z.object({}),
         execute: async () =>
-          createToolMetricResult("ai_configuration", (await context.getAiConfiguration()) ?? {}, "Active AI configuration."),
+          createToolMetricResult(
+            "ai_configuration",
+            (await context.getAiConfiguration()) ?? {},
+            "Active AI configuration.",
+          ),
       }),
   },
   getUserAccountSummary: {
@@ -397,7 +397,8 @@ const toolDefinitions = {
       tool({
         description: "Load a compact owned resume overview for resume copilot.",
         inputSchema: resumeIdSchema,
-        execute: async ({ resumeId }) => buildResumeSnapshot(await getOwnedResume(context.db, context.userId ?? "", resumeId)),
+        execute: async ({ resumeId }) =>
+          buildResumeSnapshot(await getOwnedResume(context.db, context.userId ?? "", resumeId)),
       }),
   },
   analyzeJobDescription: {

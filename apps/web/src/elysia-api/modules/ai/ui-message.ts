@@ -29,9 +29,7 @@ export function collectToolNamesFromUiMessageParts(parts: AssistantUiMessage["pa
   return [...toolNames];
 }
 
-export function sanitizeUiMessageParts(options: {
-  parts: AssistantUiMessage["parts"];
-}): Prisma.InputJsonValue {
+export function sanitizeUiMessageParts(options: { parts: AssistantUiMessage["parts"] }): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(toDisplaySafeUiMessageParts(options.parts))) as Prisma.InputJsonValue;
 }
 

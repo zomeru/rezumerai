@@ -1,16 +1,12 @@
 import type { PrismaClient } from "@rezumerai/database";
 import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
 import { AiRepository } from "../repository";
-import { sanitizeUiMessageParts, type AssistantUiMessage, toUiMessageParts } from "../ui-message";
 import type { SavedAssistantConversationMessage } from "../types";
+import { type AssistantUiMessage, sanitizeUiMessageParts, toUiMessageParts } from "../ui-message";
 import { buildMessageChunks } from "./chunking";
 import { embedAssistantTexts } from "./embedder";
 import { ConversationMemoryRepository } from "./repository";
-import {
-  assembleConversationContext,
-  type ConversationContextMessage,
-  type SemanticConversationMatch,
-} from "./retrieval";
+import { assembleConversationContext, type ConversationContextMessage } from "./retrieval";
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
@@ -37,11 +33,7 @@ interface SaveAssistantUiTurnOptions extends GetAssistantConversationStateOption
   };
 }
 
-function buildConversationKey(options: {
-  scope: AssistantRoleScope;
-  threadId: string;
-  userId: string;
-}): string {
+function buildConversationKey(options: { scope: AssistantRoleScope; threadId: string; userId: string }): string {
   return `assistant:${options.scope}:${options.userId}:${options.threadId}`;
 }
 
@@ -123,10 +115,7 @@ async function reindexConversationMessages(
 
 // biome-ignore lint/complexity/noStaticOnlyClass: AI conversation memory is intentionally centralized here.
 export abstract class ConversationMemoryService {
-  private static async getConversationState(
-    db: DatabaseClient,
-    options: GetAssistantConversationStateOptions,
-  ) {
+  private static async getConversationState(db: DatabaseClient, options: GetAssistantConversationStateOptions) {
     return AiRepository.getAssistantConversationState(db, {
       conversationKey: buildConversationKey({
         scope: options.scope,

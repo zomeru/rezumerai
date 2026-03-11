@@ -1,5 +1,5 @@
-import type { AiConfiguration } from "@rezumerai/types";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { AiConfiguration } from "@rezumerai/types";
 import type { EmbeddingModel, LanguageModel } from "ai";
 
 export class ProviderConfigurationError extends Error {

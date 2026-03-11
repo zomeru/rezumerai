@@ -67,6 +67,70 @@ textarea {
   resize: none;
 }
 
+.llm-markdown pre code {
+  display: block;
+  min-width: max-content;
+}
+
+.llm-markdown .hljs {
+  color: #e5eefc;
+  background: transparent;
+}
+
+.llm-markdown .hljs-comment,
+.llm-markdown .hljs-quote {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.llm-markdown .hljs-keyword,
+.llm-markdown .hljs-selector-tag,
+.llm-markdown .hljs-title,
+.llm-markdown .hljs-section,
+.llm-markdown .hljs-type,
+.llm-markdown .hljs-built_in,
+.llm-markdown .hljs-doctag {
+  color: #7dd3fc;
+}
+
+.llm-markdown .hljs-string,
+.llm-markdown .hljs-attr,
+.llm-markdown .hljs-attribute,
+.llm-markdown .hljs-template-variable {
+  color: #fda4af;
+}
+
+.llm-markdown .hljs-number,
+.llm-markdown .hljs-literal,
+.llm-markdown .hljs-variable,
+.llm-markdown .hljs-symbol,
+.llm-markdown .hljs-bullet {
+  color: #fbbf24;
+}
+
+.llm-markdown .hljs-function,
+.llm-markdown .hljs-title.function_,
+.llm-markdown .hljs-title.class_,
+.llm-markdown .hljs-title.class {
+  color: #c4b5fd;
+}
+
+.llm-markdown .hljs-property,
+.llm-markdown .hljs-params,
+.llm-markdown .hljs-operator,
+.llm-markdown .hljs-punctuation,
+.llm-markdown .hljs-tag {
+  color: #cbd5f5;
+}
+
+.llm-markdown .hljs-addition {
+  color: #86efac;
+}
+
+.llm-markdown .hljs-deletion {
+  color: #fca5a5;
+}
+
 /* Rich text content styling for resume templates */
 .rich-text-content p {
   margin-bottom: 0.25em;

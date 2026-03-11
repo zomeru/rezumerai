@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "bun:test";
+import { hasSessionIdentity, isAnonymousSession } from "../auth-session";
 
 let authClientModule: typeof import("../auth-client");
 
@@ -21,10 +22,10 @@ describe("authClient anonymous support", () => {
   });
 
   it("detects anonymous sessions and resolved identities", () => {
-    expect(authClientModule.isAnonymousSession({ user: { id: "anon_123", isAnonymous: true } })).toBe(true);
-    expect(authClientModule.isAnonymousSession({ user: { id: "user_123", isAnonymous: false } })).toBe(false);
-    expect(authClientModule.hasSessionIdentity({ user: { id: "user_123", isAnonymous: false } })).toBe(true);
-    expect(authClientModule.hasSessionIdentity(null)).toBe(false);
+    expect(isAnonymousSession({ user: { id: "anon_123", isAnonymous: true } })).toBe(true);
+    expect(isAnonymousSession({ user: { id: "user_123", isAnonymous: false } })).toBe(false);
+    expect(hasSessionIdentity({ user: { id: "user_123", isAnonymous: false } })).toBe(true);
+    expect(hasSessionIdentity(null)).toBe(false);
   });
 
   it("sends an empty JSON payload when bootstrapping an anonymous session", async () => {

@@ -19,8 +19,7 @@ const FLOW_RULES: Record<AiPromptFlow, string> = {
     "Flow=copilot-optimize. Improve the requested resume content without changing facts. Return only the requested structured result.",
   "copilot-tailor":
     "Flow=copilot-tailor. Compare the resume against the job description. Return only the requested structured result.",
-  "copilot-review":
-    "Flow=copilot-review. Review the resume critically. Return only the requested structured result.",
+  "copilot-review": "Flow=copilot-review. Review the resume critically. Return only the requested structured result.",
 };
 
 export function composeAiSystemPrompt(options: ComposeAiSystemPromptOptions): string {

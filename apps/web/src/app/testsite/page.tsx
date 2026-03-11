@@ -3,6 +3,7 @@
 import { useCompletion } from "@ai-sdk/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import LLMMarkdownRenderer from "@/components/ai/LLMMarkdownRenderer";
 import { DisabledTooltip } from "@/components/ui/DisabledTooltip";
 import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
@@ -113,7 +114,7 @@ export default function TestSitePage(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <div>
         <h1 className="font-bold text-2xl text-gray-900">AI Text Optimizer</h1>
         <p className="mt-1 text-gray-500 text-sm">
@@ -199,15 +200,20 @@ export default function TestSitePage(): React.JSX.Element {
       {(completion || isLoading) && (
         <div className="flex flex-col gap-2">
           <p className="font-medium text-gray-700 text-sm">Optimized Result</p>
-          <pre
-            className="min-h-32 w-full whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-4 text-gray-800 text-sm leading-relaxed"
+          <div
+            className="min-h-32 w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5"
             aria-busy={isLoading}
             aria-live="polite"
             aria-atomic="false"
           >
-            {completion}
-            {isLoading && <span className="inline-block h-4 w-0.5 animate-pulse bg-blue-500 align-middle" />}
-          </pre>
+            <LLMMarkdownRenderer content={completion} />
+            {isLoading && (
+              <div className="mt-3 flex items-center gap-2 text-blue-600 text-xs">
+                <span className="inline-block h-4 w-0.5 animate-pulse bg-blue-500 align-middle" />
+                Streaming response...
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

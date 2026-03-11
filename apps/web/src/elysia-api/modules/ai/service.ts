@@ -31,15 +31,15 @@ import {
 } from "ai";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { auditAdminAssistantUsage } from "./controller/helpers/audit";
 import {
-  buildDeterministicConversationReply,
   buildAssistantThreadCursor,
+  buildDeterministicConversationReply,
   isConversationMemoryIntent,
   parseAssistantThreadCursor,
   resolveAssistantScope,
 } from "./assistant-chat";
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
+import { auditAdminAssistantUsage } from "./controller/helpers/audit";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
 import { emptyAiUsageMetrics } from "./mapper";
 import { ConversationMemoryService } from "./memory/service";
@@ -59,7 +59,11 @@ import type {
   StructuredModelResult,
   UserAiSettings,
 } from "./types";
-import { collectToolNamesFromUiMessageParts, extractTextFromUiMessageParts, type AssistantUiMessage } from "./ui-message";
+import {
+  type AssistantUiMessage,
+  collectToolNamesFromUiMessageParts,
+  extractTextFromUiMessageParts,
+} from "./ui-message";
 import {
   analyzeJobDescriptionText,
   buildDraftPatch,
@@ -159,7 +163,9 @@ function buildCopilotScope(role: AssistantConversationIdentity["role"]): Assista
   return role === "ADMIN" ? "ADMIN" : "USER";
 }
 
-function toAssistantChatHistory(messages: AssistantUiMessage[]): Array<{ content: string; role: "assistant" | "user" }> {
+function toAssistantChatHistory(
+  messages: AssistantUiMessage[],
+): Array<{ content: string; role: "assistant" | "user" }> {
   return messages.flatMap((message) => {
     if (message.role !== "assistant" && message.role !== "user") {
       return [];
@@ -543,13 +549,7 @@ export abstract class AiService {
     const resume = await AiRepository.getOwnedResume(db, userId, input.resumeId);
     const sectionSource = getResumeSectionSource(resume, input.target);
     const snapshot = buildResumeSnapshot(resume);
-    const toolRegistry = AiService.createToolRegistry(
-      db,
-      runtime.config,
-      buildCopilotScope("USER"),
-      "USER",
-      userId,
-    );
+    const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
       instructions: composeAiSystemPrompt({
@@ -615,13 +615,7 @@ export abstract class AiService {
     const analysis = analyzeJobDescriptionText(input.jobDescription);
     const comparison = matchResumeSnapshotToJob(snapshot, analysis);
     const allowedTargets = AiService.buildCopilotTargets(resume);
-    const toolRegistry = AiService.createToolRegistry(
-      db,
-      runtime.config,
-      buildCopilotScope("USER"),
-      "USER",
-      userId,
-    );
+    const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
       instructions: composeAiSystemPrompt({
@@ -681,13 +675,7 @@ export abstract class AiService {
     const snapshot = buildResumeSnapshot(resume);
     const analysis = input.jobDescription ? analyzeJobDescriptionText(input.jobDescription) : null;
     const comparison = analysis ? matchResumeSnapshotToJob(snapshot, analysis) : null;
-    const toolRegistry = AiService.createToolRegistry(
-      db,
-      runtime.config,
-      buildCopilotScope("USER"),
-      "USER",
-      userId,
-    );
+    const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
       instructions: composeAiSystemPrompt({
@@ -734,11 +722,7 @@ export abstract class AiService {
     };
   }
 
-  static async createOptimizeStream(
-    input: string,
-    modelId: string,
-    systemPrompt: string,
-  ): Promise<StreamTextHandle> {
+  static async createOptimizeStream(input: string, modelId: string, systemPrompt: string): Promise<StreamTextHandle> {
     const providerRegistry = createAiProviderRegistry();
 
     return streamText({

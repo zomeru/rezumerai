@@ -1,29 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import { JSDOM } from "jsdom";
 import type { ReactNode } from "react";
 import { ERROR_MESSAGES } from "@/constants/errors";
-
-const dom = new JSDOM("<!doctype html><html><body></body></html>");
-
-globalThis.window = dom.window as unknown as typeof globalThis.window;
-globalThis.document = dom.window.document;
-globalThis.navigator = dom.window.navigator;
-globalThis.HTMLElement = dom.window.HTMLElement;
-globalThis.HTMLButtonElement = dom.window.HTMLButtonElement;
-globalThis.HTMLSelectElement = dom.window.HTMLSelectElement;
-globalThis.HTMLTextAreaElement = dom.window.HTMLTextAreaElement;
-globalThis.Document = dom.window.Document;
-globalThis.Element = dom.window.Element;
-globalThis.Event = dom.window.Event;
-globalThis.EventTarget = dom.window.EventTarget;
-globalThis.MouseEvent = dom.window.MouseEvent;
-globalThis.InputEvent = dom.window.InputEvent;
-globalThis.Node = dom.window.Node;
-globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => setTimeout(callback, 0);
-globalThis.cancelAnimationFrame = (handle: number) => clearTimeout(handle);
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const completeMock = mock(async () => "Optimized text");
 const stopMock = mock(() => undefined);
@@ -229,6 +207,18 @@ describe("/testsite", () => {
     fireEvent.click(view.getByRole("button", { name: "Stop" }));
 
     expect(stopMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders optimized markdown responses with the shared renderer", () => {
+    completionState = createCompletionState({
+      completion: "# Refined copy\n\n- Stronger action verb\n\n```ts\nconst score = 92;\n```",
+    });
+
+    const view = render(<TestSitePage />);
+
+    expect(view.getByRole("heading", { name: "Refined copy" })).toBeTruthy();
+    expect(view.getByText("Stronger action verb").closest("li")).toBeTruthy();
+    expect(view.getByRole("button", { name: /copy code/i })).toBeTruthy();
   });
 
   it("parses JSON optimize errors into user-facing text", () => {
