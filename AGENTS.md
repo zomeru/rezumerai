@@ -68,6 +68,25 @@ Do **not** read every file under `.agents/instructions/` automatically. Load onl
 | New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md` |
 | Commit / PR work | `commit-and-pr-guidelines.md` |
 
+## AI Architecture
+
+The canonical AI stack is:
+
+- **Runtime:** Vercel AI SDK Core in the embedded Elysia API layer
+- **Provider:** OpenRouter through `@openrouter/ai-sdk-provider`
+- **UI:** AI SDK UI / `useChat`
+- **RAG / vectors:** pgvector
+- **Embeddings:** AI SDK embeddings
+- **Chunking:** LangChain text splitters only
+
+Architecture rules:
+
+- Next.js API routes under `apps/web/src/app/api/**` are transport-only wrappers around the embedded Elysia app.
+- All AI business logic stays in `apps/web/src/elysia-api/modules/ai/**`.
+- Use the centralized provider registry, tool registry, and prompt composer in the AI module instead of ad hoc model/tool/prompt wiring.
+- Do not reintroduce Mastra, `@openrouter/sdk`, or custom assistant streaming abstractions.
+- Assistant persistence must remain thread-isolated by `userId + scope + threadId`.
+
 ## Instruction Files
 
 Detailed guidance is split into modular files under `.agents/instructions/`. Load what you need.

@@ -1,35 +1,40 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
+import type {
+  AiConfiguration,
+  AssistantHistoryQuery,
+  AssistantRoleScope,
+  ResumeCopilotOptimizeInput,
+  ResumeCopilotOptimizeResponse,
+  ResumeCopilotReviewInput,
+  ResumeCopilotReviewResponse,
+  ResumeCopilotTailorInput,
+  ResumeCopilotTailorResponse,
+  ResumeSectionTarget,
+} from "@rezumerai/types";
 import {
-  type AiConfiguration,
   AiConfigurationSchema,
-  type AssistantChatInput,
-  type AssistantChatMessage,
-  type AssistantChatResponse,
-  type AssistantHistoryQuery,
-  type AssistantHistoryResponse,
-  type AssistantRoleScope,
-  DEFAULT_AI_CONFIGURATION,
-  type ResumeCopilotOptimizeInput,
-  type ResumeCopilotOptimizeResponse,
+  DEFAULT_AI_CONFIGURATION as DEFAULT_CONFIGURATION_VALUE,
   ResumeCopilotOptimizeResponseSchema,
-  type ResumeCopilotReviewInput,
-  type ResumeCopilotReviewResponse,
   ResumeCopilotReviewResponseSchema,
-  type ResumeCopilotTailorInput,
-  type ResumeCopilotTailorResponse,
   ResumeCopilotTailorResponseSchema,
-  type ResumeSectionTarget,
   ResumeSectionTargetSchema,
 } from "@rezumerai/types";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  generateText,
+  Output,
+  stepCountIs,
+  streamText,
+  type ToolSet,
+} from "ai";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { runMastraAssistantChat } from "./assistant-agent";
+import { auditAdminAssistantUsage } from "./controller/helpers/audit";
 import {
-  buildAssistantResourceId,
-  buildAssistantScopedThreadId,
-  buildAssistantThreadCursor,
   buildDeterministicConversationReply,
-  getLatestUserMessage,
+  buildAssistantThreadCursor,
   isConversationMemoryIntent,
   parseAssistantThreadCursor,
   resolveAssistantScope,
@@ -37,11 +42,11 @@ import {
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
 import { emptyAiUsageMetrics } from "./mapper";
-import { buildAssistantMemoryConfig } from "./memory/config";
 import { ConversationMemoryService } from "./memory/service";
-import { openRouterAiProvider } from "./providers/openrouter-provider";
-import type { AiProvider, StructuredModelCallOptions, TextModelCallOptions } from "./providers/provider";
+import { composeAiSystemPrompt } from "./prompts/composer";
+import { createAiProviderRegistry } from "./providers/registry";
 import { AiRepository } from "./repository";
+import { createAiToolRegistry } from "./tools/registry";
 import type {
   ActiveAiModel,
   AiUsageMetrics,
@@ -52,18 +57,16 @@ import type {
   SaveOptimizationInput,
   StreamOptimizeTextOptions,
   StructuredModelResult,
-  TextModelResult,
   UserAiSettings,
 } from "./types";
+import { collectToolNamesFromUiMessageParts, extractTextFromUiMessageParts, type AssistantUiMessage } from "./ui-message";
 import {
   analyzeJobDescriptionText,
   buildDraftPatch,
   buildResumeSnapshot,
   compactText,
-  formatAssistantReply,
   getResumeSectionSource,
   matchResumeSnapshotToJob,
-  parseAssistantReplyBlocks,
   toJsonText,
 } from "./utils";
 
@@ -115,9 +118,9 @@ const reviewModelSchema = z.object({
   nextSteps: z.array(z.string().trim().min(1).max(180)).max(6).default([]),
 });
 
-const defaultAiProvider: AiProvider = openRouterAiProvider;
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
+type StreamTextHandle = ReturnType<typeof streamText>;
 
 export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError };
 export type {
@@ -132,19 +135,54 @@ export type {
   UserAiSettings,
 } from "./types";
 
-// biome-ignore lint/complexity/noStaticOnlyClass: The AI service exposes a stable facade while delegating IO to repositories and providers.
+function toUsageMetrics(usage: {
+  inputTokens?: number | undefined;
+  outputTokens?: number | undefined;
+  totalTokens?: number | undefined;
+  outputTokenDetails?: {
+    reasoningTokens?: number | undefined;
+  };
+}): AiUsageMetrics {
+  return {
+    promptTokens: usage.inputTokens ?? null,
+    completionTokens: usage.outputTokens ?? null,
+    totalTokens: usage.totalTokens ?? null,
+    reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? null,
+  };
+}
+
+function dedupeToolNames(toolNames: string[]): string[] {
+  return [...new Set(toolNames)];
+}
+
+function buildCopilotScope(role: AssistantConversationIdentity["role"]): AssistantRoleScope {
+  return role === "ADMIN" ? "ADMIN" : "USER";
+}
+
+function toAssistantChatHistory(messages: AssistantUiMessage[]): Array<{ content: string; role: "assistant" | "user" }> {
+  return messages.flatMap((message) => {
+    if (message.role !== "assistant" && message.role !== "user") {
+      return [];
+    }
+
+    const content = extractTextFromUiMessageParts(message.parts);
+
+    if (!content) {
+      return [];
+    }
+
+    return [
+      {
+        role: message.role,
+        content,
+      },
+    ];
+  });
+}
+
+// biome-ignore lint/complexity/noStaticOnlyClass: The AI service is the module-level facade for orchestration and persistence.
 export abstract class AiService {
   static readonly DEFAULT_CONFIGURATION = DEFAULT_AI_SETTINGS;
-
-  private static provider: AiProvider = defaultAiProvider;
-
-  static configureProvider(provider: AiProvider): void {
-    AiService.provider = provider;
-  }
-
-  static resetProvider(): void {
-    AiService.provider = defaultAiProvider;
-  }
 
   static emptyUsageMetrics(): AiUsageMetrics {
     return emptyAiUsageMetrics();
@@ -158,7 +196,7 @@ export abstract class AiService {
     const configurationValue = await AiRepository.getAiConfigurationValue(db);
 
     if (!configurationValue) {
-      return DEFAULT_AI_CONFIGURATION;
+      return DEFAULT_CONFIGURATION_VALUE;
     }
 
     return AiService.parseAiConfiguration(configurationValue);
@@ -239,101 +277,222 @@ export abstract class AiService {
     return resolveAssistantScope(role === "ADMIN" || role === "USER" ? role : null, isAnonymous);
   }
 
-  static async runAssistantChat(
-    db: TransactionCapableDatabaseClient,
-    input: AssistantChatInput,
-    identity: AssistantConversationIdentity,
-  ): Promise<AssistantChatResponse> {
-    const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
-    const runtime = await AiService.resolveOptimizationContext(db, identity.userId, null);
-    const latestUserTurn = getLatestUserMessage(input.messages);
+  private static async persistAssistantTurn(options: {
+    assistantMessage: AssistantUiMessage;
+    config: AiConfiguration;
+    db: TransactionCapableDatabaseClient;
+    identity: AssistantConversationIdentity;
+    request: Request;
+    scope: AssistantRoleScope;
+    threadId: string;
+    userMessage: {
+      content: string;
+      id: string;
+      parts: AssistantUiMessage["parts"];
+    };
+  }): Promise<void> {
+    const assistantText = extractTextFromUiMessageParts(options.assistantMessage.parts);
+    const toolNames = dedupeToolNames(collectToolNamesFromUiMessageParts(options.assistantMessage.parts));
 
-    if (!latestUserTurn) {
+    await ConversationMemoryService.saveAssistantUiTurn({
+      assistantMessage: {
+        id: options.assistantMessage.id,
+        content: assistantText,
+        parts: options.assistantMessage.parts,
+        toolNames,
+      },
+      config: options.config,
+      db: options.db,
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.identity.userId,
+      userMessage: options.userMessage,
+    });
+
+    if (options.identity.role === "ADMIN") {
+      await auditAdminAssistantUsage({
+        userId: options.identity.userId,
+        reply: assistantText,
+        toolNames,
+        request: options.request,
+      });
+    }
+  }
+
+  private static createStaticAssistantResponse(options: {
+    db: TransactionCapableDatabaseClient;
+    identity: AssistantConversationIdentity;
+    originalMessages: AssistantUiMessage[];
+    request: Request;
+    responseText: string;
+    runtime: OptimizationContext;
+    scope: AssistantRoleScope;
+    threadId: string;
+    userMessage: {
+      content: string;
+      id: string;
+      parts: AssistantUiMessage["parts"];
+    };
+  }): Response {
+    const stream = createUIMessageStream<AssistantUiMessage>({
+      originalMessages: options.originalMessages,
+      generateId: () => crypto.randomUUID(),
+      execute: ({ writer }) => {
+        const textId = crypto.randomUUID();
+
+        writer.write({
+          type: "text-start",
+          id: textId,
+        });
+        writer.write({
+          type: "text-delta",
+          id: textId,
+          delta: options.responseText,
+        });
+        writer.write({
+          type: "text-end",
+          id: textId,
+        });
+      },
+      onFinish: async ({ responseMessage }) => {
+        await AiService.persistAssistantTurn({
+          assistantMessage: responseMessage,
+          config: options.runtime.config,
+          db: options.db,
+          identity: options.identity,
+          request: options.request,
+          scope: options.scope,
+          threadId: options.threadId,
+          userMessage: options.userMessage,
+        });
+      },
+      onError: () => ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+    });
+
+    return createUIMessageStreamResponse({ stream });
+  }
+
+  static async streamAssistantChat(
+    db: TransactionCapableDatabaseClient,
+    input: {
+      currentPath?: string;
+      message: AssistantUiMessage;
+      threadId: string;
+    },
+    identity: AssistantConversationIdentity,
+    request: Request,
+  ): Promise<Response> {
+    if (input.message.role !== "user") {
       throw new Error("Assistant chat requires a user message.");
     }
 
-    const resourceId = buildAssistantResourceId({
-      userId: identity.userId,
-      role: identity.role,
-      isAnonymous: identity.isAnonymous,
-    });
-    const scopedThreadId = buildAssistantScopedThreadId({
-      resourceId,
-      threadId: input.threadId,
-    });
-    const ownerKind = identity.isAnonymous ? "guest" : identity.role === "ADMIN" ? "admin" : "user";
+    const userMessageContent = extractTextFromUiMessageParts(input.message.parts);
 
-    await ConversationMemoryService.ensureThread({
+    if (!userMessageContent) {
+      throw new Error("Assistant chat requires non-empty user text.");
+    }
+
+    const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
+    const runtime = await AiService.resolveOptimizationContext(db, identity.userId, null);
+    const promptContext = await ConversationMemoryService.buildPromptContext({
       config: runtime.config,
-      ownerKind,
-      ownerUserId: identity.userId,
-      resourceId,
+      db,
+      latestUserMessage: userMessageContent,
       scope,
-      threadId: scopedThreadId,
+      threadId: input.threadId,
+      userId: identity.userId,
     });
-    const isConversationRequest = isConversationMemoryIntent(latestUserTurn.content);
+    const originalMessages = [...promptContext.messages, input.message];
+    const deterministicReply =
+      isConversationMemoryIntent(userMessageContent) &&
+      buildDeterministicConversationReply({
+        history: [
+          ...toAssistantChatHistory(promptContext.messages),
+          {
+            role: "user",
+            content: userMessageContent,
+          },
+        ],
+        latestUserMessage: userMessageContent,
+      });
 
-    const result = isConversationRequest
-      ? await AiService.answerConversationFromHistory({
-          config: runtime.config,
-          scope,
-          modelId: runtime.model.modelId,
-          systemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
-          maxSteps: 1,
-          latestUserMessage: latestUserTurn.content,
-          currentPath: input.currentPath,
-          resourceId,
-          threadId: scopedThreadId,
-        })
-      : await AiService.answerAssistantDataRequest(db, {
-          config: runtime.config,
-          scope,
-          role: identity.role,
-          userId: identity.userId,
-          modelId: runtime.model.modelId,
-          systemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
-          maxSteps: runtime.config.ASSISTANT_MAX_STEPS,
-          latestUserMessage: latestUserTurn.content,
-          currentPath: input.currentPath,
-          resourceId,
-          threadId: scopedThreadId,
-        });
-    const blocks = parseAssistantReplyBlocks(result.reply);
-
-    if (!result.persistedByMemory) {
-      await ConversationMemoryService.saveExchange({
-        config: runtime.config,
-        resourceId,
-        threadId: scopedThreadId,
-        userMessage: latestUserTurn.content,
-        assistantMessage: result.reply,
+    if (deterministicReply) {
+      return AiService.createStaticAssistantResponse({
+        db,
+        identity,
+        originalMessages,
+        request,
+        responseText: deterministicReply,
+        runtime,
+        scope,
+        threadId: input.threadId,
+        userMessage: {
+          id: input.message.id,
+          content: userMessageContent,
+          parts: input.message.parts,
+        },
       });
     }
 
-    return {
+    const toolRegistry = AiService.createToolRegistry(db, runtime.config, scope, identity.role, identity.userId);
+    const promptToolNames = toolRegistry.getPromptToolNames("assistant");
+    const systemPrompt = composeAiSystemPrompt({
+      baseSystemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
+      currentPath: input.currentPath,
+      flow: "assistant",
+      memoryContext: promptContext.memoryContext,
+      ragContext: null,
       scope,
-      reply: result.reply,
-      blocks,
-      toolNames: result.toolNames,
-      usedConversationMemory: isConversationRequest || result.usedMemory,
-    };
+      toolNames: promptToolNames,
+    });
+    const providerRegistry = createAiProviderRegistry();
+    const modelMessages = await convertToModelMessages(originalMessages);
+    const result = streamText({
+      model: providerRegistry.getChatModel(runtime.model.modelId),
+      system: systemPrompt,
+      messages: modelMessages,
+      tools: toolRegistry.getAssistantTools(),
+      stopWhen: stepCountIs(runtime.config.ASSISTANT_MAX_STEPS),
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: "ai.assistant.chat",
+      },
+    });
+
+    return result.toUIMessageStreamResponse({
+      originalMessages,
+      generateMessageId: () => crypto.randomUUID(),
+      onFinish: async ({ responseMessage }) => {
+        await AiService.persistAssistantTurn({
+          assistantMessage: responseMessage,
+          config: runtime.config,
+          db,
+          identity,
+          request,
+          scope,
+          threadId: input.threadId,
+          userMessage: {
+            id: input.message.id,
+            content: userMessageContent,
+            parts: input.message.parts,
+          },
+        });
+      },
+      onError: () => ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR,
+    });
   }
 
-  static async getAssistantHistory(
+  static async getAssistantMessages(
     db: DatabaseClient,
     identity: AssistantConversationIdentity,
     query: AssistantHistoryQuery,
-  ): Promise<AssistantHistoryResponse> {
+  ): Promise<{
+    hasMore: boolean;
+    messages: AssistantUiMessage[];
+    nextCursor: string | null;
+    scope: AssistantRoleScope;
+  }> {
     const scope = AiService.toAssistantScope(identity.role, identity.isAnonymous);
-    const resourceId = buildAssistantResourceId({
-      userId: identity.userId,
-      role: identity.role,
-      isAnonymous: identity.isAnonymous,
-    });
-    const scopedThreadId = buildAssistantScopedThreadId({
-      resourceId,
-      threadId: query.threadId,
-    });
     const parsedCursor = parseAssistantThreadCursor(query.cursor);
     const cursor =
       parsedCursor && !Number.isNaN(new Date(parsedCursor.createdAt).getTime())
@@ -342,29 +501,32 @@ export abstract class AiService {
             id: parsedCursor.id,
           }
         : null;
-    const config = await AiService.getAiConfiguration(db);
-    const page = await ConversationMemoryService.getHistory({
-      config,
+    const page = await ConversationMemoryService.getUiMessagePage({
+      db,
+      scope,
+      threadId: query.threadId,
+      userId: identity.userId,
       cursor,
       limit: query.limit,
-      resourceId,
-      threadId: scopedThreadId,
     });
-    const oldestMessage = page.messages[0] ?? null;
+    const historyPage = await ConversationMemoryService.getHistory({
+      db,
+      scope,
+      threadId: query.threadId,
+      userId: identity.userId,
+      cursor,
+      limit: query.limit,
+    });
+    const oldestPersistedMessage = historyPage.messages[0] ?? null;
 
     return {
       scope,
-      messages: page.messages.map((message) => ({
-        id: message.id,
-        role: message.role,
-        content: message.content,
-        createdAt: message.createdAt.toISOString(),
-      })),
+      messages: page.messages,
       nextCursor:
-        page.hasMore && oldestMessage
+        page.hasMore && oldestPersistedMessage
           ? buildAssistantThreadCursor({
-              createdAt: oldestMessage.createdAt.toISOString(),
-              id: oldestMessage.id,
+              createdAt: oldestPersistedMessage.createdAt.toISOString(),
+              id: oldestPersistedMessage.id,
             })
           : null,
       hasMore: page.hasMore,
@@ -381,13 +543,21 @@ export abstract class AiService {
     const resume = await AiRepository.getOwnedResume(db, userId, input.resumeId);
     const sectionSource = getResumeSectionSource(resume, input.target);
     const snapshot = buildResumeSnapshot(resume);
+    const toolRegistry = AiService.createToolRegistry(
+      db,
+      runtime.config,
+      buildCopilotScope("USER"),
+      "USER",
+      userId,
+    );
 
     const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=optimize. Rewrite only the requested section. Keep facts unchanged. " +
-        "Return JSON with title, rationale, suggestedText, cautions, draftPatch.",
+      instructions: composeAiSystemPrompt({
+        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
+        flow: "copilot-optimize",
+        scope: "USER",
+        toolNames: toolRegistry.getPromptToolNames("copilot"),
+      }),
       input: [
         {
           role: "user",
@@ -406,9 +576,11 @@ export abstract class AiService {
           }),
         },
       ],
-      tools: [],
-      schema: optimizeModelSchema,
-      maxSteps: 1,
+      maxSteps: 2,
+      modelId: runtime.model.modelId,
+      outputDescription: "Resume optimization suggestion",
+      outputSchema: optimizeModelSchema,
+      tools: toolRegistry.getCopilotTools(),
     });
 
     return {
@@ -443,13 +615,21 @@ export abstract class AiService {
     const analysis = analyzeJobDescriptionText(input.jobDescription);
     const comparison = matchResumeSnapshotToJob(snapshot, analysis);
     const allowedTargets = AiService.buildCopilotTargets(resume);
+    const toolRegistry = AiService.createToolRegistry(
+      db,
+      runtime.config,
+      buildCopilotScope("USER"),
+      "USER",
+      userId,
+    );
 
     const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=tailor. Suggest only truthful emphasis changes based on the provided resume and job analysis. " +
-        "Only suggest truthful emphasis changes. Return compact JSON with jobTitle, priorities, matches, gaps, suggestions.",
+      instructions: composeAiSystemPrompt({
+        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
+        flow: "copilot-tailor",
+        scope: "USER",
+        toolNames: toolRegistry.getPromptToolNames("copilot"),
+      }),
       input: [
         {
           role: "user",
@@ -465,9 +645,11 @@ export abstract class AiService {
           }),
         },
       ],
-      tools: [],
-      schema: tailorModelSchema,
-      maxSteps: 1,
+      maxSteps: 2,
+      modelId: runtime.model.modelId,
+      outputDescription: "Resume tailoring suggestions",
+      outputSchema: tailorModelSchema,
+      tools: toolRegistry.getCopilotTools(),
     });
 
     return {
@@ -499,13 +681,21 @@ export abstract class AiService {
     const snapshot = buildResumeSnapshot(resume);
     const analysis = input.jobDescription ? analyzeJobDescriptionText(input.jobDescription) : null;
     const comparison = analysis ? matchResumeSnapshotToJob(snapshot, analysis) : null;
+    const toolRegistry = AiService.createToolRegistry(
+      db,
+      runtime.config,
+      buildCopilotScope("USER"),
+      "USER",
+      userId,
+    );
 
     const result = await AiService.runStructuredModel({
-      modelId: runtime.model.modelId,
-      instructions:
-        `${runtime.config.COPILOT_SYSTEM_PROMPT} ` +
-        "Task=review. Review the resume for clarity, completeness, and safe resume quality. " +
-        "Return JSON with overallScore, summary, strengths, findings, nextSteps.",
+      instructions: composeAiSystemPrompt({
+        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
+        flow: "copilot-review",
+        scope: "USER",
+        toolNames: toolRegistry.getPromptToolNames("copilot"),
+      }),
       input: [
         {
           role: "user",
@@ -522,9 +712,11 @@ export abstract class AiService {
           }),
         },
       ],
-      tools: [],
-      schema: reviewModelSchema,
-      maxSteps: 1,
+      maxSteps: 2,
+      modelId: runtime.model.modelId,
+      outputDescription: "Resume review findings",
+      outputSchema: reviewModelSchema,
+      tools: toolRegistry.getCopilotTools(),
     });
 
     return {
@@ -546,19 +738,30 @@ export abstract class AiService {
     input: string,
     modelId: string,
     systemPrompt: string,
-  ): Promise<AsyncIterable<unknown>> {
-    return AiService.provider.createOptimizeStream({
-      input,
-      modelId,
-      systemPrompt,
+  ): Promise<StreamTextHandle> {
+    const providerRegistry = createAiProviderRegistry();
+
+    return streamText({
+      model: providerRegistry.getChatModel(modelId),
+      system: systemPrompt,
+      messages: [{ role: "user", content: input }],
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: "ai.optimize.stream",
+      },
     });
   }
 
   static async *streamOptimizeText(
-    stream: AsyncIterable<unknown>,
+    stream: StreamTextHandle,
     options?: StreamOptimizeTextOptions,
   ): AsyncGenerator<string, void, unknown> {
-    yield* AiService.provider.streamOptimizeText(stream, options);
+    for await (const chunk of stream.textStream) {
+      yield chunk;
+    }
+
+    const usage = await stream.totalUsage;
+    options?.onUsage?.(toUsageMetrics(usage));
   }
 
   static normalizeOptimizationError(error: unknown): Error {
@@ -632,147 +835,73 @@ export abstract class AiService {
     });
   }
 
-  private static async answerAssistantDataRequest(
-    db: TransactionCapableDatabaseClient,
-    options: {
-      config: AiConfiguration;
-      scope: AssistantRoleScope;
-      role: "ADMIN" | "USER" | null;
-      userId: string | null;
-      modelId: string;
-      systemPrompt: string;
-      maxSteps: number;
-      latestUserMessage: string;
-      currentPath?: string;
-      resourceId: string;
-      threadId: string;
-    },
-  ): Promise<{ persistedByMemory: boolean; reply: string; toolNames: string[]; usedMemory: boolean }> {
-    const knowledgeContext = await ConversationMemoryService.buildKnowledgeContext({
-      config: options.config,
+  private static createToolRegistry(
+    db: TransactionCapableDatabaseClient | DatabaseClient,
+    config: AiConfiguration,
+    scope: AssistantRoleScope,
+    role: AssistantConversationIdentity["role"],
+    userId: string | null,
+  ) {
+    return createAiToolRegistry({
       db,
-      latestUserMessage: options.latestUserMessage,
-    });
-    const result = await runMastraAssistantChat({
-      db,
-      scope: options.scope,
-      userId: options.userId,
-      resourceId: options.resourceId,
-      threadId: options.threadId,
-      memoryOptions: buildAssistantMemoryConfig(options.config),
-      getOptimizationCredits: async () => (options.userId ? AiService.getDailyCredits(db, options.userId) : null),
+      role,
+      scope,
+      userId,
+      getAiConfiguration: async () => config,
       getCurrentModelSettings: async () => {
-        if (!options.userId) {
+        if (!userId) {
           return null;
         }
 
-        const settings = await AiService.getUserAiSettings(db, options.userId);
+        const settings = await AiService.getUserAiSettings(db, userId);
 
         return {
           selectedModelId: settings.selectedModelId,
           models: settings.models.map((item) => item.modelId),
         };
       },
-      getAiConfiguration: async () => AiService.getAiConfiguration(db),
-      modelId: options.modelId,
-      systemPrompt: options.systemPrompt,
-      maxSteps: options.maxSteps,
-      latestUserMessage: options.latestUserMessage,
-      currentPath: options.currentPath,
-      history: [],
-      contextMessages: knowledgeContext ? [knowledgeContext] : undefined,
-    });
+      getOptimizationCredits: async () => {
+        if (!userId) {
+          return null;
+        }
 
-    return {
-      persistedByMemory: result.persistedByMemory,
-      reply: formatAssistantReply(result.reply, 4000),
-      toolNames: result.toolNames,
-      usedMemory: result.usedMemory || Boolean(knowledgeContext),
-    };
+        return AiService.getDailyCredits(db as TransactionCapableDatabaseClient, userId);
+      },
+    });
   }
 
-  private static async answerConversationFromHistory(options: {
-    config: AiConfiguration;
-    scope: AssistantRoleScope;
-    modelId: string;
-    systemPrompt: string;
+  private static async runStructuredModel<T extends Record<string, unknown>>(options: {
+    instructions: string;
+    input: Array<{ role: "assistant" | "user"; content: string }>;
     maxSteps: number;
-    latestUserMessage: string;
-    currentPath?: string;
-    resourceId: string;
-    threadId: string;
-  }): Promise<{ persistedByMemory: boolean; reply: string; toolNames: string[]; usedMemory: boolean }> {
-    const history = await ConversationMemoryService.buildConversationContext({
-      config: options.config,
-      latestUserMessage: options.latestUserMessage,
-      resourceId: options.resourceId,
-      threadId: options.threadId,
-    });
-    const normalizedHistory: AssistantChatMessage[] = history.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
-    const directReply = buildDeterministicConversationReply({
-      history: normalizedHistory,
-      latestUserMessage: options.latestUserMessage,
-    });
-
-    if (directReply) {
-      return {
-        persistedByMemory: false,
-        reply: formatAssistantReply(directReply, 4000),
-        toolNames: [],
-        usedMemory: normalizedHistory.length > 0,
-      };
-    }
-
-    const result = await AiService.runTextModel({
-      modelId: options.modelId,
-      instructions:
-        `${AiService.buildAssistantInstructions({
-          scope: options.scope,
-          systemPrompt: options.systemPrompt,
-          currentPath: options.currentPath,
-          allowTools: false,
-        })} ` +
-        "Answer only from the conversation history already provided. If the answer is not in this chat, say so plainly.",
-      input: normalizedHistory,
-      tools: [],
-      maxSteps: options.maxSteps,
+    modelId: string;
+    outputDescription: string;
+    outputSchema: z.ZodType<T>;
+    tools: ToolSet;
+  }): Promise<StructuredModelResult<T>> {
+    const providerRegistry = createAiProviderRegistry();
+    const result = await generateText({
+      model: providerRegistry.getChatModel(options.modelId),
+      system: options.instructions,
+      messages: options.input,
+      tools: options.tools,
+      stopWhen: stepCountIs(options.maxSteps),
+      output: Output.object({
+        schema: options.outputSchema,
+        name: "copilot_result",
+        description: options.outputDescription,
+      }),
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: "ai.copilot.structured",
+      },
     });
 
     return {
-      persistedByMemory: false,
-      reply: formatAssistantReply(result.text, 4000),
-      toolNames: result.toolNames,
-      usedMemory: normalizedHistory.length > 0,
+      data: result.output,
+      usage: toUsageMetrics(result.usage),
+      toolNames: dedupeToolNames(result.toolCalls.map((toolCall) => toolCall.toolName)),
     };
-  }
-
-  private static buildAssistantInstructions(options: {
-    scope: AssistantRoleScope;
-    systemPrompt: string;
-    currentPath?: string;
-    allowTools: boolean;
-  }): string {
-    const pathInstruction = options.currentPath ? ` CurrentPage=${options.currentPath}.` : "";
-
-    return (
-      `${options.systemPrompt} ` +
-      `Scope=${options.scope}. ${options.allowTools ? "Use tools only when real application data is required." : "Do not call tools."}` +
-      pathInstruction +
-      " Keep the reply short. Tool results use a structured JSON envelope with `type`, `entity`, and `summary`; when listing records, prefer readable labels and omit raw IDs unless the user explicitly asks for them. Never expose raw database field names or JSON-style keys in the final reply. Format replies as: short intro line, blank line, optional `**Section:**` headers on their own lines, list items one per line, blank line, short closing line if needed."
-    );
-  }
-
-  private static async runStructuredModel<T extends Record<string, unknown>>(
-    options: StructuredModelCallOptions<T>,
-  ): Promise<StructuredModelResult<T>> {
-    return AiService.provider.runStructuredModel(options);
-  }
-
-  private static async runTextModel(options: TextModelCallOptions): Promise<TextModelResult> {
-    return AiService.provider.runTextModel(options);
   }
 
   private static buildCopilotTargets(resume: Awaited<ReturnType<typeof AiRepository.getOwnedResume>>) {
@@ -825,7 +954,7 @@ export abstract class AiService {
     const parsedConfiguration = AiConfigurationSchema.safeParse(value);
 
     if (!parsedConfiguration.success) {
-      return DEFAULT_AI_CONFIGURATION;
+      return DEFAULT_CONFIGURATION_VALUE;
     }
 
     return parsedConfiguration.data;

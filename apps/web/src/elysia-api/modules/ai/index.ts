@@ -3,8 +3,8 @@ import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "./constants";
 import {
-  handleAssistantChatRequest,
-  handleAssistantHistoryRequest,
+  handleAssistantChatStreamRequest,
+  handleAssistantMessagesRequest,
   handleCopilotOptimizeRequest,
   handleCopilotReviewRequest,
   handleCopilotTailorRequest,
@@ -16,8 +16,6 @@ import {
 import { AiModel } from "./model";
 import {
   applyResponseHeaders,
-  respondAssistantChat,
-  respondAssistantHistory,
   respondCopilot,
   respondOkOrForbidden,
   respondOptimizeText,
@@ -29,56 +27,36 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
   .use(AiModel)
   .post(
     "/assistant/chat",
-    async ({ body, db, status, request, set }) => {
-      const response = await handleAssistantChatRequest({
+    async ({ body, db, request }) => {
+      return handleAssistantChatStreamRequest({
         body,
         db,
         request,
       });
-
-      applyResponseHeaders(set.headers, response.headers);
-
-      return respondAssistantChat(response, {
-        200: (body) => status(200, body),
-        422: (body) => status(422, body),
-      });
     },
     {
-      body: "ai.AssistantChatInput",
-      response: {
-        200: "ai.AssistantChatResponse",
-        422: "ai.AssistantChatResponse",
-      },
       detail: {
-        summary: "Run the unified AI assistant widget",
+        summary: "Stream assistant chat messages with AI SDK UI",
         tags: ["AI"],
       },
     },
   )
   .get(
-    "/assistant/history",
+    "/assistant/messages",
     async ({ db, query, status, request, set }) => {
-      const response = await handleAssistantHistoryRequest({
+      const response = await handleAssistantMessagesRequest({
         db,
         query,
         request,
       });
 
       applyResponseHeaders(set.headers, response.headers);
-
-      return respondAssistantHistory(response, {
-        200: (body) => status(200, body),
-        422: (body) => status(422, body),
-      });
+      return status(response.status, response.body);
     },
     {
       query: "ai.AssistantHistoryQuery",
-      response: {
-        200: "ai.AssistantHistoryResponse",
-        422: "ai.AssistantHistoryResponse",
-      },
       detail: {
-        summary: "Fetch assistant chat history for the current identity",
+        summary: "Fetch persisted assistant UI messages for the current identity",
         tags: ["AI"],
       },
     },

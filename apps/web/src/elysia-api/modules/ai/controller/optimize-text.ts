@@ -115,7 +115,7 @@ export async function handleOptimizeTextRequest(options: {
 
   const startedAt = Date.now();
   const usageMetrics = AiService.emptyUsageMetrics();
-  let stream: AsyncIterable<unknown>;
+  let stream: Awaited<ReturnType<typeof AiService.createOptimizeStream>>;
 
   try {
     stream = await AiService.createOptimizeStream(

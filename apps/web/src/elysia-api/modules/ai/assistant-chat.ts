@@ -1,7 +1,7 @@
 import type { AssistantChatMessage, AssistantRoleScope } from "@rezumerai/types";
 
 const PREVIOUS_QUESTION_PATTERN =
-  /\b(previous question|last question|what did i ask|what was my question|what did i just ask)\b/i;
+  /\b(previous question|last question|my previous message|my last message|what did i ask|what was my question|what was my previous message|what was my last message|what did i just ask)\b/i;
 const PREVIOUS_REPLY_PATTERN =
   /\b(what did you just say|what did you say|your last answer|your previous answer|repeat what you said)\b/i;
 const CONVERSATION_REFERENCE_PATTERN =

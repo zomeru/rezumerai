@@ -1,7 +1,7 @@
 {
   "editor.codeActionsOnSave": {
-    "source.organizeImports.biome": "explicit",
-    "source.fixAll.biome": "explicit"
+    "source.organizeImports.biome": "always",
+    "source.fixAll.biome": "always"
   },
   "editor.defaultFormatter": "biomejs.biome",
   "biome.configurationPath": "biome.json",
@@ -12,18 +12,18 @@
   ],
 
   // TypeScript Configuration for Monorepo
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.preferences.autoImportFileExcludePatterns": ["next/router.d.ts", "next/dist/client/router.d.ts"],
-  "typescript.preferences.includePackageJsonAutoImports": "on",
-  "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
-  "typescript.suggest.includeCompletionsForImportStatements": true,
-  "typescript.suggest.completeFunctionCalls": true,
-  "typescript.workspaceSymbols.scope": "allOpenProjects",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.preferences.autoImportFileExcludePatterns": ["next/router.d.ts", "next/dist/client/router.d.ts"],
+  "js/ts.preferences.includePackageJsonAutoImports": "on",
+  "js/ts.suggest.includeAutomaticOptionalChainCompletions": true,
+  "js/ts.suggest.includeCompletionsForImportStatements": true,
+  "js/ts.suggest.completeFunctionCalls": true,
+  "js/ts.workspaceSymbols.scope": "allOpenProjects",
 
   // Better auto-import resolution for workspace packages
-  "typescript.suggest.autoImports": true,
-  "typescript.suggest.paths": true,
+  "js/ts.suggest.autoImports": true,
+  "js/ts.suggest.paths": true,
 
   // File associations
   "files.associations": {
@@ -36,7 +36,8 @@
     "**/dist": true,
     "**/.turbo": true,
     "**/coverage": true,
-    "**/.tsbuildinfo": true
+    "**/.tsbuildinfo": true,
+    "**/.next": true
   },
 
   // File watcher exclusions for better performance
@@ -45,7 +46,8 @@
     "**/dist/**": true,
     "**/.turbo/**": true,
     "**/coverage/**": true,
-    "**/.tsbuildinfo": true
+    "**/.tsbuildinfo": true,
+    "**/.next": true
   },
 
   // IntelliSense optimizations
@@ -60,6 +62,5 @@
   "breadcrumbs.showFiles": true,
   "breadcrumbs.showModules": true,
 
-  "chat.useAgentSkills": true,
-  "js/ts.tsdk.path": "node_modules/typescript/lib"
+  "chat.useAgentSkills": true
 }

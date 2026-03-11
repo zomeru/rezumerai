@@ -47,6 +47,21 @@ describe("buildDeterministicConversationReply", () => {
     ).toBe('You previously asked: "Show me all available AI models"');
   });
 
+  it("answers the previous-message prompt from history", () => {
+    expect(
+      buildDeterministicConversationReply({
+        history: [
+          ...history.slice(0, 2),
+          {
+            role: "user",
+            content: "What was my previous message?",
+          },
+        ],
+        latestUserMessage: "What was my previous message?",
+      }),
+    ).toBe('You previously asked: "Show me all available AI models"');
+  });
+
   it("answers the previous-reply prompt from history", () => {
     expect(
       buildDeterministicConversationReply({

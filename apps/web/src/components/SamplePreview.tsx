@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeWithRelations } from "@rezumerai/types/index.mjs";
+import type { ResumeWithRelations } from "@rezumerai/types";
 import { useResumeById } from "@/hooks/useResume";
 import { ResumePreview } from "./ResumeBuilder";
 

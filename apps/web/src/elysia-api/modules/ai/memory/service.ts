@@ -1,193 +1,353 @@
-import type { MastraDBMessage } from "@mastra/core/agent";
 import type { PrismaClient } from "@rezumerai/database";
 import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
-import { buildAssistantMemoryConfig, buildAssistantThreadMetadata } from "./config";
-import { buildAssistantKnowledgeContext } from "./knowledge";
-import { createAssistantTextMessage, extractAssistantMessageText } from "./message-content";
-import { ensureAssistantStorageReady, getAssistantMemory } from "./runtime";
+import { AiRepository } from "../repository";
+import { sanitizeUiMessageParts, type AssistantUiMessage, toUiMessageParts } from "../ui-message";
+import type { SavedAssistantConversationMessage } from "../types";
+import { buildMessageChunks } from "./chunking";
+import { embedAssistantTexts } from "./embedder";
+import { ConversationMemoryRepository } from "./repository";
+import {
+  assembleConversationContext,
+  type ConversationContextMessage,
+  type SemanticConversationMatch,
+} from "./retrieval";
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
-type AssistantHistoryMessage = {
-  content: string;
-  createdAt: Date;
+interface GetAssistantConversationStateOptions {
+  config: AiConfiguration;
+  scope: AssistantRoleScope;
+  threadId: string;
+  userId: string;
+}
+
+interface SaveAssistantUiTurnOptions extends GetAssistantConversationStateOptions {
+  assistantMessage: {
+    content: string;
+    id: string;
+    parts: AssistantUiMessage["parts"];
+    toolNames: string[];
+  };
+  db: TransactionCapableDatabaseClient;
+  userMessage: {
+    content: string;
+    id: string;
+    parts: AssistantUiMessage["parts"];
+  };
+}
+
+function buildConversationKey(options: {
+  scope: AssistantRoleScope;
+  threadId: string;
+  userId: string;
+}): string {
+  return `assistant:${options.scope}:${options.userId}:${options.threadId}`;
+}
+
+function toConversationContextMessage(message: {
   id: string;
   role: "assistant" | "user";
-};
+  content: string;
+  createdAt: Date;
+}): ConversationContextMessage {
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+  };
+}
 
-// biome-ignore lint/complexity/noStaticOnlyClass: Assistant memory service centralizes Mastra-backed history, retrieval, and knowledge context.
+function formatSemanticMemoryContext(messages: ConversationContextMessage[]): string | null {
+  if (messages.length === 0) {
+    return null;
+  }
+
+  const lines = [
+    "Relevant earlier conversation excerpts. Use only when they help answer the latest message:",
+    ...messages.map((message) => `${message.role === "user" ? "User" : "Assistant"}: ${message.content}`),
+  ];
+
+  return lines.join("\n");
+}
+
+function toUiMessage(message: {
+  id: string;
+  role: "assistant" | "user";
+  content: string;
+  blocks?: unknown;
+}): AssistantUiMessage {
+  return {
+    id: message.id,
+    role: message.role,
+    parts: toUiMessageParts({
+      blocks: message.blocks,
+      content: message.content,
+      role: message.role,
+    }),
+  };
+}
+
+async function reindexConversationMessages(
+  db: DatabaseClient,
+  config: AiConfiguration,
+  messages: SavedAssistantConversationMessage[],
+): Promise<void> {
+  const chunks = buildMessageChunks(
+    messages.map((message) => ({
+      id: message.id,
+      conversationId: message.conversationId,
+      userId: message.userId,
+      scope: message.scope,
+      role: message.role,
+      content: message.content,
+      createdAt: message.createdAt,
+    })),
+  );
+
+  if (chunks.length === 0) {
+    return;
+  }
+
+  const { embeddings } = await embedAssistantTexts(
+    config,
+    chunks.map((chunk) => chunk.content),
+  );
+
+  await ConversationMemoryRepository.upsertEmbeddings(db, {
+    chunks,
+    embeddings,
+  });
+}
+
+// biome-ignore lint/complexity/noStaticOnlyClass: AI conversation memory is intentionally centralized here.
 export abstract class ConversationMemoryService {
-  static async ensureThread(options: {
-    config: AiConfiguration;
-    ownerKind: "admin" | "guest" | "user";
-    ownerUserId: string;
-    resourceId: string;
-    scope: AssistantRoleScope;
-    threadId: string;
-  }): Promise<void> {
-    const memory = await ConversationMemoryService.getMemory(options.config);
-    const existingThread = await memory.getThreadById({ threadId: options.threadId });
-
-    if (existingThread) {
-      if (existingThread.resourceId !== options.resourceId) {
-        throw new Error("Assistant thread does not belong to the current resource.");
-      }
-
-      return;
-    }
-
-    await memory.createThread({
-      threadId: options.threadId,
-      resourceId: options.resourceId,
-      title: "Rezumerai Assistant",
-      metadata: buildAssistantThreadMetadata({
+  private static async getConversationState(
+    db: DatabaseClient,
+    options: GetAssistantConversationStateOptions,
+  ) {
+    return AiRepository.getAssistantConversationState(db, {
+      conversationKey: buildConversationKey({
         scope: options.scope,
-        ownerKind: options.ownerKind,
-        ownerUserId: options.ownerUserId,
+        threadId: options.threadId,
+        userId: options.userId,
       }),
-    });
-  }
-
-  static async buildConversationContext(options: {
-    config: AiConfiguration;
-    latestUserMessage: string;
-    resourceId: string;
-    threadId: string;
-  }): Promise<AssistantHistoryMessage[]> {
-    const memory = await ConversationMemoryService.getMemory(options.config);
-    const recalled = await memory.recall({
+      scope: options.scope,
       threadId: options.threadId,
-      resourceId: options.resourceId,
-      perPage: false,
-      vectorSearchString: options.config.ASSISTANT_RAG_ENABLED ? options.latestUserMessage : undefined,
-      threadConfig: buildAssistantMemoryConfig(options.config),
+      userId: options.userId,
+      historyLimit: Math.max(options.config.ASSISTANT_HISTORY_LIMIT, options.config.ASSISTANT_RAG_RECENT_LIMIT),
+      fallbackHistory: [],
     });
-
-    return ConversationMemoryService.toAssistantHistoryMessages(recalled.messages);
   }
 
-  static async buildKnowledgeContext(options: {
+  static async buildPromptContext(options: {
     config: AiConfiguration;
     db: DatabaseClient;
     latestUserMessage: string;
-  }) {
-    return buildAssistantKnowledgeContext(options);
-  }
-
-  static async getHistory(options: {
-    config: AiConfiguration;
-    cursor?: { createdAt: Date; id: string } | null;
-    limit: number;
-    resourceId: string;
+    scope: AssistantRoleScope;
     threadId: string;
-  }): Promise<{ hasMore: boolean; messages: AssistantHistoryMessage[] }> {
-    const memory = await ConversationMemoryService.getMemory(options.config);
-    const thread = await memory.getThreadById({ threadId: options.threadId });
+    userId: string;
+  }): Promise<{
+    conversationId: string | null;
+    conversationKey: string;
+    memoryContext: string | null;
+    messages: AssistantUiMessage[];
+    persistenceAvailable: boolean;
+    usedMemory: boolean;
+  }> {
+    const state = await ConversationMemoryService.getConversationState(options.db, {
+      config: options.config,
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.userId,
+    });
 
-    if (!thread) {
+    const recentPage = await AiRepository.getAssistantConversationHistory(options.db, {
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.userId,
+      cursor: null,
+      limit: options.config.ASSISTANT_RAG_RECENT_LIMIT,
+    });
+    const recentConversationMessages = recentPage.messages.map(toConversationContextMessage);
+    const defaultMessages = recentPage.messages.map(toUiMessage);
+
+    if (
+      !options.config.ASSISTANT_RAG_ENABLED ||
+      !state.persistenceAvailable ||
+      !state.conversationId ||
+      !options.latestUserMessage.trim()
+    ) {
       return {
-        messages: [],
-        hasMore: false,
+        conversationId: state.conversationId,
+        conversationKey: state.conversationKey,
+        memoryContext: null,
+        messages: defaultMessages,
+        persistenceAvailable: state.persistenceAvailable,
+        usedMemory: defaultMessages.length > 0,
       };
     }
 
-    if (thread.resourceId !== options.resourceId) {
-      throw new Error("Assistant thread does not belong to the current resource.");
+    const queryEmbedding = (await embedAssistantTexts(options.config, [options.latestUserMessage])).embeddings[0];
+
+    if (!queryEmbedding) {
+      return {
+        conversationId: state.conversationId,
+        conversationKey: state.conversationKey,
+        memoryContext: null,
+        messages: defaultMessages,
+        persistenceAvailable: state.persistenceAvailable,
+        usedMemory: defaultMessages.length > 0,
+      };
     }
 
-    const recalled = await memory.recall({
-      threadId: options.threadId,
-      resourceId: options.resourceId,
-      perPage: false,
-      orderBy: {
-        field: "createdAt",
-        direction: "ASC",
-      },
+    const semanticMatches = await ConversationMemoryRepository.querySimilarConversationMessages(options.db, {
+      conversationId: state.conversationId,
+      scope: options.scope,
+      userId: options.userId,
+      queryEmbedding,
+      topK: options.config.ASSISTANT_RAG_TOP_K,
+      excludeMessageIds: recentConversationMessages.map((message) => message.id),
     });
-
-    const filteredMessages = ConversationMemoryService.toAssistantHistoryMessages(recalled.messages)
-      .filter((message) => {
-        if (!options.cursor) {
-          return true;
-        }
-
-        return (
-          message.createdAt.getTime() < options.cursor.createdAt.getTime() ||
-          (message.createdAt.getTime() === options.cursor.createdAt.getTime() && message.id < options.cursor.id)
-        );
-      })
-      .slice(-(options.limit + 1));
-    const hasMore = filteredMessages.length > options.limit;
-    const pageMessages = hasMore ? filteredMessages.slice(1) : filteredMessages;
+    const assembledContext = assembleConversationContext({
+      recentMessages: recentConversationMessages,
+      semanticMatches,
+      tokenLimit: options.config.ASSISTANT_CONTEXT_TOKEN_LIMIT,
+    });
+    const allowedMessageIds = new Set(assembledContext.messages.map((message) => message.id));
+    const semanticMessageIds = new Set(assembledContext.semanticMatchIds);
+    const modelMessages = recentPage.messages.filter((message) => allowedMessageIds.has(message.id)).map(toUiMessage);
+    const semanticMemoryMessages = assembledContext.messages.filter((message) => semanticMessageIds.has(message.id));
 
     return {
-      messages: pageMessages,
-      hasMore,
+      conversationId: state.conversationId,
+      conversationKey: state.conversationKey,
+      memoryContext: formatSemanticMemoryContext(semanticMemoryMessages),
+      messages: modelMessages,
+      persistenceAvailable: state.persistenceAvailable,
+      usedMemory: modelMessages.length > 0 || semanticMemoryMessages.length > 0,
     };
   }
 
-  static async saveExchange(options: {
-    assistantMessage: string;
-    config: AiConfiguration;
-    resourceId: string;
+  static async getHistory(options: {
+    db: DatabaseClient;
+    cursor?: { createdAt: Date; id: string } | null;
+    limit: number;
+    scope: AssistantRoleScope;
     threadId: string;
-    userMessage: string;
-  }): Promise<void> {
-    const memory = await ConversationMemoryService.getMemory(options.config);
-    const createdAt = new Date();
+    userId: string;
+  }): Promise<{
+    hasMore: boolean;
+    messages: Array<{
+      id: string;
+      role: "assistant" | "user";
+      content: string;
+      blocks?: unknown;
+      createdAt: Date;
+    }>;
+  }> {
+    return AiRepository.getAssistantConversationHistory(options.db, {
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.userId,
+      cursor: options.cursor ?? null,
+      limit: options.limit,
+    });
+  }
 
-    await memory.saveMessages({
-      memoryConfig: buildAssistantMemoryConfig(options.config),
+  static async getUiMessagePage(options: {
+    db: DatabaseClient;
+    cursor?: { createdAt: Date; id: string } | null;
+    limit: number;
+    scope: AssistantRoleScope;
+    threadId: string;
+    userId: string;
+  }): Promise<{
+    hasMore: boolean;
+    messages: AssistantUiMessage[];
+  }> {
+    const page = await ConversationMemoryService.getHistory(options);
+
+    return {
+      messages: page.messages.map(toUiMessage),
+      hasMore: page.hasMore,
+    };
+  }
+
+  static async saveAssistantUiTurn(options: SaveAssistantUiTurnOptions): Promise<void> {
+    const state = await ConversationMemoryService.getConversationState(options.db, {
+      config: options.config,
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.userId,
+    });
+
+    if (!state.conversationId) {
+      throw new Error("Assistant conversation could not be initialized.");
+    }
+
+    const savedMessages = await AiRepository.saveAssistantConversationMessages(options.db, {
+      conversationId: state.conversationId,
+      conversationKey: state.conversationKey,
+      scope: options.scope,
+      threadId: options.threadId,
+      userId: options.userId,
+      persistenceAvailable: state.persistenceAvailable,
       messages: [
-        createAssistantTextMessage({
+        {
+          id: options.userMessage.id,
           role: "user",
-          content: options.userMessage,
-          createdAt,
-          resourceId: options.resourceId,
-          threadId: options.threadId,
-        }),
-        createAssistantTextMessage({
+          content: options.userMessage.content,
+          blocks: sanitizeUiMessageParts({
+            parts: options.userMessage.parts,
+          }),
+          toolNames: [],
+        },
+        {
+          id: options.assistantMessage.id,
           role: "assistant",
-          content: options.assistantMessage,
-          createdAt: new Date(createdAt.getTime() + 1),
-          resourceId: options.resourceId,
-          threadId: options.threadId,
-        }),
+          content: options.assistantMessage.content,
+          blocks: sanitizeUiMessageParts({
+            parts: options.assistantMessage.parts,
+          }),
+          toolNames: options.assistantMessage.toolNames,
+        },
       ],
     });
+
+    if (savedMessages.messages.length > 0) {
+      await reindexConversationMessages(options.db, options.config, savedMessages.messages);
+    }
   }
 
   static async reindexMissingEmbeddings(
     db: DatabaseClient,
     config: AiConfiguration,
-    _limit: number,
+    limit: number,
   ): Promise<{ indexedCount: number }> {
-    await ConversationMemoryService.buildKnowledgeContext({
-      config,
+    const missingMessages = await ConversationMemoryRepository.listMessagesMissingEmbeddings(db, limit);
+
+    if (missingMessages.length === 0) {
+      return { indexedCount: 0 };
+    }
+
+    await reindexConversationMessages(
       db,
-      latestUserMessage: "assistant public content reindex",
-    });
-
-    return { indexedCount: 0 };
-  }
-
-  private static async getMemory(config: AiConfiguration) {
-    await ensureAssistantStorageReady();
-    return getAssistantMemory(config);
-  }
-
-  private static toAssistantHistoryMessages(messages: MastraDBMessage[]): AssistantHistoryMessage[] {
-    return messages
-      .filter(
-        (message): message is MastraDBMessage & { role: "assistant" | "user" } =>
-          message.role === "assistant" || message.role === "user",
-      )
-      .map((message) => ({
+      config,
+      missingMessages.map((message) => ({
         id: message.id,
+        conversationId: message.conversationId,
+        scope: message.scope,
+        userId: message.userId,
         role: message.role,
-        content: extractAssistantMessageText(message),
+        content: message.content,
         createdAt: message.createdAt,
-      }))
-      .filter((message) => message.content.length > 0);
+      })),
+    );
+
+    return {
+      indexedCount: missingMessages.length,
+    };
   }
 }
