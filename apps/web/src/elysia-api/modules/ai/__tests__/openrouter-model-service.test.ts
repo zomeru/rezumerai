@@ -9,6 +9,7 @@ import { getAvailableModels, isValidFreeModel, resolveEffectiveModel } from "../
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
+// Temporary local type — replace with the real import once Task 7 creates the service module.
 interface OpenRouterModelOption {
   id: string;
   name: string;
@@ -20,29 +21,12 @@ interface OpenRouterModelOption {
   completionPricing: string;
 }
 
-const FREE_ROUTER_MODEL: OpenRouterModelOption = {
-  id: "openrouter/free",
-  name: "Free Models Router",
-  contextLength: 131072,
-  inputModalities: ["text"],
-  outputModalities: ["text"],
-  supportedParameters: [],
-  promptPricing: "0",
-  completionPricing: "0",
-};
-
-const QWEN_FREE_MODEL: OpenRouterModelOption = {
-  id: "qwen/qwen3-235b-a22b:free",
-  name: "Qwen3 235B A22B (free)",
-  contextLength: 131072,
-  inputModalities: ["text"],
-  outputModalities: ["text"],
-  supportedParameters: ["temperature"],
-  promptPricing: "0",
-  completionPricing: "0",
-};
-
-const SAMPLE_MODELS: OpenRouterModelOption[] = [FREE_ROUTER_MODEL, QWEN_FREE_MODEL];
+// Fixtures only carry fields exercised by the tests (id lookup).
+// Over-specifying fields creates maintenance friction when the service shape evolves.
+const SAMPLE_MODELS = [
+  { id: "openrouter/free" } as OpenRouterModelOption,
+  { id: "qwen/qwen3-235b-a22b:free" } as OpenRouterModelOption,
+];
 
 // ---------------------------------------------------------------------------
 // Helper: build a minimal OpenRouter /models API response body
