@@ -94,3 +94,4 @@ docs
 apps/web/public/pdf-worker
 apps/api/server
 packages/database/generated
+.worktrees/
