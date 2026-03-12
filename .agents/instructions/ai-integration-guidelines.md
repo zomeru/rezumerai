@@ -13,9 +13,10 @@
 ## Providers And Configuration
 
 - OpenRouter is the active model and embedding provider.
-- Runtime AI configuration is stored in system configuration and seeded by `bun run db:seed:ai`.
+- Runtime AI configuration is stored in system configuration and seeded by `bun run db:seed:system`.
 - Do not hardcode prompts, model IDs, or limits when the existing AI config already owns them.
-- Active model availability comes from database records in `ai_provider` and `ai_model`.
+- AI system prompts are configured per workflow. `AI_CONFIG` owns separate keys for assistant chat, Resume Copilot optimize/tailor/review, and the `/testsite` Text Optimizer.
+- Active model availability is fetched from the OpenRouter models endpoint at runtime.
 
 ## Access And Safety Rules
 
@@ -46,8 +47,7 @@
 
 ## Database And Seeds
 
-- `bun run db:seed:ai` seeds:
-  - AI providers and models
+- `bun run db:seed:system` seeds:
   - default AI configuration
   - default public content used by the assistant and public pages
 - If you change AI configuration shape or assistant persistence, update seeds, types, and docs together.

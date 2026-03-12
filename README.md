@@ -22,7 +22,7 @@ Rezumerai is an AI-assisted resume builder for job seekers who want one workspac
 - Built-in AI assistant with anonymous guest support, persisted thread history, and `PUBLIC` / `USER` / `ADMIN` scopes
 - Better Auth accounts with email/password, GitHub OAuth, anonymous sessions, and admin roles
 - Account settings for profile updates, password changes, AI model selection, and AI credit visibility
-- Admin console for users, AI model catalog, system configuration, audit logs, analytics, and error logs
+- Admin console for users, live AI model availability, system configuration, audit logs, analytics, and error logs
 - Database-backed public content for the landing page, FAQ, about, contact, privacy, and terms pages
 
 ## Tech Stack
@@ -63,8 +63,16 @@ Rezumerai is an AI-assisted resume builder for job seekers who want one workspac
 - Vercel AI SDK Core in the embedded Elysia API
 - AI SDK UI hooks (`useChat`, `useCompletion`) on the frontend
 - OpenRouter via `@openrouter/ai-sdk-provider`
-- Database-backed AI provider/model catalog and system configuration
+- OpenRouter model discovery plus database-backed system configuration
 - LangChain text splitters plus `pgvector` for assistant memory embeddings
+
+### AI Prompt Configuration
+
+- `AI_CONFIG` stores runtime AI prompts, models, and limits in the `SystemConfiguration` table.
+- `ASSISTANT_SYSTEM_PROMPT` is reserved for chat assistant behavior and remains separate from optimization workflows.
+- Resume Copilot uses dedicated prompt keys for `optimize`, `tailor`, and `review`.
+- `/testsite` Text Optimizer uses `TEXT_OPTIMIZER_SYSTEM_PROMPT`, which is general-purpose text optimization only.
+- Legacy `COPILOT_SYSTEM_PROMPT` and `OPTIMIZE_SYSTEM_PROMPT` values are normalized into the new keys at runtime and when saved through the admin System Configuration editor.
 
 ### Observability And Operations
 
@@ -138,7 +146,7 @@ bun run db:setup
 Optional seed data:
 
 ```sh
-bun run db:seed:ai
+bun run db:seed:system
 bun run db:seed
 ```
 
@@ -152,7 +160,7 @@ Notes:
 
 - Root `predev` builds `@rezumerai/database` before `turbo dev`.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:ai` seeds AI providers/models, default AI/system configuration, and public content.
+- `bun run db:seed:system` seeds default system configuration and public content.
 - `bun run db:seed` seeds dummy resumes for existing users; it does not create auth users.
 
 ## Development Workflow
@@ -228,7 +236,7 @@ Notes:
 | `bun run db:migrate:dev` | Create and apply a development migration |
 | `bun run db:migrate:status` | Show Prisma migration status |
 | `bun run db:pull` | Pull schema changes from the database |
-| `bun run db:seed:ai` | Seed AI providers/models, default system configuration, and public content |
+| `bun run db:seed:system` | Seed default system configuration and public content |
 | `bun run db:seed` | Seed dummy resume data for existing users |
 | `bun run assistant:reindex-memory` | Run the assistant memory reindex script |
 | `bun run db:psql` | Open `psql` against `DATABASE_URL` |

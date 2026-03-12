@@ -15,6 +15,7 @@ import {
   AiConfigurationSchema,
   DEFAULT_AI_MODEL,
   DEFAULT_AI_CONFIGURATION as DEFAULT_CONFIGURATION_VALUE,
+  normalizeAiConfiguration,
   ResumeCopilotOptimizeResponseSchema,
   ResumeCopilotReviewResponseSchema,
   ResumeCopilotTailorResponseSchema,
@@ -45,7 +46,7 @@ import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailab
 import { emptyAiUsageMetrics, mapOpenRouterModelToActiveAiModel } from "./mapper";
 import { ConversationMemoryService } from "./memory/service";
 import { getAvailableModels as fetchOpenRouterModels } from "./openrouter-model-service";
-import { composeAiSystemPrompt } from "./prompts/composer";
+import { resolveAiSystemPrompt } from "./prompts/resolver";
 import { createAiProviderRegistry } from "./providers/registry";
 import { AiRepository } from "./repository";
 import { createAiToolRegistry } from "./tools/registry";
@@ -445,14 +446,17 @@ export abstract class AiService {
 
     const toolRegistry = AiService.createToolRegistry(db, runtime.config, scope, identity.role, identity.userId);
     const promptToolNames = toolRegistry.getPromptToolNames("assistant");
-    const systemPrompt = composeAiSystemPrompt({
-      baseSystemPrompt: runtime.config.ASSISTANT_SYSTEM_PROMPT,
+    const systemPrompt = resolveAiSystemPrompt({
+      config: runtime.config,
       currentPath: input.currentPath,
-      flow: "assistant",
       memoryContext: promptContext.memoryContext,
       ragContext: null,
       scope,
       toolNames: promptToolNames,
+      workflow: {
+        feature: "assistant",
+        action: "chat",
+      },
     });
     const providerRegistry = createAiProviderRegistry();
     const modelMessages = await convertToModelMessages(originalMessages);
@@ -555,11 +559,14 @@ export abstract class AiService {
     const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
-      instructions: composeAiSystemPrompt({
-        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
-        flow: "copilot-optimize",
+      instructions: resolveAiSystemPrompt({
+        config: runtime.config,
         scope: "USER",
         toolNames: toolRegistry.getPromptToolNames("copilot"),
+        workflow: {
+          feature: "resume-copilot",
+          action: "optimize",
+        },
       }),
       input: [
         {
@@ -621,11 +628,14 @@ export abstract class AiService {
     const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
-      instructions: composeAiSystemPrompt({
-        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
-        flow: "copilot-tailor",
+      instructions: resolveAiSystemPrompt({
+        config: runtime.config,
         scope: "USER",
         toolNames: toolRegistry.getPromptToolNames("copilot"),
+        workflow: {
+          feature: "resume-copilot",
+          action: "tailor",
+        },
       }),
       input: [
         {
@@ -681,11 +691,14 @@ export abstract class AiService {
     const toolRegistry = AiService.createToolRegistry(db, runtime.config, buildCopilotScope("USER"), "USER", userId);
 
     const result = await AiService.runStructuredModel({
-      instructions: composeAiSystemPrompt({
-        baseSystemPrompt: runtime.config.COPILOT_SYSTEM_PROMPT,
-        flow: "copilot-review",
+      instructions: resolveAiSystemPrompt({
+        config: runtime.config,
         scope: "USER",
         toolNames: toolRegistry.getPromptToolNames("copilot"),
+        workflow: {
+          feature: "resume-copilot",
+          action: "review",
+        },
       }),
       input: [
         {
@@ -938,7 +951,7 @@ export abstract class AiService {
   }
 
   private static parseAiConfiguration(value: Prisma.JsonValue): AiConfiguration {
-    const parsedConfiguration = AiConfigurationSchema.safeParse(value);
+    const parsedConfiguration = AiConfigurationSchema.safeParse(normalizeAiConfiguration(value));
 
     if (!parsedConfiguration.success) {
       return DEFAULT_CONFIGURATION_VALUE;

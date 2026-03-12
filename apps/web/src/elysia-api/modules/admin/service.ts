@@ -15,6 +15,7 @@ import {
   ContentPageSchema,
   FaqInformationSchema,
   LandingPageInformationSchema,
+  normalizeAiConfiguration,
   SYSTEM_CONFIGURATION_KEYS,
 } from "@rezumerai/types";
 import { z } from "zod";
@@ -47,7 +48,8 @@ const GLOBAL_CONFIGURATION_SCHEMA = z
 
 const SYSTEM_CONFIGURATION_DEFINITIONS = {
   AI_CONFIG: {
-    description: "Global AI model and optimization configuration used across the application.",
+    description:
+      "Global AI models, workflow-specific prompts, and optimization configuration used across the application.",
     schema: AiConfigurationSchema,
   },
   GLOBAL_CONFIG: {
@@ -372,7 +374,12 @@ function toStoredConfigurationValue(value: unknown): Prisma.JsonValue | null {
 
 function parseConfigurationValue(name: string, value: unknown) {
   const definition = isManagedConfigurationName(name) ? SYSTEM_CONFIGURATION_DEFINITIONS[name] : null;
-  const parsedValue = definition ? definition.schema.parse(value) : JSON.parse(JSON.stringify(value));
+  const parsedValue =
+    name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG
+      ? normalizeAiConfiguration(value)
+      : definition
+        ? definition.schema.parse(value)
+        : JSON.parse(JSON.stringify(value));
   const serialized = toStoredConfigurationValue(parsedValue);
 
   return serialized === null ? Prisma.JsonNull : serialized;
@@ -386,11 +393,14 @@ function toSystemConfigurationEntry(record: {
   createdAt: Date;
   updatedAt: Date;
 }): SystemConfigurationEntry {
+  const value =
+    record.name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG ? normalizeAiConfiguration(record.value) : record.value;
+
   return {
     id: record.id,
     name: record.name,
     description: resolveConfigurationDescription(record.name, record.description),
-    value: record.value,
+    value,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     isEditable: true,

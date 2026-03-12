@@ -100,6 +100,7 @@ Architecture rules:
 - Next.js API routes under `apps/web/src/app/api/**` are transport-only wrappers around the embedded Elysia app.
 - All AI business logic stays in `apps/web/src/elysia-api/modules/ai/**`.
 - Use the centralized provider registry, tool registry, and prompt composer in the AI module instead of ad hoc model/tool/prompt wiring.
+- System prompts are resolved by workflow `feature + action` from `AI_CONFIG`. Keep the assistant chat prompt separate from Resume Copilot optimize/tailor/review prompts and the Text Optimizer prompt.
 - Do not reintroduce Mastra, `@openrouter/sdk`, or custom assistant streaming abstractions.
 - Assistant persistence must remain thread-isolated by `userId + scope + threadId`.
 

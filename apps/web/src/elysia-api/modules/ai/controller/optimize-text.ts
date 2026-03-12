@@ -1,5 +1,6 @@
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "../constants";
+import { resolveAiSystemPrompt } from "../prompts/resolver";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "../service";
 import type { OptimizationContext } from "../types";
 import { ensureVerifiedAiUser, routeResult, trackAiHandledError } from "./helpers";
@@ -121,7 +122,13 @@ export async function handleOptimizeTextRequest(options: {
     stream = await AiService.createOptimizeStream(
       input,
       optimizationContext.model.id,
-      optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
+      resolveAiSystemPrompt({
+        config: optimizationContext.config,
+        workflow: {
+          feature: "text-optimizer",
+          action: "optimize",
+        },
+      }),
     );
   } catch (error: unknown) {
     const normalizedError = AiService.normalizeOptimizationError(error);

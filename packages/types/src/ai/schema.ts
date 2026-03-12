@@ -11,8 +11,10 @@ const IsoDatetimeStringSchema = z.preprocess((value) => {
 export const AiConfigurationSchema = z.object({
   PROMPT_VERSION: z.string().trim().min(1).max(100),
   DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: z.number().int().min(1).max(1000),
-  OPTIMIZE_SYSTEM_PROMPT: z.string().trim().min(1).max(10000),
-  COPILOT_SYSTEM_PROMPT: z.string().trim().min(1).max(6000),
+  TEXT_OPTIMIZER_SYSTEM_PROMPT: z.string().trim().min(1).max(10000),
+  RESUME_COPILOT_OPTIMIZE_SYSTEM_PROMPT: z.string().trim().min(1).max(10000),
+  RESUME_COPILOT_TAILOR_SYSTEM_PROMPT: z.string().trim().min(1).max(10000),
+  RESUME_COPILOT_REVIEW_SYSTEM_PROMPT: z.string().trim().min(1).max(10000),
   ASSISTANT_SYSTEM_PROMPT: z.string().trim().min(1).max(6000),
   ASSISTANT_MAX_STEPS: z.number().int().min(1).max(8),
   ASSISTANT_HISTORY_LIMIT: z.number().int().min(1).max(12),
@@ -27,19 +29,27 @@ export const AiConfigurationSchema = z.object({
   DEFAULT_MODEL_ID: z.string().trim().min(1).max(200),
 });
 
-const DEFAULT_ASSISTANT_SYSMTEM_PROMPT =
+const DEFAULT_ASSISTANT_SYSTEM_PROMPT =
   "You are Rezumerai Assistant. Use approved tools for Rezumerai product or account data and never guess such information; if it cannot be retrieved, refuse briefly and safely. For general knowledge questions that do not require Rezumerai tools or private data, answer normally. Keep replies short, factual, and role-safe, prefer concise lists over long prose, and use real line breaks with section headers on their own lines and one list item per line.";
 
 export const DEFAULT_AI_MODEL = "openrouter/free";
 
+export const DEFAULT_AI_SYSTEM_PROMPTS = {
+  TEXT_OPTIMIZER_SYSTEM_PROMPT:
+    "You are Text Optimizer. Improve clarity, readability, grammar, tone, and wording for the text the user provides. Rewrite only the requested text. Do not add facts, unsupported claims, or resume-specific assumptions. Do not act like Resume Copilot. Return plain text only.",
+  RESUME_COPILOT_OPTIMIZE_SYSTEM_PROMPT:
+    "You are Resume Copilot Optimize. Improve wording, clarity, structure, and professionalism using only facts supported by the provided resume and user data. Never invent or infer missing experience, metrics, dates, employers, titles, education, tools, technologies, or achievements. If evidence is missing, keep the edit conservative and say so through the requested structured result. Return only the requested structured result.",
+  RESUME_COPILOT_TAILOR_SYSTEM_PROMPT:
+    "You are Resume Copilot Tailor. Tailor the resume to the provided job description using only facts supported by the provided resume and user data. Emphasize relevant alignment, keywords, ordering, and phrasing, but never invent qualifications, achievements, metrics, dates, employers, titles, education, tools, or technologies. When a requirement is not supported, call it out as a gap or caution instead of fabricating it. Return only the requested structured result.",
+  RESUME_COPILOT_REVIEW_SYSTEM_PROMPT:
+    "You are Resume Copilot Review. Critically evaluate the resume for clarity, impact, specificity, completeness, and fit. If a job description is provided, review against it; otherwise perform a general review. Prioritize findings and recommendations over rewriting. Do not invent facts or assume unsupported qualifications. Return only the requested structured result.",
+  ASSISTANT_SYSTEM_PROMPT: DEFAULT_ASSISTANT_SYSTEM_PROMPT,
+} as const;
+
 export const DEFAULT_AI_CONFIGURATION = {
-  PROMPT_VERSION: "copilot-v1",
+  PROMPT_VERSION: "feature-prompts-v1",
   DAILY_AI_TEXT_OPTIMIZER_CREDIT_LIMIT: 100,
-  OPTIMIZE_SYSTEM_PROMPT:
-    "Rewrite only the requested resume content. Keep facts unchanged. Never invent metrics, dates, employers, titles, skills, tools, or results. Return plain text only.",
-  COPILOT_SYSTEM_PROMPT:
-    "You are Resume Copilot. Use tools. Improve wording, targeting, and clarity without changing facts. If evidence is missing, say so. Never invent experience, metrics, dates, employers, titles, education, or technologies. Return compact JSON only.",
-  ASSISTANT_SYSTEM_PROMPT: DEFAULT_ASSISTANT_SYSMTEM_PROMPT,
+  ...DEFAULT_AI_SYSTEM_PROMPTS,
   ASSISTANT_MAX_STEPS: 4,
   ASSISTANT_HISTORY_LIMIT: 8,
   EMBEDDING_PROVIDER: "openrouter",
@@ -52,6 +62,47 @@ export const DEFAULT_AI_CONFIGURATION = {
   ASSISTANT_MODEL_ID: DEFAULT_AI_MODEL,
   DEFAULT_MODEL_ID: DEFAULT_AI_MODEL,
 } as const satisfies z.infer<typeof AiConfigurationSchema>;
+
+function getOptionalPromptValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+export function normalizeAiConfiguration(value: unknown): AiConfiguration {
+  const candidate = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  const legacyTextOptimizerPrompt = getOptionalPromptValue(candidate.OPTIMIZE_SYSTEM_PROMPT);
+  const legacyCopilotPrompt = getOptionalPromptValue(candidate.COPILOT_SYSTEM_PROMPT);
+
+  const normalized: Record<string, unknown> = {
+    ...DEFAULT_AI_CONFIGURATION,
+    ...candidate,
+    TEXT_OPTIMIZER_SYSTEM_PROMPT:
+      getOptionalPromptValue(candidate.TEXT_OPTIMIZER_SYSTEM_PROMPT) ??
+      legacyTextOptimizerPrompt ??
+      DEFAULT_AI_CONFIGURATION.TEXT_OPTIMIZER_SYSTEM_PROMPT,
+    RESUME_COPILOT_OPTIMIZE_SYSTEM_PROMPT:
+      getOptionalPromptValue(candidate.RESUME_COPILOT_OPTIMIZE_SYSTEM_PROMPT) ??
+      legacyCopilotPrompt ??
+      DEFAULT_AI_CONFIGURATION.RESUME_COPILOT_OPTIMIZE_SYSTEM_PROMPT,
+    RESUME_COPILOT_TAILOR_SYSTEM_PROMPT:
+      getOptionalPromptValue(candidate.RESUME_COPILOT_TAILOR_SYSTEM_PROMPT) ??
+      legacyCopilotPrompt ??
+      DEFAULT_AI_CONFIGURATION.RESUME_COPILOT_TAILOR_SYSTEM_PROMPT,
+    RESUME_COPILOT_REVIEW_SYSTEM_PROMPT:
+      getOptionalPromptValue(candidate.RESUME_COPILOT_REVIEW_SYSTEM_PROMPT) ??
+      legacyCopilotPrompt ??
+      DEFAULT_AI_CONFIGURATION.RESUME_COPILOT_REVIEW_SYSTEM_PROMPT,
+    ASSISTANT_SYSTEM_PROMPT:
+      getOptionalPromptValue(candidate.ASSISTANT_SYSTEM_PROMPT) ?? DEFAULT_AI_CONFIGURATION.ASSISTANT_SYSTEM_PROMPT,
+  };
+
+  const parsedConfiguration = AiConfigurationSchema.safeParse(normalized);
+
+  if (!parsedConfiguration.success) {
+    return DEFAULT_AI_CONFIGURATION;
+  }
+
+  return parsedConfiguration.data;
+}
 
 export const AiModelOptionSchema = z.object({
   id: z.string().trim().min(1).max(200),

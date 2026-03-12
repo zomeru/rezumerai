@@ -8,7 +8,7 @@ bun run db:migrate
 bun run db:migrate:dev
 bun run db:migrate:status
 bun run db:seed
-bun run db:seed:ai
+bun run db:seed:system
 bun run db:pull
 bun run db:psql
 bun run db:inspect-vectors
@@ -24,5 +24,5 @@ bun run assistant:reindex-memory
 - Prisma schema lives in `packages/database/prisma/`.
 - Prisma models are split across `packages/database/prisma/models/*.prisma`.
 - Generated client output lives in `packages/database/generated/` — do not edit manually.
-- `bun run db:seed:ai` seeds AI providers/models plus default system configuration and public content.
+- `bun run db:seed:system` seeds default system configuration and public content.
 - Assistant memory embeddings use PostgreSQL + `pgvector`; inspect them with `bun run db:inspect-vectors`.

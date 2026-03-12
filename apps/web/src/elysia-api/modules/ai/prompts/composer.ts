@@ -1,32 +1,45 @@
 import type { AssistantRoleScope } from "@rezumerai/types";
 
-type AiPromptFlow = "assistant" | "copilot-optimize" | "copilot-tailor" | "copilot-review";
+export type AiPromptWorkflow =
+  | {
+      feature: "assistant";
+      action: "chat";
+    }
+  | {
+      feature: "resume-copilot";
+      action: "optimize" | "tailor" | "review";
+    };
 
 interface ComposeAiSystemPromptOptions {
   baseSystemPrompt: string;
   currentPath?: string;
-  flow: AiPromptFlow;
+  workflow: AiPromptWorkflow;
   memoryContext?: string | null;
   ragContext?: string | null;
   scope: AssistantRoleScope;
   toolNames: string[];
 }
 
-const FLOW_RULES: Record<AiPromptFlow, string> = {
-  assistant:
+const WORKFLOW_RULES = {
+  "assistant:chat":
     "Flow=assistant. Use prior messages from the same thread to answer follow-up questions and questions about earlier messages. Use tools whenever the user asks about Rezumerai product data, account data, resume data, credits, or admin data. After using tools, respond with a natural-language answer for the user. Do not guess tool-backed facts.",
-  "copilot-optimize":
-    "Flow=copilot-optimize. Improve the requested resume content without changing facts. Return only the requested structured result.",
-  "copilot-tailor":
-    "Flow=copilot-tailor. Compare the resume against the job description. Return only the requested structured result.",
-  "copilot-review": "Flow=copilot-review. Review the resume critically. Return only the requested structured result.",
-};
+  "resume-copilot:optimize": "Return only the requested structured result.",
+  "resume-copilot:tailor": "Return only the requested structured result.",
+  "resume-copilot:review": "Return only the requested structured result.",
+} as const;
+
+function getWorkflowKey(workflow: AiPromptWorkflow): keyof typeof WORKFLOW_RULES {
+  return `${workflow.feature}:${workflow.action}` as keyof typeof WORKFLOW_RULES;
+}
 
 export function composeAiSystemPrompt(options: ComposeAiSystemPromptOptions): string {
+  const workflowKey = getWorkflowKey(options.workflow);
   const sections = [
     options.baseSystemPrompt.trim(),
+    `Feature=${options.workflow.feature}.`,
+    `Action=${options.workflow.action}.`,
     `Scope=${options.scope}.`,
-    FLOW_RULES[options.flow],
+    WORKFLOW_RULES[workflowKey],
     options.currentPath ? `CurrentPage=${options.currentPath}.` : null,
     options.toolNames.length > 0
       ? `AvailableTools=${options.toolNames.join(", ")}. Use only these tools and prefer them over guessing tool-backed data.`

@@ -54,7 +54,7 @@
     "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
     "db:migrate:status": "cd packages/database && bun run db:migrate:status",
     "db:seed": "cd packages/database && bun run db:seed",
-    "db:seed:ai": "cd packages/database && bun run db:seed:ai",
+    "db:seed:system": "cd packages/database && bun run db:seed:system",
     "assistant:reindex-memory": "cd apps/web && bun run assistant:reindex-memory",
     "db:pull": "cd packages/database && bun run db:pull",
     "db:psql": "cd packages/database && bun run db:psql",

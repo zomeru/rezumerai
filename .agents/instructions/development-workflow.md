@@ -47,5 +47,5 @@ bun run dev
 
 - `bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:ai` seeds AI models, system configuration, and public content defaults.
+- `bun run db:seed:system` seeds default AI/system configuration and public content defaults.
 - Workspace-local commands should still be run with Bun from the relevant package directory.

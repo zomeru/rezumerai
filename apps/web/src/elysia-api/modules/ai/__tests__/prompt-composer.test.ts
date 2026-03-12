@@ -6,14 +6,19 @@ describe("composeAiSystemPrompt", () => {
     const prompt = composeAiSystemPrompt({
       baseSystemPrompt: "Base assistant prompt.",
       currentPath: "/workspace",
-      flow: "assistant",
       memoryContext: "Recent memory block",
       ragContext: "Knowledge block",
       scope: "USER",
       toolNames: ["getPublicFaq", "listMyRecentResumes"],
+      workflow: {
+        feature: "assistant",
+        action: "chat",
+      },
     });
 
     expect(prompt).toContain("Base assistant prompt.");
+    expect(prompt).toContain("Feature=assistant");
+    expect(prompt).toContain("Action=chat");
     expect(prompt).toContain("Scope=USER");
     expect(prompt).toContain("CurrentPage=/workspace");
     expect(prompt).toContain("getPublicFaq");
@@ -27,13 +32,17 @@ describe("composeAiSystemPrompt", () => {
   it("builds copilot prompts with flow-specific output rules", () => {
     const prompt = composeAiSystemPrompt({
       baseSystemPrompt: "Base copilot prompt.",
-      flow: "copilot-review",
       scope: "USER",
       toolNames: ["getResume", "matchResumeToJob"],
+      workflow: {
+        feature: "resume-copilot",
+        action: "review",
+      },
     });
 
     expect(prompt).toContain("Base copilot prompt.");
-    expect(prompt).toContain("Flow=copilot-review");
+    expect(prompt).toContain("Feature=resume-copilot");
+    expect(prompt).toContain("Action=review");
     expect(prompt).toContain("matchResumeToJob");
     expect(prompt).toContain("Return only the requested structured result");
   });
