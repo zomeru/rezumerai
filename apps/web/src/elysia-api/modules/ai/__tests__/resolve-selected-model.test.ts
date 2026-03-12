@@ -1,82 +1,51 @@
 import { describe, expect, it } from "bun:test";
+import { DEFAULT_AI_MODEL } from "@rezumerai/types";
 
 // We test the resolution logic indirectly via a mirror helper that matches the
-// expected behaviour of the private static resolveSelectedModel method.
+// expected behaviour of the private resolveModelId method on AiService.
 // This keeps the test decoupled from private internals while validating the logic.
 
-type Model = { id: string; modelId: string; name: string; providerName: string; providerDisplayName: string };
-
-function resolveSelectedModel(
-  models: Model[],
-  selectedModelDbId: string | null,
-  requestedModelId: string | null,
-  defaultModelId: string | null,
-): Model {
+function resolveModelId(models: { id: string }[], savedModelId: string, requestedModelId: string | null): string {
   if (models.length === 0) throw new Error("No active models");
 
   if (requestedModelId) {
-    const found = models.find((m) => m.modelId === requestedModelId);
-    if (!found) throw new Error("Requested model not available");
-    return found;
+    if (!models.some((m) => m.id === requestedModelId)) throw new Error("Requested model not available");
+    return requestedModelId;
   }
 
-  if (selectedModelDbId) {
-    const saved = models.find((m) => m.id === selectedModelDbId);
-    if (saved) return saved;
+  if (models.some((m) => m.id === savedModelId)) {
+    return savedModelId;
   }
 
-  if (defaultModelId) {
-    const defaultModel = models.find((m) => m.modelId === defaultModelId);
-    if (defaultModel) return defaultModel;
-  }
-
-  const [fallback] = models;
-  if (!fallback) throw new Error("No active models");
-  return fallback;
+  return DEFAULT_AI_MODEL;
 }
 
-const FREE_MODEL: Model = {
-  id: "m1",
-  modelId: "openrouter/free",
-  name: "Free Models Router",
-  providerName: "openrouter",
-  providerDisplayName: "OpenRouter",
-};
-const PAID_MODEL: Model = {
-  id: "m2",
-  modelId: "qwen/qwen3-235b",
-  name: "Qwen 3",
-  providerName: "openrouter",
-  providerDisplayName: "OpenRouter",
-};
+const FREE_MODEL = { id: "openrouter/free" };
+const PAID_MODEL = { id: "qwen/qwen3-235b" };
 const MODELS = [FREE_MODEL, PAID_MODEL];
 
-describe("resolveSelectedModel with defaultModelId", () => {
-  it("returns user saved preference when set", () => {
-    expect(resolveSelectedModel(MODELS, "m2", null, "openrouter/free")).toBe(PAID_MODEL);
+describe("resolveModelId", () => {
+  it("returns requestedModelId when it is valid in the list", () => {
+    expect(resolveModelId(MODELS, "openrouter/free", "qwen/qwen3-235b")).toBe("qwen/qwen3-235b");
   });
 
-  it("returns defaultModelId match when user has no saved preference", () => {
-    expect(resolveSelectedModel(MODELS, null, null, "openrouter/free")).toBe(FREE_MODEL);
+  it("throws when requestedModelId is not in the list", () => {
+    expect(() => resolveModelId(MODELS, "openrouter/free", "not/active")).toThrow("Requested model not available");
   });
 
-  it("returns models[0] when defaultModelId does not match any active model", () => {
-    expect(resolveSelectedModel(MODELS, null, null, "unknown/model")).toBe(FREE_MODEL);
+  it("returns savedModelId when it is valid and no requestedModelId given", () => {
+    expect(resolveModelId(MODELS, "qwen/qwen3-235b", null)).toBe("qwen/qwen3-235b");
   });
 
-  it("returns requestedModelId override even when user preference exists", () => {
-    expect(resolveSelectedModel(MODELS, "m2", "openrouter/free", "openrouter/free")).toBe(FREE_MODEL);
+  it("returns DEFAULT_AI_MODEL when savedModelId is not in the list", () => {
+    expect(resolveModelId(MODELS, "stale/model-id", null)).toBe(DEFAULT_AI_MODEL);
   });
 
-  it("throws when requestedModelId is not in active models", () => {
-    expect(() => resolveSelectedModel(MODELS, null, "not/active", "openrouter/free")).toThrow();
+  it("returns DEFAULT_AI_MODEL when savedModelId is not in list and no requestedModelId", () => {
+    expect(resolveModelId(MODELS, "unknown/model", null)).toBe(DEFAULT_AI_MODEL);
   });
 
-  it("returns models[0] when defaultModelId is null and no user preference", () => {
-    expect(resolveSelectedModel(MODELS, null, null, null)).toBe(FREE_MODEL);
-  });
-
-  it("falls through to defaultModelId when selectedModelDbId does not match any active model", () => {
-    expect(resolveSelectedModel(MODELS, "stale-db-id", null, "openrouter/free")).toBe(FREE_MODEL);
+  it("throws when models list is empty", () => {
+    expect(() => resolveModelId([], "openrouter/free", null)).toThrow("No active models");
   });
 });
