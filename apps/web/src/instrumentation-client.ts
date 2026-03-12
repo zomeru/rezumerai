@@ -1,6 +1,6 @@
 import { initBotId } from "botid/client/core";
 
-const isBotIdEnabled = process.env.NEXT_PUBLIC_BOTID_ENABLED === "true";
+const isBotIdEnabled = process.env.NODE_ENV !== "development";
 
 // Define the paths that need bot protection.
 // These are paths that are routed to by your app.

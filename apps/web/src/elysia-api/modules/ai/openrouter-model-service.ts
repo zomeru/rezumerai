@@ -138,6 +138,8 @@ export async function getAvailableModels(): Promise<OpenRouterModelOption[]> {
   // every call goes through the mocked network path.
   const isNativeFetch = globalThis.fetch === _nativeFetch;
   const isFresh = isNativeFetch && cachedModels !== null && Date.now() - cacheTimestamp < CACHE_TTL_MS;
+
+  // biome-ignore lint/style/noNonNullAssertion: we check cachedModels for null above, so this is safe.
   if (isFresh) return cachedModels!;
   // Serve stale data and refresh in background only when using the real fetch.
   if (isNativeFetch && cachedModels) {
