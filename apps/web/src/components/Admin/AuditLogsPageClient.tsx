@@ -89,21 +89,18 @@ export default function AuditLogsPageClient(): React.JSX.Element {
           </div>
         </AdminFieldLabel>
 
-        <AdminFieldLabel label="Page size">
-          <AdminSelect
-            value={pageSize}
-            onChange={(value) => {
-              setPageSize(Number(value));
-              setPage(1);
-            }}
-          >
-            {PAGE_SIZE_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </AdminSelect>
-        </AdminFieldLabel>
+        <AdminSelect
+          label="Page size"
+          value={pageSize}
+          onChange={(value) => {
+            setPageSize(Number(value));
+            setPage(1);
+          }}
+          options={PAGE_SIZE_OPTIONS.map((value) => ({
+            value: String(value),
+            label: String(value),
+          }))}
+        />
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
           <p className="text-slate-500">Matching entries</p>

@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { Select, type SelectOption } from "../ui/Select";
 import JsonViewer from "./JsonViewer";
 
 const ADMIN_HEADER_NAV_CLASS =
@@ -144,24 +145,33 @@ export function AdminFieldLabel({ label, children }: { label: string; children: 
 }
 
 export function AdminSelect({
+  label,
   value,
   onChange,
-  children,
+  options,
+  placeholder,
+  disabled = false,
   className,
 }: {
+  label: string;
   value: string | number;
   onChange: (value: string) => void;
-  children: React.ReactNode;
+  options: SelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
   className?: string;
 }): React.JSX.Element {
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={cn("rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm", className)}
-    >
-      {children}
-    </select>
+    <Select
+      label={label}
+      value={String(value)}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      triggerClassName="rounded-lg px-3 py-2 text-slate-800 shadow-none"
+    />
   );
 }
 

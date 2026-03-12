@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAdminErrorLogs } from "@/hooks/useErrorLogs";
-import { AdminPageShell } from "./AdminUI";
+import { AdminPageShell, AdminSelect } from "./AdminUI";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const READ_FILTER_OPTIONS = [
@@ -90,39 +90,25 @@ export default function ErrorListPageClient(): React.JSX.Element {
       isRefreshing={isFetching}
     >
       <div className="mb-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
-        <label className="flex flex-col gap-1 text-slate-600 text-sm">
-          <span className="font-medium text-slate-700">Filter</span>
-          <select
-            value={readFilter}
-            onChange={(event) =>
-              onChangeFilter(
-                event.target.value === "read" || event.target.value === "unread" ? event.target.value : "all",
-              )
-            }
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm"
-          >
-            {READ_FILTER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <AdminSelect
+          label="Filter"
+          value={readFilter}
+          onChange={(value) => onChangeFilter(value === "read" || value === "unread" ? value : "all")}
+          options={READ_FILTER_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
 
-        <label className="flex flex-col gap-1 text-slate-600 text-sm">
-          <span className="font-medium text-slate-700">Page size</span>
-          <select
-            value={pageSize}
-            onChange={(event) => onChangePageSize(Number(event.target.value))}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm"
-          >
-            {PAGE_SIZE_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
+        <AdminSelect
+          label="Page size"
+          value={pageSize}
+          onChange={(value) => onChangePageSize(Number(value))}
+          options={PAGE_SIZE_OPTIONS.map((value) => ({
+            value: String(value),
+            label: String(value),
+          }))}
+        />
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
           <p className="text-slate-500">Total Logs</p>

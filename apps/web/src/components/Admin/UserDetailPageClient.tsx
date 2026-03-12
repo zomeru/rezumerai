@@ -183,22 +183,19 @@ export default function UserDetailPageClient({ userId }: { userId: string }): Re
                 </div>
 
                 <div className="mt-4 space-y-4">
-                  <AdminFieldLabel label="Assigned role">
-                    <AdminSelect
-                      value={selectedRole}
-                      onChange={(value) => {
-                        if (value === "ADMIN" || value === "USER") {
-                          setSelectedRole(value);
-                        }
-                      }}
-                    >
-                      {ROLE_OPTIONS.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </AdminSelect>
-                  </AdminFieldLabel>
+                  <AdminSelect
+                    label="Assigned role"
+                    value={selectedRole}
+                    onChange={(value) => {
+                      if (value === "ADMIN" || value === "USER") {
+                        setSelectedRole(value);
+                      }
+                    }}
+                    options={ROLE_OPTIONS.map((role) => ({
+                      value: role,
+                      label: role,
+                    }))}
+                  />
 
                   <button
                     type="button"

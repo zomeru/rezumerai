@@ -7,7 +7,7 @@ import { useAdminAnalytics } from "@/hooks/useAdmin";
 import {
   AdminBarChart,
   AdminEmptyState,
-  AdminFieldLabel,
+  AdminFilterGrid,
   AdminPageShell,
   AdminPanel,
   AdminSelect,
@@ -42,18 +42,20 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
       backHref={ROUTES.ADMIN}
       onRefresh={() => void refetch()}
       isRefreshing={isFetching}
-      action={
-        <AdminFieldLabel label="Time range">
-          <AdminSelect value={timeframeDays} onChange={(value) => setTimeframeDays(Number(value))}>
-            {RANGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </AdminSelect>
-        </AdminFieldLabel>
-      }
     >
+      <AdminFilterGrid className="w-full sm:w-fit sm:max-w-full sm:grid-cols-[minmax(0,16rem)]">
+        <AdminSelect
+          label="Time range"
+          value={timeframeDays}
+          onChange={(value) => setTimeframeDays(Number(value))}
+          options={RANGE_OPTIONS.map((option) => ({
+            value: String(option.value),
+            label: option.label,
+          }))}
+          className="w-full sm:w-auto"
+        />
+      </AdminFilterGrid>
+
       {error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
           <div className="flex items-start gap-3">
