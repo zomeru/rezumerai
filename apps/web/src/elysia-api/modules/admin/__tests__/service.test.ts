@@ -2,6 +2,14 @@ import { describe, expect, it, mock } from "bun:test";
 import { DEFAULT_AI_CONFIGURATION } from "@rezumerai/types";
 
 const createAuditLogMock = mock(async () => undefined);
+type MockFunction = ReturnType<typeof mock>;
+
+interface MockDb {
+  systemConfiguration: {
+    findUnique: MockFunction;
+    upsert: MockFunction;
+  };
+}
 
 mock.module("@rezumerai/database", () => ({
   Prisma: {
@@ -51,7 +59,7 @@ function makeMockDb() {
       findUnique: mock(),
       upsert: mock(),
     },
-  } as never;
+  } satisfies MockDb;
 }
 
 describe("AdminService.updateSystemConfiguration", () => {
@@ -62,13 +70,13 @@ describe("AdminService.updateSystemConfiguration", () => {
       ASSISTANT_CONTEXT_TOKEN_LIMIT: 4096,
     };
 
-    (db.systemConfiguration.findUnique as ReturnType<typeof mock>).mockResolvedValue({
+    db.systemConfiguration.findUnique.mockResolvedValue({
       id: "cfg_123",
       name: "AI_CONFIG",
       description: null,
       value: DEFAULT_AI_CONFIGURATION,
     });
-    (db.systemConfiguration.upsert as ReturnType<typeof mock>).mockResolvedValue({
+    db.systemConfiguration.upsert.mockResolvedValue({
       id: "cfg_123",
       name: "AI_CONFIG",
       description: "AI config",
@@ -77,7 +85,7 @@ describe("AdminService.updateSystemConfiguration", () => {
       updatedAt: new Date("2026-03-10T00:00:00.000Z"),
     });
 
-    const result = await AdminService.updateSystemConfiguration(db, "admin_123", "AI_CONFIG", nextValue);
+    const result = await AdminService.updateSystemConfiguration(db as never, "admin_123", "AI_CONFIG", nextValue);
 
     expect(db.systemConfiguration.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

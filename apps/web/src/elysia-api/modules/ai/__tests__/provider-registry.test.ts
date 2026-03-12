@@ -1,11 +1,14 @@
 import { describe, expect, it, mock } from "bun:test";
 import { DEFAULT_AI_CONFIGURATION } from "@rezumerai/types";
+import type { EmbeddingModel, LanguageModel } from "ai";
 import { createAiProviderRegistry, ensureEmbeddingDimension, ProviderConfigurationError } from "../providers/registry";
 
 describe("createAiProviderRegistry", () => {
   it("creates chat and embedding models independently from one OpenRouter provider factory", () => {
-    const chat = mock(() => ({ kind: "chat-model" }));
-    const textEmbeddingModel = mock(() => ({ kind: "embedding-model" }));
+    const chatModel = {} as LanguageModel;
+    const embeddingModel = {} as EmbeddingModel;
+    const chat = mock(() => chatModel);
+    const textEmbeddingModel = mock(() => embeddingModel);
 
     const registry = createAiProviderRegistry({
       apiKey: "test-openrouter-key",
@@ -18,16 +21,16 @@ describe("createAiProviderRegistry", () => {
         }) as never,
     });
 
-    const chatModel = registry.getChatModel("openai/gpt-5-mini");
-    const embeddingModel = registry.getEmbeddingModel({
+    const resolvedChatModel = registry.getChatModel("openai/gpt-5-mini");
+    const resolvedEmbeddingModel = registry.getEmbeddingModel({
       ...DEFAULT_AI_CONFIGURATION,
       EMBEDDING_MODEL: "openai/text-embedding-3-small",
     });
 
     expect(chat).toHaveBeenCalledWith("openai/gpt-5-mini");
     expect(textEmbeddingModel).toHaveBeenCalledWith("openai/text-embedding-3-small");
-    expect(chatModel).toEqual({ kind: "chat-model" });
-    expect(embeddingModel).toEqual({ kind: "embedding-model" });
+    expect(resolvedChatModel).toBe(chatModel);
+    expect(resolvedEmbeddingModel).toBe(embeddingModel);
   });
 
   it("throws a typed error when the API key is missing", () => {

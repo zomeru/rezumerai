@@ -2,16 +2,17 @@ import { beforeAll, describe, expect, it } from "bun:test";
 import { hasSessionIdentity, isAnonymousSession } from "../auth-session";
 
 let authClientModule: typeof import("../auth-client");
+const writableEnv = process.env as Record<string, string | undefined>;
 
 beforeAll(async () => {
-  process.env.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
-  process.env.NODE_ENV ??= "test";
-  process.env.BETTER_AUTH_URL ??= "http://localhost:3000";
-  process.env.BETTER_AUTH_SECRET ??= "test-secret-test-secret-test-secret";
-  process.env.BETTER_AUTH_GITHUB_CLIENT_ID ??= "github-client-id";
-  process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET ??= "github-client-secret";
-  process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/rezumerai_test";
-  process.env.OPENROUTER_API_KEY ??= "test-openrouter-key";
+  writableEnv.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
+  writableEnv.NODE_ENV ??= "test";
+  writableEnv.BETTER_AUTH_URL ??= "http://localhost:3000";
+  writableEnv.BETTER_AUTH_SECRET ??= "test-secret-test-secret-test-secret";
+  writableEnv.BETTER_AUTH_GITHUB_CLIENT_ID ??= "github-client-id";
+  writableEnv.BETTER_AUTH_GITHUB_CLIENT_SECRET ??= "github-client-secret";
+  writableEnv.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/rezumerai_test";
+  writableEnv.OPENROUTER_API_KEY ??= "test-openrouter-key";
 
   authClientModule = await import("../auth-client");
 });
