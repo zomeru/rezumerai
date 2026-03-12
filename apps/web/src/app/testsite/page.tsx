@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { useAiSettings } from "@/hooks/useAi";
 import { getAiFeatureAccessMessage } from "@/lib/ai-access";
+import { toModelSelectOptions } from "@/lib/ai-model-options";
 import { isAnonymousSession, useSession } from "@/lib/auth-client";
 
 function parseOptimizeErrorMessage(error: Error | undefined): string | null {
@@ -91,10 +92,7 @@ export default function TestSitePage(): React.JSX.Element {
   const modelOptions = useMemo(() => {
     if (!aiSettings) return [];
 
-    return aiSettings.models.map((model: (typeof aiSettings.models)[number]) => ({
-      value: model.modelId,
-      label: `${model.providerDisplayName} — ${model.name}`,
-    }));
+    return toModelSelectOptions(aiSettings.models);
   }, [aiSettings]);
 
   function handleOptimize(): void {
