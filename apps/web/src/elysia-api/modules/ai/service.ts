@@ -13,6 +13,7 @@ import type {
 } from "@rezumerai/types";
 import {
   AiConfigurationSchema,
+  DEFAULT_AI_MODEL,
   DEFAULT_AI_CONFIGURATION as DEFAULT_CONFIGURATION_VALUE,
   ResumeCopilotOptimizeResponseSchema,
   ResumeCopilotReviewResponseSchema,
@@ -41,8 +42,9 @@ import {
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
 import { auditAdminAssistantUsage } from "./controller/helpers/audit";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
-import { emptyAiUsageMetrics } from "./mapper";
+import { emptyAiUsageMetrics, mapOpenRouterModelToActiveAiModel } from "./mapper";
 import { ConversationMemoryService } from "./memory/service";
+import { getAvailableModels as fetchOpenRouterModels } from "./openrouter-model-service";
 import { composeAiSystemPrompt } from "./prompts/composer";
 import { createAiProviderRegistry } from "./providers/registry";
 import { AiRepository } from "./repository";
@@ -194,8 +196,9 @@ export abstract class AiService {
     return emptyAiUsageMetrics();
   }
 
-  static async listActiveModels(db: DatabaseClient): Promise<ActiveAiModel[]> {
-    return AiRepository.listActiveModels(db);
+  static async getAvailableModels(): Promise<ActiveAiModel[]> {
+    const models = await fetchOpenRouterModels();
+    return models.map(mapOpenRouterModelToActiveAiModel);
   }
 
   static async getAiConfiguration(db: DatabaseClient): Promise<AiConfiguration> {
@@ -210,7 +213,7 @@ export abstract class AiService {
 
   static async getUserAiSettings(db: DatabaseClient, userId: string): Promise<UserAiSettings> {
     const [models, user] = await Promise.all([
-      AiService.listActiveModels(db),
+      AiService.getAvailableModels(),
       AiRepository.getUserSelectedModelRecord(db, userId),
     ]);
 
@@ -218,26 +221,21 @@ export abstract class AiService {
       throw new Error(ERROR_MESSAGES.AI_USER_NOT_FOUND);
     }
 
-    const selectedModel =
-      models.length > 0 ? AiService.resolveSelectedModel(models, user.selectedAiModelId ?? null, null) : null;
+    const savedModelId = user.selectedAiModel;
+    const selectedModelId = models.some((m) => m.id === savedModelId) ? savedModelId : DEFAULT_AI_MODEL;
 
-    return {
-      models,
-      selectedModelId: selectedModel?.modelId ?? "",
-    };
+    return { models, selectedModelId };
   }
 
   static async updateUserSelectedModel(db: DatabaseClient, userId: string, modelId: string): Promise<string> {
-    const models = await AiService.listActiveModels(db);
-    const selectedModel = models.find((model) => model.modelId === modelId);
+    const models = await AiService.getAvailableModels();
 
-    if (!selectedModel) {
+    if (!models.some((m) => m.id === modelId)) {
       throw new AiModelUnavailableError();
     }
 
-    await AiRepository.updateUserSelectedModel(db, userId, selectedModel.id);
-
-    return selectedModel.modelId;
+    await AiRepository.updateUserSelectedModel(db, userId, modelId);
+    return modelId;
   }
 
   static async resolveOptimizationContext(
@@ -246,7 +244,7 @@ export abstract class AiService {
     requestedModelId?: string | null,
   ): Promise<OptimizationContext> {
     const [models, config, user] = await Promise.all([
-      AiService.listActiveModels(db),
+      AiService.getAvailableModels(),
       AiService.getAiConfiguration(db),
       userId ? AiRepository.getUserSelectedModelRecord(db, userId) : Promise.resolve(null),
     ]);
@@ -255,15 +253,15 @@ export abstract class AiService {
       throw new Error(ERROR_MESSAGES.AI_USER_NOT_FOUND);
     }
 
-    return {
-      model: AiService.resolveSelectedModel(
-        models,
-        user?.selectedAiModelId ?? null,
-        requestedModelId ?? null,
-        config.DEFAULT_MODEL_ID,
-      ),
-      config,
-    };
+    const savedModelId = user?.selectedAiModel ?? DEFAULT_AI_MODEL;
+    const effectiveId = AiService.resolveModelId(models, savedModelId, requestedModelId ?? null);
+    const model = models.find((m) => m.id === effectiveId);
+
+    if (!model) {
+      throw new AiModelUnavailableError(ERROR_MESSAGES.AI_NO_ACTIVE_MODELS);
+    }
+
+    return { model, config };
   }
 
   static async consumeDailyCredit(
@@ -949,45 +947,26 @@ export abstract class AiService {
     return parsedConfiguration.data;
   }
 
-  private static resolveSelectedModel(
+  private static resolveModelId(
     models: ActiveAiModel[],
-    selectedModelDbId: string | null,
+    savedModelId: string,
     requestedModelId: string | null,
-    defaultModelId: string | null = null,
-  ): ActiveAiModel {
+  ): string {
     if (models.length === 0) {
       throw new AiModelUnavailableError(ERROR_MESSAGES.AI_NO_ACTIVE_MODELS);
     }
 
     if (requestedModelId) {
-      const requestedModel = models.find((model) => model.modelId === requestedModelId);
-
-      if (!requestedModel) {
+      if (!models.some((m) => m.id === requestedModelId)) {
         throw new AiModelUnavailableError();
       }
-
-      return requestedModel;
+      return requestedModelId;
     }
 
-    if (selectedModelDbId) {
-      const savedModel = models.find((model) => model.id === selectedModelDbId);
-
-      if (savedModel) {
-        return savedModel;
-      }
+    if (models.some((m) => m.id === savedModelId)) {
+      return savedModelId;
     }
 
-    if (defaultModelId) {
-      const configDefault = models.find((model) => model.modelId === defaultModelId);
-      if (configDefault) return configDefault;
-    }
-
-    const [fallbackModel] = models;
-
-    if (!fallbackModel) {
-      throw new AiModelUnavailableError(ERROR_MESSAGES.AI_NO_ACTIVE_MODELS);
-    }
-
-    return fallbackModel;
+    return DEFAULT_AI_MODEL;
   }
 }
