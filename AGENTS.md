@@ -119,7 +119,7 @@ Detailed guidance is split into modular files under `.agents/instructions/`. Loa
 - **Module architecture:** `.agents/instructions/architecture.md`
 - **Elysia API guidelines:** `.agents/instructions/elysia-api-guidelines.md`
 - **TypeScript guidelines:** `.agents/instructions/typescript-guidelines.md`
-- **Testing guidelines:** `.agents/instructions/testing-guidelines.md`
+- **Unit/Browser Testing guidelines:** `.agents/instructions/testing-guidelines.md`
 - **AI integration guidelines:** `.agents/instructions/ai-integration-guidelines.md`
 - **AI agent workflow:** `.agents/instructions/ai-agent-workflow.md`
 - **Security guidelines:** `.agents/instructions/security-guidelines.md`
