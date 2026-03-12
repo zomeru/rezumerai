@@ -580,7 +580,7 @@ export abstract class AiService {
         },
       ],
       maxSteps: 2,
-      modelId: runtime.model.modelId,
+      modelId: runtime.model.id,
       outputDescription: "Resume optimization suggestion",
       outputSchema: optimizeModelSchema,
       tools: toolRegistry.getCopilotTools(),
@@ -590,7 +590,7 @@ export abstract class AiService {
       response: ResumeCopilotOptimizeResponseSchema.parse({
         target: input.target,
         intent: input.intent,
-        modelId: runtime.model.modelId,
+        modelId: runtime.model.id,
         creditsRemaining: credit.remainingCredits,
         suggestion: {
           title: result.data.title,
@@ -643,7 +643,7 @@ export abstract class AiService {
         },
       ],
       maxSteps: 2,
-      modelId: runtime.model.modelId,
+      modelId: runtime.model.id,
       outputDescription: "Resume tailoring suggestions",
       outputSchema: tailorModelSchema,
       tools: toolRegistry.getCopilotTools(),
@@ -651,7 +651,7 @@ export abstract class AiService {
 
     return {
       response: ResumeCopilotTailorResponseSchema.parse({
-        modelId: runtime.model.modelId,
+        modelId: runtime.model.id,
         creditsRemaining: credit.remainingCredits,
         jobTitle: result.data.jobTitle,
         priorities: result.data.priorities,
@@ -704,7 +704,7 @@ export abstract class AiService {
         },
       ],
       maxSteps: 2,
-      modelId: runtime.model.modelId,
+      modelId: runtime.model.id,
       outputDescription: "Resume review findings",
       outputSchema: reviewModelSchema,
       tools: toolRegistry.getCopilotTools(),
@@ -712,7 +712,7 @@ export abstract class AiService {
 
     return {
       response: ResumeCopilotReviewResponseSchema.parse({
-        modelId: runtime.model.modelId,
+        modelId: runtime.model.id,
         creditsRemaining: credit.remainingCredits,
         overallScore: result.data.overallScore,
         summary: result.data.summary,
@@ -844,7 +844,7 @@ export abstract class AiService {
 
         return {
           selectedModelId: settings.selectedModelId,
-          models: settings.models.map((item) => item.modelId),
+          models: settings.models.map((item) => item.id),
         };
       },
       getOptimizationCredits: async () => {
