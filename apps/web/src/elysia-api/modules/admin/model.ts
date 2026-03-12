@@ -187,6 +187,13 @@ const AnalyticsSummary = t.Object({
   mostUsedEndpoint: t.Nullable(t.String()),
 });
 
+const AnalyticsDatabaseSummary = t.Object({
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
+  slowQueryRequestRate: t.Number({ minimum: 0 }),
+});
+
 const AnalyticsTimeseriesPoint = t.Object({
   bucketStart: IsoDateTimeString,
   label: t.String(),
@@ -195,6 +202,9 @@ const AnalyticsTimeseriesPoint = t.Object({
   errorRate: t.Number({ minimum: 0 }),
   averageResponseTimeMs: t.Number({ minimum: 0 }),
   activeUsers: t.Integer({ minimum: 0 }),
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
 });
 
 const AnalyticsEndpointUsage = t.Object({
@@ -204,6 +214,10 @@ const AnalyticsEndpointUsage = t.Object({
   errorCount: t.Integer({ minimum: 0 }),
   errorRate: t.Number({ minimum: 0 }),
   averageResponseTimeMs: t.Number({ minimum: 0 }),
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
+  slowQueryRequestRate: t.Number({ minimum: 0 }),
 });
 
 const AnalyticsBackgroundJob = t.Object({
@@ -215,12 +229,22 @@ const AnalyticsBackgroundJob = t.Object({
   lastRunAt: t.Nullable(IsoDateTimeString),
 });
 
+const AnalyticsSlowQueryPattern = t.Object({
+  model: t.String(),
+  operation: t.String(),
+  occurrenceCount: t.Integer({ minimum: 0 }),
+  averageDurationMs: t.Number({ minimum: 0 }),
+  maxDurationMs: t.Number({ minimum: 0 }),
+});
+
 const AnalyticsDashboard = t.Object({
   timeframeDays: t.Integer({ minimum: 1 }),
   granularity: t.Union([t.Literal("hour"), t.Literal("day")]),
   summary: AnalyticsSummary,
+  database: AnalyticsDatabaseSummary,
   requestVolume: t.Array(AnalyticsTimeseriesPoint),
   endpointUsage: t.Array(AnalyticsEndpointUsage),
+  slowQueryPatterns: t.Array(AnalyticsSlowQueryPattern),
   backgroundJobs: t.Array(AnalyticsBackgroundJob),
 });
 

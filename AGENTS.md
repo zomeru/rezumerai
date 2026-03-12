@@ -23,6 +23,11 @@ ls .agents/skills/
 cat .agents/skills/<skill-name>/SKILL.md
 ```
 
+## Performance Diagnostics
+
+- Use `bun run benchmark:report -- --days=7` to print the current request, latency, and Prisma-query benchmark summary from collected analytics events.
+- The benchmark report is based on tracked analytics data, so it is only meaningful after the target flows have been exercised.
+
 ## TypeScript Config Conventions
 
 - Shared TypeScript presets live in `packages/tsconfig/`.

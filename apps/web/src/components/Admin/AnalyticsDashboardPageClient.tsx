@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertCircle, BarChart3, Clock3, ShieldCheck, Users } from "lucide-react";
+import { Activity, AlertCircle, BarChart3, Clock3, Database, Layers3, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAdminAnalytics } from "@/hooks/useAdmin";
@@ -38,7 +38,7 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
   return (
     <AdminPageShell
       title="Analytics"
-      description="Monitor request volume, reliability, usage trends, and background job performance from a single admin dashboard."
+      description="Monitor request volume, reliability, database efficiency, and background job performance from a single admin dashboard."
       backHref={ROUTES.ADMIN}
       onRefresh={() => void refetch()}
       isRefreshing={isFetching}
@@ -113,6 +113,24 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
               icon={Activity}
             />
             <AdminStatCard
+              title="Avg DB Queries / Request"
+              value={data.database.averageDbQueryCount.toFixed(2)}
+              caption="Mean Prisma query count per API request"
+              icon={Layers3}
+            />
+            <AdminStatCard
+              title="Avg DB Time / Request"
+              value={formatDuration(data.database.averageDbQueryDurationMs)}
+              caption="Mean cumulative Prisma time per API request"
+              icon={Database}
+            />
+            <AdminStatCard
+              title="Slow Query Requests"
+              value={formatNumber(data.database.slowQueryRequestCount)}
+              caption={`Slow-query rate ${formatPercentage(data.database.slowQueryRequestRate)}`}
+              icon={Clock3}
+            />
+            <AdminStatCard
               title="Background Jobs"
               value={formatNumber(data.backgroundJobs.length)}
               caption="Tracked scheduled jobs in range"
@@ -161,6 +179,74 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
               ]}
             />
 
+            <AdminTrendChart
+              title="Database Workload"
+              description="Average Prisma query count and cumulative DB time per request."
+              data={data.requestVolume.map((point) => ({
+                label: point.label,
+                dbQueries: point.averageDbQueryCount,
+                dbTime: point.averageDbQueryDurationMs,
+              }))}
+              series={[
+                { key: "dbQueries", label: "Avg DB queries", color: "#0f766e" },
+                { key: "dbTime", label: "Avg DB time (ms)", color: "#b45309" },
+              ]}
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <AdminTrendChart
+              title="Slow Query Pressure"
+              description="Requests that captured at least one slow Prisma query in the selected window."
+              data={data.requestVolume.map((point) => ({
+                label: point.label,
+                slowQueryRequests: point.slowQueryRequestCount,
+                errors: point.errorCount,
+              }))}
+              series={[
+                { key: "slowQueryRequests", label: "Slow-query requests", color: "#dc2626" },
+                { key: "errors", label: "Errors", color: "#7c2d12" },
+              ]}
+            />
+
+            {data.slowQueryPatterns.length === 0 ? (
+              <AdminEmptyState
+                title="No slow query patterns"
+                description="No tracked requests crossed the slow-query threshold in the selected time range."
+              />
+            ) : (
+              <AdminPanel>
+                <h2 className="font-semibold text-slate-900 text-xl">Slow Query Patterns</h2>
+                <p className="mt-1 text-slate-500 text-sm">
+                  Most expensive Prisma model and operation combinations captured from request metadata.
+                </p>
+                <div className="mt-5 space-y-4">
+                  {data.slowQueryPatterns.map((item) => (
+                    <div
+                      key={`${item.model}-${item.operation}`}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {item.model} {item.operation}
+                          </p>
+                          <p className="mt-1 text-slate-500 text-sm">
+                            {formatNumber(item.occurrenceCount)} samples · avg {formatDuration(item.averageDurationMs)}
+                          </p>
+                        </div>
+                        <div className="text-right text-slate-600 text-sm">
+                          <p>Max {formatDuration(item.maxDurationMs)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AdminPanel>
+            )}
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             {data.backgroundJobs.length === 0 ? (
               <AdminEmptyState
                 title="No background job data"
@@ -205,6 +291,9 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
                       <th className="px-4 py-3 text-left">Errors</th>
                       <th className="px-4 py-3 text-left">Error Rate</th>
                       <th className="px-4 py-3 text-left">Avg Response Time</th>
+                      <th className="px-4 py-3 text-left">Avg DB Queries</th>
+                      <th className="px-4 py-3 text-left">Avg DB Time</th>
+                      <th className="px-4 py-3 text-left">Slow Query Requests</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -217,6 +306,11 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
                         <td className="px-4 py-4 text-slate-600">{formatNumber(item.errorCount)}</td>
                         <td className="px-4 py-4 text-slate-600">{formatPercentage(item.errorRate)}</td>
                         <td className="px-4 py-4 text-slate-600">{formatDuration(item.averageResponseTimeMs)}</td>
+                        <td className="px-4 py-4 text-slate-600">{item.averageDbQueryCount.toFixed(2)}</td>
+                        <td className="px-4 py-4 text-slate-600">{formatDuration(item.averageDbQueryDurationMs)}</td>
+                        <td className="px-4 py-4 text-slate-600">
+                          {formatNumber(item.slowQueryRequestCount)} ({formatPercentage(item.slowQueryRequestRate)})
+                        </td>
                       </tr>
                     ))}
                   </tbody>

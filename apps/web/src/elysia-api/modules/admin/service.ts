@@ -146,6 +146,9 @@ interface AnalyticsTimeseriesRow {
   errorCount: number;
   averageResponseTimeMs: number;
   activeUsers: number;
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
 }
 
 interface EndpointUsageRow {
@@ -154,6 +157,23 @@ interface EndpointUsageRow {
   requestCount: number;
   errorCount: number;
   averageResponseTimeMs: number;
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
+}
+
+interface AnalyticsDatabaseSummaryRow {
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
+}
+
+interface SlowQueryPatternRow {
+  model: string | null;
+  operation: string | null;
+  occurrenceCount: number;
+  averageDurationMs: number;
+  maxDurationMs: number;
 }
 
 interface BackgroundJobRow {
@@ -442,6 +462,9 @@ function buildTimeSeries(
       errorRate,
       averageResponseTimeMs: row?.averageResponseTimeMs ?? 0,
       activeUsers: row?.activeUsers ?? 0,
+      averageDbQueryCount: row?.averageDbQueryCount ?? 0,
+      averageDbQueryDurationMs: row?.averageDbQueryDurationMs ?? 0,
+      slowQueryRequestCount: row?.slowQueryRequestCount ?? 0,
     });
 
     pointer = addBucket(pointer, granularity);
@@ -1132,14 +1155,20 @@ export abstract class AdminService {
     const now = new Date();
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - timeframeDays);
+    const slowQueryRequestCondition = Prisma.sql`
+      jsonb_typeof("metadata"->'metadata'->'slowDbQueries') = 'array'
+      AND jsonb_array_length("metadata"->'metadata'->'slowDbQueries') > 0
+    `;
 
     const [
       summaryAggregate,
       totalErrors,
       activeUsersResult,
+      databaseSummaryResult,
       mostUsedEndpointResult,
       timeseriesRows,
       endpointUsageRows,
+      slowQueryPatterns,
       backgroundJobs,
     ] = await Promise.all([
       db.analyticsEvent.aggregate({
@@ -1174,6 +1203,15 @@ export abstract class AdminService {
             AND "createdAt" >= ${startDate}
             AND "userId" IS NOT NULL
         `),
+      db.$queryRaw<AnalyticsDatabaseSummaryRow[]>(Prisma.sql`
+          SELECT
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
+          FROM "analytics_event"
+          WHERE "source" = 'API_REQUEST'
+            AND "createdAt" >= ${startDate}
+        `),
       db.$queryRaw<Array<{ endpoint: string | null; count: number }>>(Prisma.sql`
           SELECT "endpoint", COUNT(*)::int AS count
           FROM "analytics_event"
@@ -1190,7 +1228,10 @@ export abstract class AdminService {
             COUNT(*)::int AS "requestCount",
             COUNT(*) FILTER (WHERE "statusCode" >= 400)::int AS "errorCount",
             COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs",
-            COUNT(DISTINCT "userId")::int AS "activeUsers"
+            COUNT(DISTINCT "userId")::int AS "activeUsers",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
           FROM "analytics_event"
           WHERE "source" = 'API_REQUEST'
             AND "createdAt" >= ${startDate}
@@ -1203,13 +1244,37 @@ export abstract class AdminService {
             COALESCE("method", 'UNKNOWN') AS method,
             COUNT(*)::int AS "requestCount",
             COUNT(*) FILTER (WHERE "statusCode" >= 400)::int AS "errorCount",
-            COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs"
+            COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
           FROM "analytics_event"
           WHERE "source" = 'API_REQUEST'
             AND "createdAt" >= ${startDate}
             AND "endpoint" IS NOT NULL
           GROUP BY "endpoint", method
           ORDER BY "requestCount" DESC, "averageResponseTimeMs" DESC
+          LIMIT 8
+        `),
+      db.$queryRaw<SlowQueryPatternRow[]>(Prisma.sql`
+          SELECT
+            COALESCE("slowQuery".value->>'model', 'UNKNOWN') AS model,
+            UPPER(COALESCE("slowQuery".value->>'operation', 'unknown')) AS operation,
+            COUNT(*)::int AS "occurrenceCount",
+            COALESCE(AVG(COALESCE(("slowQuery".value->>'durationMs')::float, 0)), 0)::float AS "averageDurationMs",
+            COALESCE(MAX(COALESCE(("slowQuery".value->>'durationMs')::float, 0)), 0)::float AS "maxDurationMs"
+          FROM "analytics_event"
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE
+              WHEN jsonb_typeof("metadata"->'metadata'->'slowDbQueries') = 'array'
+                THEN "metadata"->'metadata'->'slowDbQueries'
+              ELSE '[]'::jsonb
+            END
+          ) AS "slowQuery"(value)
+          WHERE "source" = 'API_REQUEST'
+            AND "createdAt" >= ${startDate}
+          GROUP BY model, operation
+          ORDER BY "maxDurationMs" DESC, "occurrenceCount" DESC, model ASC
           LIMIT 8
         `),
       db.$queryRaw<BackgroundJobRow[]>(Prisma.sql`
@@ -1229,6 +1294,13 @@ export abstract class AdminService {
 
     const totalRequests = summaryAggregate._count._all;
     const errorRate = totalRequests > 0 ? Number(((totalErrors / totalRequests) * 100).toFixed(2)) : 0;
+    const databaseSummary = databaseSummaryResult[0] ?? {
+      averageDbQueryCount: 0,
+      averageDbQueryDurationMs: 0,
+      slowQueryRequestCount: 0,
+    };
+    const slowQueryRequestRate =
+      totalRequests > 0 ? Number(((databaseSummary.slowQueryRequestCount / totalRequests) * 100).toFixed(2)) : 0;
 
     return {
       timeframeDays,
@@ -1241,6 +1313,12 @@ export abstract class AdminService {
         averageResponseTimeMs: Number((summaryAggregate._avg.durationMs ?? 0).toFixed(2)),
         mostUsedEndpoint: mostUsedEndpointResult[0]?.endpoint ?? null,
       },
+      database: {
+        averageDbQueryCount: Number(databaseSummary.averageDbQueryCount.toFixed(2)),
+        averageDbQueryDurationMs: Number(databaseSummary.averageDbQueryDurationMs.toFixed(2)),
+        slowQueryRequestCount: databaseSummary.slowQueryRequestCount,
+        slowQueryRequestRate,
+      },
       requestVolume: buildTimeSeries(timeframeDays, granularity, timeseriesRows, now),
       endpointUsage: endpointUsageRows.map((row) => ({
         endpoint: row.endpoint ?? "Unknown endpoint",
@@ -1249,6 +1327,18 @@ export abstract class AdminService {
         errorCount: row.errorCount,
         errorRate: row.requestCount > 0 ? Number(((row.errorCount / row.requestCount) * 100).toFixed(2)) : 0,
         averageResponseTimeMs: Number(row.averageResponseTimeMs.toFixed(2)),
+        averageDbQueryCount: Number(row.averageDbQueryCount.toFixed(2)),
+        averageDbQueryDurationMs: Number(row.averageDbQueryDurationMs.toFixed(2)),
+        slowQueryRequestCount: row.slowQueryRequestCount,
+        slowQueryRequestRate:
+          row.requestCount > 0 ? Number(((row.slowQueryRequestCount / row.requestCount) * 100).toFixed(2)) : 0,
+      })),
+      slowQueryPatterns: slowQueryPatterns.map((row) => ({
+        model: row.model ?? "UNKNOWN",
+        operation: row.operation ?? "UNKNOWN",
+        occurrenceCount: row.occurrenceCount,
+        averageDurationMs: Number(row.averageDurationMs.toFixed(2)),
+        maxDurationMs: Number(row.maxDurationMs.toFixed(2)),
       })),
       backgroundJobs: backgroundJobs.map((row) => ({
         name: row.eventType,

@@ -56,6 +56,7 @@
     "db:seed": "cd packages/database && bun run db:seed",
     "db:seed:system": "cd packages/database && bun run db:seed:system",
     "assistant:reindex-memory": "cd apps/web && bun run assistant:reindex-memory",
+    "benchmark:report": "cd apps/web && bun run benchmark:report",
     "db:pull": "cd packages/database && bun run db:pull",
     "db:psql": "cd packages/database && bun run db:psql",
     "db:inspect-vectors": "cd packages/database && bun run db:inspect-vectors",

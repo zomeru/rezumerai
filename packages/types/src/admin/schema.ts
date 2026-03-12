@@ -149,6 +149,13 @@ export const AnalyticsSummarySchema = z.object({
   mostUsedEndpoint: z.string().nullable(),
 });
 
+export const AnalyticsDatabaseSummarySchema = z.object({
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
+  slowQueryRequestRate: z.number().min(0),
+});
+
 export const AnalyticsTimeseriesPointSchema = z.object({
   bucketStart: z.string(),
   label: z.string(),
@@ -157,6 +164,9 @@ export const AnalyticsTimeseriesPointSchema = z.object({
   errorRate: z.number().min(0),
   averageResponseTimeMs: z.number().min(0),
   activeUsers: z.number().int().min(0),
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
 });
 
 export const AnalyticsEndpointUsageSchema = z.object({
@@ -166,6 +176,10 @@ export const AnalyticsEndpointUsageSchema = z.object({
   errorCount: z.number().int().min(0),
   errorRate: z.number().min(0),
   averageResponseTimeMs: z.number().min(0),
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
+  slowQueryRequestRate: z.number().min(0),
 });
 
 export const AnalyticsJobPerformanceSchema = z.object({
@@ -177,12 +191,22 @@ export const AnalyticsJobPerformanceSchema = z.object({
   lastRunAt: z.string().nullable(),
 });
 
+export const AnalyticsSlowQueryPatternSchema = z.object({
+  model: z.string(),
+  operation: z.string(),
+  occurrenceCount: z.number().int().min(0),
+  averageDurationMs: z.number().min(0),
+  maxDurationMs: z.number().min(0),
+});
+
 export const AnalyticsDashboardSchema = z.object({
   timeframeDays: z.number().int().positive(),
   granularity: z.enum(["hour", "day"]),
   summary: AnalyticsSummarySchema,
+  database: AnalyticsDatabaseSummarySchema,
   requestVolume: z.array(AnalyticsTimeseriesPointSchema),
   endpointUsage: z.array(AnalyticsEndpointUsageSchema),
+  slowQueryPatterns: z.array(AnalyticsSlowQueryPatternSchema),
   backgroundJobs: z.array(AnalyticsJobPerformanceSchema),
 });
 
@@ -204,7 +228,9 @@ export type AuditLogListItem = z.infer<typeof AuditLogListItemSchema>;
 export type AuditLogListResponse = z.infer<typeof AuditLogListResponseSchema>;
 export type AuditLogDetail = z.infer<typeof AuditLogDetailSchema>;
 export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;
+export type AnalyticsDatabaseSummary = z.infer<typeof AnalyticsDatabaseSummarySchema>;
 export type AnalyticsTimeseriesPoint = z.infer<typeof AnalyticsTimeseriesPointSchema>;
 export type AnalyticsEndpointUsage = z.infer<typeof AnalyticsEndpointUsageSchema>;
 export type AnalyticsJobPerformance = z.infer<typeof AnalyticsJobPerformanceSchema>;
+export type AnalyticsSlowQueryPattern = z.infer<typeof AnalyticsSlowQueryPatternSchema>;
 export type AnalyticsDashboard = z.infer<typeof AnalyticsDashboardSchema>;
