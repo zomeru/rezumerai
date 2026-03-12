@@ -12,6 +12,7 @@ import { ERROR_MESSAGES } from "@/constants/errors";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings, useUpdateAccountSettings } from "@/hooks/useAccount";
 import { useAiSettings, useUpdateSelectedAiModel } from "@/hooks/useAi";
+import { getAiFeatureAccessMessage } from "@/lib/ai-access";
 import { changePassword } from "@/lib/auth-client";
 import { isCredentialProvider, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/password-policy";
 
@@ -38,6 +39,9 @@ const EMPTY_PASSWORD_FORM: PasswordFormState = {
   password: "",
   confirmPassword: "",
 };
+
+const ANONYMOUS_PASSWORD_READ_ONLY_REASON = "Please sign up to set and manage a password for this account.";
+const ANONYMOUS_PASSWORD_READ_ONLY_HELP = "Anonymous accounts do not have a password yet.";
 
 function getProviderLabel(providerId: string): string {
   if (providerId === "credential" || providerId === "email-password") {
@@ -290,7 +294,12 @@ export default function WorkspaceSettingsPageClient(): React.JSX.Element {
   }
 
   const emailReadOnly = !data.permissions.canEditEmail;
-  const isAiRestricted = !data.user.emailVerified;
+  const isAnonymousUser = data.user.isAnonymous;
+  const aiAccessMessage = getAiFeatureAccessMessage({
+    isAnonymous: isAnonymousUser,
+    emailVerified: data.user.emailVerified,
+  });
+  const isAiRestricted = aiAccessMessage !== null;
   const isOAuthOnly = data.passwordManagement.isOAuthOnly;
   const showEditablePasswordForm = data.passwordManagement.hasCredentialProvider && !isOAuthOnly;
   const oauthProviderLabels = data.providers
@@ -300,6 +309,12 @@ export default function WorkspaceSettingsPageClient(): React.JSX.Element {
     oauthProviderLabels.length > 0
       ? `This account is connected to ${oauthProviderLabels.join(", ")}.`
       : "This account is connected to an OAuth provider.";
+  const passwordReadOnlyMessage = isAnonymousUser
+    ? ANONYMOUS_PASSWORD_READ_ONLY_REASON
+    : (data.readOnlyReasons.password ?? oauthProviderMessage);
+  const passwordReadOnlyHelpText = isAnonymousUser
+    ? ANONYMOUS_PASSWORD_READ_ONLY_HELP
+    : "Password changes for OAuth-only accounts are managed by the connected provider.";
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
@@ -437,10 +452,8 @@ export default function WorkspaceSettingsPageClient(): React.JSX.Element {
               </div>
 
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
-                <p className="font-medium">{data.readOnlyReasons.password ?? oauthProviderMessage}</p>
-                <p className="mt-1 text-amber-800 text-xs">
-                  Password changes for OAuth-only accounts are managed by the connected provider.
-                </p>
+                <p className="font-medium">{passwordReadOnlyMessage}</p>
+                <p className="mt-1 text-amber-800 text-xs">{passwordReadOnlyHelpText}</p>
               </div>
             </div>
           ) : (
@@ -566,14 +579,14 @@ export default function WorkspaceSettingsPageClient(): React.JSX.Element {
                   disabled={isAiRestricted || !aiSettings.models.length || updateSelectedModel.isPending}
                 />
                 {isAiRestricted ? (
-                  <p className="mt-1.5 text-amber-700 text-xs">{ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}</p>
+                  <p className="mt-1.5 text-amber-700 text-xs">{aiAccessMessage}</p>
                 ) : aiSettings.models.length ? (
                   <p className="mt-1.5 text-slate-500 text-xs">Only active models are available for selection.</p>
                 ) : null}
               </div>
 
               {isAiRestricted ? (
-                <DisabledTooltip message={ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}>
+                <DisabledTooltip message={aiAccessMessage}>
                   <button
                     type="button"
                     disabled
@@ -608,7 +621,7 @@ export default function WorkspaceSettingsPageClient(): React.JSX.Element {
 
           {!isAiSettingsLoading && !aiSettings && isAiRestricted ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
-              {ERROR_MESSAGES.AI_EMAIL_VERIFICATION_REQUIRED}
+              {aiAccessMessage}
             </div>
           ) : null}
         </div>
