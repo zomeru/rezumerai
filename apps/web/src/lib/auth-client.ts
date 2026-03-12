@@ -1,7 +1,13 @@
 import { anonymousClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { clientEnv } from "@/env";
-import { hasRegisteredSession, hasSessionIdentity, isAnonymousSession, type SessionLike } from "./auth-session";
+import {
+  getSessionUserRole,
+  hasRegisteredSession,
+  hasSessionIdentity,
+  isAnonymousSession,
+  type SessionLike,
+} from "./auth-session";
 
 function getClientBaseUrl(): string {
   return clientEnv.NEXT_PUBLIC_SITE_URL;
@@ -13,7 +19,7 @@ export const authClient = createAuthClient({
 });
 
 export const { changePassword, signIn, signOut, signUp, useSession } = authClient;
-export { hasRegisteredSession, hasSessionIdentity, isAnonymousSession, type SessionLike };
+export { getSessionUserRole, hasRegisteredSession, hasSessionIdentity, isAnonymousSession, type SessionLike };
 
 let pendingAnonymousSignIn: Promise<unknown> | null = null;
 

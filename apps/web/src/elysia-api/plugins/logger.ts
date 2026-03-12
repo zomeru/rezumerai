@@ -38,9 +38,15 @@ export interface LoggerOptions {
   ignore?: string[];
 }
 
+function shouldLogRequests(): boolean {
+  return process.env.NODE_ENV !== "production" || process.env.ENABLE_API_REQUEST_LOGS === "true";
+}
+
 export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions = {}) =>
   new Elysia({ name: "plugin/logger" })
     .onBeforeHandle({ as: "global" }, ({ request }) => {
+      if (!shouldLogRequests()) return;
+
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
@@ -60,6 +66,8 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
     })
 
     .onAfterResponse({ as: "global" }, ({ request, set, response }) => {
+      if (!shouldLogRequests()) return;
+
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
@@ -88,6 +96,8 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
     })
 
     .onError({ as: "global" }, ({ request, error, code }) => {
+      if (!shouldLogRequests()) return;
+
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 

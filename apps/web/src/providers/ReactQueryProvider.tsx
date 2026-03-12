@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 import { getQueryClient } from "@/lib/get-query-client";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function ReactQueryProvider({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
 
   // Enable axe-core accessibility testing in development
@@ -35,7 +35,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools />
+      {process.env.NODE_ENV !== "production" ? <ReactQueryDevtools /> : null}
     </QueryClientProvider>
   );
 }

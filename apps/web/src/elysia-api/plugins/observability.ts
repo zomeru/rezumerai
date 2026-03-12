@@ -1,6 +1,7 @@
 import Elysia from "elysia";
 import { recordAnalyticsEvent } from "../observability/analytics";
 import { recordRequestAuditLog } from "../observability/audit";
+import { runPostResponseTask } from "../observability/post-response";
 import {
   enterRequestContext,
   getRequestContext,
@@ -80,21 +81,24 @@ export const observabilityPlugin = new Elysia({ name: "plugin/observability" })
     const params = getRequestParams(context);
     const metadata = requestContext?.metadata ?? {};
 
-    await Promise.allSettled([
-      recordAnalyticsEvent({
+    runPostResponseTask(async () => {
+      await recordAnalyticsEvent({
         source: "API_REQUEST",
         eventType: "REQUEST_COMPLETED",
         statusCode,
         durationMs,
         errorCode: typeof metadata.errorCode === "string" ? metadata.errorCode : null,
         errorName: typeof metadata.errorName === "string" ? metadata.errorName : null,
-      }),
-      recordRequestAuditLog({
+      });
+    }, "analytics");
+
+    runPostResponseTask(async () => {
+      await recordRequestAuditLog({
         request: context.request,
         statusCode,
         body,
         query,
         params,
-      }),
-    ]);
+      });
+    }, "audit");
   });

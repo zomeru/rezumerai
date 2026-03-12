@@ -1,6 +1,10 @@
 import Elysia from "elysia";
 import { bold, colorizeElapsed, dim, paint } from "../utils/ansi";
 
+function shouldTraceRequests(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.ENABLE_ELYSIA_TRACE !== "false";
+}
+
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 /**
@@ -18,6 +22,10 @@ import { bold, colorizeElapsed, dim, paint } from "../utils/ansi";
  */
 export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
   async ({ context, onBeforeHandle, onHandle, onAfterHandle, onError }) => {
+    if (!shouldTraceRequests()) {
+      return;
+    }
+
     const path = new URL(context.request.url).pathname;
 
     // ── beforeHandle ────────────────────────────────────────────────────────

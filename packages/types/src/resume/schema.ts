@@ -13,6 +13,8 @@ export type ResumeWithRelations = Prisma.ResumeGetPayload<{
   include: ResumeRelationsInclude;
 }>;
 
+export type ResumeListItem = Pick<ResumeWithRelations, "id" | "title" | "updatedAt">;
+
 export type ResumeWithRelationsInputUpdate = DeepPartial<
   Pick<
     ResumeWithRelations,

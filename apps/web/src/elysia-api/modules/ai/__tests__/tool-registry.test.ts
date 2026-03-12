@@ -1,6 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
 
-mock.module("@rezumerai/database", () => ({}));
+mock.module("@rezumerai/database", () => ({
+  prisma: {},
+}));
 mock.module("@/lib/system-content", () => ({
   getPublicAppContent: mock(async () => ({
     topic: "landing",

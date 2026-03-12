@@ -8,10 +8,15 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import LLMMarkdownRenderer from "@/components/ai/LLMMarkdownRenderer";
-import { useAccountSettings } from "@/hooks/useAccount";
 import { useAssistantMessageHistory } from "@/hooks/useAi";
 import { extractDisplayTextFromUiMessageParts, toDisplaySafeUiMessageParts } from "@/lib/ai-message-parts";
-import { ensureAnonymousSession, hasSessionIdentity, isAnonymousSession, useSession } from "@/lib/auth-client";
+import {
+  ensureAnonymousSession,
+  getSessionUserRole,
+  hasSessionIdentity,
+  isAnonymousSession,
+  useSession,
+} from "@/lib/auth-client";
 
 const INITIAL_ASSISTANT_COPY = "Ask about Rezumerai, your resumes, or admin data based on your current access.";
 
@@ -105,10 +110,6 @@ export default function AiAssistantWidget(): React.JSX.Element {
   const { data: session, isPending: isSessionPending } = useSession();
   const hasAssistantIdentity = hasSessionIdentity(session);
   const isAnonymous = isAnonymousSession(session);
-  const accountSettings = useAccountSettings({
-    enabled: hasAssistantIdentity && !isAnonymous,
-    retry: false,
-  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -133,7 +134,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
       .reverse()
       .flatMap((page) => page.messages);
   }, [history.data]);
-  const role = accountSettings.data?.user.role;
+  const role = getSessionUserRole(session);
   const scope =
     history.data?.pages[0]?.scope ?? (role === "ADMIN" ? "ADMIN" : role === "USER" && !isAnonymous ? "USER" : "PUBLIC");
 

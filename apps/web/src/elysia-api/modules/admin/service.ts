@@ -20,6 +20,7 @@ import {
 } from "@rezumerai/types";
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
+import { clearPublicContentCache } from "@/lib/system-content";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
@@ -451,17 +452,6 @@ function buildTimeSeries(
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class ErrorLogService {
-  static async isAdmin(db: DatabaseClient, userId: string): Promise<boolean> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        role: true,
-      },
-    });
-
-    return user?.role === "ADMIN";
-  }
-
   static async listErrorLogs(
     db: TransactionCapableDatabaseClient,
     input: ListErrorLogsInput = {},
@@ -988,6 +978,12 @@ export abstract class AdminService {
         value: parsedValue,
       },
     });
+
+    if (name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG && typeof AiService.clearConfigurationCache === "function") {
+      AiService.clearConfigurationCache();
+    }
+
+    clearPublicContentCache(name);
 
     await createAuditLog({
       category: "USER_ACTION",

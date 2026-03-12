@@ -22,11 +22,7 @@ import {
 } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithoutDateParsing } from "@/lib/api";
-
-const ADMIN_USERS_QUERY_KEY = ["admin", "users"] as const;
-const ADMIN_SYSTEM_CONFIG_QUERY_KEY = ["admin", "system-config"] as const;
-const ADMIN_AUDIT_LOGS_QUERY_KEY = ["admin", "audit-logs"] as const;
-const ADMIN_ANALYTICS_QUERY_KEY = ["admin", "analytics"] as const;
+import { queryKeys } from "@/lib/query-keys";
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -54,7 +50,7 @@ export function useAdminUsers(
   options?: Omit<QueryOptions<AdminUserListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_USERS_QUERY_KEY, query.page, query.pageSize, query.search ?? "", query.role ?? "all"],
+    queryKey: queryKeys.admin.users(query),
     queryFn: async (): Promise<AdminUserListResponse> => {
       const requestQuery: {
         page: string;
@@ -95,7 +91,7 @@ export function useAdminUserDetail(
   options?: Omit<QueryOptions<AdminUserDetail>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", userId],
+    queryKey: queryKeys.admin.userDetail(userId),
     enabled: userId.length > 0,
     queryFn: async (): Promise<AdminUserDetail> => {
       const { data, error } = await apiWithoutDateParsing.admin.users({ id: userId }).get();
@@ -138,10 +134,10 @@ export function useUpdateAdminUserRole() {
       return AdminUserDetailSchema.parse(data);
     },
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", variables.userId] });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.userId) });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
@@ -170,10 +166,10 @@ export function useUpdateAdminUserPassword() {
       return AdminUserDetailSchema.parse(data);
     },
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", variables.userId] });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.userId) });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
@@ -182,7 +178,7 @@ export function useSystemConfigurations(
   options?: Omit<QueryOptions<SystemConfigurationListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY,
+    queryKey: queryKeys.admin.systemConfig(),
     queryFn: async (): Promise<SystemConfigurationListResponse> => {
       const { data, error } = await apiWithoutDateParsing.admin["system-config"].get();
 
@@ -224,9 +220,9 @@ export function useUpdateSystemConfiguration() {
       return SystemConfigurationEntrySchema.parse(data);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.systemConfig() });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
@@ -241,7 +237,7 @@ export function useAuditLogs(
   options?: Omit<QueryOptions<AuditLogListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_AUDIT_LOGS_QUERY_KEY, query.page, query.pageSize, query.search ?? "", query.category ?? "all"],
+    queryKey: queryKeys.admin.auditLogs(query),
     queryFn: async (): Promise<AuditLogListResponse> => {
       const requestQuery: {
         page: string;
@@ -282,7 +278,7 @@ export function useAuditLogDetail(
   options?: Omit<QueryOptions<AuditLogDetail>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_AUDIT_LOGS_QUERY_KEY, "detail", auditId],
+    queryKey: queryKeys.admin.auditLogDetail(auditId),
     enabled: auditId.length > 0,
     queryFn: async (): Promise<AuditLogDetail> => {
       const { data, error } = await apiWithoutDateParsing.admin["audit-logs"]({ id: auditId }).get();
@@ -306,7 +302,7 @@ export function useAdminAnalytics(
   options?: Omit<QueryOptions<AnalyticsDashboard>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_ANALYTICS_QUERY_KEY, timeframeDays],
+    queryKey: queryKeys.admin.analytics(timeframeDays),
     queryFn: async (): Promise<AnalyticsDashboard> => {
       const { data, error } = await apiWithoutDateParsing.admin.analytics.get({
         query: {

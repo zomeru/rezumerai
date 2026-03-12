@@ -1,10 +1,8 @@
-import { prisma } from "@rezumerai/database";
-import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ROUTES } from "@/constants/routing";
-import { auth } from "@/lib/auth";
 import { canAccessAuthPage, canAccessSessionRoute } from "@/lib/auth-route-access";
+import { resolveRequestSessionIdentity } from "@/lib/request-auth";
 
 /**
  * Routes that require a session identity.
@@ -82,22 +80,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Auth session
-  const session = await auth.api.getSession({ headers: await headers() });
+  const authContext = await resolveRequestSessionIdentity(request.headers);
+  const { role, session, userId } = authContext;
   const isAdminRoute = pathname.startsWith(ROUTES.ADMIN);
 
   if (isAdminRoute) {
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      return rewriteToNotFound(request);
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user || user.role !== "ADMIN") {
+    if (!userId || role !== "ADMIN") {
       return rewriteToNotFound(request);
     }
   }

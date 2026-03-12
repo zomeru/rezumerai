@@ -71,19 +71,15 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
   .use(authPlugin)
   .use(AdminModel)
   // Keep the admin policy local to the admin module so it cannot affect sibling routes.
-  .derive(async ({ db, user, set }) => {
-    const userId = typeof user?.id === "string" ? user.id : null;
-
-    if (!userId) {
+  .derive(async ({ user, set }) => {
+    if (typeof user?.id !== "string") {
       set.status = 403;
       return {
         __forbidden: true as const,
       };
     }
 
-    const isAdmin = await ErrorLogService.isAdmin(db, userId);
-
-    if (!isAdmin) {
+    if (user.role !== "ADMIN") {
       set.status = 403;
       return {
         __forbidden: true as const,

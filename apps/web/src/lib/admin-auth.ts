@@ -1,29 +1,14 @@
-import { prisma } from "@rezumerai/database";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getServerSessionIdentity } from "@/lib/server-runtime";
 
 export async function requireAdminOrNotFound(): Promise<{ userId: string }> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const userId = session?.user?.id;
+  const { userId, role } = await getServerSessionIdentity();
 
   if (!userId) {
     notFound();
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      role: true,
-    },
-  });
-
-  if (!user || user.role !== "ADMIN") {
+  if (role !== "ADMIN") {
     notFound();
   }
 

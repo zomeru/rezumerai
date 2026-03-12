@@ -15,6 +15,7 @@ mock.module("@rezumerai/database", () => ({
   Prisma: {
     JsonNull: null,
   },
+  prisma: {},
 }));
 
 mock.module("@/lib/auth", () => ({

@@ -1,7 +1,6 @@
-import { prisma, type User } from "@rezumerai/database";
+import type { User } from "@rezumerai/database";
 import Elysia from "elysia";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { resolveRequestSessionUser } from "@/lib/request-auth";
 import { updateRequestContext } from "../observability/request-context";
 import { isAuthOptionalPath } from "./auth-paths";
 
@@ -10,20 +9,8 @@ import { isAuthOptionalPath } from "./auth-paths";
  * user into the Elysia request context. Protected routes should `.use(authPlugin)`.
  *
  */
-export async function resolveSessionUser(): Promise<User | null> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const userId = session?.user?.id;
-
-  if (!userId) return null;
-
-  return prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
+export async function resolveSessionUser(requestHeaders: HeadersInit): Promise<User | null> {
+  return resolveRequestSessionUser(requestHeaders);
 }
 
 export const authPlugin = new Elysia({ name: "plugin/auth" })
@@ -37,7 +24,7 @@ export const authPlugin = new Elysia({ name: "plugin/auth" })
       };
     }
 
-    const user = await resolveSessionUser();
+    const user = await resolveSessionUser(request.headers);
 
     if (!user) {
       set.status = 401;

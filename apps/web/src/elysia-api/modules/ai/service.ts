@@ -125,6 +125,13 @@ const reviewModelSchema = z.object({
   nextSteps: z.array(z.string().trim().min(1).max(180)).max(6).default([]),
 });
 
+const AI_CONFIGURATION_CACHE_TTL_MS = 30_000;
+
+let aiConfigurationCache: {
+  expiresAt: number;
+  value: AiConfiguration;
+} | null = null;
+
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 type StreamTextHandle = ReturnType<typeof streamText>;
@@ -197,19 +204,39 @@ export abstract class AiService {
     return emptyAiUsageMetrics();
   }
 
+  static clearConfigurationCache(): void {
+    aiConfigurationCache = null;
+  }
+
   static async getAvailableModels(): Promise<ActiveAiModel[]> {
     const models = await fetchOpenRouterModels();
     return models.map(mapOpenRouterModelToActiveAiModel);
   }
 
   static async getAiConfiguration(db: DatabaseClient): Promise<AiConfiguration> {
+    const now = Date.now();
+
+    if (aiConfigurationCache && aiConfigurationCache.expiresAt > now) {
+      return aiConfigurationCache.value;
+    }
+
     const configurationValue = await AiRepository.getAiConfigurationValue(db);
 
     if (!configurationValue) {
+      aiConfigurationCache = {
+        value: DEFAULT_CONFIGURATION_VALUE,
+        expiresAt: now + AI_CONFIGURATION_CACHE_TTL_MS,
+      };
       return DEFAULT_CONFIGURATION_VALUE;
     }
 
-    return AiService.parseAiConfiguration(configurationValue);
+    const configuration = AiService.parseAiConfiguration(configurationValue);
+    aiConfigurationCache = {
+      value: configuration,
+      expiresAt: now + AI_CONFIGURATION_CACHE_TTL_MS,
+    };
+
+    return configuration;
   }
 
   static async getUserAiSettings(db: DatabaseClient, userId: string): Promise<UserAiSettings> {
@@ -522,24 +549,15 @@ export abstract class AiService {
       cursor,
       limit: query.limit,
     });
-    const historyPage = await ConversationMemoryService.getHistory({
-      db,
-      scope,
-      threadId: query.threadId,
-      userId: identity.userId,
-      cursor,
-      limit: query.limit,
-    });
-    const oldestPersistedMessage = historyPage.messages[0] ?? null;
 
     return {
       scope,
       messages: page.messages,
       nextCursor:
-        page.hasMore && oldestPersistedMessage
+        page.hasMore && page.oldestMessageCursor
           ? buildAssistantThreadCursor({
-              createdAt: oldestPersistedMessage.createdAt.toISOString(),
-              id: oldestPersistedMessage.id,
+              createdAt: page.oldestMessageCursor.createdAt.toISOString(),
+              id: page.oldestMessageCursor.id,
             })
           : null,
       hasMore: page.hasMore,

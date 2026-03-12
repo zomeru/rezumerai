@@ -2,14 +2,13 @@ import type { ErrorLogDetail, ErrorLogListResponse } from "@rezumerai/types";
 import { ErrorLogDetailSchema, ErrorLogListResponseSchema } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithoutDateParsing } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 
 interface ErrorLogListQuery {
   page: number;
   pageSize: number;
   isRead?: boolean;
 }
-
-const ERROR_LOGS_QUERY_KEY = ["admin", "errorLogs"] as const;
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -46,7 +45,7 @@ export function useAdminErrorLogs(
   options?: Omit<QueryOptions<ErrorLogListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ERROR_LOGS_QUERY_KEY, query.page, query.pageSize, query.isRead ?? "all"],
+    queryKey: queryKeys.admin.errorLogs(query),
     queryFn: async (): Promise<ErrorLogListResponse> => {
       const requestQuery: {
         page: string;
@@ -84,7 +83,7 @@ export function useAdminErrorLogDetail(
   options?: Omit<QueryOptions<ErrorLogDetail>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ERROR_LOGS_QUERY_KEY, "detail", id],
+    queryKey: queryKeys.admin.errorLogDetail(id),
     enabled: id.length > 0,
     queryFn: async (): Promise<ErrorLogDetail> => {
       const { data, error } = await apiWithoutDateParsing.admin.errors({ id }).get();
@@ -121,8 +120,8 @@ export function useMarkAdminErrorAsRead() {
       return normalizeErrorLogDetail(ErrorLogDetailSchema.parse(data));
     },
     onSuccess: async (_, id) => {
-      await queryClient.invalidateQueries({ queryKey: ERROR_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: [...ERROR_LOGS_QUERY_KEY, "detail", id] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "error-logs"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.errorLogDetail(id) });
     },
   });
 }

@@ -12,9 +12,14 @@ import type {
   SaveOptimizationInput,
 } from "./types";
 
-type CreditsAccessor = Pick<DatabaseClient, "aiTextOptimizerCredits">;
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
+type CreditsAccessor = {
+  aiTextOptimizerCredits: Pick<
+    DatabaseClient["aiTextOptimizerCredits"],
+    "create" | "findUnique" | "updateMany" | "upsert"
+  >;
+};
 
 const assistantConversationFallbackStore = new Map<string, AssistantConversationRecord>();
 
@@ -153,6 +158,20 @@ export abstract class AiRepository {
     now: Date = new Date(),
   ): Promise<DailyCreditsStatus> {
     const todayBoundary = AiRepository.getAsiaManilaMidnightBoundary(now);
+    const existingCredits = await db.aiTextOptimizerCredits.findUnique({
+      where: { userId },
+      select: {
+        credits: true,
+        lastResetAt: true,
+      },
+    });
+
+    if (existingCredits && existingCredits.lastResetAt >= todayBoundary) {
+      return {
+        remainingCredits: existingCredits.credits,
+        dailyLimit,
+      };
+    }
 
     return db.$transaction(async (tx) => {
       await AiRepository.ensureDailyCreditsWindow(tx, userId, todayBoundary, dailyLimit);
@@ -631,15 +650,29 @@ export abstract class AiRepository {
     todayBoundary: Date,
     dailyLimit: number,
   ): Promise<void> {
-    await db.aiTextOptimizerCredits.upsert({
+    const existingCredits = await db.aiTextOptimizerCredits.findUnique({
       where: { userId },
-      update: {},
-      create: {
-        userId,
-        credits: dailyLimit,
-        lastResetAt: todayBoundary,
+      select: {
+        lastResetAt: true,
       },
     });
+
+    if (existingCredits && existingCredits.lastResetAt >= todayBoundary) {
+      return;
+    }
+
+    if (!existingCredits) {
+      await db.aiTextOptimizerCredits.upsert({
+        where: { userId },
+        update: {},
+        create: {
+          userId,
+          credits: dailyLimit,
+          lastResetAt: todayBoundary,
+        },
+      });
+      return;
+    }
 
     await db.aiTextOptimizerCredits.updateMany({
       where: {

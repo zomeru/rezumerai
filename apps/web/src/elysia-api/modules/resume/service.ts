@@ -3,13 +3,13 @@ import type { PrismaClient } from "@rezumerai/database";
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 
-import type { ResumeWithRelations } from "@rezumerai/types";
+import type { ResumeListItem, ResumeWithRelations } from "@rezumerai/types";
 import { ResumeRepository } from "./repository";
 import type { ResumeCreateInput, ResumeSearchInput, ResumeUpdateInput } from "./types";
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The service remains a stable facade while the repository owns Prisma queries.
 export abstract class ResumeService {
-  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeWithRelations[]> {
+  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeListItem[]> {
     return ResumeRepository.search(db, userId, query);
   }
 

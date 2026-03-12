@@ -24,6 +24,12 @@ const RESUME_WITH_RELATIONS = {
   project: [],
 };
 
+const RESUME_LIST_ITEM = {
+  id: RESUME_ID,
+  title: "My Resume",
+  updatedAt: new Date(),
+};
+
 function makeMockDb(): PrismaClient {
   return {
     resume: {
@@ -83,6 +89,31 @@ describe("ResumeService.findById", () => {
     const result = await ResumeService.findById(db, USER_ID, RESUME_ID);
 
     expect(result).toBeNull();
+  });
+});
+
+describe("ResumeService.search", () => {
+  it("returns summary rows for the workspace list without loading relation graphs", async () => {
+    const db = makeMockDb();
+    (db.resume.findMany as ReturnType<typeof mock>).mockResolvedValue([RESUME_LIST_ITEM]);
+
+    const result = await ResumeService.search(db, USER_ID, {
+      search: "resume",
+    });
+
+    expect(result).toEqual([RESUME_LIST_ITEM]);
+    expect(db.resume.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: USER_ID,
+        AND: [{ title: { contains: "resume", mode: "insensitive" } }],
+      },
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
   });
 });
 

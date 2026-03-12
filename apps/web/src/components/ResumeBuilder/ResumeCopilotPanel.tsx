@@ -4,7 +4,6 @@ import type { ResumeSectionTarget, ResumeWithRelations } from "@rezumerai/types"
 import { Bot, Loader2, Sparkles, Target as TargetIcon, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useAccountSettings } from "@/hooks/useAccount";
 import { useCopilotOptimizeSection, useCopilotReviewResume, useCopilotTailorResume } from "@/hooks/useAi";
 import { getAiFeatureAccessMessage } from "@/lib/ai-access";
 import { isAnonymousSession, useSession } from "@/lib/auth-client";
@@ -74,10 +73,6 @@ export default function ResumeCopilotPanel({
 }: ResumeCopilotPanelProps): React.JSX.Element {
   const { data: session } = useSession();
   const isAnonymous = isAnonymousSession(session);
-  const accountSettings = useAccountSettings({
-    enabled: Boolean(session?.user?.id) && !isAnonymous,
-    retry: false,
-  });
   const optimizeMutation = useCopilotOptimizeSection();
   const tailorMutation = useCopilotTailorResume();
   const reviewMutation = useCopilotReviewResume();
@@ -95,7 +90,7 @@ export default function ResumeCopilotPanel({
   const trimmedJobDescription = jobDescription.trim();
   const aiAccessMessage = getAiFeatureAccessMessage({
     isAnonymous,
-    emailVerified: accountSettings.data?.user.emailVerified,
+    emailVerified: session?.user?.emailVerified,
   });
   const isAiRestricted = aiAccessMessage !== null;
   const tailorNeedsMoreDetail =

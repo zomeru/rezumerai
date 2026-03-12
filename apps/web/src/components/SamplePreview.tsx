@@ -10,12 +10,9 @@ interface PreviewClientProps {
 }
 
 export default function PreviewClient({ serverData, resumeId }: PreviewClientProps) {
-  const { data } = useResumeById(resumeId, {
-    initialData: serverData,
-  });
+  const { data } = useResumeById(resumeId);
 
-  // biome-ignore lint/style/noNonNullAssertion: We know data is available here because the server would have returned 404 if it wasn't. This is just to satisfy TypeScript.
-  const resumeData: ResumeWithRelations = data!;
+  const resumeData: ResumeWithRelations = data ?? serverData;
 
   return (
     <div className="min-h-screen bg-slate-100">

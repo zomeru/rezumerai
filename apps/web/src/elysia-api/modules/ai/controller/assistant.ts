@@ -52,7 +52,7 @@ export async function handleAssistantChatStreamRequest(options: {
     return new Response(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR, { status: 422 });
   }
 
-  const sessionUser = await resolveSessionUser();
+  const sessionUser = await resolveSessionUser(options.request.headers);
   const role = resolveUserRole(sessionUser?.role);
 
   if (!sessionUser) {
@@ -98,7 +98,7 @@ export async function handleAssistantMessagesRequest(options: {
   request: Request;
 }): Promise<RouteResult<{ 200: AssistantMessagesResponse; 422: AssistantMessagesResponse }>> {
   const parsedQuery = AssistantHistoryQuerySchema.safeParse(options.query);
-  const sessionUser = await resolveSessionUser();
+  const sessionUser = await resolveSessionUser(options.request.headers);
   const role = resolveUserRole(sessionUser?.role);
   const scope = getAssistantScopeFromRole(role, sessionUser?.isAnonymous === true);
 

@@ -1,6 +1,12 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
-import type { ResumeWithRelations } from "@rezumerai/types";
-import type { ResumeCreateInput, ResumeSearchInput, ResumeUpdateInput, SyncPromiseReturn } from "./types";
+import type { ResumeListItem, ResumeWithRelations } from "@rezumerai/types";
+import type {
+  ResumeCreateInput,
+  ResumeListRecord,
+  ResumeSearchInput,
+  ResumeUpdateInput,
+  SyncPromiseReturn,
+} from "./types";
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
@@ -16,7 +22,7 @@ type SyncableRelation = {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally groups stateless Prisma helpers for the resume module.
 export abstract class ResumeRepository {
-  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeWithRelations[]> {
+  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeListItem[]> {
     const where: Prisma.ResumeWhereInput = {
       userId,
     };
@@ -27,14 +33,13 @@ export abstract class ResumeRepository {
 
     return db.resume.findMany({
       where,
-      include: {
-        education: true,
-        experience: true,
-        project: true,
-        personalInfo: true,
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
       },
       orderBy: { updatedAt: "desc" },
-    });
+    }) as Promise<ResumeListRecord[]>;
   }
 
   static async findById(db: DatabaseClient, userId: string, resumeId: string): Promise<ResumeWithRelations | null> {

@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { isAnonymousSession, signOut, useSession } from "@/lib/auth-client";
+import { getSessionUserRole, isAnonymousSession, signOut, useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
 
 function getInitials(name: string): string {
@@ -62,13 +62,13 @@ function normalizePath(path: string): string {
 export default function Navbar(): React.JSX.Element {
   const { data: session } = useSession();
   const isAnonymous = isAnonymousSession(session);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const { data: accountSettings, isLoading } = useAccountSettings({
-    enabled: !isAnonymous,
+    enabled: isOpen && !isAnonymous,
   });
   const router = useRouter();
   const pathname = usePathname();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
   const displayName = useMemo(() => {
@@ -81,7 +81,7 @@ export default function Navbar(): React.JSX.Element {
 
   const displayEmail = isAnonymous ? "" : accountSettings?.user.email || session?.user.email || "";
   const avatarUrl = accountSettings?.user.image ?? session?.user.image;
-  const isAdmin = !isAnonymous && accountSettings?.user.role === "ADMIN";
+  const isAdmin = !isAnonymous && getSessionUserRole(session) === "ADMIN";
 
   async function onLogout(): Promise<void> {
     try {

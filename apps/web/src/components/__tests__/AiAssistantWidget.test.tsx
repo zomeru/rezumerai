@@ -7,7 +7,6 @@ const toastErrorMock = mock(() => undefined);
 const useChatMock = mock();
 const useSessionMock = mock();
 const useAssistantMessageHistoryMock = mock();
-const useAccountSettingsMock = mock();
 const ensureAnonymousSessionMock = mock(async () => undefined);
 const hasSessionIdentityMock = mock(() => true);
 const isAnonymousSessionMock = mock(() => false);
@@ -44,12 +43,10 @@ mock.module("@/hooks/useAi", () => ({
   useAiSettings: mock(() => ({ data: undefined, isLoading: false, error: null })),
 }));
 
-mock.module("@/hooks/useAccount", () => ({
-  useAccountSettings: useAccountSettingsMock,
-}));
-
 mock.module("@/lib/auth-client", () => ({
   ensureAnonymousSession: ensureAnonymousSessionMock,
+  getSessionUserRole: (session: { user?: { role?: string | null } } | null | undefined) =>
+    session?.user?.role === "ADMIN" || session?.user?.role === "USER" ? session.user.role : null,
   hasSessionIdentity: hasSessionIdentityMock,
   isAnonymousSession: isAnonymousSessionMock,
   useSession: useSessionMock,
@@ -81,18 +78,10 @@ describe("AiAssistantWidget", () => {
       data: {
         user: {
           id: "user_123",
-        },
-      },
-      isPending: false,
-    });
-
-    useAccountSettingsMock.mockReset();
-    useAccountSettingsMock.mockReturnValue({
-      data: {
-        user: {
           role: "USER",
         },
       },
+      isPending: false,
     });
 
     useAssistantMessageHistoryMock.mockReset();

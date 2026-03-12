@@ -25,9 +25,7 @@ import type { UIMessage } from "ai";
 import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { api } from "@/lib/api";
-
-const AI_SETTINGS_QUERY_KEY = ["aiSettings"] as const;
-const ASSISTANT_MESSAGES_QUERY_KEY = ["assistantMessages"] as const;
+import { queryKeys } from "@/lib/query-keys";
 
 const AssistantUiMessageSchema: z.ZodType<UIMessage> = z
   .object({
@@ -62,7 +60,7 @@ export function useAiSettings(
   options?: Omit<QueryOptions<AiSettings>, "queryKey" | "queryFn"> & { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: AI_SETTINGS_QUERY_KEY,
+    queryKey: queryKeys.ai.settings(),
     queryFn: async () => {
       const { data, error } = await api.ai.settings.get();
 
@@ -98,7 +96,7 @@ export function useUpdateSelectedAiModel() {
       return AiSettingsSchema.parse(data);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: AI_SETTINGS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.settings() });
     },
   });
 }
@@ -117,10 +115,10 @@ export function useAssistantMessageHistory(options?: {
     AssistantMessagesResponse,
     Error,
     InfiniteData<AssistantMessagesResponse>,
-    readonly ["assistantMessages", string, number, string],
+    ReturnType<typeof queryKeys.ai.assistantMessages>,
     string | null
   >({
-    queryKey: [...ASSISTANT_MESSAGES_QUERY_KEY, threadId ?? "missing-thread", limit, identityKey ?? "missing-identity"],
+    queryKey: queryKeys.ai.assistantMessages({ threadId, limit, identityKey }),
     enabled:
       (options?.enabled ?? true) &&
       typeof threadId === "string" &&

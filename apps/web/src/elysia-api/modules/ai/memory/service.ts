@@ -255,12 +255,23 @@ export abstract class ConversationMemoryService {
   }): Promise<{
     hasMore: boolean;
     messages: AssistantUiMessage[];
+    oldestMessageCursor: {
+      createdAt: Date;
+      id: string;
+    } | null;
   }> {
     const page = await ConversationMemoryService.getHistory(options);
+    const oldestMessage = page.messages[0] ?? null;
 
     return {
       messages: page.messages.map(toUiMessage),
       hasMore: page.hasMore,
+      oldestMessageCursor: oldestMessage
+        ? {
+            createdAt: oldestMessage.createdAt,
+            id: oldestMessage.id,
+          }
+        : null,
     };
   }
 

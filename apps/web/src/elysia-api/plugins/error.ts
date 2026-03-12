@@ -3,6 +3,7 @@ import path from "node:path";
 import { type Prisma, prisma } from "@rezumerai/database";
 import Elysia from "elysia";
 import { serverEnv } from "@/env";
+import { runPostResponseTask } from "../observability/post-response";
 
 const isProd = serverEnv?.NODE_ENV === "production";
 const isDev = serverEnv?.NODE_ENV === "development";
@@ -538,7 +539,9 @@ export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "g
     user,
   };
 
-  await trackUnhandledError(trackingContext);
+  runPostResponseTask(async () => {
+    await trackUnhandledError(trackingContext);
+  }, "error-tracking");
 
   if (!isProd) {
     console.error(`[ERROR] ${code}`, error);
