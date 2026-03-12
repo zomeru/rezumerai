@@ -153,8 +153,8 @@ export default function WorkspaceSettingsPage(): React.JSX.Element {
     if (!aiSettings) return [];
 
     return aiSettings.models.map((model) => ({
-      value: model.modelId,
-      label: `${model.providerDisplayName} — ${model.name}`,
+      value: model.id,
+      label: model.name,
     }));
   }, [aiSettings]);
 

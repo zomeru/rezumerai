@@ -120,7 +120,7 @@ export async function handleOptimizeTextRequest(options: {
   try {
     stream = await AiService.createOptimizeStream(
       input,
-      optimizationContext.model.modelId,
+      optimizationContext.model.id,
       optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
     );
   } catch (error: unknown) {
@@ -137,15 +137,15 @@ export async function handleOptimizeTextRequest(options: {
         responseStatus: 422,
         phase: "create-optimize-stream",
         reason: responseCode,
-        modelId: optimizationContext.model.modelId,
-        provider: optimizationContext.model.providerName,
+        modelId: optimizationContext.model.id,
+        provider: "openrouter",
       },
     });
 
     await persistOptimizationSafely(options.db, {
       userId: options.user.id,
-      provider: optimizationContext.model.providerName,
-      model: optimizationContext.model.modelId,
+      provider: "openrouter",
+      model: optimizationContext.model.id,
       promptVersion: optimizationContext.config.PROMPT_VERSION,
       resumeId: options.body.resumeId?.trim() || null,
       inputText: input,
@@ -200,8 +200,8 @@ export async function handleOptimizeTextRequest(options: {
           metadata: {
             phase: "stream-optimize-text",
             reason: "AI_STREAM_RUNTIME_ERROR",
-            modelId: optimizationContext.model.modelId,
-            provider: optimizationContext.model.providerName,
+            modelId: optimizationContext.model.id,
+            provider: "openrouter",
           },
         });
         return;
@@ -213,8 +213,8 @@ export async function handleOptimizeTextRequest(options: {
 
         await persistOptimizationSafely(options.db, {
           userId: options.user.id,
-          provider: optimizationContext.model.providerName,
-          model: optimizationContext.model.modelId,
+          provider: "openrouter",
+          model: optimizationContext.model.id,
           promptVersion: optimizationContext.config.PROMPT_VERSION,
           resumeId: options.body.resumeId?.trim() || null,
           inputText: input,
