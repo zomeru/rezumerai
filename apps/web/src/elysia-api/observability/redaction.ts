@@ -2,6 +2,8 @@ import type { Prisma } from "@rezumerai/database";
 
 export const REDACTED_VALUE = "[REDACTED]";
 const MAX_STRING_LENGTH = 10_000;
+const MAX_ARRAY_LENGTH = 50;
+const MAX_OBJECT_ENTRIES = 50;
 const MAX_DEPTH = 8;
 type SerializableJson = string | number | boolean | null | SerializableJson[] | { [key: string]: SerializableJson };
 
@@ -71,14 +73,25 @@ export function toSerializableValue(value: unknown, depth = 0): SerializableJson
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => toSerializableValue(item, depth + 1));
+    const items = value.slice(0, MAX_ARRAY_LENGTH).map((item) => toSerializableValue(item, depth + 1));
+
+    if (value.length > MAX_ARRAY_LENGTH) {
+      items.push(`[${value.length - MAX_ARRAY_LENGTH} additional items truncated]`);
+    }
+
+    return items;
   }
 
   if (typeof value === "object") {
     const result: Record<string, SerializableJson> = {};
+    const entries = Object.entries(value);
 
-    for (const [key, nestedValue] of Object.entries(value)) {
+    for (const [key, nestedValue] of entries.slice(0, MAX_OBJECT_ENTRIES)) {
       result[key] = shouldRedactKey(key) ? REDACTED_VALUE : toSerializableValue(nestedValue, depth + 1);
+    }
+
+    if (entries.length > MAX_OBJECT_ENTRIES) {
+      result.__truncatedKeys = `[${entries.length - MAX_OBJECT_ENTRIES} additional keys truncated]`;
     }
 
     return result;

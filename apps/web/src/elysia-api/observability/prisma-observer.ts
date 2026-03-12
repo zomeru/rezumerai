@@ -1,6 +1,7 @@
 import { prisma } from "@rezumerai/database";
 import { recordDatabaseAuditLog } from "./audit";
 import { toSerializableValue } from "./redaction";
+import { getRequestContext } from "./request-context";
 
 const AUDITABLE_OPERATIONS = new Set([
   "create",
@@ -13,6 +14,8 @@ const AUDITABLE_OPERATIONS = new Set([
 ]);
 
 const INTERNAL_MODELS = new Set(["AuditLog", "AnalyticsEvent", "Session", "Account", "Verification", "SampleTable"]);
+const SLOW_QUERY_THRESHOLD_MS = 100;
+const MAX_SLOW_QUERY_SAMPLES = 5;
 
 function toDelegateKey(model: string): string {
   return `${model.slice(0, 1).toLowerCase()}${model.slice(1)}`;
@@ -107,6 +110,36 @@ function resolveAfterSnapshot(operation: string, args: unknown, result: unknown)
   return result;
 }
 
+function recordDatabaseQueryMetrics(model: string | null, operation: string, durationMs: number): void {
+  const context = getRequestContext();
+
+  if (!context) {
+    return;
+  }
+
+  const queryCount = typeof context.metadata.dbQueryCount === "number" ? context.metadata.dbQueryCount + 1 : 1;
+  const totalDurationMs =
+    typeof context.metadata.dbQueryDurationMs === "number"
+      ? context.metadata.dbQueryDurationMs + durationMs
+      : durationMs;
+  const slowQueries = Array.isArray(context.metadata.slowDbQueries) ? [...context.metadata.slowDbQueries] : [];
+
+  if (durationMs >= SLOW_QUERY_THRESHOLD_MS) {
+    slowQueries.push({
+      durationMs: Math.round(durationMs),
+      model: model ?? "UNKNOWN",
+      operation,
+    });
+  }
+
+  context.metadata = {
+    ...context.metadata,
+    dbQueryCount: queryCount,
+    dbQueryDurationMs: Math.round(totalDurationMs * 100) / 100,
+    ...(slowQueries.length > 0 ? { slowDbQueries: slowQueries.slice(-MAX_SLOW_QUERY_SAMPLES) } : {}),
+  };
+}
+
 export const observedPrisma = prisma.$extends({
   name: "admin-observability",
   query: {
@@ -116,7 +149,9 @@ export const observedPrisma = prisma.$extends({
         const shouldAudit =
           normalizedModel && AUDITABLE_OPERATIONS.has(operation) && !INTERNAL_MODELS.has(normalizedModel);
         const beforeSnapshot = shouldAudit ? await readBeforeSnapshot(normalizedModel, operation, args) : null;
+        const startedAt = performance.now();
         const result = await query(args);
+        recordDatabaseQueryMetrics(normalizedModel, operation, performance.now() - startedAt);
 
         if (!shouldAudit || !normalizedModel) {
           return result;

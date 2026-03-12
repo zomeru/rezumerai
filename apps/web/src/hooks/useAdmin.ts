@@ -133,11 +133,10 @@ export function useUpdateAdminUserRole() {
 
       return AdminUserDetailSchema.parse(data);
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async (data, variables) => {
+      queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
       await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.userId) });
       await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
@@ -165,11 +164,9 @@ export function useUpdateAdminUserPassword() {
 
       return AdminUserDetailSchema.parse(data);
     },
-    onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.userId) });
+    onSuccess: async (data, variables) => {
+      queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
       await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
@@ -219,10 +216,25 @@ export function useUpdateSystemConfiguration() {
 
       return SystemConfigurationEntrySchema.parse(data);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.systemConfig() });
+    onSuccess: async (updatedConfiguration) => {
+      queryClient.setQueryData(
+        queryKeys.admin.systemConfig(),
+        (current: SystemConfigurationListResponse | undefined): SystemConfigurationListResponse | undefined => {
+          if (!current) {
+            return current;
+          }
+
+          const nextItems = current.items.some((item) => item.name === updatedConfiguration.name)
+            ? current.items.map((item) => (item.name === updatedConfiguration.name ? updatedConfiguration : item))
+            : [...current.items, updatedConfiguration].sort((left, right) => left.name.localeCompare(right.name));
+
+          return {
+            ...current,
+            items: nextItems,
+          };
+        },
+      );
       await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
     },
   });
 }
