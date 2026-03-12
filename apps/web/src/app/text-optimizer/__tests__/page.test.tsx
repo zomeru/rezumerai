@@ -86,7 +86,7 @@ mock.module("@/components/ui/Select", () => ({
   ),
 }));
 
-const { buildOptimizeCompletionRequest, default: TestSitePage } = await import("../page");
+const { buildOptimizeCompletionRequest, default: TextOptimizerPage } = await import("../page");
 
 function createCompletionState(overrides?: Partial<MockCompletionState>): MockCompletionState {
   return {
@@ -128,7 +128,7 @@ function createSession(options?: { emailVerified?: boolean; isAnonymous?: boolea
   };
 }
 
-describe("/testsite", () => {
+describe("/text-optimizer", () => {
   beforeEach(() => {
     cleanup();
 
@@ -160,7 +160,7 @@ describe("/testsite", () => {
   });
 
   it("configures useCompletion for the AI SDK optimize endpoint", () => {
-    render(<TestSitePage />);
+    render(<TextOptimizerPage />);
 
     expect(lastUseCompletionOptions).toMatchObject({
       api: "/api/ai/optimize",
@@ -183,7 +183,7 @@ describe("/testsite", () => {
   });
 
   it("toasts parsed optimize errors from the AI SDK hook", () => {
-    render(<TestSitePage />);
+    render(<TextOptimizerPage />);
 
     const onError = lastUseCompletionOptions?.onError;
 
@@ -202,7 +202,7 @@ describe("/testsite", () => {
       isLoading: true,
     });
 
-    const view = render(<TestSitePage />);
+    const view = render(<TextOptimizerPage />);
 
     fireEvent.click(view.getByRole("button", { name: "Stop" }));
 
@@ -214,7 +214,7 @@ describe("/testsite", () => {
       completion: "# Refined copy\n\n- Stronger action verb\n\n```ts\nconst score = 92;\n```",
     });
 
-    const view = render(<TestSitePage />);
+    const view = render(<TextOptimizerPage />);
 
     expect(view.getByRole("heading", { name: "Refined copy" })).toBeTruthy();
     expect(view.getByText("Stronger action verb").closest("li")).toBeTruthy();
@@ -226,7 +226,7 @@ describe("/testsite", () => {
       error: new Error(JSON.stringify({ message: "Model failed." })),
     });
 
-    const view = render(<TestSitePage />);
+    const view = render(<TextOptimizerPage />);
 
     expect(view.getByRole("alert").textContent).toContain("Model failed.");
   });
@@ -237,7 +237,7 @@ describe("/testsite", () => {
       isPending: false,
     });
 
-    const view = render(<TestSitePage />);
+    const view = render(<TextOptimizerPage />);
 
     expect(view.getByText(ERROR_MESSAGES.AI_AUTH_REQUIRED)).toBeTruthy();
     expect(view.getByRole("button", { name: "Optimize Text" })).toHaveProperty("disabled", true);

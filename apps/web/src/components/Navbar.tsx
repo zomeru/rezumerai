@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronDown, FileText, LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -162,6 +162,15 @@ export default function Navbar(): React.JSX.Element {
               >
                 <LayoutDashboard className="size-4" />
                 Workspace
+              </Link>
+
+              <Link
+                href={ROUTES.TEXT_OPTIMIZER}
+                onClick={(event) => onNavigateFromDropdown(event, ROUTES.TEXT_OPTIMIZER)}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-slate-100"
+              >
+                <FileText className="size-4" />
+                Text Optimizer
               </Link>
 
               <Link

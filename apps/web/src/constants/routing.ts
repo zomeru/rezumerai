@@ -22,8 +22,8 @@ const ADMIN_SYSTEM_CONFIG = `${ADMIN}/system-config`;
 const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
 const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
 
-// Test page
-const TESTSITE = "/testsite";
+// AI tools
+const TEXT_OPTIMIZER = "/text-optimizer";
 
 /**
  * Centralized route constants for application navigation.
@@ -65,7 +65,7 @@ export const ROUTES = {
   ADMIN_SYSTEM_CONFIG,
   ADMIN_AUDIT_LOGS,
   ADMIN_ANALYTICS,
-  TESTSITE,
+  TEXT_OPTIMIZER,
 } as const;
 
 /**

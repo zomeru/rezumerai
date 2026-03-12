@@ -10,7 +10,13 @@ import { canAccessAuthPage, canAccessSessionRoute } from "@/lib/auth-route-acces
  * Routes that require a session identity.
  * Anonymous and registered sessions are both allowed here.
  */
-const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS, ROUTES.TESTSITE];
+const PROTECTED_ROUTES: string[] = [
+  ROUTES.WORKSPACE,
+  ROUTES.BUILDER,
+  ROUTES.PREVIEW,
+  ROUTES.SETTINGS,
+  ROUTES.TEXT_OPTIMIZER,
+];
 
 function rewriteToNotFound(request: NextRequest): NextResponse {
   const notFoundUrl = new URL("/_not-found", request.url);

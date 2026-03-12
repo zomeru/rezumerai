@@ -57,7 +57,7 @@ export function buildOptimizeCompletionRequest(inputText: string, selectedModelI
   };
 }
 
-export default function TestSitePage(): React.JSX.Element {
+export default function TextOptimizerPage(): React.JSX.Element {
   const { data: session, isPending: isSessionPending } = useSession();
   const isAnonymous = isAnonymousSession(session);
   const aiAccessMessage = getAiFeatureAccessMessage({
@@ -112,7 +112,7 @@ export default function TestSitePage(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <div>
         <h1 className="font-bold text-2xl text-gray-900">AI Text Optimizer</h1>
         <p className="mt-1 text-gray-500 text-sm">

@@ -7,7 +7,7 @@
 - Auth routes: `/signin`, `/signup`
 - Session-gated routes: `/workspace`, `/workspace/builder/[resumeId]`, `/workspace/settings`, `/preview/[resumeId]`
 - Admin routes: `/admin/**`
-- Internal utility route: `/testsite`
+- Session-gated utility route: `/text-optimizer`
 
 ## Server And Client Boundaries
 
