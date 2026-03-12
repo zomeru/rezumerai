@@ -300,12 +300,7 @@ export default function LLMMarkdownRenderer({
   }
 
   return (
-    <div
-      className={cn(
-        "llm-markdown max-w-none text-[0.95rem] text-slate-800 leading-7 [overflow-wrap:anywhere]",
-        className,
-      )}
-    >
+    <div className={cn("llm-markdown wrap-anywhere max-w-none text-[0.95rem] text-slate-800 leading-7", className)}>
       <ReactMarkdown
         components={markdownComponents}
         rehypePlugins={rehypePlugins}

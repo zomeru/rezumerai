@@ -396,7 +396,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
                 return (
                   <div
                     key={message.id}
-                    className={`min-w-0 max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] ${
+                    className={`wrap-anywhere min-w-0 max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                       message.role === "assistant"
                         ? "mr-auto bg-white text-slate-700 shadow-sm"
                         : "ml-auto bg-primary-600 text-white"
