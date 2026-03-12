@@ -1,11 +1,12 @@
 import Elysia, { t } from "elysia";
 
 const AiModelOption = t.Object({
-  id: t.String(),
-  name: t.String(),
-  modelId: t.String(),
-  providerName: t.String(),
-  providerDisplayName: t.String(),
+  id: t.String({ minLength: 1, maxLength: 200 }),
+  name: t.String({ minLength: 1, maxLength: 200 }),
+  contextLength: t.Integer({ minimum: 0, maximum: 10_000_000 }),
+  inputModalities: t.Array(t.String()),
+  outputModalities: t.Array(t.String()),
+  supportedParameters: t.Array(t.String()),
 });
 
 const AiSettings = t.Object({
