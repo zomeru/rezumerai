@@ -1,7 +1,4 @@
 import type {
-  AdminAiModel,
-  AdminAiModelCatalog,
-  AdminAiModelMutationInput,
   AdminUserDetail,
   AdminUserListResponse,
   AdminUserPasswordUpdateInput,
@@ -10,20 +7,16 @@ import type {
   AuditLogCategory,
   AuditLogDetail,
   AuditLogListResponse,
-  DeleteAdminAiModelResponse,
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
   UpdateSystemConfigurationInput,
 } from "@rezumerai/types";
 import {
-  AdminAiModelCatalogSchema,
-  AdminAiModelSchema,
   AdminUserDetailSchema,
   AdminUserListResponseSchema,
   AnalyticsDashboardSchema,
   AuditLogDetailSchema,
   AuditLogListResponseSchema,
-  DeleteAdminAiModelResponseSchema,
   SystemConfigurationEntrySchema,
   SystemConfigurationListResponseSchema,
 } from "@rezumerai/types";
@@ -32,7 +25,6 @@ import { apiWithoutDateParsing } from "@/lib/api";
 
 const ADMIN_USERS_QUERY_KEY = ["admin", "users"] as const;
 const ADMIN_SYSTEM_CONFIG_QUERY_KEY = ["admin", "system-config"] as const;
-const ADMIN_AI_MODELS_QUERY_KEY = ["admin", "ai-models"] as const;
 const ADMIN_AUDIT_LOGS_QUERY_KEY = ["admin", "audit-logs"] as const;
 const ADMIN_ANALYTICS_QUERY_KEY = ["admin", "analytics"] as const;
 
@@ -233,101 +225,6 @@ export function useUpdateSystemConfiguration() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
-    },
-  });
-}
-
-export function useAdminAiModels(options?: Omit<QueryOptions<AdminAiModelCatalog>, "queryKey" | "queryFn">) {
-  return useQuery({
-    queryKey: ADMIN_AI_MODELS_QUERY_KEY,
-    queryFn: async (): Promise<AdminAiModelCatalog> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].get();
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to load AI models."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI models response.");
-      }
-
-      return AdminAiModelCatalogSchema.parse(data);
-    },
-    ...options,
-  });
-}
-
-export function useCreateAdminAiModel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: AdminAiModelMutationInput): Promise<AdminAiModel> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].post(input);
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to create AI model."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI model create response.");
-      }
-
-      return AdminAiModelSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
-    },
-  });
-}
-
-export function useUpdateAdminAiModel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: AdminAiModelMutationInput }): Promise<AdminAiModel> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).patch(input);
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to update AI model."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI model update response.");
-      }
-
-      return AdminAiModelSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
-    },
-  });
-}
-
-export function useDeleteAdminAiModel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string): Promise<DeleteAdminAiModelResponse> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).delete();
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to delete AI model."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI model delete response.");
-      }
-
-      return DeleteAdminAiModelResponseSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
     },
