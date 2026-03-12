@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routing";
 import { useAdminErrorLogDetail, useMarkAdminErrorAsRead } from "@/hooks/useErrorLogs";
+import { JsonCodeBlock } from "./AdminUI";
+import { formatDateTime } from "./format";
 
 interface ErrorDetailPageClientProps {
   errorId: string;
@@ -16,35 +18,6 @@ function isParsedStackTrace(value: unknown): value is {
   stackLines?: string[];
 } {
   return typeof value === "object" && value !== null;
-}
-
-function formatDateTime(value: string | null): string {
-  if (!value) {
-    return "N/A";
-  }
-
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
-}
-
-function formatJson(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "null";
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
 }
 
 function resolveStackTrace(stackTraceJson: string): string {
@@ -206,33 +179,13 @@ export default function ErrorDetailPageClient({ errorId }: ErrorDetailPageClient
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-3 font-semibold text-slate-900">Query Params</h3>
-                <pre className="max-h-72 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs">
-                  {formatJson(data.queryParams)}
-                </pre>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-3 font-semibold text-slate-900">Request Body</h3>
-                <pre className="max-h-72 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs">
-                  {formatJson(data.requestBody)}
-                </pre>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-3 font-semibold text-slate-900">Headers (redacted)</h3>
-                <pre className="max-h-72 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs">
-                  {formatJson(data.headers)}
-                </pre>
-              </div>
+              <JsonCodeBlock title="Query Params" value={data.queryParams} className="h-full" />
+              <JsonCodeBlock title="Request Body" value={data.requestBody} className="h-full" />
+              <JsonCodeBlock title="Headers (redacted)" value={data.headers} className="h-full" />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-3 font-semibold text-slate-900">Full Error Payload</h3>
-              <pre className="max-h-96 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs">
-                {formatJson(data)}
-              </pre>
+            <div className="mt-6">
+              <JsonCodeBlock title="Full Error Payload" value={data} />
             </div>
           </>
         )}

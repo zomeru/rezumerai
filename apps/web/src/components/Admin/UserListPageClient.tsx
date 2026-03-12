@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowLeft, Eye, RefreshCw, Search } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, Eye, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
@@ -58,26 +57,9 @@ export default function UserListPageClient(): React.JSX.Element {
     <AdminPageShell
       title="Users"
       description="Review platform users, inspect account usage, and navigate to detailed admin controls."
-      action={
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ROUTES.ADMIN}
-            className="inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900"
-          >
-            <ArrowLeft className="size-4" />
-            Back to admin
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
-          >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      }
+      backHref={ROUTES.ADMIN}
+      onRefresh={() => void refetch()}
+      isRefreshing={isFetching}
     >
       <AdminFilterGrid className="sm:grid-cols-4">
         <AdminFieldLabel label="Search users">

@@ -1,7 +1,6 @@
 "use client";
 
-import { Activity, AlertCircle, ArrowLeft, BarChart3, Clock3, RefreshCw, ShieldCheck, Users } from "lucide-react";
-import Link from "next/link";
+import { Activity, AlertCircle, BarChart3, Clock3, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAdminAnalytics } from "@/hooks/useAdmin";
@@ -40,35 +39,19 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
     <AdminPageShell
       title="Analytics"
       description="Monitor request volume, reliability, usage trends, and background job performance from a single admin dashboard."
+      backHref={ROUTES.ADMIN}
+      onRefresh={() => void refetch()}
+      isRefreshing={isFetching}
       action={
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ROUTES.ADMIN}
-            className="inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900"
-          >
-            <ArrowLeft className="size-4" />
-            Back to admin
-          </Link>
-
-          <AdminFieldLabel label="Time range">
-            <AdminSelect value={timeframeDays} onChange={(value) => setTimeframeDays(Number(value))}>
-              {RANGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </AdminSelect>
-          </AdminFieldLabel>
-
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
-          >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
+        <AdminFieldLabel label="Time range">
+          <AdminSelect value={timeframeDays} onChange={(value) => setTimeframeDays(Number(value))}>
+            {RANGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </AdminSelect>
+        </AdminFieldLabel>
       }
     >
       {error ? (

@@ -1,20 +1,80 @@
 import { cn } from "@rezumerai/utils/styles";
 import type { LucideIcon } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import JsonViewer from "./JsonViewer";
+
+const ADMIN_HEADER_NAV_CLASS =
+  "inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900";
+const ADMIN_HEADER_BUTTON_CLASS =
+  "inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50";
+const ADMIN_HEADER_ITEM_STYLE = {
+  width: "max-content",
+  flex: "none",
+} satisfies CSSProperties;
+
+export function AdminPageHeaderActions({
+  backHref,
+  backLabel = "Back to admin",
+  onRefresh,
+  isRefreshing = false,
+  action,
+}: {
+  backHref?: string;
+  backLabel?: string;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  action?: React.ReactNode;
+}): React.JSX.Element | null {
+  if (!backHref && !onRefresh && !action) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {backHref ? (
+        <Link href={backHref} className={ADMIN_HEADER_NAV_CLASS} style={ADMIN_HEADER_ITEM_STYLE}>
+          <ArrowLeft className="size-4" />
+          {backLabel}
+        </Link>
+      ) : null}
+
+      {onRefresh ? (
+        <button type="button" onClick={onRefresh} className={ADMIN_HEADER_BUTTON_CLASS} style={ADMIN_HEADER_ITEM_STYLE}>
+          <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      ) : null}
+
+      {action}
+    </div>
+  );
+}
 
 export function AdminPageShell({
   eyebrow = "Admin Console",
   title,
   description,
+  backHref,
+  backLabel,
+  onRefresh,
+  isRefreshing = false,
   action,
   children,
 }: {
   eyebrow?: string;
   title: string;
   description: string;
+  backHref?: string;
+  backLabel?: string;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
   action?: React.ReactNode;
   children: React.ReactNode;
 }): React.JSX.Element {
+  const hasHeaderActions = Boolean(backHref || onRefresh || action);
+
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="mx-auto max-w-400 px-4 py-8 sm:px-6 lg:px-8">
@@ -27,7 +87,17 @@ export function AdminPageShell({
             <p className="mt-2 max-w-3xl text-slate-600">{description}</p>
           </div>
 
-          {action ? <div className="shrink-0">{action}</div> : null}
+          {hasHeaderActions ? (
+            <div className="shrink-0">
+              <AdminPageHeaderActions
+                backHref={backHref}
+                backLabel={backLabel}
+                onRefresh={onRefresh}
+                isRefreshing={isRefreshing}
+                action={action}
+              />
+            </div>
+          ) : null}
         </div>
 
         {children}
@@ -305,17 +375,17 @@ export function JsonCodeBlock({
   title,
   value,
   className,
+  parseStringAsJson = false,
 }: {
   title: string;
-  value: string;
+  value: unknown;
   className?: string;
+  parseStringAsJson?: boolean;
 }): React.JSX.Element {
   return (
     <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-sm", className)}>
       <h3 className="mb-3 font-semibold text-slate-900">{title}</h3>
-      <pre className="max-h-96 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs leading-relaxed">
-        {value}
-      </pre>
+      <JsonViewer value={value} parseStringAsJson={parseStringAsJson} />
     </div>
   );
 }

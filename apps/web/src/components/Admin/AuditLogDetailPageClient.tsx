@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 import { useAuditLogDetail } from "@/hooks/useAdmin";
 import { AdminBadge, AdminPageShell, AdminPanel, JsonCodeBlock } from "./AdminUI";
-import { formatDateTime, formatJson } from "./format";
+import { formatDateTime } from "./format";
 
 function resolveTone(category: "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE"): "info" | "warning" | "neutral" {
   if (category === "DATABASE_CHANGE") {
@@ -94,12 +94,12 @@ export default function AuditLogDetailPageClient({ auditId }: { auditId: string 
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <JsonCodeBlock title="Request Metadata" value={formatJson(data.requestMetadata)} />
-            <JsonCodeBlock title="Before Values" value={formatJson(data.beforeValues)} />
-            <JsonCodeBlock title="After Values" value={formatJson(data.afterValues)} />
+            <JsonCodeBlock title="Request Metadata" value={data.requestMetadata} />
+            <JsonCodeBlock title="Before Values" value={data.beforeValues} />
+            <JsonCodeBlock title="After Values" value={data.afterValues} />
           </div>
 
-          <JsonCodeBlock title="Full Audit Payload" value={formatJson(data)} />
+          <JsonCodeBlock title="Full Audit Payload" value={data} />
         </div>
       )}
     </AdminPageShell>
