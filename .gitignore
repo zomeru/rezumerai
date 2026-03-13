@@ -86,7 +86,8 @@ next-env.d.ts
 .agent-files/feature-requests
 .claude/worktrees
 .claude/settings.local.json
-docs
+docs/
+code-reviews/
 
 ####################################
 # App / Package generated output
