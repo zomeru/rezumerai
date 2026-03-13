@@ -35,6 +35,7 @@ mock.module("../../../observability/audit", () => ({
 
 mock.module("@/lib/feature-flags", () => ({
   clearFeatureFlagCache: clearFeatureFlagCacheMock,
+  isFeatureEnabled: mock(async () => false),
 }));
 
 const aiServiceMock = {
