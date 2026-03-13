@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./compress";
+export * from "./cors";
 export * from "./error";
 export * from "./logger";
 export * from "./modernCsrf";

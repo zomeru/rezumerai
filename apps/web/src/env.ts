@@ -47,11 +47,11 @@ const serverSchema = clientSchema.extend({
     .min(1, "OPENROUTER_API_KEY is required")
     .describe("OpenRouter API key for AI text optimization"),
 
-  // Optional analytics/monitoring (server-side only)
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),
   ANALYTICS_ID: z.string().optional().describe("Analytics tracking ID"),
 
-  // Optional OpenTelemetry export (server-side only)
+  CORS_ALLOWED_ORIGINS: z.string().optional().describe("Comma-separated list of extra allowed CORS origins"),
+
   OTEL_EXPORTER_OTLP_ENDPOINT: z
     .string()
     .optional()

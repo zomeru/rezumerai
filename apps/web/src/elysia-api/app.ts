@@ -9,6 +9,7 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
+import { serverEnv } from "@/env";
 import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
 import { recordAnalyticsEvent } from "./observability/analytics";
@@ -16,6 +17,7 @@ import { recordSystemActivityLog } from "./observability/audit";
 import { runWithSystemContext } from "./observability/request-context";
 import {
   authPlugin,
+  createCorsConfig,
   errorPlugin,
   loggerPlugin,
   modernCsrf,
@@ -55,7 +57,15 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
       },
     }),
   )
-  .use(cors())
+  .use(
+    cors(
+      createCorsConfig({
+        NEXT_PUBLIC_SITE_URL: serverEnv?.NEXT_PUBLIC_SITE_URL ?? "",
+        BETTER_AUTH_URL: serverEnv?.BETTER_AUTH_URL ?? "",
+        CORS_ALLOWED_ORIGINS: serverEnv?.CORS_ALLOWED_ORIGINS,
+      }),
+    ),
+  )
   .use(
     !isDev
       ? rateLimit({
