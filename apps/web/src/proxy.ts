@@ -24,14 +24,14 @@ function rewriteToNotFound(request: NextRequest): NextResponse {
 /**
  * Helper to set security headers
  */
-function setSecurityHeaders(res: NextResponse, isDev: boolean) {
+function setSecurityHeaders(res: NextResponse, nonProd: boolean) {
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.headers.set("X-XSS-Protection", "1; mode=block");
 
-  if (!isDev) {
+  if (!nonProd) {
     // HSTS only in production
     res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
@@ -40,15 +40,12 @@ function setSecurityHeaders(res: NextResponse, isDev: boolean) {
 /**
  * Build dynamic Content Security Policy
  */
-function buildCSP(isDev: boolean) {
+function buildCSP(nonProd: boolean) {
   const scriptSrc = ["'self'", "blob:"];
   const connectSrc = ["'self'", "blob:"];
 
-  if (isDev) {
+  if (nonProd) {
     scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "https://vercel.live");
-  } else {
-    // Production: Tailwind inline styles only
-    scriptSrc.push("'unsafe-inline'");
   }
 
   return [
@@ -72,7 +69,7 @@ function buildCSP(isDev: boolean) {
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
-  const isDev = process.env.NODE_ENV !== "production";
+  const nonProd = process.env.NODE_ENV !== "production";
 
   // Skip API routes entirely for CSP/auth headers
   if (pathname.startsWith("/api")) {
@@ -106,8 +103,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // Response with security headers
   const response = NextResponse.next();
-  setSecurityHeaders(response, isDev);
-  response.headers.set("Content-Security-Policy", buildCSP(isDev));
+  setSecurityHeaders(response, nonProd);
+  response.headers.set("Content-Security-Policy", buildCSP(nonProd));
 
   return response;
 }
