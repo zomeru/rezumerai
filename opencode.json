@@ -1,0 +1,44 @@
+{
+  "plugin": ["opencode-agent-memory", "oh-my-opencode", "opencode-skills", "opencode-pty", "opencode-mem"],
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "serena": {
+      "type": "local",
+      "command": [
+        "/Users/zomeru/.local/bin/uvx",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide"
+      ],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "fetch": {
+      "type": "local",
+      "command": ["uvx", "mcp-server-fetch"],
+      "enabled": true
+    },
+    "mcp-compass": {
+      "type": "local",
+      "command": ["npx", "-y", "@liuyoshio/mcp-compass"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "@playwright/mcp@latest"],
+      "enabled": true
+    }
+  },
+  "permission": {
+    "*": {
+      "*": "allow"
+    }
+  }
+}
