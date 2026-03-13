@@ -67,14 +67,6 @@ function formatCompactNumber(value: number): string {
   }).format(value);
 }
 
-function truncateAxisLabel(value: string, maxLength = 26): string {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 1)}…`;
-}
-
 function getNumericValue(value: ChartTooltipEntry["value"]): number | null {
   if (typeof value === "number") {
     return value;
@@ -230,8 +222,8 @@ function TimeseriesChartPanel({
   const hasRightAxis = series.some((item) => item.axisId === "right");
 
   return (
-    <AdminPanel>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <AdminPanel className="flex h-full flex-col p-5">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-semibold text-slate-900 text-xl">{title}</h2>
           <p className="mt-1 text-slate-500 text-sm">{description}</p>
@@ -240,8 +232,8 @@ function TimeseriesChartPanel({
         <ChartLegend series={series} />
       </div>
 
-      <figure aria-label={ariaLabel} className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%" minHeight={288}>
+      <figure aria-label={ariaLabel} className="mt-2 w-full flex-1" style={{ height: "320px" }}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
           <ComposedChart
             accessibilityLayer
             data={data}
@@ -305,7 +297,7 @@ function TimeseriesChartPanel({
 function EndpointUsageChartPanel({ items }: { items: AnalyticsDashboard["endpointUsage"] }): React.JSX.Element {
   const chartData = useMemo(
     () =>
-      items.slice(0, 8).map((item) => ({
+      items.slice(0, 6).map((item) => ({
         label: `${item.method} ${item.endpoint}`,
         requestCount: item.requestCount,
         errorCount: item.errorCount,
@@ -317,6 +309,7 @@ function EndpointUsageChartPanel({ items }: { items: AnalyticsDashboard["endpoin
       })),
     [items],
   );
+  const maxRequestCount = Math.max(1, ...chartData.map((item) => item.requestCount));
 
   if (chartData.length === 0) {
     return (
@@ -328,54 +321,51 @@ function EndpointUsageChartPanel({ items }: { items: AnalyticsDashboard["endpoin
   }
 
   return (
-    <AdminPanel>
-      <div className="mb-4">
+    <AdminPanel className="flex h-full flex-col p-5">
+      <div className="mb-3">
         <h2 className="font-semibold text-slate-900 text-xl">Endpoint Usage</h2>
         <p className="mt-1 text-slate-500 text-sm">
           Hover for request, reliability, and latency details on the busiest endpoints.
         </p>
       </div>
 
-      <figure
+      <section
         aria-label="Interactive endpoint usage chart"
-        className="w-full"
-        style={{ height: `${Math.max(320, chartData.length * 56)}px` }}
+        className="mt-2 flex flex-1 flex-col justify-between gap-3"
       >
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 8, right: 16, bottom: 8, left: 24 }}
-          >
-            <CartesianGrid horizontal={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-            <XAxis
-              axisLine={false}
-              tick={{ fill: "#64748b", fontSize: 12 }}
-              tickFormatter={formatCompactNumber}
-              tickLine={false}
-              type="number"
-            />
-            <YAxis
-              axisLine={false}
-              dataKey="label"
-              tick={{ fill: "#64748b", fontSize: 12 }}
-              tickFormatter={truncateAxisLabel}
-              tickLine={false}
-              type="category"
-              width={170}
-            />
-            <Tooltip content={<EndpointUsageTooltip />} cursor={{ fill: "rgba(15, 23, 42, 0.04)" }} />
-            <Bar
-              dataKey="requestCount"
-              fill="#0f766e"
-              isAnimationActive={false}
-              name="Requests"
-              radius={[0, 6, 6, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </figure>
+        {chartData.map((item) => (
+          <div key={item.label} className="relative z-0 flex flex-col gap-2 focus-within:z-20 hover:z-20">
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 font-medium text-slate-900 text-sm leading-5">{item.label}</p>
+              <p className="shrink-0 text-slate-500 text-sm">
+                {formatNumber(item.requestCount)} req · {formatPercentage(item.errorRate)} err
+              </p>
+            </div>
+
+            <figure className="h-8 w-full" aria-label={`${item.label} endpoint usage bar`}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={32}>
+                <BarChart
+                  accessibilityLayer
+                  data={[item]}
+                  layout="vertical"
+                  margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                >
+                  <XAxis domain={[0, maxRequestCount]} hide type="number" />
+                  <YAxis dataKey="label" hide type="category" />
+                  <Tooltip content={<EndpointUsageTooltip />} cursor={{ fill: "rgba(15, 23, 42, 0.04)" }} />
+                  <Bar
+                    dataKey="requestCount"
+                    fill="#0f766e"
+                    isAnimationActive={false}
+                    name="Requests"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </figure>
+          </div>
+        ))}
+      </section>
     </AdminPanel>
   );
 }
@@ -629,7 +619,7 @@ export default function AnalyticsDashboardInteractivePageClient(): React.JSX.Ele
             )}
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="grid gap-6">
             {data.backgroundJobs.length === 0 ? (
               <AdminEmptyState
                 title="No background job data"

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { render } from "@testing-library/react";
+import { render, within } from "@testing-library/react";
 import {
   adminRefetchMock,
   resetAdminHooksModuleMock,
@@ -112,5 +112,59 @@ describe("AnalyticsDashboardInteractivePageClient", () => {
     expect(view.getByLabelText("Interactive request volume chart")).toBeTruthy();
     expect(view.getByLabelText("Interactive endpoint usage chart")).toBeTruthy();
     expect(view.getByLabelText("Interactive latency and active users chart")).toBeTruthy();
+  });
+
+  it("keeps paired analytics cards aligned while letting charts fill the available panel height", async () => {
+    const { default: AnalyticsDashboardInteractivePageClient } = await import(
+      "../AnalyticsDashboardInteractivePageClient"
+    );
+    const view = render(<AnalyticsDashboardInteractivePageClient />);
+
+    const analyticsRows = Array.from(view.container.querySelectorAll("div")).filter((element) =>
+      element.className.includes("xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"),
+    );
+
+    expect(analyticsRows.length).toBeGreaterThan(0);
+    for (const row of analyticsRows) {
+      expect(row.className).not.toContain("xl:items-start");
+    }
+
+    expect(view.getByLabelText("Interactive request volume chart").getAttribute("class")).toContain("flex-1");
+    expect(view.getByLabelText("Interactive endpoint usage chart").getAttribute("class")).toContain("flex-1");
+  });
+
+  it("renders endpoint names above each interactive usage bar instead of reserving a left axis gutter", async () => {
+    const { default: AnalyticsDashboardInteractivePageClient } = await import(
+      "../AnalyticsDashboardInteractivePageClient"
+    );
+    const view = render(<AnalyticsDashboardInteractivePageClient />);
+    const endpointUsagePanel = view.getByRole("heading", { name: "Endpoint Usage" }).closest("section");
+
+    expect(endpointUsagePanel).toBeTruthy();
+    const scopedView = within(endpointUsagePanel as HTMLElement);
+
+    expect(scopedView.getByText("GET /api/admin/analytics")).toBeTruthy();
+    expect(scopedView.getByText("1,600 req · 0.01% err")).toBeTruthy();
+    expect(scopedView.getByText("GET /api/admin/users")).toBeTruthy();
+    expect(scopedView.getByText("900 req · 0.02% err")).toBeTruthy();
+  });
+
+  it("promotes hovered endpoint rows above neighboring bars so tooltips are not covered", async () => {
+    const { default: AnalyticsDashboardInteractivePageClient } = await import(
+      "../AnalyticsDashboardInteractivePageClient"
+    );
+    const view = render(<AnalyticsDashboardInteractivePageClient />);
+    const endpointUsagePanel = view.getByRole("heading", { name: "Endpoint Usage" }).closest("section");
+
+    expect(endpointUsagePanel).toBeTruthy();
+    const firstRowChart = within(endpointUsagePanel as HTMLElement).getByLabelText(
+      "GET /api/admin/analytics endpoint usage bar",
+    );
+    const firstRow = firstRowChart.parentElement;
+
+    expect(firstRow).toBeTruthy();
+    expect(firstRow?.getAttribute("class")).toContain("relative");
+    expect(firstRow?.getAttribute("class")).toContain("hover:z-20");
+    expect(firstRow?.getAttribute("class")).toContain("focus-within:z-20");
   });
 });

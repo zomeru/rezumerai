@@ -156,7 +156,7 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
             <AdminBarChart
               title="Endpoint Usage"
               description="Most-used endpoints during the selected window."
-              items={data.endpointUsage.map((item) => ({
+              items={data.endpointUsage.slice(0, 6).map((item) => ({
                 label: `${item.method} ${item.endpoint}`,
                 value: item.requestCount,
                 secondary: `${formatNumber(item.requestCount)} req · ${formatPercentage(item.errorRate)} err`,
@@ -246,7 +246,7 @@ export default function AnalyticsDashboardPageClient(): React.JSX.Element {
             )}
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="grid gap-6">
             {data.backgroundJobs.length === 0 ? (
               <AdminEmptyState
                 title="No background job data"

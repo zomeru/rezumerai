@@ -431,12 +431,12 @@ export function AdminTrendChart({
   const width = 760;
   const height = 220;
   const paddingX = 18;
-  const paddingY = 24;
+  const paddingY = 20;
   const maxValue = Math.max(1, ...data.flatMap((row) => series.map((item) => Number(row[item.key] ?? 0))));
 
   return (
-    <AdminPanel>
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <AdminPanel className="flex h-full flex-col p-5">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-semibold text-slate-900 text-xl">{title}</h2>
           <p className="mt-1 text-slate-500 text-sm">{description}</p>
@@ -452,7 +452,12 @@ export function AdminTrendChart({
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" role="img" aria-label={title}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="mt-2 min-h-[18rem] w-full flex-1"
+        role="img"
+        aria-label={title}
+      >
         <title>{title}</title>
         {[0.25, 0.5, 0.75, 1].map((ratio) => {
           const y = height - paddingY - (height - paddingY * 2) * ratio;
@@ -502,17 +507,18 @@ export function AdminBarChart({
   description: string;
   items: Array<{ label: string; value: number; secondary?: string }>;
 }): React.JSX.Element {
-  const maxValue = Math.max(1, ...items.map((item) => item.value));
+  const visibleItems = items.slice(0, 6);
+  const maxValue = Math.max(1, ...visibleItems.map((item) => item.value));
 
   return (
-    <AdminPanel>
+    <AdminPanel className="p-5">
       <h2 className="font-semibold text-slate-900 text-xl">{title}</h2>
       <p className="mt-1 text-slate-500 text-sm">{description}</p>
 
-      <div className="mt-5 space-y-4">
-        {items.map((item) => (
+      <div className="mt-4 space-y-3">
+        {visibleItems.map((item) => (
           <div key={item.label}>
-            <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
               <p className="truncate font-medium text-slate-800">{item.label}</p>
               <p className="shrink-0 text-slate-500">{item.secondary ?? item.value.toLocaleString()}</p>
             </div>
