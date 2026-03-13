@@ -1,7 +1,4 @@
 import type {
-  AdminAiModel,
-  AdminAiModelCatalog,
-  AdminAiModelMutationInput,
   AdminUserDetail,
   AdminUserListResponse,
   AdminUserPasswordUpdateInput,
@@ -10,31 +7,27 @@ import type {
   AuditLogCategory,
   AuditLogDetail,
   AuditLogListResponse,
-  DeleteAdminAiModelResponse,
+  FeatureFlagEntry,
+  FeatureFlagListResponse,
+  SaveFeatureFlagInput,
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
   UpdateSystemConfigurationInput,
 } from "@rezumerai/types";
 import {
-  AdminAiModelCatalogSchema,
-  AdminAiModelSchema,
   AdminUserDetailSchema,
   AdminUserListResponseSchema,
   AnalyticsDashboardSchema,
   AuditLogDetailSchema,
   AuditLogListResponseSchema,
-  DeleteAdminAiModelResponseSchema,
+  FeatureFlagEntrySchema,
+  FeatureFlagListResponseSchema,
   SystemConfigurationEntrySchema,
   SystemConfigurationListResponseSchema,
 } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithoutDateParsing } from "@/lib/api";
-
-const ADMIN_USERS_QUERY_KEY = ["admin", "users"] as const;
-const ADMIN_SYSTEM_CONFIG_QUERY_KEY = ["admin", "system-config"] as const;
-const ADMIN_AI_MODELS_QUERY_KEY = ["admin", "ai-models"] as const;
-const ADMIN_AUDIT_LOGS_QUERY_KEY = ["admin", "audit-logs"] as const;
-const ADMIN_ANALYTICS_QUERY_KEY = ["admin", "analytics"] as const;
+import { queryKeys } from "@/lib/query-keys";
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -62,7 +55,7 @@ export function useAdminUsers(
   options?: Omit<QueryOptions<AdminUserListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_USERS_QUERY_KEY, query.page, query.pageSize, query.search ?? "", query.role ?? "all"],
+    queryKey: queryKeys.admin.users(query),
     queryFn: async (): Promise<AdminUserListResponse> => {
       const requestQuery: {
         page: string;
@@ -103,7 +96,7 @@ export function useAdminUserDetail(
   options?: Omit<QueryOptions<AdminUserDetail>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", userId],
+    queryKey: queryKeys.admin.userDetail(userId),
     enabled: userId.length > 0,
     queryFn: async (): Promise<AdminUserDetail> => {
       const { data, error } = await apiWithoutDateParsing.admin.users({ id: userId }).get();
@@ -145,11 +138,10 @@ export function useUpdateAdminUserRole() {
 
       return AdminUserDetailSchema.parse(data);
     },
-    onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", variables.userId] });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+    onSuccess: async (data, variables) => {
+      queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
     },
   });
 }
@@ -177,11 +169,9 @@ export function useUpdateAdminUserPassword() {
 
       return AdminUserDetailSchema.parse(data);
     },
-    onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: [...ADMIN_USERS_QUERY_KEY, "detail", variables.userId] });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+    onSuccess: async (data, variables) => {
+      queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
     },
   });
 }
@@ -190,7 +180,7 @@ export function useSystemConfigurations(
   options?: Omit<QueryOptions<SystemConfigurationListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY,
+    queryKey: queryKeys.admin.systemConfig(),
     queryFn: async (): Promise<SystemConfigurationListResponse> => {
       const { data, error } = await apiWithoutDateParsing.admin["system-config"].get();
 
@@ -231,105 +221,81 @@ export function useUpdateSystemConfiguration() {
 
       return SystemConfigurationEntrySchema.parse(data);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_SYSTEM_CONFIG_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+    onSuccess: async (updatedConfiguration) => {
+      queryClient.setQueryData(
+        queryKeys.admin.systemConfig(),
+        (current: SystemConfigurationListResponse | undefined): SystemConfigurationListResponse | undefined => {
+          if (!current) {
+            return current;
+          }
+
+          const nextItems = current.items.some((item) => item.name === updatedConfiguration.name)
+            ? current.items.map((item) => (item.name === updatedConfiguration.name ? updatedConfiguration : item))
+            : [...current.items, updatedConfiguration].sort((left, right) => left.name.localeCompare(right.name));
+
+          return {
+            ...current,
+            items: nextItems,
+          };
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
     },
   });
 }
 
-export function useAdminAiModels(options?: Omit<QueryOptions<AdminAiModelCatalog>, "queryKey" | "queryFn">) {
+export function useFeatureFlags(options?: Omit<QueryOptions<FeatureFlagListResponse>, "queryKey" | "queryFn">) {
   return useQuery({
-    queryKey: ADMIN_AI_MODELS_QUERY_KEY,
-    queryFn: async (): Promise<AdminAiModelCatalog> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].get();
+    queryKey: queryKeys.admin.features(),
+    queryFn: async (): Promise<FeatureFlagListResponse> => {
+      const { data, error } = await apiWithoutDateParsing.admin.features.get();
 
       if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to load AI models."));
+        throw new Error(getApiErrorMessage(error.value, "Failed to load feature flags."));
       }
 
       if (!data) {
-        throw new Error("Invalid AI models response.");
+        throw new Error("Invalid feature flags response.");
       }
 
-      return AdminAiModelCatalogSchema.parse(data);
+      return FeatureFlagListResponseSchema.parse(data);
     },
     ...options,
   });
 }
 
-export function useCreateAdminAiModel() {
+export function useSaveFeatureFlag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: AdminAiModelMutationInput): Promise<AdminAiModel> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"].post(input);
+    mutationFn: async ({ name, input }: { name: string; input: SaveFeatureFlagInput }): Promise<FeatureFlagEntry> => {
+      const { data, error } = await apiWithoutDateParsing.admin.features({ name }).put(input);
 
       if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to create AI model."));
+        throw new Error(getApiErrorMessage(error.value, "Failed to save feature flag."));
       }
 
       if (!data) {
-        throw new Error("Invalid AI model create response.");
+        throw new Error("Invalid feature flag response.");
       }
 
-      return AdminAiModelSchema.parse(data);
+      return FeatureFlagEntrySchema.parse(data);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
-    },
-  });
-}
+    onSuccess: async (savedFeatureFlag) => {
+      queryClient.setQueryData(
+        queryKeys.admin.features(),
+        (current: FeatureFlagListResponse | undefined): FeatureFlagListResponse => {
+          const currentItems = current?.items ?? [];
+          const nextItems = currentItems.some((item) => item.name === savedFeatureFlag.name)
+            ? currentItems.map((item) => (item.name === savedFeatureFlag.name ? savedFeatureFlag : item))
+            : [...currentItems, savedFeatureFlag];
 
-export function useUpdateAdminAiModel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: AdminAiModelMutationInput }): Promise<AdminAiModel> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).patch(input);
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to update AI model."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI model update response.");
-      }
-
-      return AdminAiModelSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
-    },
-  });
-}
-
-export function useDeleteAdminAiModel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string): Promise<DeleteAdminAiModelResponse> => {
-      const { data, error } = await apiWithoutDateParsing.admin["ai-models"]({ id }).delete();
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, "Failed to delete AI model."));
-      }
-
-      if (!data) {
-        throw new Error("Invalid AI model delete response.");
-      }
-
-      return DeleteAdminAiModelResponseSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AI_MODELS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_AUDIT_LOGS_QUERY_KEY });
-      await queryClient.invalidateQueries({ queryKey: ADMIN_ANALYTICS_QUERY_KEY });
+          return {
+            items: nextItems.sort((left, right) => left.name.localeCompare(right.name)),
+          };
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
     },
   });
 }
@@ -344,7 +310,7 @@ export function useAuditLogs(
   options?: Omit<QueryOptions<AuditLogListResponse>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_AUDIT_LOGS_QUERY_KEY, query.page, query.pageSize, query.search ?? "", query.category ?? "all"],
+    queryKey: queryKeys.admin.auditLogs(query),
     queryFn: async (): Promise<AuditLogListResponse> => {
       const requestQuery: {
         page: string;
@@ -385,7 +351,7 @@ export function useAuditLogDetail(
   options?: Omit<QueryOptions<AuditLogDetail>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_AUDIT_LOGS_QUERY_KEY, "detail", auditId],
+    queryKey: queryKeys.admin.auditLogDetail(auditId),
     enabled: auditId.length > 0,
     queryFn: async (): Promise<AuditLogDetail> => {
       const { data, error } = await apiWithoutDateParsing.admin["audit-logs"]({ id: auditId }).get();
@@ -409,7 +375,7 @@ export function useAdminAnalytics(
   options?: Omit<QueryOptions<AnalyticsDashboard>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: [...ADMIN_ANALYTICS_QUERY_KEY, timeframeDays],
+    queryKey: queryKeys.admin.analytics(timeframeDays),
     queryFn: async (): Promise<AnalyticsDashboard> => {
       const { data, error } = await apiWithoutDateParsing.admin.analytics.get({
         query: {

@@ -1,6 +1,8 @@
 import { prisma } from "@rezumerai/database";
 import { recordDatabaseAuditLog } from "./audit";
+import { getAuditSnapshotSelect, shapeAuditSnapshot } from "./audit-snapshots";
 import { toSerializableValue } from "./redaction";
+import { getRequestContext } from "./request-context";
 
 const AUDITABLE_OPERATIONS = new Set([
   "create",
@@ -13,6 +15,8 @@ const AUDITABLE_OPERATIONS = new Set([
 ]);
 
 const INTERNAL_MODELS = new Set(["AuditLog", "AnalyticsEvent", "Session", "Account", "Verification", "SampleTable"]);
+const SLOW_QUERY_THRESHOLD_MS = 100;
+const MAX_SLOW_QUERY_SAMPLES = 5;
 
 function toDelegateKey(model: string): string {
   return `${model.slice(0, 1).toLowerCase()}${model.slice(1)}`;
@@ -38,7 +42,13 @@ async function readBeforeSnapshot(model: string, operation: string, args: unknow
 
   if ((operation === "update" || operation === "delete" || operation === "upsert") && "where" in args) {
     try {
-      return await delegate.findUnique?.({ where: (args as { where: unknown }).where });
+      const select = getAuditSnapshotSelect(model);
+      const beforeSnapshot = await delegate.findUnique?.({
+        where: (args as { where: unknown }).where,
+        ...(select ? { select } : {}),
+      });
+
+      return shapeAuditSnapshot(model, beforeSnapshot);
     } catch {
       return { where: toSerializableValue((args as { where: unknown }).where) };
     }
@@ -90,7 +100,7 @@ function resolveAction(operation: string, beforeSnapshot: unknown): string {
   }
 }
 
-function resolveAfterSnapshot(operation: string, args: unknown, result: unknown): unknown {
+function resolveAfterSnapshot(operation: string, model: string | null, args: unknown, result: unknown): unknown {
   if (operation === "createMany" || operation === "updateMany" || operation === "deleteMany") {
     if (result && typeof result === "object" && "count" in result) {
       return {
@@ -104,7 +114,37 @@ function resolveAfterSnapshot(operation: string, args: unknown, result: unknown)
     };
   }
 
-  return result;
+  return model ? shapeAuditSnapshot(model, result) : result;
+}
+
+function recordDatabaseQueryMetrics(model: string | null, operation: string, durationMs: number): void {
+  const context = getRequestContext();
+
+  if (!context) {
+    return;
+  }
+
+  const queryCount = typeof context.metadata.dbQueryCount === "number" ? context.metadata.dbQueryCount + 1 : 1;
+  const totalDurationMs =
+    typeof context.metadata.dbQueryDurationMs === "number"
+      ? context.metadata.dbQueryDurationMs + durationMs
+      : durationMs;
+  const slowQueries = Array.isArray(context.metadata.slowDbQueries) ? [...context.metadata.slowDbQueries] : [];
+
+  if (durationMs >= SLOW_QUERY_THRESHOLD_MS) {
+    slowQueries.push({
+      durationMs: Math.round(durationMs),
+      model: model ?? "UNKNOWN",
+      operation,
+    });
+  }
+
+  context.metadata = {
+    ...context.metadata,
+    dbQueryCount: queryCount,
+    dbQueryDurationMs: Math.round(totalDurationMs * 100) / 100,
+    ...(slowQueries.length > 0 ? { slowDbQueries: slowQueries.slice(-MAX_SLOW_QUERY_SAMPLES) } : {}),
+  };
 }
 
 export const observedPrisma = prisma.$extends({
@@ -116,7 +156,14 @@ export const observedPrisma = prisma.$extends({
         const shouldAudit =
           normalizedModel && AUDITABLE_OPERATIONS.has(operation) && !INTERNAL_MODELS.has(normalizedModel);
         const beforeSnapshot = shouldAudit ? await readBeforeSnapshot(normalizedModel, operation, args) : null;
-        const result = await query(args);
+        const startedAt = performance.now();
+        let result: unknown;
+
+        try {
+          result = await query(args);
+        } finally {
+          recordDatabaseQueryMetrics(normalizedModel, operation, performance.now() - startedAt);
+        }
 
         if (!shouldAudit || !normalizedModel) {
           return result;
@@ -128,7 +175,7 @@ export const observedPrisma = prisma.$extends({
           resourceType: normalizedModel,
           resourceId: resolveResourceId(result, args),
           beforeValues: beforeSnapshot,
-          afterValues: resolveAfterSnapshot(operation, args, result),
+          afterValues: resolveAfterSnapshot(operation, normalizedModel, args, result),
           metadata: {
             model: normalizedModel,
             operation,

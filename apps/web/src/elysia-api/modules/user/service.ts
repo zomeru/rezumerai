@@ -47,6 +47,27 @@ export abstract class UserService {
     return db.user.findUnique({ where: { email } });
   }
 
+  static async create(
+    db: DatabaseClient,
+    data: Pick<User, "name" | "email" | "role" | "image" | "isAnonymous" | "emailVerified">,
+  ): Promise<User> {
+    const now = new Date();
+
+    return db.user.create({
+      data: {
+        id: globalThis.crypto.randomUUID(),
+        name: data.name,
+        email: data.email,
+        emailVerified: data.emailVerified,
+        role: data.role,
+        image: data.image,
+        isAnonymous: data.isAnonymous,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+  }
+
   /**
    * Updates a user's information.
    *
@@ -62,6 +83,17 @@ export abstract class UserService {
     });
     if (!exists) return null;
     return db.user.update({ where: { id }, data });
+  }
+
+  static async remove(db: DatabaseClient, id: string): Promise<User | null> {
+    const exists = await db.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!exists) return null;
+
+    return db.user.delete({ where: { id } });
   }
 
   static async getAccountSettings(
@@ -118,16 +150,4 @@ export abstract class UserService {
       },
     };
   }
-
-  /**
-   * Creates a new user with the provided input data.
-   * NOTE: User creation is handled by Better Auth — implement only if needed for admin features.
-   *
-   * @param db - Prisma client instance
-   * @param input - Data for the new user (name and email)
-   * @returns The created user record
-   */
-  // static async create(db: PrismaClient, input: CreateUserInput): Promise<User> {
-  //   return db.user.create({ data: input });
-  // }
 }

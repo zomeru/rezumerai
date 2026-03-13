@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResumeWithRelations } from "@rezumerai/types";
+import type { ResumeListItem } from "@rezumerai/types";
 import { DownloadIcon, ExternalLink, FilePenLineIcon, Loader2, PencilIcon, TrashIcon } from "lucide-react";
 import { memo, useState } from "react";
 
@@ -15,7 +15,7 @@ import { memo, useState } from "react";
  * @property onDownload - Optional async callback to download the resume as PDF
  */
 export interface ResumeCardProps {
-  resume: ResumeWithRelations;
+  resume: ResumeListItem;
   color: string;
   onOpen: () => void;
   onEdit: () => void;

@@ -1,30 +1,3 @@
-model AiProvider {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  models    AiModel[]
-
-  @@map("ai_provider")
-}
-
-model AiModel {
-  id              String     @id @default(cuid())
-  name            String
-  modelId         String
-  providerId      String
-  isActive        Boolean    @default(true)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  provider        AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  selectedByUsers User[]     @relation("UserSelectedAiModel")
-
-  @@unique([providerId, modelId])
-  @@index([providerId])
-  @@index([isActive])
-  @@map("ai_model")
-}
-
 model SystemConfiguration {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -84,12 +57,14 @@ model AiAssistantConversation {
   lastUserMessageAt DateTime?
   createdAt         DateTime                           @default(now())
   updatedAt         DateTime                           @updatedAt
+  threadId          String
   user              User                               @relation(fields: [userId], references: [id], onDelete: Cascade)
   embeddings        AiAssistantConversationEmbedding[]
   messages          AiAssistantConversationMessage[]
 
-  @@unique([userId, scope])
-  @@index([userId, updatedAt])
+  @@unique([userId, scope, threadId])
+  @@index([userId, scope, threadId, updatedAt])
+  @@index([threadId, updatedAt])
   @@index([scope, updatedAt])
   @@map("ai_assistant_conversation")
 }

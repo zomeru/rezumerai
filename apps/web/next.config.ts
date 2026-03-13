@@ -6,7 +6,7 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
 
-const isBotIdEnabled = process.env.BOTID_ENABLED === "true";
+const isBotIdEnabled = process.env.NODE_ENV !== "development";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

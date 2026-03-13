@@ -1,16 +1,18 @@
-import type { ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
+import type { ResumeListItem, ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DUMMY_RESUME_DATA_ID } from "@/constants/dummy";
+import type { ResumeCreateInput } from "@/elysia-api/modules/resume/types";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 
-export type CreateResumeInput = Parameters<typeof api.resumes.post>[0];
+export type CreateResumeInput = ResumeCreateInput;
 
 export function useResumeById(
   id: string,
   options?: Omit<QueryOptions<ResumeWithRelations>, "queryKey" | "queryFn" | "enabled">,
 ) {
   return useQuery({
-    queryKey: ["resumesById", id],
+    queryKey: queryKeys.resumes.detail(id),
     queryFn: async () => {
       const { data, error } = await api.resumes({ id }).get();
 
@@ -22,7 +24,7 @@ export function useResumeById(
         throw new Error(errorMessage);
       }
 
-      return data;
+      return data as ResumeWithRelations;
     },
     enabled: !!id && id !== DUMMY_RESUME_DATA_ID,
     ...options,
@@ -31,7 +33,7 @@ export function useResumeById(
 
 export function useResumeList(search?: string) {
   return useQuery({
-    queryKey: ["resumes", { search }],
+    queryKey: queryKeys.resumes.list(search),
     queryFn: async () => {
       const queryParams = search ? { search } : {};
       const { data, error } = await api.resumes.get({
@@ -46,7 +48,7 @@ export function useResumeList(search?: string) {
         throw new Error(errorMessage);
       }
 
-      return data;
+      return (data ?? []) as ResumeListItem[];
     },
   });
 }
@@ -62,7 +64,8 @@ export function useCreateResume() {
         const errorMessage =
           typeof error.value === "string"
             ? error.value
-            : error.value.message || "An unknown error occurred while creating the resume.";
+            : ("message" in error.value ? error.value.message : undefined) ||
+              "An unknown error occurred while creating the resume.";
         throw new Error(errorMessage);
       }
 
@@ -70,10 +73,10 @@ export function useCreateResume() {
         throw new Error("Failed to create resume: Invalid response");
       }
 
-      return data.data;
+      return data.data as ResumeWithRelations;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.resumes.all() });
     },
   });
 }
@@ -83,7 +86,7 @@ export function useUpdateResume() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: ResumeWithRelationsInputUpdate }) => {
-      const { data, error } = await api.resumes({ id }).patch(updates);
+      const { data, error } = await api.resumes({ id }).patch(updates as never);
 
       if (error) {
         const errorMessage =
@@ -95,12 +98,12 @@ export function useUpdateResume() {
         throw new Error("Failed to update resume: Invalid response");
       }
 
-      return data;
+      return data as ResumeWithRelations;
     },
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.resumes.all() });
       void queryClient.invalidateQueries({
-        queryKey: ["resumesById", variables.id],
+        queryKey: queryKeys.resumes.detail(variables.id),
       });
     },
   });
@@ -124,10 +127,7 @@ export function useDeleteResume() {
       return true;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
-      void queryClient.invalidateQueries({
-        queryKey: ["resumesById"],
-      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.resumes.all() });
     },
   });
 }

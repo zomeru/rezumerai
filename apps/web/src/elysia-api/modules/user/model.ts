@@ -1,4 +1,4 @@
-import { UserPlain, UserPlainInputUpdate } from "@rezumerai/database/generated/prismabox/User";
+import { UserPlain, UserPlainInputCreate, UserPlainInputUpdate } from "@rezumerai/database/generated/prismabox/User";
 import Elysia, { t } from "elysia";
 
 const UserAccountProvider = t.Object({
@@ -41,16 +41,24 @@ const UserAccountSettings = t.Object({
   credits: UserCredits,
 });
 
-const UserAccountUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "image"]);
+export type UserAccountUpdateInput = {
+  name?: string;
+  email?: string;
+  image?: string | null;
+};
 
-export type UserAccountUpdateInput = typeof UserAccountUpdate.static;
+const UserAccountUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "image"]);
+const UserAdminCreate = t.Pick(UserPlainInputCreate, ["name", "email", "role", "image", "isAnonymous"]);
+const UserAdminUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "role", "image", "isAnonymous"]);
 
 export const UserModel = new Elysia().model({
-  responseList: t.Array(UserPlain),
-  responseById: UserPlain,
-  responseAccount: UserAccountSettings,
-  paramById: t.Object({ id: t.String({ minLength: 1 }) }),
-  paramByEmail: t.Object({ email: t.String({ format: "email" }) }),
-  inputUpdate: UserAccountUpdate,
-  error: t.String(),
+  "user.ResponseList": t.Array(UserPlain),
+  "user.ResponseById": UserPlain,
+  "user.ResponseAccount": UserAccountSettings,
+  "user.ParamById": t.Object({ id: t.String({ minLength: 1 }) }),
+  "user.ParamByEmail": t.Object({ email: t.String({ format: "email" }) }),
+  "user.InputUpdate": UserAccountUpdate,
+  "user.AdminCreateInput": UserAdminCreate,
+  "user.AdminUpdateInput": UserAdminUpdate,
+  "user.Error": t.String(),
 } as const);

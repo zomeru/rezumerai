@@ -7,7 +7,7 @@ model User {
   createdAt                       DateTime
   updatedAt                       DateTime
   role                            UserRole                           @default(USER)
-  selectedAiModelId               String?
+  selectedAiModel                 String                             @default("openrouter/free") @map("selected_ai_model")
   lastPasswordChangeAt            DateTime?
   banned                          Boolean                            @default(false)
   banReason                       String?
@@ -23,8 +23,8 @@ model User {
   errorLogs                       ErrorLog[]                         @relation("ErrorLogUser")
   resumes                         Resume[]
   sessions                        Session[]
-  selectedAiModel                 AiModel?                           @relation("UserSelectedAiModel", fields: [selectedAiModelId], references: [id])
 
+  @@index([role, createdAt])
   @@map("user")
 }
 

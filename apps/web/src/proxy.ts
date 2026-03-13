@@ -1,15 +1,20 @@
-import { prisma } from "@rezumerai/database";
-import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ROUTES } from "@/constants/routing";
-import { auth } from "@/lib/auth";
+import { canAccessAuthPage, canAccessSessionRoute } from "@/lib/auth-route-access";
+import { resolveRequestSessionIdentity } from "@/lib/request-auth";
 
 /**
- * Protected routes that require authentication.
- * Users without a session will be redirected to the sign-in page.
+ * Routes that require a session identity.
+ * Anonymous and registered sessions are both allowed here.
  */
-const PROTECTED_ROUTES: string[] = [ROUTES.WORKSPACE, ROUTES.BUILDER, ROUTES.PREVIEW, ROUTES.SETTINGS, ROUTES.TESTSITE];
+const PROTECTED_ROUTES: string[] = [
+  ROUTES.WORKSPACE,
+  ROUTES.BUILDER,
+  ROUTES.PREVIEW,
+  ROUTES.SETTINGS,
+  ROUTES.TEXT_OPTIMIZER,
+];
 
 function rewriteToNotFound(request: NextRequest): NextResponse {
   const notFoundUrl = new URL("/_not-found", request.url);
@@ -19,14 +24,14 @@ function rewriteToNotFound(request: NextRequest): NextResponse {
 /**
  * Helper to set security headers
  */
-function setSecurityHeaders(res: NextResponse, isDev: boolean) {
+function setSecurityHeaders(res: NextResponse, nonProd: boolean) {
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.headers.set("X-XSS-Protection", "1; mode=block");
 
-  if (!isDev) {
+  if (!nonProd) {
     // HSTS only in production
     res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
@@ -35,15 +40,12 @@ function setSecurityHeaders(res: NextResponse, isDev: boolean) {
 /**
  * Build dynamic Content Security Policy
  */
-function buildCSP(isDev: boolean) {
-  const scriptSrc = ["'self'", "blob:"];
+function buildCSP(nonProd: boolean, nonce: string) {
+  const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", "blob:"];
   const connectSrc = ["'self'", "blob:"];
 
-  if (isDev) {
-    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "https://vercel.live");
-  } else {
-    // Production: Tailwind inline styles only
-    scriptSrc.push("'unsafe-inline'");
+  if (nonProd) {
+    scriptSrc.push("'unsafe-eval'", "https://vercel.live");
   }
 
   return [
@@ -67,7 +69,9 @@ function buildCSP(isDev: boolean) {
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
-  const isDev = process.env.NODE_ENV !== "production";
+  const nonProd = process.env.NODE_ENV !== "production";
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildCSP(nonProd, nonce);
 
   // Skip API routes entirely for CSP/auth headers
   if (pathname.startsWith("/api")) {
@@ -75,44 +79,44 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Auth session
-  const session = await auth.api.getSession({ headers: await headers() });
+  const authContext = await resolveRequestSessionIdentity(request.headers);
+  const { role, session, userId } = authContext;
   const isAdminRoute = pathname.startsWith(ROUTES.ADMIN);
 
   if (isAdminRoute) {
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      return rewriteToNotFound(request);
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user || user.role !== "ADMIN") {
+    if (!userId || role !== "ADMIN") {
       return rewriteToNotFound(request);
     }
   }
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !session) {
+  // Redirect users without any session identity from session-gated routes.
+  if (isProtectedRoute && !canAccessSessionRoute(session)) {
     const signInUrl = new URL(ROUTES.SIGNIN, request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (session && (pathname === ROUTES.SIGNIN || pathname === ROUTES.SIGNUP)) {
+  // Only redirect registered users away from auth pages.
+  if (!canAccessAuthPage(session) && (pathname === ROUTES.SIGNIN || pathname === ROUTES.SIGNUP)) {
     return NextResponse.redirect(new URL(ROUTES.WORKSPACE, request.url));
   }
 
   // Response with security headers
-  const response = NextResponse.next();
-  setSecurityHeaders(response, isDev);
-  response.headers.set("Content-Security-Policy", buildCSP(isDev));
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  setSecurityHeaders(response, nonProd);
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("x-nonce", nonce);
 
   return response;
 }

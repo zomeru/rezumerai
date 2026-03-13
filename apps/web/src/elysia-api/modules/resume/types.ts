@@ -1,13 +1,13 @@
 import type { Prisma } from "@rezumerai/database";
-import type { ResumeWithRelations } from "@rezumerai/types";
-import type { CustomResumeWithRelationsInputCreate, CustomResumeWithRelationsInputUpdate } from "./model";
+import type { ResumeListItem, ResumeWithRelations, ResumeWithRelationsInputUpdate } from "@rezumerai/types";
 
 export type ResumeSearchInput = {
   search?: string;
 };
 
-export type ResumeCreateInput = typeof CustomResumeWithRelationsInputCreate.static;
-export type ResumeUpdateInput = typeof CustomResumeWithRelationsInputUpdate.static;
+export type ResumeCreateInput = import("./model").ResumeCreateInput;
+export type ResumeUpdateInput = ResumeWithRelationsInputUpdate;
 export type ResumeRecord = ResumeWithRelations;
+export type ResumeListRecord = ResumeListItem;
 
 export type SyncPromiseReturn = Prisma.PrismaPromise<unknown>;

@@ -1,0 +1,49 @@
+import { describe, expect, it } from "bun:test";
+import { composeAiSystemPrompt } from "../prompts/composer";
+
+describe("composeAiSystemPrompt", () => {
+  it("builds assistant prompts with scope, tools, rag, and memory blocks", () => {
+    const prompt = composeAiSystemPrompt({
+      baseSystemPrompt: "Base assistant prompt.",
+      currentPath: "/workspace",
+      memoryContext: "Recent memory block",
+      ragContext: "Knowledge block",
+      scope: "USER",
+      toolNames: ["getPublicFaq", "listMyRecentResumes"],
+      workflow: {
+        feature: "assistant",
+        action: "chat",
+      },
+    });
+
+    expect(prompt).toContain("Base assistant prompt.");
+    expect(prompt).toContain("Feature=assistant");
+    expect(prompt).toContain("Action=chat");
+    expect(prompt).toContain("Scope=USER");
+    expect(prompt).toContain("CurrentPage=/workspace");
+    expect(prompt).toContain("getPublicFaq");
+    expect(prompt).toContain("listMyRecentResumes");
+    expect(prompt).toContain("Knowledge block");
+    expect(prompt).toContain("Recent memory block");
+    expect(prompt).toContain("Use prior messages from the same thread");
+    expect(prompt).toContain("Never expose raw JSON or tool payloads");
+  });
+
+  it("builds copilot prompts with flow-specific output rules", () => {
+    const prompt = composeAiSystemPrompt({
+      baseSystemPrompt: "Base copilot prompt.",
+      scope: "USER",
+      toolNames: ["getResume", "matchResumeToJob"],
+      workflow: {
+        feature: "resume-copilot",
+        action: "review",
+      },
+    });
+
+    expect(prompt).toContain("Base copilot prompt.");
+    expect(prompt).toContain("Feature=resume-copilot");
+    expect(prompt).toContain("Action=review");
+    expect(prompt).toContain("matchResumeToJob");
+    expect(prompt).toContain("Return only the requested structured result");
+  });
+});

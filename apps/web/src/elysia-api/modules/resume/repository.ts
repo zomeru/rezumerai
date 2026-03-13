@@ -1,19 +1,17 @@
 import type { Prisma, PrismaClient } from "@rezumerai/database";
-import type { ResumeWithRelations } from "@rezumerai/types";
-import { t } from "elysia";
-import { CustomResumeWithRelationsInputUpdate } from "./model";
-import type { ResumeCreateInput, ResumeSearchInput, ResumeUpdateInput, SyncPromiseReturn } from "./types";
+import type { ResumeListItem, ResumeWithRelations } from "@rezumerai/types";
+import type {
+  ResumeCreateInput,
+  ResumeListRecord,
+  ResumeSearchInput,
+  ResumeUpdateInput,
+  SyncPromiseReturn,
+} from "./types";
 
-const SyncEducation = t.Pick(CustomResumeWithRelationsInputUpdate, ["education"]);
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
-const SyncExperience = t.Pick(CustomResumeWithRelationsInputUpdate, ["experience"]);
-const SyncProject = t.Pick(CustomResumeWithRelationsInputUpdate, ["project"]);
 
-type SyncItemsType =
-  | typeof SyncEducation.static.education
-  | typeof SyncExperience.static.experience
-  | typeof SyncProject.static.project;
+type SyncItemsType = ResumeUpdateInput["education"] | ResumeUpdateInput["experience"] | ResumeUpdateInput["project"];
 
 type SyncableRelation = {
   findMany(args: { where: { resumeId: string }; select: { id: true } }): Promise<{ id: string }[]>;
@@ -24,7 +22,7 @@ type SyncableRelation = {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: The repository intentionally groups stateless Prisma helpers for the resume module.
 export abstract class ResumeRepository {
-  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeWithRelations[]> {
+  static async search(db: DatabaseClient, userId: string, query: ResumeSearchInput): Promise<ResumeListItem[]> {
     const where: Prisma.ResumeWhereInput = {
       userId,
     };
@@ -35,14 +33,13 @@ export abstract class ResumeRepository {
 
     return db.resume.findMany({
       where,
-      include: {
-        education: true,
-        experience: true,
-        project: true,
-        personalInfo: true,
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
       },
       orderBy: { updatedAt: "desc" },
-    });
+    }) as Promise<ResumeListRecord[]>;
   }
 
   static async findById(db: DatabaseClient, userId: string, resumeId: string): Promise<ResumeWithRelations | null> {

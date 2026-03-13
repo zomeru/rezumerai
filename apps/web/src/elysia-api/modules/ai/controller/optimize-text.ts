@@ -1,5 +1,6 @@
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "../constants";
+import { resolveAiSystemPrompt } from "../prompts/resolver";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "../service";
 import type { OptimizationContext } from "../types";
 import { ensureVerifiedAiUser, routeResult, trackAiHandledError } from "./helpers";
@@ -48,7 +49,7 @@ export async function handleOptimizeTextRequest(options: {
     return verificationResult;
   }
 
-  const input = options.body.text.trim();
+  const input = (options.body.prompt ?? options.body.text ?? "").trim();
   const modelId = options.body.modelId?.trim();
   const trackedRequestContext = {
     request: options.request,
@@ -115,13 +116,19 @@ export async function handleOptimizeTextRequest(options: {
 
   const startedAt = Date.now();
   const usageMetrics = AiService.emptyUsageMetrics();
-  let stream: AsyncIterable<unknown>;
+  let stream: Awaited<ReturnType<typeof AiService.createOptimizeStream>>;
 
   try {
     stream = await AiService.createOptimizeStream(
       input,
-      optimizationContext.model.modelId,
-      optimizationContext.config.OPTIMIZE_SYSTEM_PROMPT,
+      optimizationContext.model.id,
+      resolveAiSystemPrompt({
+        config: optimizationContext.config,
+        workflow: {
+          feature: "text-optimizer",
+          action: "optimize",
+        },
+      }),
     );
   } catch (error: unknown) {
     const normalizedError = AiService.normalizeOptimizationError(error);
@@ -137,15 +144,15 @@ export async function handleOptimizeTextRequest(options: {
         responseStatus: 422,
         phase: "create-optimize-stream",
         reason: responseCode,
-        modelId: optimizationContext.model.modelId,
-        provider: optimizationContext.model.providerName,
+        modelId: optimizationContext.model.id,
+        provider: "openrouter",
       },
     });
 
     await persistOptimizationSafely(options.db, {
       userId: options.user.id,
-      provider: optimizationContext.model.providerName,
-      model: optimizationContext.model.modelId,
+      provider: "openrouter",
+      model: optimizationContext.model.id,
       promptVersion: optimizationContext.config.PROMPT_VERSION,
       resumeId: options.body.resumeId?.trim() || null,
       inputText: input,
@@ -200,8 +207,8 @@ export async function handleOptimizeTextRequest(options: {
           metadata: {
             phase: "stream-optimize-text",
             reason: "AI_STREAM_RUNTIME_ERROR",
-            modelId: optimizationContext.model.modelId,
-            provider: optimizationContext.model.providerName,
+            modelId: optimizationContext.model.id,
+            provider: "openrouter",
           },
         });
         return;
@@ -213,8 +220,8 @@ export async function handleOptimizeTextRequest(options: {
 
         await persistOptimizationSafely(options.db, {
           userId: options.user.id,
-          provider: optimizationContext.model.providerName,
-          model: optimizationContext.model.modelId,
+          provider: "openrouter",
+          model: optimizationContext.model.id,
           promptVersion: optimizationContext.config.PROMPT_VERSION,
           resumeId: options.body.resumeId?.trim() || null,
           inputText: input,

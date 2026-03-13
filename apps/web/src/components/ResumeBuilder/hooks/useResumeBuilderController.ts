@@ -23,9 +23,7 @@ export function useResumeBuilderController({
   resumeId,
   resumePreviewRef,
 }: UseResumeBuilderControllerOptions) {
-  const { data: freshResume } = useResumeById(resumeId, {
-    initialData: serverResume,
-  });
+  const { data: freshResume } = useResumeById(resumeId);
 
   const storedDraftResume = useBuilderStore((state) => state.draftResume);
   const setDraftResume = useBuilderStore((state) => state.setDraftResume);
@@ -40,7 +38,7 @@ export function useResumeBuilderController({
   const setLastSaved = useBuilderStore((state) => state.setLastSaved);
   const previewMode = useBuilderStore((state) => state.previewMode);
   const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
-  const draftResume = storedDraftResume ?? serverResume;
+  const draftResume = storedDraftResume ?? freshResume ?? serverResume;
 
   useEffect(() => {
     setDraftResume(freshResume ?? serverResume);

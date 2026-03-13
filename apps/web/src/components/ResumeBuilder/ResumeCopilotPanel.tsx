@@ -4,14 +4,21 @@ import type { ResumeSectionTarget, ResumeWithRelations } from "@rezumerai/types"
 import { Bot, Loader2, Sparkles, Target as TargetIcon, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useAccountSettings } from "@/hooks/useAccount";
 import { useCopilotOptimizeSection, useCopilotReviewResume, useCopilotTailorResume } from "@/hooks/useAi";
 import { getAiFeatureAccessMessage } from "@/lib/ai-access";
 import { isAnonymousSession, useSession } from "@/lib/auth-client";
 import { DisabledTooltip } from "../ui/DisabledTooltip";
+import { Select, type SelectOption } from "../ui/Select";
 
 type CopilotMode = "optimize" | "tailor" | "review";
 const COPILOT_MODES: CopilotMode[] = ["optimize", "tailor", "review"];
+const COPILOT_INTENT_OPTIONS = [
+  { value: "clarity", label: "Clarity" },
+  { value: "impact", label: "Impact" },
+  { value: "ats", label: "ATS alignment" },
+  { value: "concise", label: "Concise" },
+  { value: "grammar", label: "Grammar" },
+] satisfies SelectOption[];
 
 function isCopilotIntent(value: string): value is "clarity" | "impact" | "ats" | "concise" | "grammar" {
   return ["clarity", "impact", "ats", "concise", "grammar"].includes(value);
@@ -66,10 +73,6 @@ export default function ResumeCopilotPanel({
 }: ResumeCopilotPanelProps): React.JSX.Element {
   const { data: session } = useSession();
   const isAnonymous = isAnonymousSession(session);
-  const accountSettings = useAccountSettings({
-    enabled: Boolean(session?.user?.id) && !isAnonymous,
-    retry: false,
-  });
   const optimizeMutation = useCopilotOptimizeSection();
   const tailorMutation = useCopilotTailorResume();
   const reviewMutation = useCopilotReviewResume();
@@ -87,7 +90,7 @@ export default function ResumeCopilotPanel({
   const trimmedJobDescription = jobDescription.trim();
   const aiAccessMessage = getAiFeatureAccessMessage({
     isAnonymous,
-    emailVerified: accountSettings.data?.user.emailVerified,
+    emailVerified: session?.user?.emailVerified,
   });
   const isAiRestricted = aiAccessMessage !== null;
   const tailorNeedsMoreDetail =
@@ -181,45 +184,23 @@ export default function ResumeCopilotPanel({
 
         {mode === "optimize" && (
           <div className="space-y-4">
-            <div>
-              <label htmlFor="copilot-target" className="mb-1.5 block font-medium text-slate-700 text-sm">
-                Section target
-              </label>
-              <select
-                id="copilot-target"
-                value={selectedTargetKey}
-                onChange={(event) => setSelectedTargetKey(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
-              >
-                {sectionOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Section target"
+              value={selectedTargetKey}
+              onChange={(value) => setSelectedTargetKey(value)}
+              options={sectionOptions}
+            />
 
-            <div>
-              <label htmlFor="copilot-intent" className="mb-1.5 block font-medium text-slate-700 text-sm">
-                Goal
-              </label>
-              <select
-                id="copilot-intent"
-                value={intent}
-                onChange={(event) => {
-                  if (isCopilotIntent(event.target.value)) {
-                    setIntent(event.target.value);
-                  }
-                }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
-              >
-                <option value="clarity">Clarity</option>
-                <option value="impact">Impact</option>
-                <option value="ats">ATS alignment</option>
-                <option value="concise">Concise</option>
-                <option value="grammar">Grammar</option>
-              </select>
-            </div>
+            <Select
+              label="Goal"
+              value={intent}
+              onChange={(value) => {
+                if (isCopilotIntent(value)) {
+                  setIntent(value);
+                }
+              }}
+              options={COPILOT_INTENT_OPTIONS}
+            />
 
             {aiAccessMessage ? (
               <DisabledTooltip message={aiAccessMessage} className="w-full">

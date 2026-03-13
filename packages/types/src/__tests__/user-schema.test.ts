@@ -32,7 +32,7 @@ describe("UserSchema", () => {
       banned: false,
       banReason: null,
       banExpires: null,
-      selectedAiModelId: null,
+      selectedAiModel: "openrouter/free",
     });
 
     expect(parsed.isAnonymous).toBe(true);

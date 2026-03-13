@@ -1,72 +1,81 @@
-import type { MastraEmbeddingModel } from "@mastra/core/vector";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import type { AiConfiguration } from "@rezumerai/types";
-import { EmbeddingConfigurationError, EmbeddingService } from "../embeddings/service";
+import { embed, embedMany } from "ai";
+import { createAiProviderRegistry, ensureEmbeddingDimension, ProviderConfigurationError } from "../providers/registry";
 
-class OpenRouterMastraEmbeddingModel {
-  readonly specificationVersion = "v2" as const;
-  readonly provider = "openrouter";
-  readonly maxEmbeddingsPerCall = 16;
-  readonly supportsParallelCalls = true;
-
-  constructor(
-    readonly modelId: string,
-    private readonly config: AiConfiguration,
-  ) {}
-
-  async doEmbed(options: {
-    values: string[];
-    abortSignal?: AbortSignal;
-    providerOptions?: Record<string, unknown>;
-    headers?: Record<string, string | undefined>;
-  }): Promise<{ embeddings: number[][]; usage?: { tokens: number } }> {
-    const provider = EmbeddingService.createProvider(this.config);
-    const embeddings = await provider.embedBatch(options.values);
-
-    const invalidEmbedding = embeddings.find((embedding) => embedding.length !== this.config.EMBEDDING_DIMENSIONS);
-
-    if (invalidEmbedding) {
-      throw new EmbeddingConfigurationError(
-        `Configured embedding dimension ${this.config.EMBEDDING_DIMENSIONS} does not match provider output ${invalidEmbedding.length}.`,
-      );
-    }
-
-    return { embeddings };
-  }
-}
-
+const DEFAULT_CHUNK_SIZE = 800;
+const DEFAULT_CHUNK_OVERLAP = 120;
 const embeddingDimensionCache = new Map<string, Promise<number>>();
 
 function getEmbeddingCacheKey(config: AiConfiguration): string {
   return `${config.EMBEDDING_PROVIDER}:${config.EMBEDDING_MODEL}:${config.EMBEDDING_DIMENSIONS}`;
 }
 
-export function createAssistantEmbeddingModel(config: AiConfiguration): MastraEmbeddingModel<string> {
-  return new OpenRouterMastraEmbeddingModel(config.EMBEDDING_MODEL, config);
+function getTextSplitter(): RecursiveCharacterTextSplitter {
+  return new RecursiveCharacterTextSplitter({
+    chunkSize: DEFAULT_CHUNK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+  });
+}
+
+async function splitEmbeddingInput(value: string): Promise<string[]> {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return [];
+  }
+
+  const chunks = await getTextSplitter().splitText(normalizedValue);
+  const normalizedChunks = chunks.map((chunk) => chunk.trim()).filter((chunk) => chunk.length > 0);
+
+  return normalizedChunks.length > 0 ? normalizedChunks : [normalizedValue];
+}
+
+function averageEmbeddings(vectors: number[][], dimension: number): number[] {
+  if (vectors.length === 0) {
+    throw new ProviderConfigurationError("Cannot average embeddings from an empty vector set.");
+  }
+
+  const sums = new Array<number>(dimension).fill(0);
+
+  for (const vector of vectors) {
+    if (vector.length !== dimension) {
+      throw new ProviderConfigurationError(
+        `Embedding dimension mismatch. Expected ${dimension}, received ${vector.length}.`,
+      );
+    }
+
+    for (let index = 0; index < dimension; index += 1) {
+      sums[index] = (sums[index] ?? 0) + (vector[index] ?? 0);
+    }
+  }
+
+  return sums.map((value) => value / vectors.length);
 }
 
 export async function ensureAssistantEmbeddingDimension(config: AiConfiguration): Promise<number> {
   const cacheKey = getEmbeddingCacheKey(config);
-  const cached = embeddingDimensionCache.get(cacheKey);
+  const cachedDimension = embeddingDimensionCache.get(cacheKey);
 
-  if (cached) {
-    return cached;
+  if (cachedDimension) {
+    return cachedDimension;
   }
 
-  const probe = (async () => {
-    const provider = EmbeddingService.createProvider(config);
-    const embedding = await provider.embed("assistant-dimension-probe");
+  const dimensionPromise = (async () => {
+    const registry = createAiProviderRegistry();
+    const result = await embed({
+      model: registry.getEmbeddingModel(config),
+      value: "assistant-dimension-probe",
+    });
 
-    if (embedding.length !== config.EMBEDDING_DIMENSIONS) {
-      throw new EmbeddingConfigurationError(
-        `Configured embedding dimension ${config.EMBEDDING_DIMENSIONS} does not match provider output ${embedding.length}.`,
-      );
-    }
-
-    return embedding.length;
+    return ensureEmbeddingDimension({
+      configuredDimension: config.EMBEDDING_DIMENSIONS,
+      embeddings: [result.embedding],
+    });
   })();
 
-  embeddingDimensionCache.set(cacheKey, probe);
-  return probe;
+  embeddingDimensionCache.set(cacheKey, dimensionPromise);
+  return dimensionPromise;
 }
 
 export async function embedAssistantTexts(
@@ -80,15 +89,40 @@ export async function embedAssistantTexts(
     };
   }
 
-  const embedder = createAssistantEmbeddingModel(config) as OpenRouterMastraEmbeddingModel;
-  const result = await embedder.doEmbed({ values });
+  const chunkGroups = await Promise.all(values.map((value) => splitEmbeddingInput(value)));
+  const flattenedChunks = chunkGroups.flat();
+
+  if (flattenedChunks.length === 0) {
+    return {
+      embeddings: [],
+      dimension: config.EMBEDDING_DIMENSIONS,
+    };
+  }
+
+  const registry = createAiProviderRegistry();
+  const result = await embedMany({
+    model: registry.getEmbeddingModel(config),
+    values: flattenedChunks,
+  });
+  const dimension = ensureEmbeddingDimension({
+    configuredDimension: config.EMBEDDING_DIMENSIONS,
+    embeddings: result.embeddings,
+  });
+
+  let currentIndex = 0;
+  const averagedEmbeddings = chunkGroups.map((chunks) => {
+    const chunkVectors = result.embeddings.slice(currentIndex, currentIndex + chunks.length);
+    currentIndex += chunks.length;
+
+    if (chunkVectors.length === 0) {
+      throw new ProviderConfigurationError("Missing embedding vectors for a chunked assistant message.");
+    }
+
+    return averageEmbeddings(chunkVectors, dimension);
+  });
 
   return {
-    embeddings: result.embeddings,
-    dimension: result.embeddings[0]?.length ?? config.EMBEDDING_DIMENSIONS,
+    embeddings: averagedEmbeddings,
+    dimension,
   };
-}
-
-export function resolveAssistantVectorType(dimension: number): "halfvec" | "vector" {
-  return dimension > 2_000 ? "halfvec" : "vector";
 }

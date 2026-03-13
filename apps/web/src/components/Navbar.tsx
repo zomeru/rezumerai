@@ -1,13 +1,13 @@
 "use client";
 
-import { ChevronDown, LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronDown, FileText, LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
 import { useAccountSettings } from "@/hooks/useAccount";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { isAnonymousSession, signOut, useSession } from "@/lib/auth-client";
+import { getSessionUserRole, isAnonymousSession, signOut, useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
 
 function getInitials(name: string): string {
@@ -62,13 +62,13 @@ function normalizePath(path: string): string {
 export default function Navbar(): React.JSX.Element {
   const { data: session } = useSession();
   const isAnonymous = isAnonymousSession(session);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const { data: accountSettings, isLoading } = useAccountSettings({
-    enabled: !isAnonymous,
+    enabled: isOpen && !isAnonymous,
   });
   const router = useRouter();
   const pathname = usePathname();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false), isOpen);
 
   const displayName = useMemo(() => {
@@ -81,7 +81,7 @@ export default function Navbar(): React.JSX.Element {
 
   const displayEmail = isAnonymous ? "" : accountSettings?.user.email || session?.user.email || "";
   const avatarUrl = accountSettings?.user.image ?? session?.user.image;
-  const isAdmin = !isAnonymous && accountSettings?.user.role === "ADMIN";
+  const isAdmin = !isAnonymous && getSessionUserRole(session) === "ADMIN";
 
   async function onLogout(): Promise<void> {
     try {
@@ -162,6 +162,15 @@ export default function Navbar(): React.JSX.Element {
               >
                 <LayoutDashboard className="size-4" />
                 Workspace
+              </Link>
+
+              <Link
+                href={ROUTES.TEXT_OPTIMIZER}
+                onClick={(event) => onNavigateFromDropdown(event, ROUTES.TEXT_OPTIMIZER)}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-slate-100"
+              >
+                <FileText className="size-4" />
+                Text Optimizer
               </Link>
 
               <Link

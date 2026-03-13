@@ -48,7 +48,7 @@ export const UserSchema = z.object({
   banned: z.boolean(),
   banReason: z.string().nullable(),
   banExpires: z.date().nullable(),
-  selectedAiModelId: z.string().nullable(),
+  selectedAiModel: z.string().default("openrouter/free"),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

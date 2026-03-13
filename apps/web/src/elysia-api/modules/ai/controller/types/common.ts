@@ -25,7 +25,8 @@ export interface SelectModelBody {
 }
 
 export interface OptimizeTextBody {
-  text: string;
+  prompt?: string;
+  text?: string;
   resumeId?: string;
   modelId?: string;
 }

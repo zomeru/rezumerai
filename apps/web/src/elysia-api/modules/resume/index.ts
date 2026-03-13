@@ -3,6 +3,7 @@ import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
 import { ResumeModel } from "./model";
 import { ResumeService } from "./service";
+import type { ResumeCreateInput, ResumeUpdateInput } from "./types";
 import { validateResumeUpdate } from "./validation";
 
 const resumeNotFound = () => status(404, "Resume not found");
@@ -16,10 +17,9 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(prismaPlugin)
   .use(authPlugin)
   .use(ResumeModel)
-  .prefix("model", "resume.")
   .get(
     "/",
-    async ({ db, user, query }) => {
+    async ({ db, user, query, status }) => {
       const data = await ResumeService.search(db, user.id, {
         search: query.search,
       });
@@ -36,7 +36,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .post(
     "/",
     async ({ db, user, body }) => {
-      const newResume = await ResumeService.create(db, user.id, body);
+      const newResume = await ResumeService.create(db, user.id, body as ResumeCreateInput);
 
       return { success: true as const, data: newResume };
     },
@@ -45,13 +45,17 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .get(
     "/:id",
     async ({ db, user, params, status }) => {
+      if (!params.id) {
+        return resumeNotFound();
+      }
+
       const data = await ResumeService.findById(db, user.id, params.id);
 
       if (!data) {
         return resumeNotFound();
       }
 
-      return status(200, data);
+      return status(200, data as never);
     },
     {
       params: "resume.ParamById",
@@ -64,19 +68,24 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .patch(
     "/:id",
     async ({ db, user, params, body, status }) => {
-      const validationError = validateResumeUpdate(body);
+      if (!params.id) {
+        return resumeNotFound();
+      }
+
+      const updates = body as ResumeUpdateInput;
+      const validationError = validateResumeUpdate(updates);
 
       if (validationError) {
         return status(422, validationError.message);
       }
 
-      const updatedResume = await ResumeService.update(db, user.id, params.id, body);
+      const updatedResume = await ResumeService.update(db, user.id, params.id, updates);
 
       if (!updatedResume) {
         return resumeNotFound();
       }
 
-      return status(200, updatedResume);
+      return status(200, updatedResume as never);
     },
     {
       params: "resume.ParamById",
@@ -90,7 +99,11 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   )
   .delete(
     "/:id",
-    async ({ db, user, params }) => {
+    async ({ db, user, params, status }) => {
+      if (!params.id) {
+        return resumeNotFound();
+      }
+
       const deleted = await ResumeService.delete(db, user.id, params.id);
 
       if (!deleted) {

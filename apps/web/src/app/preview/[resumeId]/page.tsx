@@ -1,8 +1,11 @@
-import { headers } from "next/headers";
+import type { ResumeWithRelations } from "@rezumerai/types";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import { SamplePreview } from "@/components";
 import { DUMMY_RESUME_DATA_ID, DUMMY_RESUME_PREVIEW_DATA } from "@/constants/dummy";
-import { api } from "@/lib/api";
+import { getQueryClient } from "@/lib/get-query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { getOwnedResumeForCurrentUser } from "@/lib/server-runtime";
 
 interface PreviewPageProps {
   params: Promise<{
@@ -27,13 +30,18 @@ export default async function Preview({ params }: PreviewPageProps) {
     notFound();
   }
 
-  const { data, error } = await api.resumes({ id: resumeId }).get({
-    headers: Object.fromEntries((await headers()).entries()),
-  });
+  const resume = await getOwnedResumeForCurrentUser(resumeId);
 
-  if (error || !data) {
+  if (!resume) {
     notFound();
   }
 
-  return <SamplePreview serverData={data} resumeId={resumeId} />;
+  const queryClient = getQueryClient();
+  queryClient.setQueryData(queryKeys.resumes.detail(resumeId), resume);
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <SamplePreview serverData={resume as ResumeWithRelations} resumeId={resumeId} />
+    </HydrationBoundary>
+  );
 }

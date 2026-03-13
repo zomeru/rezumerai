@@ -1,4 +1,5 @@
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@rezumerai/types";
+import { FEATURE_FLAG_NAME_PATTERN, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@rezumerai/types";
+import type { Static } from "elysia";
 import Elysia, { t } from "elysia";
 
 const Pagination = t.Object({
@@ -47,6 +48,11 @@ const ParamById = t.Object({
 
 const ParamByName = t.Object({
   name: t.String({ minLength: 1 }),
+});
+
+const FeatureFlagName = t.String({ minLength: 1, maxLength: 64, pattern: FEATURE_FLAG_NAME_PATTERN });
+const FeatureFlagParamByName = t.Object({
+  name: FeatureFlagName,
 });
 
 const ErrorLogListItem = t.Object({
@@ -139,18 +145,12 @@ const SystemConfigurationEntry = t.Object({
   validationMode: t.Union([t.Literal("KNOWN_SCHEMA"), t.Literal("RAW_JSON")]),
 });
 
-const AdminAiProviderOption = t.Object({
+const FeatureFlagEntry = t.Object({
   id: t.String(),
-  name: t.String(),
-});
-
-const AdminAiModel = t.Object({
-  id: t.String(),
-  name: t.String(),
-  modelId: t.String(),
-  providerId: t.String(),
-  providerName: t.String(),
-  isActive: t.Boolean(),
+  name: FeatureFlagName,
+  enabled: t.Boolean(),
+  description: t.Nullable(t.String()),
+  rolloutPercentage: t.Integer({ minimum: 0, maximum: 100 }),
   createdAt: IsoDateTimeString,
   updatedAt: IsoDateTimeString,
 });
@@ -202,6 +202,13 @@ const AnalyticsSummary = t.Object({
   mostUsedEndpoint: t.Nullable(t.String()),
 });
 
+const AnalyticsDatabaseSummary = t.Object({
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
+  slowQueryRequestRate: t.Number({ minimum: 0 }),
+});
+
 const AnalyticsTimeseriesPoint = t.Object({
   bucketStart: IsoDateTimeString,
   label: t.String(),
@@ -210,6 +217,9 @@ const AnalyticsTimeseriesPoint = t.Object({
   errorRate: t.Number({ minimum: 0 }),
   averageResponseTimeMs: t.Number({ minimum: 0 }),
   activeUsers: t.Integer({ minimum: 0 }),
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
 });
 
 const AnalyticsEndpointUsage = t.Object({
@@ -219,6 +229,10 @@ const AnalyticsEndpointUsage = t.Object({
   errorCount: t.Integer({ minimum: 0 }),
   errorRate: t.Number({ minimum: 0 }),
   averageResponseTimeMs: t.Number({ minimum: 0 }),
+  averageDbQueryCount: t.Number({ minimum: 0 }),
+  averageDbQueryDurationMs: t.Number({ minimum: 0 }),
+  slowQueryRequestCount: t.Integer({ minimum: 0 }),
+  slowQueryRequestRate: t.Number({ minimum: 0 }),
 });
 
 const AnalyticsBackgroundJob = t.Object({
@@ -230,19 +244,29 @@ const AnalyticsBackgroundJob = t.Object({
   lastRunAt: t.Nullable(IsoDateTimeString),
 });
 
+const AnalyticsSlowQueryPattern = t.Object({
+  model: t.String(),
+  operation: t.String(),
+  occurrenceCount: t.Integer({ minimum: 0 }),
+  averageDurationMs: t.Number({ minimum: 0 }),
+  maxDurationMs: t.Number({ minimum: 0 }),
+});
+
 const AnalyticsDashboard = t.Object({
   timeframeDays: t.Integer({ minimum: 1 }),
   granularity: t.Union([t.Literal("hour"), t.Literal("day")]),
   summary: AnalyticsSummary,
+  database: AnalyticsDatabaseSummary,
   requestVolume: t.Array(AnalyticsTimeseriesPoint),
   endpointUsage: t.Array(AnalyticsEndpointUsage),
+  slowQueryPatterns: t.Array(AnalyticsSlowQueryPattern),
   backgroundJobs: t.Array(AnalyticsBackgroundJob),
 });
 
-export type ErrorLogListQueryInput = typeof ErrorLogListQuery.static;
-export type UserListQueryInput = typeof UserListQuery.static;
-export type AuditLogListQueryInput = typeof AuditLogListQuery.static;
-export type AnalyticsQueryInput = typeof AnalyticsQuery.static;
+export type ErrorLogListQueryInput = Static<typeof ErrorLogListQuery>;
+export type UserListQueryInput = Static<typeof UserListQuery>;
+export type AuditLogListQueryInput = Static<typeof AuditLogListQuery>;
+export type AnalyticsQueryInput = Static<typeof AnalyticsQuery>;
 
 export const AdminModel = new Elysia().model({
   "adminError.QueryList": ErrorLogListQuery,
@@ -271,23 +295,16 @@ export const AdminModel = new Elysia().model({
   "adminConfig.ListResponse": t.Object({
     items: t.Array(SystemConfigurationEntry),
   }),
-  "adminAiModel.ParamById": ParamById,
-  "adminAiModel.MutationInput": t.Object({
-    providerId: t.String({ minLength: 1, pattern: ".*\\S.*" }),
-    name: t.String({ minLength: 1, pattern: ".*\\S.*" }),
-    modelId: t.String({ minLength: 1, pattern: ".*\\S.*" }),
-    isActive: t.Boolean(),
+  "adminFeature.ParamByName": FeatureFlagParamByName,
+  "adminFeature.SaveInput": t.Object({
+    enabled: t.Boolean(),
+    description: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+    rolloutPercentage: t.Integer({ minimum: 0, maximum: 100 }),
   }),
-  "adminAiModel.Entry": AdminAiModel,
-  "adminAiModel.ProviderOption": AdminAiProviderOption,
-  "adminAiModel.ListResponse": t.Object({
-    models: t.Array(AdminAiModel),
-    providers: t.Array(AdminAiProviderOption),
+  "adminFeature.Entry": FeatureFlagEntry,
+  "adminFeature.ListResponse": t.Object({
+    items: t.Array(FeatureFlagEntry),
   }),
-  "adminAiModel.DeleteResponse": t.Object({
-    id: t.String(),
-  }),
-  "adminAiModel.Error": t.String(),
   "adminAudit.QueryList": AuditLogListQuery,
   "adminAudit.ParamById": ParamById,
   "adminAudit.ListResponse": t.Object({

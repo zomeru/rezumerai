@@ -1,20 +1,81 @@
 import { cn } from "@rezumerai/utils/styles";
 import type { LucideIcon } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import { Select, type SelectOption } from "../ui/Select";
+import JsonViewer from "./JsonViewer";
+
+const ADMIN_HEADER_NAV_CLASS =
+  "inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900";
+const ADMIN_HEADER_BUTTON_CLASS =
+  "inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50";
+const ADMIN_HEADER_ITEM_STYLE = {
+  width: "max-content",
+  flex: "none",
+} satisfies CSSProperties;
+
+export function AdminPageHeaderActions({
+  backHref,
+  backLabel = "Back to admin",
+  onRefresh,
+  isRefreshing = false,
+  action,
+}: {
+  backHref?: string;
+  backLabel?: string;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  action?: React.ReactNode;
+}): React.JSX.Element | null {
+  if (!backHref && !onRefresh && !action) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {backHref ? (
+        <Link href={backHref} className={ADMIN_HEADER_NAV_CLASS} style={ADMIN_HEADER_ITEM_STYLE}>
+          <ArrowLeft className="size-4" />
+          {backLabel}
+        </Link>
+      ) : null}
+
+      {onRefresh ? (
+        <button type="button" onClick={onRefresh} className={ADMIN_HEADER_BUTTON_CLASS} style={ADMIN_HEADER_ITEM_STYLE}>
+          <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      ) : null}
+
+      {action}
+    </div>
+  );
+}
 
 export function AdminPageShell({
   eyebrow = "Admin Console",
   title,
   description,
+  backHref,
+  backLabel,
+  onRefresh,
+  isRefreshing = false,
   action,
   children,
 }: {
   eyebrow?: string;
   title: string;
   description: string;
+  backHref?: string;
+  backLabel?: string;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
   action?: React.ReactNode;
   children: React.ReactNode;
 }): React.JSX.Element {
+  const hasHeaderActions = Boolean(backHref || onRefresh || action);
+
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="mx-auto max-w-400 px-4 py-8 sm:px-6 lg:px-8">
@@ -27,7 +88,17 @@ export function AdminPageShell({
             <p className="mt-2 max-w-3xl text-slate-600">{description}</p>
           </div>
 
-          {action ? <div className="shrink-0">{action}</div> : null}
+          {hasHeaderActions ? (
+            <div className="shrink-0">
+              <AdminPageHeaderActions
+                backHref={backHref}
+                backLabel={backLabel}
+                onRefresh={onRefresh}
+                isRefreshing={isRefreshing}
+                action={action}
+              />
+            </div>
+          ) : null}
         </div>
 
         {children}
@@ -74,57 +145,80 @@ export function AdminFieldLabel({ label, children }: { label: string; children: 
 }
 
 export function AdminSelect({
+  label,
   value,
   onChange,
-  children,
+  options,
+  placeholder,
+  disabled = false,
   className,
 }: {
+  label: string;
   value: string | number;
   onChange: (value: string) => void;
-  children: React.ReactNode;
+  options: SelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
   className?: string;
 }): React.JSX.Element {
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={cn("rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm", className)}
-    >
-      {children}
-    </select>
+    <Select
+      label={label}
+      value={String(value)}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      triggerClassName="rounded-lg px-3 py-2 text-slate-800 shadow-none"
+    />
   );
 }
 
 export function AdminInput({
+  ariaLabel,
   value,
   onChange,
   placeholder,
   type = "text",
+  min,
+  max,
+  step,
   className,
 }: {
+  ariaLabel?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute;
+  min?: number;
+  max?: number;
+  step?: number;
   className?: string;
 }): React.JSX.Element {
   return (
     <input
+      aria-label={ariaLabel}
       type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
+      min={min}
+      max={max}
+      step={step}
       className={cn("rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm", className)}
     />
   );
 }
 
 export function AdminTextarea({
+  ariaLabel,
   value,
   onChange,
   rows = 12,
   className,
 }: {
+  ariaLabel?: string;
   value: string;
   onChange: (value: string) => void;
   rows?: number;
@@ -132,6 +226,7 @@ export function AdminTextarea({
 }): React.JSX.Element {
   return (
     <textarea
+      aria-label={ariaLabel}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       rows={rows}
@@ -305,17 +400,17 @@ export function JsonCodeBlock({
   title,
   value,
   className,
+  parseStringAsJson = false,
 }: {
   title: string;
-  value: string;
+  value: unknown;
   className?: string;
+  parseStringAsJson?: boolean;
 }): React.JSX.Element {
   return (
     <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-sm", className)}>
       <h3 className="mb-3 font-semibold text-slate-900">{title}</h3>
-      <pre className="max-h-96 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-slate-800 text-xs leading-relaxed">
-        {value}
-      </pre>
+      <JsonViewer value={value} parseStringAsJson={parseStringAsJson} />
     </div>
   );
 }
@@ -342,12 +437,12 @@ export function AdminTrendChart({
   const width = 760;
   const height = 220;
   const paddingX = 18;
-  const paddingY = 24;
+  const paddingY = 20;
   const maxValue = Math.max(1, ...data.flatMap((row) => series.map((item) => Number(row[item.key] ?? 0))));
 
   return (
-    <AdminPanel>
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <AdminPanel className="flex h-full flex-col p-5">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-semibold text-slate-900 text-xl">{title}</h2>
           <p className="mt-1 text-slate-500 text-sm">{description}</p>
@@ -363,7 +458,12 @@ export function AdminTrendChart({
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" role="img" aria-label={title}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="mt-2 min-h-[18rem] w-full flex-1"
+        role="img"
+        aria-label={title}
+      >
         <title>{title}</title>
         {[0.25, 0.5, 0.75, 1].map((ratio) => {
           const y = height - paddingY - (height - paddingY * 2) * ratio;
@@ -413,17 +513,18 @@ export function AdminBarChart({
   description: string;
   items: Array<{ label: string; value: number; secondary?: string }>;
 }): React.JSX.Element {
-  const maxValue = Math.max(1, ...items.map((item) => item.value));
+  const visibleItems = items.slice(0, 6);
+  const maxValue = Math.max(1, ...visibleItems.map((item) => item.value));
 
   return (
-    <AdminPanel>
+    <AdminPanel className="p-5">
       <h2 className="font-semibold text-slate-900 text-xl">{title}</h2>
       <p className="mt-1 text-slate-500 text-sm">{description}</p>
 
-      <div className="mt-5 space-y-4">
-        {items.map((item) => (
+      <div className="mt-4 space-y-3">
+        {visibleItems.map((item) => (
           <div key={item.label}>
-            <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
               <p className="truncate font-medium text-slate-800">{item.label}</p>
               <p className="shrink-0 text-slate-500">{item.secondary ?? item.value.toLocaleString()}</p>
             </div>

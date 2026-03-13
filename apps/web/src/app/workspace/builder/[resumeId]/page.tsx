@@ -1,7 +1,10 @@
-import { headers } from "next/headers";
+import type { ResumeWithRelations } from "@rezumerai/types";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import ResumeBuilderClient from "@/components/ResumeBuilder/ResumeBuilderClientPage";
-import { api } from "@/lib/api";
+import { getQueryClient } from "@/lib/get-query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { getOwnedResumeForCurrentUser } from "@/lib/server-runtime";
 
 interface ResumeBuilderPageProps {
   params: Promise<{
@@ -16,13 +19,18 @@ export default async function ResumeBuilderPage({ params }: ResumeBuilderPagePro
     notFound();
   }
 
-  const { data, error } = await api.resumes({ id: resumeId }).get({
-    headers: Object.fromEntries((await headers()).entries()),
-  });
+  const resume = await getOwnedResumeForCurrentUser(resumeId);
 
-  if (error || !data) {
+  if (!resume) {
     notFound();
   }
 
-  return <ResumeBuilderClient serverResume={data} resumeId={resumeId} />;
+  const queryClient = getQueryClient();
+  queryClient.setQueryData(queryKeys.resumes.detail(resumeId), resume);
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ResumeBuilderClient serverResume={resume as ResumeWithRelations} resumeId={resumeId} />
+    </HydrationBoundary>
+  );
 }

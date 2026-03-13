@@ -2,7 +2,7 @@ import { checkBotId } from "botid/server";
 import { NextResponse } from "next/dist/server/web/spec-extension/response";
 import { elysiaApp } from "@/elysia-api/app";
 
-const isBotIdEnabled = process.env.BOTID_ENABLED === "true";
+const isBotIdEnabled = process.env.NODE_ENV !== "development";
 
 async function withBotId(request: Request) {
   if (!isBotIdEnabled) {

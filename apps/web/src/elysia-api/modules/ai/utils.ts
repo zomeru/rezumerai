@@ -1,5 +1,5 @@
-import type { Resume } from "@rezumerai/database/generated/prismabox/Resume";
 import type { AssistantReplyBlock, ResumeSection, ResumeSectionTarget } from "@rezumerai/types";
+import type { Static } from "elysia";
 import type { z } from "zod";
 
 const htmlEntityMap: Record<string, string> = {
@@ -177,7 +177,8 @@ function extractJsonBlock(value: string): string {
   return value.slice(start);
 }
 
-type ResumeWithRelations = Omit<(typeof Resume)["static"], "user">;
+type ResumeSchema = typeof import("@rezumerai/database/generated/prismabox/Resume")["Resume"];
+type ResumeWithRelations = Omit<Static<ResumeSchema>, "user">;
 
 export function buildResumeHeadline(resume: ResumeWithRelations): string {
   const fullName = resume.personalInfo?.fullName?.trim();
@@ -230,7 +231,9 @@ export function getResumeSectionSource(
   }
 
   if (target.section === "experience") {
-    const item = resume.experience.find((entry) => entry.id === target.itemId);
+    const item = resume.experience.find(
+      (entry: ResumeWithRelations["experience"][number]) => entry.id === target.itemId,
+    );
     if (!item) {
       throw new Error("Requested experience item was not found.");
     }
@@ -249,7 +252,7 @@ export function getResumeSectionSource(
   }
 
   if (target.section === "education") {
-    const item = resume.education.find((entry) => entry.id === target.itemId);
+    const item = resume.education.find((entry: ResumeWithRelations["education"][number]) => entry.id === target.itemId);
     if (!item) {
       throw new Error("Requested education item was not found.");
     }
@@ -266,7 +269,7 @@ export function getResumeSectionSource(
     };
   }
 
-  const item = resume.project.find((entry) => entry.id === target.itemId);
+  const item = resume.project.find((entry: ResumeWithRelations["project"][number]) => entry.id === target.itemId);
   if (!item) {
     throw new Error("Requested project item was not found.");
   }
@@ -295,16 +298,16 @@ export function buildResumeSnapshot(resume: ResumeWithRelations): {
     headline: buildResumeHeadline(resume),
     summary: compactText(resume.professionalSummary ?? "", 600),
     skills: (resume.skills ?? []).slice(0, 24),
-    experience: resume.experience.map((item) =>
+    experience: resume.experience.map((item: ResumeWithRelations["experience"][number]) =>
       compactText(
         `${item.position || "Role"} @ ${item.company || "Company"}: ${stripHtml(item.description ?? "")}`,
         220,
       ),
     ),
-    education: resume.education.map((item) =>
+    education: resume.education.map((item: ResumeWithRelations["education"][number]) =>
       compactText(`${item.degree || "Degree"} - ${item.institution || "Institution"} ${item.field || ""}`, 180),
     ),
-    projects: resume.project.map((item) =>
+    projects: resume.project.map((item: ResumeWithRelations["project"][number]) =>
       compactText(`${item.name || "Project"}: ${stripHtml(item.description ?? "")}`, 180),
     ),
   };

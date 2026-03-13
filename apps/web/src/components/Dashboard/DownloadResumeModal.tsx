@@ -1,9 +1,9 @@
 "use client";
 
-import type { ResumeWithRelations } from "@rezumerai/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ResumePreview } from "@/components/ResumeBuilder";
+import { useResumeById } from "@/hooks/useResume";
 import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdf-utils";
 
 /**
@@ -14,7 +14,7 @@ import { downloadPdfBlob, generatePdfFromElement } from "@/lib/pdf-utils";
  * @property onClose - Callback to close the modal after download completes
  */
 export interface DownloadResumeModalProps {
-  resume: ResumeWithRelations;
+  resumeId: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -33,17 +33,24 @@ export interface DownloadResumeModalProps {
  * <DownloadResumeModal resume={resume} isOpen={showDownload} onClose={close} />
  * ```
  */
-export default function DownloadResumeModal({ resume, isOpen, onClose }: DownloadResumeModalProps) {
+export default function DownloadResumeModal({ resumeId, isOpen, onClose }: DownloadResumeModalProps) {
   const [status, setStatus] = useState<"generating" | "success" | "error">("generating");
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const hasDownloadedRef = useRef(false);
+  const { data: resume } = useResumeById(resumeId);
 
   useEffect(() => {
     if (!isOpen) {
       hasDownloadedRef.current = false;
       return;
     }
+
+    if (!resume) {
+      return;
+    }
+
+    const currentResume = resume;
 
     // Prevent duplicate downloads in StrictMode
     if (hasDownloadedRef.current) return;
@@ -71,9 +78,9 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
         }
 
         // Generate filename and download
-        const fileName = resume.personalInfo?.fullName
-          ? `Resume_${resume.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
-          : `Resume_${resume.title.replace(/\s+/g, "_")}.pdf`;
+        const fileName = currentResume.personalInfo?.fullName
+          ? `Resume_${currentResume.personalInfo.fullName.replace(/\s+/g, "_")}.pdf`
+          : `Resume_${currentResume.title.replace(/\s+/g, "_")}.pdf`;
 
         downloadPdfBlob(blob, fileName, () => {
           setTimeout(onClose, 1000);
@@ -89,12 +96,11 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
     }
 
     generateAndDownload();
-  }, [isOpen, resume, onClose]);
+  }, [isOpen, onClose, resume]);
 
   if (!isOpen) return null;
-
-  const template = resume.template || "classic";
-  const accentColor = resume.accentColor || "#4B5563";
+  const template = resume?.template || "classic";
+  const accentColor = resume?.accentColor || "#4B5563";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -104,7 +110,7 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
           {status === "generating" && (
             <>
               <Loader2 className="size-8 animate-spin text-primary-500" />
-              <p className="text-slate-600">Generating PDF...</p>
+              <p className="text-slate-600">{resume ? "Generating PDF..." : "Loading resume..."}</p>
             </>
           )}
           {status === "success" && <p className="font-medium text-green-600">Download started!</p>}
@@ -125,16 +131,18 @@ export default function DownloadResumeModal({ resume, isOpen, onClose }: Downloa
       </div>
 
       {/* Hidden resume preview for PDF generation */}
-      <div className="pointer-events-none absolute" style={{ left: "-9999px", top: 0 }}>
-        <ResumePreview
-          ref={previewRef}
-          data={resume}
-          template={template}
-          accentColor={accentColor}
-          fontSize="medium" // TODO: add font size to resume information (database)
-          previewMode="html"
-        />
-      </div>
+      {resume ? (
+        <div className="pointer-events-none absolute" style={{ left: "-9999px", top: 0 }}>
+          <ResumePreview
+            ref={previewRef}
+            data={resume}
+            template={template}
+            accentColor={accentColor}
+            fontSize="medium" // TODO: add font size to resume information (database)
+            previewMode="html"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

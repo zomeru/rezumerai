@@ -2,8 +2,7 @@ import type { UpdateUserAccountInput, UserAccountSettings } from "@rezumerai/typ
 import { UserAccountSettingsSchema } from "@rezumerai/types";
 import { type QueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-
-const ACCOUNT_QUERY_KEY = ["accountSettings"] as const;
+import { queryKeys } from "@/lib/query-keys";
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -25,9 +24,9 @@ export function useAccountSettings(
   options?: Omit<QueryOptions<UserAccountSettings>, "queryKey" | "queryFn"> & { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: ACCOUNT_QUERY_KEY,
+    queryKey: queryKeys.account.settings(),
     queryFn: async () => {
-      const { data, error } = await api.users.me.get();
+      const { data, error } = await api.profile.get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load account settings."));
@@ -48,7 +47,7 @@ export function useUpdateAccountSettings() {
 
   return useMutation({
     mutationFn: async (updates: UpdateUserAccountInput) => {
-      const { data, error } = await api.users.me.patch(updates);
+      const { data, error } = await api.profile.patch(updates);
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update account settings."));
@@ -61,7 +60,7 @@ export function useUpdateAccountSettings() {
       return UserAccountSettingsSchema.parse(data);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.account.settings() });
     },
   });
 }

@@ -60,7 +60,7 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
         options.userId,
         options.body.resumeId,
         options.operation,
-        runtime.model.modelId,
+        runtime.model.id,
         runtime.config.PROMPT_VERSION,
         options.body,
         normalizedError.message,

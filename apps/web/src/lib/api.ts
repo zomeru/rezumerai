@@ -10,8 +10,8 @@ import { clientEnv } from "@/env";
  * Credentials are included to forward cookies (NextAuth session).
  *
  * Usage:
- *   const { data, error } = await api.users.get()
- *   const { data, error } = await api.users({ id: "1" }).get()
+ *   const { data, error } = await api.profile.get()
+ *   const { data, error } = await api.admin.users({ id: "1" }).get()
  */
 
 function getApiBaseUrl(): string {

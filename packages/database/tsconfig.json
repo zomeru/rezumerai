@@ -1,9 +1,5 @@
 {
   "extends": "@rezumerai/tsconfig/database.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "."
-  },
   "include": ["index.ts", "prisma/**/*.ts"],
   "exclude": ["node_modules", "dist", "generated/prisma"]
 }

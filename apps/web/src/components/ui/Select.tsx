@@ -19,6 +19,8 @@ export interface SelectProps {
   placeholder?: string;
   disabled?: boolean;
   error?: string;
+  className?: string;
+  triggerClassName?: string;
 }
 
 interface DropdownPosition {
@@ -58,6 +60,8 @@ export function Select({
   placeholder = "Select an option",
   disabled = false,
   error,
+  className,
+  triggerClassName,
 }: SelectProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -296,7 +300,7 @@ export function Select({
   };
 
   return (
-    <div className="w-full">
+    <div className={cn("w-full", className)}>
       {label && (
         <span id={labelId} className="mb-1.5 block font-medium text-slate-700 text-sm">
           {label}
@@ -326,6 +330,7 @@ export function Select({
             ? "cursor-not-allowed border-slate-300 bg-slate-100 text-slate-500"
             : "border-slate-300 bg-white text-slate-900 hover:border-slate-400",
           error && "border-red-400 focus:border-red-500 focus:ring-red-500/20",
+          triggerClassName,
         )}
       >
         <span className={cn("truncate", !selectedOption && "text-slate-500")}>

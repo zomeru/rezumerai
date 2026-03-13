@@ -19,7 +19,7 @@ export async function handleListModelsRequest(options: {
     return verificationResult;
   }
 
-  return routeResult(200, await AiService.listActiveModels(options.db));
+  return routeResult(200, await AiService.getAvailableModels());
 }
 
 export async function handleGetSettingsRequest(options: {

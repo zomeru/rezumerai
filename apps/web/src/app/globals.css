@@ -34,6 +34,19 @@
   --color-accent-500: oklch(0.56 0.21 300); /* #9333EA */
   --color-accent-600: oklch(0.45 0.18 300);
   --color-accent-700: oklch(0.35 0.18 300);
+
+  /* Animation */
+  --animate-marquee: marquee-scroll 25s linear infinite;
+  --animate-marquee-reverse: marquee-scroll 25s linear infinite reverse;
+
+  @keyframes marquee-scroll {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 html {
@@ -65,6 +78,70 @@ textarea {
   box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   --ring-color: #3b82f6;
   resize: none;
+}
+
+.llm-markdown pre code {
+  display: block;
+  min-width: max-content;
+}
+
+.llm-markdown .hljs {
+  color: #e5eefc;
+  background: transparent;
+}
+
+.llm-markdown .hljs-comment,
+.llm-markdown .hljs-quote {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.llm-markdown .hljs-keyword,
+.llm-markdown .hljs-selector-tag,
+.llm-markdown .hljs-title,
+.llm-markdown .hljs-section,
+.llm-markdown .hljs-type,
+.llm-markdown .hljs-built_in,
+.llm-markdown .hljs-doctag {
+  color: #7dd3fc;
+}
+
+.llm-markdown .hljs-string,
+.llm-markdown .hljs-attr,
+.llm-markdown .hljs-attribute,
+.llm-markdown .hljs-template-variable {
+  color: #fda4af;
+}
+
+.llm-markdown .hljs-number,
+.llm-markdown .hljs-literal,
+.llm-markdown .hljs-variable,
+.llm-markdown .hljs-symbol,
+.llm-markdown .hljs-bullet {
+  color: #fbbf24;
+}
+
+.llm-markdown .hljs-function,
+.llm-markdown .hljs-title.function_,
+.llm-markdown .hljs-title.class_,
+.llm-markdown .hljs-title.class {
+  color: #c4b5fd;
+}
+
+.llm-markdown .hljs-property,
+.llm-markdown .hljs-params,
+.llm-markdown .hljs-operator,
+.llm-markdown .hljs-punctuation,
+.llm-markdown .hljs-tag {
+  color: #cbd5f5;
+}
+
+.llm-markdown .hljs-addition {
+  color: #86efac;
+}
+
+.llm-markdown .hljs-deletion {
+  color: #fca5a5;
 }
 
 /* Rich text content styling for resume templates */

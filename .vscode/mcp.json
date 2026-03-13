@@ -45,7 +45,7 @@
       "env": {
         "DATABASE_URI": "${input:postgres_uri}"
       }
-    }
+    },
   },
   "inputs": [
     {

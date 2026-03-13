@@ -1,19 +1,25 @@
 "use client";
 
-import { AlertCircle, ArrowLeft, CheckCircle2, RefreshCw, Save } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle2, RefreshCw, Save, WandSparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routing";
 import { useSystemConfigurations, useUpdateSystemConfiguration } from "@/hooks/useAdmin";
 import { AdminBadge, AdminEmptyState, AdminPageShell, AdminPanel, AdminTableWrapper, AdminTextarea } from "./AdminUI";
 import { formatDateTime, formatJson } from "./format";
+import JsonViewer from "./JsonViewer";
+
+const JSON_VIEW_MODES = [
+  { value: "RAW", label: "Raw JSON" },
+  { value: "STRUCTURED", label: "Structured Preview" },
+] as const;
 
 export default function SystemConfigurationPageClient(): React.JSX.Element {
   const { data, error, isLoading, isFetching, refetch } = useSystemConfigurations();
   const updateConfiguration = useUpdateSystemConfiguration();
   const [selectedName, setSelectedName] = useState<string>("");
   const [editorValue, setEditorValue] = useState<string>("{}");
+  const [jsonViewMode, setJsonViewMode] = useState<(typeof JSON_VIEW_MODES)[number]["value"]>("RAW");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const selectedConfig = useMemo(
@@ -40,8 +46,27 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
       return false;
     }
 
-    return formatJson(selectedConfig.value) !== editorValue;
+    try {
+      return formatJson(selectedConfig.value) !== formatJson(JSON.parse(editorValue));
+    } catch {
+      return formatJson(selectedConfig.value) !== editorValue;
+    }
   }, [editorValue, selectedConfig]);
+
+  function onFormatEditorValue(): void {
+    try {
+      const parsed = JSON.parse(editorValue);
+      setEditorValue(formatJson(parsed));
+      setLocalError(null);
+    } catch (formatError: unknown) {
+      const message =
+        formatError instanceof Error
+          ? "Configuration must be valid JSON before it can be formatted."
+          : "Unable to format the current configuration value.";
+      setLocalError(message);
+      toast.error(message);
+    }
+  }
 
   async function onSave(): Promise<void> {
     if (!selectedConfig) {
@@ -50,6 +75,7 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
 
     try {
       const parsed = JSON.parse(editorValue);
+      setEditorValue(formatJson(parsed));
       setLocalError(null);
       await updateConfiguration.mutateAsync({ name: selectedConfig.name, value: parsed });
       toast.success(`${selectedConfig.name} updated.`);
@@ -69,26 +95,9 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
     <AdminPageShell
       title="System Configuration"
       description="Manage database-backed application settings used by admin workflows, AI behavior, and retention jobs."
-      action={
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ROUTES.ADMIN}
-            className="inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900"
-          >
-            <ArrowLeft className="size-4" />
-            Back to admin
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
-          >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      }
+      backHref={ROUTES.ADMIN}
+      onRefresh={() => void refetch()}
+      isRefreshing={isFetching}
     >
       {error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
@@ -116,14 +125,7 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
         />
       ) : selectedConfig ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-          <AdminPanel className="p-0">
-            <div className="border-slate-200 border-b px-6 py-5">
-              <h2 className="font-semibold text-slate-900 text-xl">Configuration Entries</h2>
-              <p className="mt-1 text-slate-500 text-sm">
-                Stored in the `SystemConfiguration` table and validated on save.
-              </p>
-            </div>
-
+          <div>
             <AdminTableWrapper>
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-slate-600 uppercase tracking-wide">
@@ -161,7 +163,7 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
                 </tbody>
               </table>
             </AdminTableWrapper>
-          </AdminPanel>
+          </div>
 
           <div className="space-y-6">
             <AdminPanel>
@@ -192,41 +194,103 @@ export default function SystemConfigurationPageClient(): React.JSX.Element {
             </AdminPanel>
 
             <AdminPanel>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h3 className="font-semibold text-slate-900 text-xl">JSON Editor</h3>
+                  <h3 className="font-semibold text-slate-900 text-xl">Configuration Value</h3>
                   <p className="mt-1 text-slate-500 text-sm">
-                    Edit the persisted value directly. Validation runs before the update is committed.
+                    Edit the persisted JSON directly or switch to a structured preview of the same unsaved value.
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => void onSave()}
-                  disabled={!isDirty || updateConfiguration.isPending}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 font-medium text-sm text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {updateConfiguration.isPending ? (
-                    <RefreshCw className="size-4 animate-spin" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onFormatEditorValue}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm transition-colors hover:bg-slate-50"
+                  >
+                    <WandSparkles className="size-4" />
+                    Format JSON
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void onSave()}
+                    disabled={!isDirty || updateConfiguration.isPending}
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 font-medium text-sm text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updateConfiguration.isPending ? (
+                      <RefreshCw className="size-4 animate-spin" />
+                    ) : (
+                      <Save className="size-4" />
+                    )}
+                    Save changes
+                  </button>
+                </div>
+              </div>
+
+              <div
+                role="tablist"
+                aria-label="JSON view mode"
+                className="mt-4 inline-flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+              >
+                {JSON_VIEW_MODES.map((option) => {
+                  const isActive = option.value === jsonViewMode;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="tab"
+                      id={`json-view-tab-${option.value.toLowerCase()}`}
+                      aria-selected={isActive}
+                      aria-controls={`json-view-panel-${option.value.toLowerCase()}`}
+                      tabIndex={isActive ? 0 : -1}
+                      onClick={() => setJsonViewMode(option.value)}
+                      className={`rounded-lg px-3 py-2 font-medium text-sm transition-colors ${
+                        isActive
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-600 hover:bg-white/80 hover:text-slate-900"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {jsonViewMode === "RAW" ? (
+                <div role="tabpanel" id="json-view-panel-raw" aria-labelledby="json-view-tab-raw" className="mt-4">
+                  <AdminTextarea value={editorValue} onChange={setEditorValue} rows={18} />
+
+                  {localError ? (
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+                      {localError}
+                    </div>
                   ) : (
-                    <Save className="size-4" />
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700 text-sm">
+                      <CheckCircle2 className="size-4" />
+                      JSON is ready to validate on save.
+                    </div>
                   )}
-                  Save changes
-                </button>
-              </div>
-
-              <div className="mt-4">
-                <AdminTextarea value={editorValue} onChange={setEditorValue} rows={18} />
-              </div>
-
-              {localError ? (
-                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
-                  {localError}
                 </div>
               ) : (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700 text-sm">
-                  <CheckCircle2 className="size-4" />
-                  JSON is ready to validate on save.
+                <div
+                  role="tabpanel"
+                  id="json-view-panel-structured"
+                  aria-labelledby="json-view-tab-structured"
+                  className="mt-4 space-y-4"
+                >
+                  <p className="text-slate-500 text-sm">
+                    Preview reflects the current editor contents, including unsaved changes.
+                  </p>
+
+                  <JsonViewer value={editorValue} parseStringAsJson maxHeightClassName="max-h-[32rem]" />
+
+                  {localError ? (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+                      {localError}
+                    </div>
+                  ) : null}
                 </div>
               )}
             </AdminPanel>

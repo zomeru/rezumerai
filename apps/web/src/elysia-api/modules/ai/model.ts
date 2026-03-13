@@ -1,11 +1,12 @@
 import Elysia, { t } from "elysia";
 
 const AiModelOption = t.Object({
-  id: t.String(),
-  name: t.String(),
-  modelId: t.String(),
-  providerName: t.String(),
-  providerDisplayName: t.String(),
+  id: t.String({ minLength: 1, maxLength: 200 }),
+  name: t.String({ minLength: 1, maxLength: 200 }),
+  contextLength: t.Integer({ minimum: 0, maximum: 10_000_000 }),
+  inputModalities: t.Array(t.String()),
+  outputModalities: t.Array(t.String()),
+  supportedParameters: t.Array(t.String()),
 });
 
 const AiSettings = t.Object({
@@ -78,7 +79,8 @@ const ResumeCopilotReviewFinding = t.Object({
 
 export const AiModel = new Elysia().model({
   "ai.OptimizeInput": t.Object({
-    text: t.String({ minLength: 1, description: "Text to optimize" }),
+    prompt: t.Optional(t.String({ minLength: 1, description: "AI SDK completion prompt to optimize" })),
+    text: t.Optional(t.String({ minLength: 1, description: "Legacy text payload to optimize" })),
     resumeId: t.Optional(t.String({ minLength: 1, description: "Optional source resume ID" })),
     modelId: t.Optional(t.String({ minLength: 1, description: "Optional AI model override" })),
   }),

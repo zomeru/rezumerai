@@ -25,8 +25,6 @@
 - `BETTER_AUTH_GOOGLE_CLIENT_SECRET`
 - `CRON_SECRET`
 - `DB_SEED_USER_EMAIL`
-- `BOTID_ENABLED`
-- `NEXT_PUBLIC_BOTID_ENABLED`
 - `SENTRY_DSN`
 - `ANALYTICS_ID`
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
@@ -47,5 +45,6 @@ bun run dev
 
 - `bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:ai` seeds AI models, system configuration, and public content defaults.
+- `bun run db:migrate` bootstraps missing required AI/system configuration and public content rows after Prisma migrations.
+- `bun run db:seed:system` is the local reset path that rewrites those rows back to the current defaults.
 - Workspace-local commands should still be run with Bun from the relevant package directory.

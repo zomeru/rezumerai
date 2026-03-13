@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { PasswordConfirmationSchema, PasswordSchema, UserRoleSchema } from "../user/schema";
 
+export const FEATURE_FLAG_NAME_PATTERN = "^[a-z][a-z0-9_]*$";
+export const FEATURE_FLAG_NAME_MESSAGE =
+  "Feature flag names must start with a lowercase letter and contain only lowercase letters, numbers, and underscores.";
+export const FEATURE_FLAG_NAMES = {
+  NEW_ADMIN_ANALYTICS_UI: "new_admin_analytics_ui",
+} as const;
+
+const FeatureFlagNameSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(new RegExp(FEATURE_FLAG_NAME_PATTERN), FEATURE_FLAG_NAME_MESSAGE);
+
 export const AdminPaginationSchema = z.object({
   page: z.number().int().positive(),
   pageSize: z.number().int().positive(),
@@ -92,36 +105,24 @@ export const UpdateSystemConfigurationInputSchema = z.object({
   value: z.unknown(),
 });
 
-export const AdminAiProviderOptionSchema = z.object({
+export const FeatureFlagEntrySchema = z.object({
   id: z.string(),
-  name: z.string(),
-});
-
-export const AdminAiModelSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  modelId: z.string(),
-  providerId: z.string(),
-  providerName: z.string(),
-  isActive: z.boolean(),
+  name: FeatureFlagNameSchema,
+  enabled: z.boolean(),
+  description: z.string().nullable(),
+  rolloutPercentage: z.number().int().min(0).max(100),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 
-export const AdminAiModelCatalogSchema = z.object({
-  models: z.array(AdminAiModelSchema),
-  providers: z.array(AdminAiProviderOptionSchema),
+export const FeatureFlagListResponseSchema = z.object({
+  items: z.array(FeatureFlagEntrySchema),
 });
 
-export const AdminAiModelMutationInputSchema = z.object({
-  providerId: z.string().trim().min(1),
-  name: z.string().trim().min(1),
-  modelId: z.string().trim().min(1),
-  isActive: z.boolean(),
-});
-
-export const DeleteAdminAiModelResponseSchema = z.object({
-  id: z.string(),
+export const SaveFeatureFlagInputSchema = z.object({
+  enabled: z.boolean(),
+  description: z.string().trim().max(500).nullable().optional(),
+  rolloutPercentage: z.number().int().min(0).max(100),
 });
 
 export const AuditLogCategorySchema = z.enum(["USER_ACTION", "SYSTEM_ACTIVITY", "DATABASE_CHANGE"]);
@@ -181,6 +182,13 @@ export const AnalyticsSummarySchema = z.object({
   mostUsedEndpoint: z.string().nullable(),
 });
 
+export const AnalyticsDatabaseSummarySchema = z.object({
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
+  slowQueryRequestRate: z.number().min(0),
+});
+
 export const AnalyticsTimeseriesPointSchema = z.object({
   bucketStart: z.string(),
   label: z.string(),
@@ -189,6 +197,9 @@ export const AnalyticsTimeseriesPointSchema = z.object({
   errorRate: z.number().min(0),
   averageResponseTimeMs: z.number().min(0),
   activeUsers: z.number().int().min(0),
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
 });
 
 export const AnalyticsEndpointUsageSchema = z.object({
@@ -198,6 +209,10 @@ export const AnalyticsEndpointUsageSchema = z.object({
   errorCount: z.number().int().min(0),
   errorRate: z.number().min(0),
   averageResponseTimeMs: z.number().min(0),
+  averageDbQueryCount: z.number().min(0),
+  averageDbQueryDurationMs: z.number().min(0),
+  slowQueryRequestCount: z.number().int().min(0),
+  slowQueryRequestRate: z.number().min(0),
 });
 
 export const AnalyticsJobPerformanceSchema = z.object({
@@ -209,12 +224,22 @@ export const AnalyticsJobPerformanceSchema = z.object({
   lastRunAt: z.string().nullable(),
 });
 
+export const AnalyticsSlowQueryPatternSchema = z.object({
+  model: z.string(),
+  operation: z.string(),
+  occurrenceCount: z.number().int().min(0),
+  averageDurationMs: z.number().min(0),
+  maxDurationMs: z.number().min(0),
+});
+
 export const AnalyticsDashboardSchema = z.object({
   timeframeDays: z.number().int().positive(),
   granularity: z.enum(["hour", "day"]),
   summary: AnalyticsSummarySchema,
+  database: AnalyticsDatabaseSummarySchema,
   requestVolume: z.array(AnalyticsTimeseriesPointSchema),
   endpointUsage: z.array(AnalyticsEndpointUsageSchema),
+  slowQueryPatterns: z.array(AnalyticsSlowQueryPatternSchema),
   backgroundJobs: z.array(AnalyticsJobPerformanceSchema),
 });
 
@@ -230,18 +255,18 @@ export type AdminUserPasswordUpdateInput = z.infer<typeof AdminUserPasswordUpdat
 export type SystemConfigurationEntry = z.infer<typeof SystemConfigurationEntrySchema>;
 export type SystemConfigurationListResponse = z.infer<typeof SystemConfigurationListResponseSchema>;
 export type UpdateSystemConfigurationInput = z.infer<typeof UpdateSystemConfigurationInputSchema>;
-export type AdminAiProviderOption = z.infer<typeof AdminAiProviderOptionSchema>;
-export type AdminAiModel = z.infer<typeof AdminAiModelSchema>;
-export type AdminAiModelCatalog = z.infer<typeof AdminAiModelCatalogSchema>;
-export type AdminAiModelMutationInput = z.infer<typeof AdminAiModelMutationInputSchema>;
-export type DeleteAdminAiModelResponse = z.infer<typeof DeleteAdminAiModelResponseSchema>;
+export type FeatureFlagEntry = z.infer<typeof FeatureFlagEntrySchema>;
+export type FeatureFlagListResponse = z.infer<typeof FeatureFlagListResponseSchema>;
+export type SaveFeatureFlagInput = z.infer<typeof SaveFeatureFlagInputSchema>;
 export type AuditLogCategory = z.infer<typeof AuditLogCategorySchema>;
 export type AuditLogActor = z.infer<typeof AuditLogActorSchema>;
 export type AuditLogListItem = z.infer<typeof AuditLogListItemSchema>;
 export type AuditLogListResponse = z.infer<typeof AuditLogListResponseSchema>;
 export type AuditLogDetail = z.infer<typeof AuditLogDetailSchema>;
 export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;
+export type AnalyticsDatabaseSummary = z.infer<typeof AnalyticsDatabaseSummarySchema>;
 export type AnalyticsTimeseriesPoint = z.infer<typeof AnalyticsTimeseriesPointSchema>;
 export type AnalyticsEndpointUsage = z.infer<typeof AnalyticsEndpointUsageSchema>;
 export type AnalyticsJobPerformance = z.infer<typeof AnalyticsJobPerformanceSchema>;
+export type AnalyticsSlowQueryPattern = z.infer<typeof AnalyticsSlowQueryPatternSchema>;
 export type AnalyticsDashboard = z.infer<typeof AnalyticsDashboardSchema>;

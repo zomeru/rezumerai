@@ -1,8 +1,5 @@
 import type {
   AiSettings,
-  AssistantChatInput,
-  AssistantChatResponse,
-  AssistantHistoryResponse,
   ResumeCopilotOptimizeInput,
   ResumeCopilotOptimizeResponse,
   ResumeCopilotReviewInput,
@@ -12,8 +9,6 @@ import type {
 } from "@rezumerai/types";
 import {
   AiSettingsSchema,
-  AssistantChatResponseSchema,
-  AssistantHistoryResponseSchema,
   ResumeCopilotOptimizeResponseSchema,
   ResumeCopilotReviewResponseSchema,
   ResumeCopilotTailorResponseSchema,
@@ -26,11 +21,28 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import type { UIMessage } from "ai";
+import { z } from "zod";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 
-const AI_SETTINGS_QUERY_KEY = ["aiSettings"] as const;
-const ASSISTANT_HISTORY_QUERY_KEY = ["assistantHistory"] as const;
+const AssistantUiMessageSchema: z.ZodType<UIMessage> = z
+  .object({
+    id: z.string().trim().min(1),
+    role: z.enum(["system", "user", "assistant"]),
+    parts: z.array(z.unknown()),
+  })
+  .transform((value) => value as UIMessage);
+
+const AssistantMessagesResponseSchema = z.object({
+  scope: z.enum(["PUBLIC", "USER", "ADMIN"]),
+  messages: z.array(AssistantUiMessageSchema),
+  nextCursor: z.string().trim().min(1).nullable(),
+  hasMore: z.boolean(),
+});
+
+export type AssistantMessagesResponse = z.infer<typeof AssistantMessagesResponseSchema>;
 
 function getApiErrorMessage(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) {
@@ -48,7 +60,7 @@ export function useAiSettings(
   options?: Omit<QueryOptions<AiSettings>, "queryKey" | "queryFn"> & { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: AI_SETTINGS_QUERY_KEY,
+    queryKey: queryKeys.ai.settings(),
     queryFn: async () => {
       const { data, error } = await api.ai.settings.get();
 
@@ -84,73 +96,65 @@ export function useUpdateSelectedAiModel() {
       return AiSettingsSchema.parse(data);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: AI_SETTINGS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.settings() });
     },
   });
 }
 
-export function useAssistantChat() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: AssistantChatInput): Promise<AssistantChatResponse> => {
-      const { data, error } = await api.ai.assistant.chat.post(input);
-
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR));
-      }
-
-      if (!data) {
-        throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
-      }
-
-      return AssistantChatResponseSchema.parse(data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ASSISTANT_HISTORY_QUERY_KEY });
-    },
-  });
-}
-
-export function useAssistantHistory(options?: { enabled?: boolean; limit?: number; threadId?: string | null }) {
+export function useAssistantMessageHistory(options?: {
+  enabled?: boolean;
+  identityKey?: string | null;
+  limit?: number;
+  threadId?: string | null;
+}) {
   const limit = options?.limit ?? 20;
+  const identityKey = options?.identityKey ?? null;
   const threadId = options?.threadId ?? null;
 
   return useInfiniteQuery<
-    AssistantHistoryResponse,
+    AssistantMessagesResponse,
     Error,
-    InfiniteData<AssistantHistoryResponse>,
-    readonly ["assistantHistory", string, number],
+    InfiniteData<AssistantMessagesResponse>,
+    ReturnType<typeof queryKeys.ai.assistantMessages>,
     string | null
   >({
-    queryKey: [...ASSISTANT_HISTORY_QUERY_KEY, threadId ?? "missing-thread", limit],
-    enabled: (options?.enabled ?? true) && typeof threadId === "string" && threadId.length > 0,
+    queryKey: queryKeys.ai.assistantMessages({ threadId, limit, identityKey }),
+    enabled:
+      (options?.enabled ?? true) &&
+      typeof threadId === "string" &&
+      threadId.length > 0 &&
+      typeof identityKey === "string" &&
+      identityKey.length > 0,
     initialPageParam: null,
-    queryFn: async ({ pageParam }): Promise<AssistantHistoryResponse> => {
+    queryFn: async ({ pageParam }): Promise<AssistantMessagesResponse> => {
       if (!threadId) {
         throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
       }
 
-      const query: { threadId: string; limit: number; cursor?: string } = {
+      const params = new URLSearchParams({
         threadId,
-        limit,
-      };
+        limit: String(limit),
+      });
 
       if (pageParam) {
-        query.cursor = pageParam;
+        params.set("cursor", pageParam);
       }
 
-      const { data, error } = await api.ai.assistant.history.get({ query });
+      const response = await fetch(`/api/ai/assistant/messages?${params.toString()}`, {
+        credentials: "include",
+      });
 
-      if (error) {
-        throw new Error(getApiErrorMessage(error.value, ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR));
+      if (!response.ok) {
+        throw new Error((await response.text()) || ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
       }
+
+      const data = await response.json();
 
       if (!data) {
         throw new Error(ERROR_MESSAGES.AI_ASSISTANT_UNKNOWN_ERROR);
       }
 
-      return AssistantHistoryResponseSchema.parse(data);
+      return AssistantMessagesResponseSchema.parse(data);
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });

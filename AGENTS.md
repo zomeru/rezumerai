@@ -23,6 +23,32 @@ ls .agents/skills/
 cat .agents/skills/<skill-name>/SKILL.md
 ```
 
+## Performance Diagnostics
+
+- Use `bun run benchmark:report -- --days=7` to print the current request, latency, and Prisma-query benchmark summary from collected analytics events.
+- The benchmark report is based on tracked analytics data, so it is only meaningful after the target flows have been exercised.
+
+## Deployment Bootstrap
+
+- `bun run db:migrate` in `packages/database` is the deploy-safe path: it runs `prisma migrate deploy` and then bootstraps any missing required system configuration and public content rows.
+- `bun run db:bootstrap:system` generates the Prisma client first so it can run correctly in clean CI/deploy environments where `packages/database/generated/` is absent.
+- `bun run db:seed:system` remains a development reset tool that overwrites those rows back to the current defaults.
+
+## TypeScript Config Conventions
+
+- Shared TypeScript presets live in `packages/tsconfig/`.
+- The canonical preset layout is:
+  - `base.json`: common compiler semantics only
+  - `library.json`: internal non-React package defaults
+  - `react-library.json`: internal React package defaults
+  - `next.json`: Next.js app defaults
+  - `database.json`: Prisma/database package defaults
+- Keep project-local `tsconfig.json` files focused on project-relative concerns only:
+  - `include` / `exclude`
+  - local `baseUrl`
+  - local `paths` for source-level workspace aliases when a package must typecheck against sibling source
+- Do not put project-relative `baseUrl`, `paths`, `outDir`, or `tsBuildInfoFile` settings into shared presets under `packages/tsconfig/`.
+
 ### Serena (Optional)
 
 Serena provides semantic code navigation — symbol lookup, reference tracing, and structured edits. Use it when it helps; it is not required for every task.
@@ -58,15 +84,36 @@ Do **not** read every file under `.agents/instructions/` automatically. Load onl
 
 | Task type | Load these files |
 | --- | --- |
-| UI / frontend work | `code-style.md`, `architecture.md`, `testing-guidelines.md` |
-| Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
-| Database / schema work | `database-commands.md`, `architecture.md`, `security-guidelines.md` |
-| Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md` |
+| UI / frontend work | `project-overview.md`, `repository-layout.md`, `nextjs-app-router-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
+| Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `repository-layout.md`, `code-style.md`, `testing-guidelines.md` |
+| Database / schema work | `database-commands.md`, `architecture.md`, `repository-layout.md`, `security-guidelines.md` |
+| Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `nextjs-app-router-guidelines.md`, `repository-layout.md` |
 | AI / LLM integration | `ai-integration-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md`, `testing-guidelines.md` |
-| CI / tooling work | `build-test-commands.md`, `development-workflow.md`, `monorepo-guidelines.md` |
+| CI / tooling work | `build-test-commands.md`, `development-workflow.md`, `docker-commands.md`, `monorepo-guidelines.md` |
 | Monorepo / packages work | `monorepo-guidelines.md`, `repository-layout.md`, `typescript-guidelines.md` |
-| New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md` |
+| New contributor onboarding | `project-overview.md`, `repository-layout.md`, `development-workflow.md`, `build-test-commands.md` |
+| Documentation / agent workflow | `ai-agent-workflow.md`, `project-overview.md`, `repository-layout.md` |
 | Commit / PR work | `commit-and-pr-guidelines.md` |
+
+## AI Architecture
+
+The canonical AI stack is:
+
+- **Runtime:** Vercel AI SDK Core in the embedded Elysia API layer
+- **Provider:** OpenRouter through `@openrouter/ai-sdk-provider`
+- **UI:** AI SDK UI / `useChat`
+- **RAG / vectors:** pgvector
+- **Embeddings:** AI SDK embeddings
+- **Chunking:** LangChain text splitters only
+
+Architecture rules:
+
+- Next.js API routes under `apps/web/src/app/api/**` are transport-only wrappers around the embedded Elysia app.
+- All AI business logic stays in `apps/web/src/elysia-api/modules/ai/**`.
+- Use the centralized provider registry, tool registry, and prompt composer in the AI module instead of ad hoc model/tool/prompt wiring.
+- System prompts are resolved by workflow `feature + action` from `AI_CONFIG`. Keep the assistant chat prompt separate from Resume Copilot optimize/tailor/review prompts and the Text Optimizer prompt.
+- Do not reintroduce Mastra, `@openrouter/sdk`, or custom assistant streaming abstractions.
+- Assistant persistence must remain thread-isolated by `userId + scope + threadId`.
 
 ## Instruction Files
 
@@ -74,6 +121,7 @@ Detailed guidance is split into modular files under `.agents/instructions/`. Loa
 
 - **Project overview:** `.agents/instructions/project-overview.md`
 - **Repository layout:** `.agents/instructions/repository-layout.md`
+- **Next.js App Router guidelines:** `.agents/instructions/nextjs-app-router-guidelines.md`
 - **Development workflow:** `.agents/instructions/development-workflow.md`
 - **Build, lint, format, test:** `.agents/instructions/build-test-commands.md`
 - **Database commands:** `.agents/instructions/database-commands.md`
@@ -82,7 +130,7 @@ Detailed guidance is split into modular files under `.agents/instructions/`. Loa
 - **Module architecture:** `.agents/instructions/architecture.md`
 - **Elysia API guidelines:** `.agents/instructions/elysia-api-guidelines.md`
 - **TypeScript guidelines:** `.agents/instructions/typescript-guidelines.md`
-- **Testing guidelines:** `.agents/instructions/testing-guidelines.md`
+- **Unit/Browser Testing guidelines:** `.agents/instructions/testing-guidelines.md`
 - **AI integration guidelines:** `.agents/instructions/ai-integration-guidelines.md`
 - **AI agent workflow:** `.agents/instructions/ai-agent-workflow.md`
 - **Security guidelines:** `.agents/instructions/security-guidelines.md`

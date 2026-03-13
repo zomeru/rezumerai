@@ -1,26 +1,24 @@
 "use client";
 
-import type { AssistantChatMessage, AssistantReplyBlock } from "@rezumerai/types";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useAccountSettings } from "@/hooks/useAccount";
-import { useAssistantChat, useAssistantHistory } from "@/hooks/useAi";
-import { ensureAnonymousSession, hasSessionIdentity, isAnonymousSession, useSession } from "@/lib/auth-client";
+import LLMMarkdownRenderer from "@/components/ai/LLMMarkdownRenderer";
+import { useAssistantMessageHistory } from "@/hooks/useAi";
+import { extractDisplayTextFromUiMessageParts, toDisplaySafeUiMessageParts } from "@/lib/ai-message-parts";
+import {
+  ensureAnonymousSession,
+  getSessionUserRole,
+  hasSessionIdentity,
+  isAnonymousSession,
+  useSession,
+} from "@/lib/auth-client";
 
-type WidgetMessage = AssistantChatMessage & {
-  id: string;
-  blocks?: AssistantReplyBlock[];
-};
-
-const INITIAL_MESSAGES: WidgetMessage[] = [
-  {
-    id: "assistant-welcome",
-    role: "assistant",
-    content: "Ask about Rezumerai, your resumes, or admin data based on your access.",
-  },
-];
+const INITIAL_ASSISTANT_COPY = "Ask about Rezumerai, your resumes, or admin data based on your current access.";
 
 const DEFAULT_PANEL_SIZE = {
   width: 384,
@@ -34,6 +32,7 @@ const MIN_PANEL_SIZE = {
 
 const MAX_PANEL_WIDTH = 640;
 const DEFAULT_ASSISTANT_THREAD_ID = "assistant-widget";
+
 type PanelSize = {
   width: number;
   height: number;
@@ -41,82 +40,6 @@ type PanelSize = {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-function normalizeAssistantContent(content: string): string {
-  return content
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+(\d+\.\s+\*\*?)/g, "\n$1")
-    .replace(/[ \t]+(\d+\.\s+)/g, "\n$1")
-    .replace(/[ \t]+([-*•]\s+)/g, "\n$1")
-    .trim();
-}
-
-function parseMessageBlocks(content: string): AssistantReplyBlock[] {
-  const normalized = normalizeAssistantContent(content);
-  const lines = normalized.split("\n").map((line) => line.trim());
-  const blocks: AssistantReplyBlock[] = [];
-  let paragraphLines: string[] = [];
-
-  function flushParagraph(): void {
-    if (paragraphLines.length === 0) {
-      return;
-    }
-
-    blocks.push({
-      type: "paragraph",
-      content: paragraphLines.join("\n").trim(),
-    });
-    paragraphLines = [];
-  }
-
-  for (let index = 0; index < lines.length; ) {
-    const line = lines[index];
-
-    if (!line) {
-      flushParagraph();
-      index += 1;
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(line)) {
-      flushParagraph();
-      const items: string[] = [];
-
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index] ?? "")) {
-        items.push((lines[index] ?? "").replace(/^\d+\.\s+/, "").trim());
-        index += 1;
-      }
-
-      blocks.push({
-        type: "ordered-list",
-        items,
-      });
-      continue;
-    }
-
-    if (/^[-*•]\s+/.test(line)) {
-      flushParagraph();
-      const items: string[] = [];
-
-      while (index < lines.length && /^[-*•]\s+/.test(lines[index] ?? "")) {
-        items.push((lines[index] ?? "").replace(/^[-*•]\s+/, "").trim());
-        index += 1;
-      }
-
-      blocks.push({
-        type: "unordered-list",
-        items,
-      });
-      continue;
-    }
-
-    paragraphLines.push(line);
-    index += 1;
-  }
-
-  flushParagraph();
-  return blocks;
 }
 
 function normalizeInlineContent(content: unknown): string {
@@ -133,140 +56,105 @@ function normalizeInlineContent(content: unknown): string {
   }
 
   try {
-    return JSON.stringify(content);
+    return JSON.stringify(content, null, 2);
   } catch {
     return String(content);
   }
 }
 
-function renderInlineText(content: unknown): React.ReactNode {
-  const normalizedContent = normalizeInlineContent(content);
-  const parts = normalizedContent.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+function mergeMessages(olderMessages: UIMessage[], currentMessages: UIMessage[]): UIMessage[] {
+  const messageOrder: string[] = [];
+  const mergedById = new Map<string, UIMessage>();
 
-  return parts.map((part) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={`strong-${part}`} className="font-semibold text-slate-900">
-          {part.slice(2, -2)}
-        </strong>
-      );
+  for (const message of [...olderMessages, ...currentMessages]) {
+    if (!mergedById.has(message.id)) {
+      messageOrder.push(message.id);
     }
 
-    return <span key={`text-${part}`}>{part}</span>;
+    mergedById.set(message.id, message);
+  }
+
+  return messageOrder.map((id) => mergedById.get(id)).filter((message): message is UIMessage => Boolean(message));
+}
+
+function getVisibleMessageTextParts(parts: UIMessage["parts"]): Array<{ key: string; text: string }> {
+  let characterOffset = 0;
+
+  return toDisplaySafeUiMessageParts(parts).flatMap((part) => {
+    if (!("text" in part) || typeof part.text !== "string") {
+      return [];
+    }
+
+    const key = `${characterOffset}-${part.text}`;
+    characterOffset += part.text.length;
+
+    return [{ key, text: part.text }];
   });
 }
 
-function AssistantMessageContent({
-  content,
-  blocks,
-}: {
-  content: string;
-  blocks?: AssistantReplyBlock[];
-}): React.JSX.Element {
-  const messageBlocks = blocks && blocks.length > 0 ? blocks : parseMessageBlocks(content);
-
-  return (
-    <div className="space-y-3 break-words text-[0.95rem] leading-6 [overflow-wrap:anywhere]">
-      {messageBlocks.map((block) => {
-        if (block.type === "ordered-list") {
-          const normalizedItems = block.items.map((item) => normalizeInlineContent(item));
-          const blockKey = `ordered-${normalizedItems.join("|")}`;
-
-          return (
-            <ol key={blockKey} className="list-decimal space-y-2 pl-5 marker:text-slate-400">
-              {normalizedItems.map((item) => (
-                <li key={`ordered-item-${item}`} className="break-words [overflow-wrap:anywhere]">
-                  {renderInlineText(item)}
-                </li>
-              ))}
-            </ol>
-          );
-        }
-
-        if (block.type === "unordered-list") {
-          const normalizedItems = block.items.map((item) => normalizeInlineContent(item));
-          const blockKey = `unordered-${normalizedItems.join("|")}`;
-
-          return (
-            <ul key={blockKey} className="list-disc space-y-2 pl-5 marker:text-slate-400">
-              {normalizedItems.map((item) => (
-                <li key={`unordered-item-${item}`} className="break-words [overflow-wrap:anywhere]">
-                  {renderInlineText(item)}
-                </li>
-              ))}
-            </ul>
-          );
-        }
-
-        const paragraphContent = normalizeInlineContent(block.content);
-
-        return (
-          <p key={`paragraph-${paragraphContent}`} className="whitespace-pre-wrap text-slate-700">
-            {renderInlineText(paragraphContent)}
-          </p>
-        );
-      })}
-    </div>
-  );
+function MessageBody({ content }: { content: string }): React.JSX.Element {
+  return <LLMMarkdownRenderer className="text-slate-700" content={content} />;
 }
 
 export default function AiAssistantWidget(): React.JSX.Element {
   const pathname = usePathname();
-  const assistantChat = useAssistantChat();
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingScrollRestoreHeightRef = useRef<number | null>(null);
   const shouldScrollToBottomRef = useRef(false);
-  const { data: session, isPending: isSessionPending } = useSession();
-  const hasAssistantIdentity = hasSessionIdentity(session);
-  const isAnonymous = isAnonymousSession(session);
-  const accountSettings = useAccountSettings({
-    enabled: hasAssistantIdentity && !isAnonymous,
-    retry: false,
-  });
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [pendingMessages, setPendingMessages] = useState<WidgetMessage[]>([]);
-  const [responseScope, setResponseScope] = useState<"PUBLIC" | "USER" | "ADMIN" | null>(null);
-  const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
-  const [isResizing, setIsResizing] = useState(false);
-  const [isPreparingSession, setIsPreparingSession] = useState(false);
   const resizeStateRef = useRef<{
     startX: number;
     startY: number;
     startWidth: number;
     startHeight: number;
   } | null>(null);
+  const { data: session, isPending: isSessionPending } = useSession();
+  const hasAssistantIdentity = hasSessionIdentity(session);
+  const isAnonymous = isAnonymousSession(session);
 
-  const role = accountSettings.data?.user.role;
-  const history = useAssistantHistory({
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isPreparingSession, setIsPreparingSession] = useState(false);
+  const assistantIdentityKey =
+    hasAssistantIdentity && session?.user?.id ? `${session.user.id}:${isAnonymous ? "anonymous" : "registered"}` : null;
+  const previousAssistantIdentityKeyRef = useRef<string | null>(null);
+
+  const history = useAssistantMessageHistory({
     enabled: isOpen && hasAssistantIdentity,
+    identityKey: assistantIdentityKey,
     limit: 20,
     threadId: DEFAULT_ASSISTANT_THREAD_ID,
   });
-  const historyMessages = useMemo<WidgetMessage[]>(() => {
+  const historyMessages = useMemo<UIMessage[]>(() => {
     const pages = history.data?.pages ?? [];
 
     return pages
       .slice()
       .reverse()
-      .flatMap((page) =>
-        page.messages.map((message) => ({
-          id: message.id,
-          role: message.role,
-          content: message.content,
-          blocks: message.blocks,
-        })),
-      );
+      .flatMap((page) => page.messages);
   }, [history.data]);
-  const messages =
-    historyMessages.length > 0 || pendingMessages.length > 0
-      ? [...historyMessages, ...pendingMessages]
-      : INITIAL_MESSAGES;
+  const role = getSessionUserRole(session);
   const scope =
-    responseScope ??
-    history.data?.pages[0]?.scope ??
-    (role === "ADMIN" ? "ADMIN" : role === "USER" && !isAnonymous ? "USER" : "PUBLIC");
+    history.data?.pages[0]?.scope ?? (role === "ADMIN" ? "ADMIN" : role === "USER" && !isAnonymous ? "USER" : "PUBLIC");
+
+  const { messages, sendMessage, setMessages, status } = useChat<UIMessage>({
+    id: DEFAULT_ASSISTANT_THREAD_ID,
+    messages: historyMessages,
+    transport: new DefaultChatTransport({
+      api: "/api/ai/assistant/chat",
+      prepareSendMessagesRequest: ({ id, messages }) => ({
+        body: {
+          id,
+          message: messages[messages.length - 1],
+          currentPath: pathname ?? "/",
+        },
+      }),
+    }),
+    onError: (error) => {
+      toast.error(error.message || "Assistant request failed.");
+    },
+  });
 
   useEffect(() => {
     if (!isOpen || isSessionPending || hasAssistantIdentity || isPreparingSession) {
@@ -284,6 +172,23 @@ export default function AiAssistantWidget(): React.JSX.Element {
         setIsPreparingSession(false);
       });
   }, [hasAssistantIdentity, isOpen, isPreparingSession, isSessionPending, session]);
+
+  useEffect(() => {
+    if (assistantIdentityKey === previousAssistantIdentityKeyRef.current) {
+      return;
+    }
+
+    previousAssistantIdentityKeyRef.current = assistantIdentityKey;
+    setMessages(assistantIdentityKey ? historyMessages : []);
+  }, [assistantIdentityKey, historyMessages, setMessages]);
+
+  useEffect(() => {
+    if (historyMessages.length === 0) {
+      return;
+    }
+
+    setMessages((currentMessages) => mergeMessages(historyMessages, currentMessages));
+  }, [historyMessages, setMessages]);
 
   useEffect(() => {
     if (!isResizing) {
@@ -364,7 +269,7 @@ export default function AiAssistantWidget(): React.JSX.Element {
 
     shouldScrollToBottomRef.current = false;
     container.scrollTop = container.scrollHeight;
-  }, [messages, history.isFetchingNextPage]);
+  }, [messages, history.isFetchingNextPage, status]);
 
   function onResizeHandlePointerDown(event: React.PointerEvent<HTMLButtonElement>): void {
     event.preventDefault();
@@ -385,7 +290,8 @@ export default function AiAssistantWidget(): React.JSX.Element {
     event.preventDefault();
 
     const nextInput = input.trim();
-    if (!nextInput || assistantChat.isPending || isPreparingSession || isSessionPending) {
+
+    if (!nextInput || status === "submitted" || status === "streaming" || isPreparingSession || isSessionPending) {
       return;
     }
 
@@ -404,46 +310,9 @@ export default function AiAssistantWidget(): React.JSX.Element {
       setIsPreparingSession(false);
     }
 
-    const optimisticUserMessage: WidgetMessage = {
-      id: `pending-user-${Date.now()}`,
-      role: "user",
-      content: nextInput,
-    };
-
-    setPendingMessages([optimisticUserMessage]);
     setInput("");
     shouldScrollToBottomRef.current = true;
-
-    try {
-      const response = await assistantChat.mutateAsync({
-        threadId: DEFAULT_ASSISTANT_THREAD_ID,
-        messages: [
-          {
-            role: "user",
-            content: nextInput,
-          },
-        ],
-        currentPath: pathname ?? "/",
-      });
-
-      setResponseScope(response.scope);
-      setPendingMessages([
-        optimisticUserMessage,
-        {
-          id: `pending-assistant-${Date.now()}`,
-          role: "assistant",
-          content: response.reply,
-          blocks: response.blocks,
-        },
-      ]);
-      await history.refetch();
-      setPendingMessages([]);
-      shouldScrollToBottomRef.current = true;
-    } catch (error) {
-      setPendingMessages([]);
-      const message = error instanceof Error ? error.message : "Assistant request failed.";
-      toast.error(message);
-    }
+    await sendMessage({ text: nextInput });
   }
 
   async function onMessagesScroll(event: React.UIEvent<HTMLDivElement>): Promise<void> {
@@ -456,6 +325,12 @@ export default function AiAssistantWidget(): React.JSX.Element {
     pendingScrollRestoreHeightRef.current = container.scrollHeight;
     await history.fetchNextPage();
   }
+
+  const isChatBusy = status === "submitted" || status === "streaming";
+  const showLoadingState =
+    (isSessionPending || isPreparingSession || history.isLoading) &&
+    messages.length === 0 &&
+    historyMessages.length === 0;
 
   return (
     <aside aria-label="AI assistant" className="fixed right-4 bottom-4 z-100 flex flex-col items-end gap-3">
@@ -500,43 +375,65 @@ export default function AiAssistantWidget(): React.JSX.Element {
               </div>
             )}
 
-            {(isSessionPending || isPreparingSession) &&
-            historyMessages.length === 0 &&
-            pendingMessages.length === 0 ? (
+            {showLoadingState ? (
               <div className="flex h-full items-center justify-center gap-2 text-slate-500 text-sm">
                 <Loader2 className="size-4 animate-spin" />
                 Preparing assistant...
               </div>
-            ) : history.isLoading && historyMessages.length === 0 && pendingMessages.length === 0 ? (
-              <div className="flex h-full items-center justify-center gap-2 text-slate-500 text-sm">
-                <Loader2 className="size-4 animate-spin" />
-                Loading conversation...
+            ) : messages.length === 0 ? (
+              <div className="mr-auto max-w-[90%] rounded-2xl bg-white px-4 py-3 text-slate-700 text-sm shadow-sm">
+                {INITIAL_ASSISTANT_COPY}
               </div>
             ) : (
-              <>
-                {messages.map((message) => (
+              messages.map((message) => {
+                const visibleTextParts = getVisibleMessageTextParts(message.parts);
+                const assistantContent = extractDisplayTextFromUiMessageParts(message.parts);
+
+                if (message.role === "assistant" && visibleTextParts.length === 0) {
+                  return null;
+                }
+
+                return (
                   <div
                     key={message.id}
-                    className={`min-w-0 max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] ${
+                    className={`wrap-anywhere min-w-0 max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                       message.role === "assistant"
                         ? "mr-auto bg-white text-slate-700 shadow-sm"
                         : "ml-auto bg-primary-600 text-white"
                     }`}
                   >
                     {message.role === "assistant" ? (
-                      <AssistantMessageContent content={message.content} blocks={message.blocks} />
+                      <MessageBody content={assistantContent} />
                     ) : (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <div className="space-y-2">
+                        {visibleTextParts.map((part) => (
+                          <p key={`${message.id}-${part.key}`} className="whitespace-pre-wrap">
+                            {normalizeInlineContent(part.text)}
+                          </p>
+                        ))}
+                      </div>
                     )}
                   </div>
-                ))}
-              </>
+                );
+              })
             )}
 
-            {assistantChat.isPending && (
-              <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-slate-600 text-sm shadow-sm">
-                <Loader2 className="size-4 animate-spin" />
-                Thinking...
+            {isChatBusy && (
+              <div className="mr-auto rounded-2xl bg-white px-4 py-3 shadow-sm">
+                <div
+                  aria-label="Assistant is responding"
+                  role="status"
+                  className="flex items-center gap-1.5 text-slate-500"
+                >
+                  <span className="sr-only">Assistant is responding</span>
+                  {[0, 1, 2].map((dot) => (
+                    <span
+                      key={`assistant-typing-${dot}`}
+                      className="size-2 animate-bounce rounded-full bg-slate-400"
+                      style={{ animationDelay: `${dot * 0.12}s` }}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -558,10 +455,10 @@ export default function AiAssistantWidget(): React.JSX.Element {
               />
               <button
                 type="submit"
-                disabled={assistantChat.isPending || isSessionPending || isPreparingSession || !input.trim()}
+                disabled={isChatBusy || isSessionPending || isPreparingSession || !input.trim()}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {assistantChat.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                {isChatBusy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               </button>
             </div>
           </form>

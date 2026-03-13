@@ -1,15 +1,14 @@
 import { Prisma, type PrismaClient } from "@rezumerai/database";
 import type {
-  AdminAiModel,
-  AdminAiModelCatalog,
   AdminUserDetail,
   AdminUserListResponse,
   AnalyticsDashboard,
   AuditLogDetail,
   AuditLogListResponse,
-  DeleteAdminAiModelResponse,
   ErrorLogDetail,
   ErrorLogListResponse,
+  FeatureFlagEntry,
+  FeatureFlagListResponse,
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
 } from "@rezumerai/types";
@@ -18,10 +17,13 @@ import {
   ContentPageSchema,
   FaqInformationSchema,
   LandingPageInformationSchema,
+  normalizeAiConfiguration,
   SYSTEM_CONFIGURATION_KEYS,
 } from "@rezumerai/types";
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
+import { clearFeatureFlagCache } from "@/lib/feature-flags";
+import { clearPublicContentCache } from "@/lib/system-content";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
 import { AiService } from "../ai/service";
@@ -40,9 +42,6 @@ const ERROR_LOG_NOT_FOUND_MESSAGE = "Error log not found";
 const USER_NOT_FOUND_MESSAGE = "User not found";
 const AUDIT_LOG_NOT_FOUND_MESSAGE = "Audit log not found";
 const CONFIG_NOT_FOUND_MESSAGE = "System configuration not found";
-const AI_MODEL_NOT_FOUND_MESSAGE = "AI model not found";
-const AI_PROVIDER_NOT_FOUND_MESSAGE = "AI provider not found";
-const AI_MODEL_DUPLICATE_MESSAGE = "An AI model with this provider and model ID already exists.";
 const LAST_ADMIN_ROLE_CHANGE_MESSAGE = "At least one admin must remain assigned to the system.";
 
 const GLOBAL_CONFIGURATION_SCHEMA = z
@@ -53,7 +52,8 @@ const GLOBAL_CONFIGURATION_SCHEMA = z
 
 const SYSTEM_CONFIGURATION_DEFINITIONS = {
   AI_CONFIG: {
-    description: "Global AI model and optimization configuration used across the application.",
+    description:
+      "Global AI models, workflow-specific prompts, and optimization configuration used across the application.",
     schema: AiConfigurationSchema,
   },
   GLOBAL_CONFIG: {
@@ -86,6 +86,16 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
   },
 } as const;
 
+function isMissingFeatureFlagTableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code === "P2021"
+  );
+}
+
 function isManagedConfigurationName(name: string): name is keyof typeof SYSTEM_CONFIGURATION_DEFINITIONS {
   return name in SYSTEM_CONFIGURATION_DEFINITIONS;
 }
@@ -93,21 +103,6 @@ function isManagedConfigurationName(name: string): name is keyof typeof SYSTEM_C
 function isAuditLogCategoryValue(value: string): value is AuditLogCategoryValue {
   return value === "USER_ACTION" || value === "SYSTEM_ACTIVITY" || value === "DATABASE_CHANGE";
 }
-
-const ADMIN_AI_MODEL_SELECT = {
-  id: true,
-  name: true,
-  modelId: true,
-  providerId: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
-  provider: {
-    select: {
-      name: true,
-    },
-  },
-} satisfies Prisma.AiModelSelect;
 
 type AdminUserRole = "ADMIN" | "USER";
 type AuditLogCategoryValue = "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE";
@@ -158,25 +153,15 @@ interface ErrorLogDetailRecord {
   } | null;
 }
 
-interface AdminAiModelRecord {
-  id: string;
-  name: string;
-  modelId: string;
-  providerId: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  provider: {
-    name: string;
-  };
-}
-
 interface AnalyticsTimeseriesRow {
   bucket: Date;
   requestCount: number;
   errorCount: number;
   averageResponseTimeMs: number;
   activeUsers: number;
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
 }
 
 interface EndpointUsageRow {
@@ -185,6 +170,23 @@ interface EndpointUsageRow {
   requestCount: number;
   errorCount: number;
   averageResponseTimeMs: number;
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
+}
+
+interface AnalyticsDatabaseSummaryRow {
+  averageDbQueryCount: number;
+  averageDbQueryDurationMs: number;
+  slowQueryRequestCount: number;
+}
+
+interface SlowQueryPatternRow {
+  model: string | null;
+  operation: string | null;
+  occurrenceCount: number;
+  averageDurationMs: number;
+  maxDurationMs: number;
 }
 
 interface BackgroundJobRow {
@@ -229,13 +231,6 @@ export interface UpdateUserRoleResult {
 export interface UpdateUserPasswordResult {
   user: AdminUserDetail | null;
   error: string | null;
-}
-
-export interface AdminAiModelMutationInput {
-  providerId: string;
-  name: string;
-  modelId: string;
-  isActive: boolean;
 }
 
 function toPage(page: number | undefined): number {
@@ -413,7 +408,12 @@ function toStoredConfigurationValue(value: unknown): Prisma.JsonValue | null {
 
 function parseConfigurationValue(name: string, value: unknown) {
   const definition = isManagedConfigurationName(name) ? SYSTEM_CONFIGURATION_DEFINITIONS[name] : null;
-  const parsedValue = definition ? definition.schema.parse(value) : JSON.parse(JSON.stringify(value));
+  const parsedValue =
+    name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG
+      ? normalizeAiConfiguration(value)
+      : definition
+        ? definition.schema.parse(value)
+        : JSON.parse(JSON.stringify(value));
   const serialized = toStoredConfigurationValue(parsedValue);
 
   return serialized === null ? Prisma.JsonNull : serialized;
@@ -427,11 +427,14 @@ function toSystemConfigurationEntry(record: {
   createdAt: Date;
   updatedAt: Date;
 }): SystemConfigurationEntry {
+  const value =
+    record.name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG ? normalizeAiConfiguration(record.value) : record.value;
+
   return {
     id: record.id,
     name: record.name,
     description: resolveConfigurationDescription(record.name, record.description),
-    value: record.value,
+    value,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     isEditable: true,
@@ -439,14 +442,21 @@ function toSystemConfigurationEntry(record: {
   };
 }
 
-function toAdminAiModel(record: AdminAiModelRecord): AdminAiModel {
+function toFeatureFlagEntry(record: {
+  id: string;
+  name: string;
+  enabled: boolean;
+  description: string | null;
+  rolloutPercentage: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): FeatureFlagEntry {
   return {
     id: record.id,
     name: record.name,
-    modelId: record.modelId,
-    providerId: record.providerId,
-    providerName: record.provider.name,
-    isActive: record.isActive,
+    enabled: record.enabled,
+    description: record.description,
+    rolloutPercentage: record.rolloutPercentage,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   };
@@ -485,6 +495,9 @@ function buildTimeSeries(
       errorRate,
       averageResponseTimeMs: row?.averageResponseTimeMs ?? 0,
       activeUsers: row?.activeUsers ?? 0,
+      averageDbQueryCount: row?.averageDbQueryCount ?? 0,
+      averageDbQueryDurationMs: row?.averageDbQueryDurationMs ?? 0,
+      slowQueryRequestCount: row?.slowQueryRequestCount ?? 0,
     });
 
     pointer = addBucket(pointer, granularity);
@@ -495,17 +508,6 @@ function buildTimeSeries(
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class ErrorLogService {
-  static async isAdmin(db: DatabaseClient, userId: string): Promise<boolean> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        role: true,
-      },
-    });
-
-    return user?.role === "ADMIN";
-  }
-
   static async listErrorLogs(
     db: TransactionCapableDatabaseClient,
     input: ListErrorLogsInput = {},
@@ -1033,6 +1035,12 @@ export abstract class AdminService {
       },
     });
 
+    if (name === SYSTEM_CONFIGURATION_KEYS.AI_CONFIG && typeof AiService.clearConfigurationCache === "function") {
+      AiService.clearConfigurationCache();
+    }
+
+    clearPublicContentCache(name);
+
     await createAuditLog({
       category: "USER_ACTION",
       eventType: "SYSTEM_CONFIGURATION_UPDATED",
@@ -1053,226 +1061,102 @@ export abstract class AdminService {
     };
   }
 
-  static async listAiModels(db: TransactionCapableDatabaseClient): Promise<AdminAiModelCatalog> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.listAiModels" });
+  static async listFeatureFlags(db: DatabaseClient): Promise<FeatureFlagListResponse> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.listFeatureFlags" });
+    let rows: Array<{
+      id: string;
+      name: string;
+      enabled: boolean;
+      description: string | null;
+      rolloutPercentage: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }> = [];
 
-    const [models, providers] = await db.$transaction([
-      db.aiModel.findMany({
-        select: ADMIN_AI_MODEL_SELECT,
-        orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
-      }),
-      db.aiProvider.findMany({
-        select: {
-          id: true,
-          name: true,
-        },
+    try {
+      rows = await db.featureFlag.findMany({
         orderBy: [{ name: "asc" }],
-      }),
-    ]);
+      });
+    } catch (error: unknown) {
+      if (!isMissingFeatureFlagTableError(error)) {
+        throw error;
+      }
+    }
 
     return {
-      models: models.map((model) => toAdminAiModel(model)),
-      providers,
+      items: rows.map((row) => toFeatureFlagEntry(row)),
     };
   }
 
-  static async createAiModel(
+  static async saveFeatureFlag(
     db: DatabaseClient,
     actorUserId: string,
-    input: AdminAiModelMutationInput,
-  ): Promise<{ model: AdminAiModel | null; error: string | null }> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.createAiModel" });
-
-    const payload = {
-      providerId: input.providerId.trim(),
-      name: input.name.trim(),
-      modelId: input.modelId.trim(),
-      isActive: input.isActive,
-    };
-
-    const [provider, duplicate] = await Promise.all([
-      db.aiProvider.findUnique({
-        where: { id: payload.providerId },
-        select: { id: true },
-      }),
-      db.aiModel.findFirst({
-        where: {
-          providerId: payload.providerId,
-          modelId: payload.modelId,
-        },
-        select: { id: true },
-      }),
-    ]);
-
-    if (!provider) {
-      return {
-        model: null,
-        error: AI_PROVIDER_NOT_FOUND_MESSAGE,
-      };
-    }
-
-    if (duplicate) {
-      return {
-        model: null,
-        error: AI_MODEL_DUPLICATE_MESSAGE,
-      };
-    }
-
-    const created = await db.aiModel.create({
-      data: payload,
-      select: ADMIN_AI_MODEL_SELECT,
+    name: string,
+    input: {
+      enabled: boolean;
+      description?: string | null;
+      rolloutPercentage: number;
+    },
+  ): Promise<FeatureFlagEntry> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.saveFeatureFlag" });
+    const description = input.description?.trim() ? input.description.trim() : null;
+    const existing = await db.featureFlag.findUnique({
+      where: { name },
+      select: {
+        id: true,
+        name: true,
+        enabled: true,
+        description: true,
+        rolloutPercentage: true,
+      },
     });
 
-    const serializedModel = toAdminAiModel(created);
+    const saved = await db.featureFlag.upsert({
+      where: { name },
+      update: {
+        enabled: input.enabled,
+        description,
+        rolloutPercentage: input.rolloutPercentage,
+      },
+      create: {
+        name,
+        enabled: input.enabled,
+        description,
+        rolloutPercentage: input.rolloutPercentage,
+      },
+    });
+
+    clearFeatureFlagCache(name);
+
+    const afterValues = {
+      name: saved.name,
+      enabled: saved.enabled,
+      description: saved.description,
+      rolloutPercentage: saved.rolloutPercentage,
+    };
 
     await createAuditLog({
       category: "USER_ACTION",
-      eventType: "AI_MODEL_CREATED",
-      action: "CREATE",
-      resourceType: "AiModel",
-      resourceId: created.id,
+      eventType: existing ? "FEATURE_FLAG_UPDATED" : "FEATURE_FLAG_CREATED",
+      action: existing ? "UPDATE" : "CREATE",
+      resourceType: "FeatureFlag",
+      resourceId: saved.id,
       userId: actorUserId,
-      endpoint: "/api/admin/ai-models",
-      method: "POST",
-      serviceName: "AdminService.createAiModel",
-      beforeValues: null,
-      afterValues: serializedModel,
+      endpoint: `/api/admin/features/${name}`,
+      method: "PUT",
+      serviceName: "AdminService.saveFeatureFlag",
+      beforeValues: existing
+        ? {
+            name: existing.name,
+            enabled: existing.enabled,
+            description: existing.description,
+            rolloutPercentage: existing.rolloutPercentage,
+          }
+        : null,
+      afterValues,
     });
 
-    return {
-      model: serializedModel,
-      error: null,
-    };
-  }
-
-  static async updateAiModel(
-    db: DatabaseClient,
-    actorUserId: string,
-    id: string,
-    input: AdminAiModelMutationInput,
-  ): Promise<{ model: AdminAiModel | null; error: string | null }> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.updateAiModel" });
-
-    const payload = {
-      providerId: input.providerId.trim(),
-      name: input.name.trim(),
-      modelId: input.modelId.trim(),
-      isActive: input.isActive,
-    };
-
-    const existing = await db.aiModel.findUnique({
-      where: { id },
-      select: ADMIN_AI_MODEL_SELECT,
-    });
-
-    if (!existing) {
-      return {
-        model: null,
-        error: AI_MODEL_NOT_FOUND_MESSAGE,
-      };
-    }
-
-    const [provider, duplicate] = await Promise.all([
-      db.aiProvider.findUnique({
-        where: { id: payload.providerId },
-        select: { id: true },
-      }),
-      db.aiModel.findFirst({
-        where: {
-          providerId: payload.providerId,
-          modelId: payload.modelId,
-          NOT: {
-            id,
-          },
-        },
-        select: { id: true },
-      }),
-    ]);
-
-    if (!provider) {
-      return {
-        model: null,
-        error: AI_PROVIDER_NOT_FOUND_MESSAGE,
-      };
-    }
-
-    if (duplicate) {
-      return {
-        model: null,
-        error: AI_MODEL_DUPLICATE_MESSAGE,
-      };
-    }
-
-    const updated = await db.aiModel.update({
-      where: { id },
-      data: payload,
-      select: ADMIN_AI_MODEL_SELECT,
-    });
-
-    const previousModel = toAdminAiModel(existing);
-    const serializedModel = toAdminAiModel(updated);
-
-    await createAuditLog({
-      category: "USER_ACTION",
-      eventType: "AI_MODEL_UPDATED",
-      action: "UPDATE",
-      resourceType: "AiModel",
-      resourceId: updated.id,
-      userId: actorUserId,
-      endpoint: `/api/admin/ai-models/${id}`,
-      method: "PATCH",
-      serviceName: "AdminService.updateAiModel",
-      beforeValues: previousModel,
-      afterValues: serializedModel,
-    });
-
-    return {
-      model: serializedModel,
-      error: null,
-    };
-  }
-
-  static async deleteAiModel(
-    db: DatabaseClient,
-    actorUserId: string,
-    id: string,
-  ): Promise<{ result: DeleteAdminAiModelResponse | null; error: string | null }> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.deleteAiModel" });
-
-    const existing = await db.aiModel.findUnique({
-      where: { id },
-      select: ADMIN_AI_MODEL_SELECT,
-    });
-
-    if (!existing) {
-      return {
-        result: null,
-        error: AI_MODEL_NOT_FOUND_MESSAGE,
-      };
-    }
-
-    await db.aiModel.delete({
-      where: { id },
-    });
-
-    await createAuditLog({
-      category: "USER_ACTION",
-      eventType: "AI_MODEL_DELETED",
-      action: "DELETE",
-      resourceType: "AiModel",
-      resourceId: existing.id,
-      userId: actorUserId,
-      endpoint: `/api/admin/ai-models/${id}`,
-      method: "DELETE",
-      serviceName: "AdminService.deleteAiModel",
-      beforeValues: toAdminAiModel(existing),
-      afterValues: null,
-    });
-
-    return {
-      result: { id: existing.id },
-      error: null,
-    };
+    return toFeatureFlagEntry(saved);
   }
 
   static async listAuditLogs(
@@ -1402,14 +1286,20 @@ export abstract class AdminService {
     const now = new Date();
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - timeframeDays);
+    const slowQueryRequestCondition = Prisma.sql`
+      jsonb_typeof("metadata"->'metadata'->'slowDbQueries') = 'array'
+      AND jsonb_array_length("metadata"->'metadata'->'slowDbQueries') > 0
+    `;
 
     const [
       summaryAggregate,
       totalErrors,
       activeUsersResult,
+      databaseSummaryResult,
       mostUsedEndpointResult,
       timeseriesRows,
       endpointUsageRows,
+      slowQueryPatterns,
       backgroundJobs,
     ] = await Promise.all([
       db.analyticsEvent.aggregate({
@@ -1444,6 +1334,15 @@ export abstract class AdminService {
             AND "createdAt" >= ${startDate}
             AND "userId" IS NOT NULL
         `),
+      db.$queryRaw<AnalyticsDatabaseSummaryRow[]>(Prisma.sql`
+          SELECT
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
+          FROM "analytics_event"
+          WHERE "source" = 'API_REQUEST'
+            AND "createdAt" >= ${startDate}
+        `),
       db.$queryRaw<Array<{ endpoint: string | null; count: number }>>(Prisma.sql`
           SELECT "endpoint", COUNT(*)::int AS count
           FROM "analytics_event"
@@ -1460,7 +1359,10 @@ export abstract class AdminService {
             COUNT(*)::int AS "requestCount",
             COUNT(*) FILTER (WHERE "statusCode" >= 400)::int AS "errorCount",
             COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs",
-            COUNT(DISTINCT "userId")::int AS "activeUsers"
+            COUNT(DISTINCT "userId")::int AS "activeUsers",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
           FROM "analytics_event"
           WHERE "source" = 'API_REQUEST'
             AND "createdAt" >= ${startDate}
@@ -1473,13 +1375,37 @@ export abstract class AdminService {
             COALESCE("method", 'UNKNOWN') AS method,
             COUNT(*)::int AS "requestCount",
             COUNT(*) FILTER (WHERE "statusCode" >= 400)::int AS "errorCount",
-            COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs"
+            COALESCE(AVG("durationMs"), 0)::float AS "averageResponseTimeMs",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryCount')::float, 0)), 0)::float AS "averageDbQueryCount",
+            COALESCE(AVG(COALESCE(("metadata"->'metadata'->>'dbQueryDurationMs')::float, 0)), 0)::float AS "averageDbQueryDurationMs",
+            COUNT(*) FILTER (WHERE ${slowQueryRequestCondition})::int AS "slowQueryRequestCount"
           FROM "analytics_event"
           WHERE "source" = 'API_REQUEST'
             AND "createdAt" >= ${startDate}
             AND "endpoint" IS NOT NULL
           GROUP BY "endpoint", method
           ORDER BY "requestCount" DESC, "averageResponseTimeMs" DESC
+          LIMIT 8
+        `),
+      db.$queryRaw<SlowQueryPatternRow[]>(Prisma.sql`
+          SELECT
+            COALESCE("slowQuery".value->>'model', 'UNKNOWN') AS model,
+            UPPER(COALESCE("slowQuery".value->>'operation', 'unknown')) AS operation,
+            COUNT(*)::int AS "occurrenceCount",
+            COALESCE(AVG(COALESCE(("slowQuery".value->>'durationMs')::float, 0)), 0)::float AS "averageDurationMs",
+            COALESCE(MAX(COALESCE(("slowQuery".value->>'durationMs')::float, 0)), 0)::float AS "maxDurationMs"
+          FROM "analytics_event"
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE
+              WHEN jsonb_typeof("metadata"->'metadata'->'slowDbQueries') = 'array'
+                THEN "metadata"->'metadata'->'slowDbQueries'
+              ELSE '[]'::jsonb
+            END
+          ) AS "slowQuery"(value)
+          WHERE "source" = 'API_REQUEST'
+            AND "createdAt" >= ${startDate}
+          GROUP BY model, operation
+          ORDER BY "maxDurationMs" DESC, "occurrenceCount" DESC, model ASC
           LIMIT 8
         `),
       db.$queryRaw<BackgroundJobRow[]>(Prisma.sql`
@@ -1499,6 +1425,13 @@ export abstract class AdminService {
 
     const totalRequests = summaryAggregate._count._all;
     const errorRate = totalRequests > 0 ? Number(((totalErrors / totalRequests) * 100).toFixed(2)) : 0;
+    const databaseSummary = databaseSummaryResult[0] ?? {
+      averageDbQueryCount: 0,
+      averageDbQueryDurationMs: 0,
+      slowQueryRequestCount: 0,
+    };
+    const slowQueryRequestRate =
+      totalRequests > 0 ? Number(((databaseSummary.slowQueryRequestCount / totalRequests) * 100).toFixed(2)) : 0;
 
     return {
       timeframeDays,
@@ -1511,6 +1444,12 @@ export abstract class AdminService {
         averageResponseTimeMs: Number((summaryAggregate._avg.durationMs ?? 0).toFixed(2)),
         mostUsedEndpoint: mostUsedEndpointResult[0]?.endpoint ?? null,
       },
+      database: {
+        averageDbQueryCount: Number(databaseSummary.averageDbQueryCount.toFixed(2)),
+        averageDbQueryDurationMs: Number(databaseSummary.averageDbQueryDurationMs.toFixed(2)),
+        slowQueryRequestCount: databaseSummary.slowQueryRequestCount,
+        slowQueryRequestRate,
+      },
       requestVolume: buildTimeSeries(timeframeDays, granularity, timeseriesRows, now),
       endpointUsage: endpointUsageRows.map((row) => ({
         endpoint: row.endpoint ?? "Unknown endpoint",
@@ -1519,6 +1458,18 @@ export abstract class AdminService {
         errorCount: row.errorCount,
         errorRate: row.requestCount > 0 ? Number(((row.errorCount / row.requestCount) * 100).toFixed(2)) : 0,
         averageResponseTimeMs: Number(row.averageResponseTimeMs.toFixed(2)),
+        averageDbQueryCount: Number(row.averageDbQueryCount.toFixed(2)),
+        averageDbQueryDurationMs: Number(row.averageDbQueryDurationMs.toFixed(2)),
+        slowQueryRequestCount: row.slowQueryRequestCount,
+        slowQueryRequestRate:
+          row.requestCount > 0 ? Number(((row.slowQueryRequestCount / row.requestCount) * 100).toFixed(2)) : 0,
+      })),
+      slowQueryPatterns: slowQueryPatterns.map((row) => ({
+        model: row.model ?? "UNKNOWN",
+        operation: row.operation ?? "UNKNOWN",
+        occurrenceCount: row.occurrenceCount,
+        averageDurationMs: Number(row.averageDurationMs.toFixed(2)),
+        maxDurationMs: Number(row.maxDurationMs.toFixed(2)),
       })),
       backgroundJobs: backgroundJobs.map((row) => ({
         name: row.eventType,
@@ -1536,9 +1487,6 @@ export abstract class AdminService {
     USER_NOT_FOUND_MESSAGE,
     AUDIT_LOG_NOT_FOUND_MESSAGE,
     CONFIG_NOT_FOUND_MESSAGE,
-    AI_MODEL_NOT_FOUND_MESSAGE,
-    AI_PROVIDER_NOT_FOUND_MESSAGE,
-    AI_MODEL_DUPLICATE_MESSAGE,
     LAST_ADMIN_ROLE_CHANGE_MESSAGE,
   } as const;
 }

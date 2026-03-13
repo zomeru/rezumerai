@@ -16,9 +16,6 @@ const ERROR_LOG_NOT_FOUND_MESSAGE = AdminService.messages.ERROR_LOG_NOT_FOUND_ME
 const USER_NOT_FOUND_MESSAGE = AdminService.messages.USER_NOT_FOUND_MESSAGE;
 const AUDIT_LOG_NOT_FOUND_MESSAGE = AdminService.messages.AUDIT_LOG_NOT_FOUND_MESSAGE;
 const CONFIG_NOT_FOUND_MESSAGE = AdminService.messages.CONFIG_NOT_FOUND_MESSAGE;
-const AI_MODEL_NOT_FOUND_MESSAGE = AdminService.messages.AI_MODEL_NOT_FOUND_MESSAGE;
-const AI_PROVIDER_NOT_FOUND_MESSAGE = AdminService.messages.AI_PROVIDER_NOT_FOUND_MESSAGE;
-const AI_MODEL_DUPLICATE_MESSAGE = AdminService.messages.AI_MODEL_DUPLICATE_MESSAGE;
 const LAST_ADMIN_ROLE_CHANGE_MESSAGE = AdminService.messages.LAST_ADMIN_ROLE_CHANGE_MESSAGE;
 const PASSWORD_CONFIRMATION_MISMATCH_MESSAGE = "Passwords do not match.";
 
@@ -74,19 +71,15 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
   .use(authPlugin)
   .use(AdminModel)
   // Keep the admin policy local to the admin module so it cannot affect sibling routes.
-  .derive(async ({ db, user, set }) => {
-    const userId = typeof user?.id === "string" ? user.id : null;
-
-    if (!userId) {
+  .derive(async ({ user, set }) => {
+    if (typeof user?.id !== "string") {
       set.status = 403;
       return {
         __forbidden: true as const,
       };
     }
 
-    const isAdmin = await ErrorLogService.isAdmin(db, userId);
-
-    if (!isAdmin) {
+    if (user.role !== "ADMIN") {
       set.status = 403;
       return {
         __forbidden: true as const,
@@ -335,121 +328,38 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
     },
   )
   .get(
-    "/ai-models",
+    "/features",
     async ({ db, status }) => {
-      const result = await AdminService.listAiModels(db);
+      const result = await AdminService.listFeatureFlags(db);
       return status(200, result);
     },
     {
       response: {
-        200: "adminAiModel.ListResponse",
-        403: "adminAiModel.Error",
+        200: "adminFeature.ListResponse",
+        403: "adminUser.Error",
       },
       detail: {
-        summary: "List AI models and providers for admin management",
-        tags: ["Admin", "AI Models"],
+        summary: "List runtime feature flags",
+        tags: ["Admin", "Features"],
       },
     },
   )
-  .post(
-    "/ai-models",
-    async ({ db, user, body, status }) => {
-      const result = await AdminService.createAiModel(db, user.id, body);
-
-      if (result.error === AI_PROVIDER_NOT_FOUND_MESSAGE) {
-        return status(404, AI_PROVIDER_NOT_FOUND_MESSAGE);
-      }
-
-      if (result.error === AI_MODEL_DUPLICATE_MESSAGE) {
-        return status(409, AI_MODEL_DUPLICATE_MESSAGE);
-      }
-
-      if (!result.model) {
-        return status(422, "Unable to create AI model.");
-      }
-
-      return status(200, result.model);
-    },
-    {
-      body: "adminAiModel.MutationInput",
-      response: {
-        200: "adminAiModel.Entry",
-        403: "adminAiModel.Error",
-        404: "adminAiModel.Error",
-        409: "adminAiModel.Error",
-        422: "adminAiModel.Error",
-      },
-      detail: {
-        summary: "Create a new AI model",
-        tags: ["Admin", "AI Models"],
-      },
-    },
-  )
-  .patch(
-    "/ai-models/:id",
+  .put(
+    "/features/:name",
     async ({ db, params, user, body, status }) => {
-      const result = await AdminService.updateAiModel(db, user.id, params.id, body);
-
-      if (result.error === AI_MODEL_NOT_FOUND_MESSAGE) {
-        return status(404, AI_MODEL_NOT_FOUND_MESSAGE);
-      }
-
-      if (result.error === AI_PROVIDER_NOT_FOUND_MESSAGE) {
-        return status(404, AI_PROVIDER_NOT_FOUND_MESSAGE);
-      }
-
-      if (result.error === AI_MODEL_DUPLICATE_MESSAGE) {
-        return status(409, AI_MODEL_DUPLICATE_MESSAGE);
-      }
-
-      if (!result.model) {
-        return status(422, "Unable to update AI model.");
-      }
-
-      return status(200, result.model);
+      const result = await AdminService.saveFeatureFlag(db, user.id, params.name, body);
+      return status(200, result);
     },
     {
-      params: "adminAiModel.ParamById",
-      body: "adminAiModel.MutationInput",
+      params: "adminFeature.ParamByName",
+      body: "adminFeature.SaveInput",
       response: {
-        200: "adminAiModel.Entry",
-        403: "adminAiModel.Error",
-        404: "adminAiModel.Error",
-        409: "adminAiModel.Error",
-        422: "adminAiModel.Error",
+        200: "adminFeature.Entry",
+        403: "adminUser.Error",
       },
       detail: {
-        summary: "Update an existing AI model",
-        tags: ["Admin", "AI Models"],
-      },
-    },
-  )
-  .delete(
-    "/ai-models/:id",
-    async ({ db, params, user, status }) => {
-      const result = await AdminService.deleteAiModel(db, user.id, params.id);
-
-      if (result.error === AI_MODEL_NOT_FOUND_MESSAGE) {
-        return status(404, AI_MODEL_NOT_FOUND_MESSAGE);
-      }
-
-      if (!result.result) {
-        return status(422, "Unable to delete AI model.");
-      }
-
-      return status(200, result.result);
-    },
-    {
-      params: "adminAiModel.ParamById",
-      response: {
-        200: "adminAiModel.DeleteResponse",
-        403: "adminAiModel.Error",
-        404: "adminAiModel.Error",
-        422: "adminAiModel.Error",
-      },
-      detail: {
-        summary: "Delete an AI model",
-        tags: ["Admin", "AI Models"],
+        summary: "Create or update a runtime feature flag",
+        tags: ["Admin", "Features"],
       },
     },
   )

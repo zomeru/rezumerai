@@ -4,6 +4,7 @@ import { env } from "prisma/config";
 import { PrismaClient } from "./generated/prisma/client";
 
 export * from "./generated/prisma/client";
+export { Prisma } from "./generated/prisma/client";
 
 // ─── Globals ──────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,16 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, ArrowRight, BarChart3, Bot, ClipboardList, Cog, ShieldCheck, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  BarChart3,
+  Bot,
+  ClipboardList,
+  Cog,
+  FileText,
+  Flag,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 
@@ -46,6 +57,14 @@ const adminSections: AdminSection[] = [
     isAvailable: true,
   },
   {
+    id: "content-management",
+    title: "Content Management",
+    description: "Edit public landing, FAQ, policy, and support content without using raw config JSON.",
+    icon: FileText,
+    href: ROUTES.ADMIN_CONTENT,
+    isAvailable: true,
+  },
+  {
     id: "audit-logs",
     title: "Audit Logs",
     description: "View historical system activity and important events.",
@@ -59,6 +78,14 @@ const adminSections: AdminSection[] = [
     description: "Monitor system usage and platform metrics.",
     icon: BarChart3,
     href: ROUTES.ADMIN_ANALYTICS,
+    isAvailable: true,
+  },
+  {
+    id: "features",
+    title: "Features",
+    description: "Control database-backed feature flags and rollout behavior.",
+    icon: Flag,
+    href: ROUTES.ADMIN_FEATURES,
     isAvailable: true,
   },
 ];

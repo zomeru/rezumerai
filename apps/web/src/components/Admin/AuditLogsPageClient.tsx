@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowLeft, Eye, RefreshCw, Search } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, Eye, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ROUTES } from "@/constants/routing";
@@ -58,26 +57,9 @@ export default function AuditLogsPageClient(): React.JSX.Element {
     <AdminPageShell
       title="Audit Logs"
       description="Trace user actions, system activity, and database changes with a searchable, category-driven audit trail."
-      action={
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ROUTES.ADMIN}
-            className="inline-flex items-center gap-2 text-slate-600 text-sm transition-colors hover:text-slate-900"
-          >
-            <ArrowLeft className="size-4" />
-            Back to admin
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition-all hover:bg-slate-50"
-          >
-            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      }
+      backHref={ROUTES.ADMIN}
+      onRefresh={() => void refetch()}
+      isRefreshing={isFetching}
     >
       <AdminTabs
         value={category}
@@ -107,21 +89,18 @@ export default function AuditLogsPageClient(): React.JSX.Element {
           </div>
         </AdminFieldLabel>
 
-        <AdminFieldLabel label="Page size">
-          <AdminSelect
-            value={pageSize}
-            onChange={(value) => {
-              setPageSize(Number(value));
-              setPage(1);
-            }}
-          >
-            {PAGE_SIZE_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </AdminSelect>
-        </AdminFieldLabel>
+        <AdminSelect
+          label="Page size"
+          value={pageSize}
+          onChange={(value) => {
+            setPageSize(Number(value));
+            setPage(1);
+          }}
+          options={PAGE_SIZE_OPTIONS.map((value) => ({
+            value: String(value),
+            label: String(value),
+          }))}
+        />
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
           <p className="text-slate-500">Matching entries</p>

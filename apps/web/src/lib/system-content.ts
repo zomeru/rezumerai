@@ -50,7 +50,31 @@ const PUBLIC_CONTENT_CONFIG = {
   },
 } as const;
 
+const PUBLIC_CONTENT_CACHE_TTL_MS = 60_000;
+
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
+type CachedPublicContentValue = ContentPage | FaqInformation | LandingPageInformation;
+
+const publicContentCache = new Map<
+  string,
+  {
+    expiresAt: number;
+    value: CachedPublicContentValue;
+  }
+>();
+
+function shouldUsePublicContentCache(db: DatabaseClient): boolean {
+  return db === prisma;
+}
+
+export function clearPublicContentCache(name?: string): void {
+  if (!name) {
+    publicContentCache.clear();
+    return;
+  }
+
+  publicContentCache.delete(name);
+}
 
 async function readConfigurationValue<T>(
   db: DatabaseClient,
@@ -58,17 +82,43 @@ async function readConfigurationValue<T>(
   schema: { safeParse: (value: Prisma.JsonValue) => { success: true; data: T } | { success: false } },
   fallback: T,
 ): Promise<T> {
+  const useCache = shouldUsePublicContentCache(db);
+
+  if (useCache) {
+    const cached = publicContentCache.get(name);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value as T;
+    }
+  }
+
   const configuration = await db.systemConfiguration.findUnique({
     where: { name },
     select: { value: true },
   });
 
   if (!configuration) {
+    if (useCache) {
+      publicContentCache.set(name, {
+        value: fallback as CachedPublicContentValue,
+        expiresAt: Date.now() + PUBLIC_CONTENT_CACHE_TTL_MS,
+      });
+    }
+
     return fallback;
   }
 
   const parsed = schema.safeParse(configuration.value);
-  return parsed.success ? parsed.data : fallback;
+  const resolvedValue = parsed.success ? parsed.data : fallback;
+
+  if (useCache) {
+    publicContentCache.set(name, {
+      value: resolvedValue as CachedPublicContentValue,
+      expiresAt: Date.now() + PUBLIC_CONTENT_CACHE_TTL_MS,
+    });
+  }
+
+  return resolvedValue;
 }
 
 export function getPublicContentByTopic(topic: "landing", db?: DatabaseClient): Promise<LandingPageInformation>;

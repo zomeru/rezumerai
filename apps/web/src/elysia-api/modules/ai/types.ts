@@ -40,13 +40,14 @@ export interface DailyCreditsStatus {
   dailyLimit: number;
 }
 
-export interface ActiveAiModel {
+export type ActiveAiModel = {
   id: string;
   name: string;
-  modelId: string;
-  providerName: string;
-  providerDisplayName: string;
-}
+  contextLength: number;
+  inputModalities: string[];
+  outputModalities: string[];
+  supportedParameters: string[];
+};
 
 export interface UserAiSettings {
   models: ActiveAiModel[];
@@ -88,6 +89,7 @@ export interface AssistantConversationState {
   recentMessages: AssistantConversationMemoryMessage[];
   persistenceAvailable: boolean;
   conversationKey: string;
+  threadId: string;
 }
 
 export type AiModelInput = AssistantChatMessage[] | Array<{ role: "user" | "assistant"; content: string }>;
@@ -96,6 +98,7 @@ export interface AssistantConversationRecord {
   conversationId: string;
   conversationKey: string;
   scope: AssistantRoleScope;
+  threadId: string;
   userId: string;
   history: AssistantChatMessage[];
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { NextFontWithVariable } from "next/dist/compiled/@next/font";
 import { Outfit } from "next/font/google";
+import { connection } from "next/server";
 import { Toaster } from "sonner";
 import AiAssistantWidget from "@/components/AiAssistantWidget";
 import "./globals.css";
@@ -67,7 +68,9 @@ export const viewport: Viewport = {
  * RootLayout is the main layout component for the application.
  * It sets up global styles, fonts, metadata, and wraps the application with necessary providers.
  */
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await connection();
+
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${outfitSans.variable} antialiased`} suppressHydrationWarning={true}>
