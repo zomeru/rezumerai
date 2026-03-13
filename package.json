@@ -1,7 +1,7 @@
 {
   "name": "rezumerai",
   "devDependencies": {
-    "@biomejs/biome": "2.4.6",
+    "@biomejs/biome": "2.4.7",
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.30.0",
     "@happy-dom/global-registrator": "^20.8.4",
