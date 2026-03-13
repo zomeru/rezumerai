@@ -141,7 +141,7 @@ Optional variables used by the current codebase or reserved in the env template:
 bun run db:setup
 ```
 
-Optional seed data:
+Optional local reset/demo data:
 
 ```sh
 bun run db:seed:system
@@ -158,7 +158,8 @@ Notes:
 
 - Root `predev` builds `@rezumerai/database` before `turbo dev`.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:system` seeds default system configuration and public content.
+- Deploy-oriented `bun run db:migrate` now bootstraps any missing required system configuration and public content rows after Prisma migrations.
+- `bun run db:seed:system` is a development reset tool that rewrites AI/system configuration and public content back to the current defaults.
 - `bun run db:seed` seeds dummy resumes for existing users; it does not create auth users.
 
 ## Development Workflow
@@ -230,11 +231,12 @@ Notes:
 | `bun run db:setup` | Run `db:push` and `db:generate` in `packages/database` |
 | `bun run db:generate` | Generate Prisma client and Prismabox artifacts |
 | `bun run db:push` | Push the Prisma schema to the configured database |
-| `bun run db:migrate` | Deploy Prisma migrations |
+| `bun run db:migrate` | Deploy Prisma migrations and bootstrap missing required system configuration rows |
 | `bun run db:migrate:dev` | Create and apply a development migration |
 | `bun run db:migrate:status` | Show Prisma migration status |
+| `bun run db:bootstrap:system` | Create any missing required system configuration and public content rows without overwriting existing values |
 | `bun run db:pull` | Pull schema changes from the database |
-| `bun run db:seed:system` | Seed default system configuration and public content |
+| `bun run db:seed:system` | Reset AI/system configuration and public content rows back to the current defaults |
 | `bun run db:seed` | Seed dummy resume data for existing users |
 | `bun run assistant:reindex-memory` | Run the assistant memory reindex script |
 | `bun run db:psql` | Open `psql` against `DATABASE_URL` |

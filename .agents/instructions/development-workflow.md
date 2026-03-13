@@ -45,5 +45,6 @@ bun run dev
 
 - `bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:seed:system` seeds default AI/system configuration and public content defaults.
+- `bun run db:migrate` bootstraps missing required AI/system configuration and public content rows after Prisma migrations.
+- `bun run db:seed:system` is the local reset path that rewrites those rows back to the current defaults.
 - Workspace-local commands should still be run with Bun from the relevant package directory.

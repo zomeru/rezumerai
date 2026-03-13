@@ -53,6 +53,7 @@
     "db:migrate": "cd packages/database && bun run db:migrate",
     "db:migrate:dev": "cd packages/database && bun run db:migrate:dev",
     "db:migrate:status": "cd packages/database && bun run db:migrate:status",
+    "db:bootstrap:system": "cd packages/database && bun run db:bootstrap:system",
     "db:seed": "cd packages/database && bun run db:seed",
     "db:seed:system": "cd packages/database && bun run db:seed:system",
     "assistant:reindex-memory": "cd apps/web && bun run assistant:reindex-memory",

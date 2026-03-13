@@ -28,6 +28,11 @@ cat .agents/skills/<skill-name>/SKILL.md
 - Use `bun run benchmark:report -- --days=7` to print the current request, latency, and Prisma-query benchmark summary from collected analytics events.
 - The benchmark report is based on tracked analytics data, so it is only meaningful after the target flows have been exercised.
 
+## Deployment Bootstrap
+
+- `bun run db:migrate` in `packages/database` is the deploy-safe path: it runs `prisma migrate deploy` and then bootstraps any missing required system configuration and public content rows.
+- `bun run db:seed:system` remains a development reset tool that overwrites those rows back to the current defaults.
+
 ## TypeScript Config Conventions
 
 - Shared TypeScript presets live in `packages/tsconfig/`.

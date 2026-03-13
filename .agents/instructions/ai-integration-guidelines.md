@@ -13,7 +13,7 @@
 ## Providers And Configuration
 
 - OpenRouter is the active model and embedding provider.
-- Runtime AI configuration is stored in system configuration and seeded by `bun run db:seed:system`.
+- Runtime AI configuration is stored in system configuration and is bootstrapped automatically by `bun run db:migrate` if the required row is missing.
 - Do not hardcode prompts, model IDs, or limits when the existing AI config already owns them.
 - AI system prompts are configured per workflow. `AI_CONFIG` owns separate keys for assistant chat, Resume Copilot optimize/tailor/review, and the `/text-optimizer` Text Optimizer.
 - Active model availability is fetched from the OpenRouter models endpoint at runtime.
@@ -47,7 +47,9 @@
 
 ## Database And Seeds
 
+- `bun run db:migrate` bootstraps missing required system configuration rows, including AI config and public content, after Prisma deploy migrations.
 - `bun run db:seed:system` seeds:
   - default AI configuration
   - default public content used by the assistant and public pages
+- `bun run db:seed:system` overwrites existing rows with the current defaults and is intended for local reset workflows.
 - If you change AI configuration shape or assistant persistence, update seeds, types, and docs together.

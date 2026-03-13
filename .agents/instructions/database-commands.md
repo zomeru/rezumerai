@@ -7,6 +7,7 @@ bun run db:push
 bun run db:migrate
 bun run db:migrate:dev
 bun run db:migrate:status
+bun run db:bootstrap:system
 bun run db:seed
 bun run db:seed:system
 bun run db:pull
@@ -24,5 +25,7 @@ bun run assistant:reindex-memory
 - Prisma schema lives in `packages/database/prisma/`.
 - Prisma models are split across `packages/database/prisma/models/*.prisma`.
 - Generated client output lives in `packages/database/generated/` — do not edit manually.
-- `bun run db:seed:system` seeds default system configuration and public content.
+- `bun run db:migrate` runs `prisma migrate deploy` and then bootstraps any missing required system configuration and public content rows.
+- `bun run db:bootstrap:system` creates missing required system configuration rows without overwriting existing values.
+- `bun run db:seed:system` is the development reset path for rewriting required system configuration and public content to the current defaults.
 - Assistant memory embeddings use PostgreSQL + `pgvector`; inspect them with `bun run db:inspect-vectors`.
