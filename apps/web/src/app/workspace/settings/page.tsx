@@ -3,7 +3,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import WorkspaceSettingsPageClient from "@/components/WorkspaceSettingsPageClient";
 import { AiService } from "@/elysia-api/modules/ai/service";
-import { UserService } from "@/elysia-api/modules/user/service";
+import { ProfileService } from "@/elysia-api/modules/profile/service";
 import { getQueryClient } from "@/lib/get-query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { getServerSessionIdentity } from "@/lib/server-runtime";
@@ -16,7 +16,7 @@ export default async function WorkspaceSettingsPage(): Promise<React.JSX.Element
   }
 
   const queryClient = getQueryClient();
-  const accountSettings = await UserService.getAccountSettings(prisma, userId);
+  const accountSettings = await ProfileService.getAccountSettings(prisma, userId);
 
   if (!accountSettings) {
     notFound();

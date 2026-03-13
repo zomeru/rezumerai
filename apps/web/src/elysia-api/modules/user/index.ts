@@ -1,15 +1,57 @@
 import Elysia, { status } from "elysia";
 import { authPlugin } from "../../plugins/auth";
 import { prismaPlugin } from "../../plugins/prisma";
-import { type UserAccountUpdateInput, UserModel } from "./model";
+import { UserModel } from "./model";
 import { UserService } from "./service";
 
 const userNotFound = () => status(404, "User not found");
-const forbiddenUpdate = () => status(403, "You can only update your own account");
+const adminForbidden = () => status(403, "Admin access is required");
 const invalidAccountUpdate = () => status(422, "At least one field must be updated");
 
-function sanitizeAccountUpdate(body: UserAccountUpdateInput): UserAccountUpdateInput {
-  const data: UserAccountUpdateInput = {};
+function sanitizeAdminCreate(body: {
+  name?: string;
+  email?: string;
+  role?: "ADMIN" | "USER";
+  image?: string | null;
+  isAnonymous?: boolean;
+}): {
+  name: string;
+  email: string;
+  role: "ADMIN" | "USER";
+  image: string | null;
+  isAnonymous: boolean;
+  emailVerified: boolean;
+} {
+  return {
+    name: body.name?.trim() ?? "",
+    email: body.email?.trim().toLowerCase() ?? "",
+    role: body.role ?? "USER",
+    image: body.image?.trim() || null,
+    isAnonymous: body.isAnonymous ?? false,
+    emailVerified: false,
+  };
+}
+
+function sanitizeAdminUpdate(body: {
+  name?: string;
+  email?: string;
+  role?: "ADMIN" | "USER";
+  image?: string | null;
+  isAnonymous?: boolean;
+}): {
+  name?: string;
+  email?: string;
+  role?: "ADMIN" | "USER";
+  image?: string | null;
+  isAnonymous?: boolean;
+} {
+  const data: {
+    name?: string;
+    email?: string;
+    role?: "ADMIN" | "USER";
+    image?: string | null;
+    isAnonymous?: boolean;
+  } = {};
 
   if (body.name !== undefined) {
     data.name = body.name.trim();
@@ -34,6 +76,33 @@ export const userModule = new Elysia({ prefix: "/users" })
   .use(prismaPlugin)
   .use(authPlugin)
   .use(UserModel)
+  .derive(({ user, set }) => {
+    const role = typeof user?.role === "string" ? user.role : null;
+
+    if (role !== "ADMIN") {
+      set.status = 403;
+      return { __forbidden: true as const };
+    }
+
+    return { __forbidden: false as const };
+  })
+  .onBeforeHandle(({ __forbidden }) => {
+    if (__forbidden) return adminForbidden();
+  })
+  .post(
+    "/",
+    async ({ db, body, status }) => {
+      const created = await UserService.create(db, sanitizeAdminCreate(body));
+      return status(201, created);
+    },
+    {
+      body: "user.AdminCreateInput",
+      response: {
+        201: "user.ResponseById",
+        403: "user.Error",
+      },
+    },
+  )
   .get(
     "/",
     async ({ db, status }) => {
@@ -43,20 +112,7 @@ export const userModule = new Elysia({ prefix: "/users" })
     {
       response: {
         200: "user.ResponseList",
-      },
-    },
-  )
-  .get(
-    "/me",
-    async ({ db, user, status }) => {
-      const accountSettings = await UserService.getAccountSettings(db, user.id);
-      if (!accountSettings) return userNotFound();
-      return status(200, accountSettings);
-    },
-    {
-      response: {
-        200: "user.ResponseAccount",
-        404: "user.Error",
+        403: "user.Error",
       },
     },
   )
@@ -75,6 +131,7 @@ export const userModule = new Elysia({ prefix: "/users" })
       params: "user.ParamById",
       response: {
         200: "user.ResponseById",
+        403: "user.Error",
         404: "user.Error",
       },
     },
@@ -94,58 +151,17 @@ export const userModule = new Elysia({ prefix: "/users" })
       params: "user.ParamByEmail",
       response: {
         200: "user.ResponseById",
-        404: "user.Error",
-      },
-    },
-  )
-  .patch(
-    "/me",
-    async ({ db, user, body, status }) => {
-      const accountSettings = await UserService.getAccountSettings(db, user.id);
-      if (!accountSettings) return userNotFound();
-
-      const updates = sanitizeAccountUpdate(body as UserAccountUpdateInput);
-      if (Object.keys(updates).length === 0) {
-        return invalidAccountUpdate();
-      }
-
-      if (updates.email && !accountSettings.permissions.canEditEmail) {
-        return status(403, accountSettings.readOnlyReasons.email ?? "Email cannot be updated for this account");
-      }
-
-      const updatedUser = await UserService.update(db, user.id, updates);
-      if (!updatedUser) return userNotFound();
-
-      const refreshedAccount = await UserService.getAccountSettings(db, user.id);
-      if (!refreshedAccount) return userNotFound();
-
-      return status(200, refreshedAccount);
-    },
-    {
-      body: "user.InputUpdate",
-      response: {
-        200: "user.ResponseAccount",
         403: "user.Error",
         404: "user.Error",
-        422: "user.Error",
       },
     },
   )
   .patch(
     "/:id",
-    async ({ db, params, user, body, status }) => {
-      if (params.id !== user.id) return forbiddenUpdate();
-
-      const accountSettings = await UserService.getAccountSettings(db, user.id);
-      if (!accountSettings) return userNotFound();
-
-      const updates = sanitizeAccountUpdate(body as UserAccountUpdateInput);
+    async ({ db, params, body, status }) => {
+      const updates = sanitizeAdminUpdate(body);
       if (Object.keys(updates).length === 0) {
         return invalidAccountUpdate();
-      }
-
-      if (updates.email && !accountSettings.permissions.canEditEmail) {
-        return status(403, accountSettings.readOnlyReasons.email ?? "Email cannot be updated for this account");
       }
 
       const updatedUser = await UserService.update(db, params.id, updates);
@@ -155,12 +171,29 @@ export const userModule = new Elysia({ prefix: "/users" })
     },
     {
       params: "user.ParamById",
-      body: "user.InputUpdate",
+      body: "user.AdminUpdateInput",
       response: {
         200: "user.ResponseById",
         403: "user.Error",
         404: "user.Error",
         422: "user.Error",
+      },
+    },
+  )
+  .delete(
+    "/:id",
+    async ({ db, params, status }) => {
+      const deletedUser = await UserService.remove(db, params.id);
+      if (!deletedUser) return userNotFound();
+
+      return status(200, deletedUser);
+    },
+    {
+      params: "user.ParamById",
+      response: {
+        200: "user.ResponseById",
+        403: "user.Error",
+        404: "user.Error",
       },
     },
   );

@@ -9,11 +9,6 @@ mock.module("@/lib/request-auth", () => ({
   })),
 }));
 
-mock.module("@/lib/auth-route-access", () => ({
-  canAccessAuthPage: mock(() => true),
-  canAccessSessionRoute: mock(() => false),
-}));
-
 const originalNodeEnv = process.env.NODE_ENV;
 let proxy: typeof import("../proxy").proxy;
 

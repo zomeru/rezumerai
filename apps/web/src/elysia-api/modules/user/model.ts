@@ -1,4 +1,4 @@
-import { UserPlain, UserPlainInputUpdate } from "@rezumerai/database/generated/prismabox/User";
+import { UserPlain, UserPlainInputCreate, UserPlainInputUpdate } from "@rezumerai/database/generated/prismabox/User";
 import Elysia, { t } from "elysia";
 
 const UserAccountProvider = t.Object({
@@ -48,6 +48,8 @@ export type UserAccountUpdateInput = {
 };
 
 const UserAccountUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "image"]);
+const UserAdminCreate = t.Pick(UserPlainInputCreate, ["name", "email", "role", "image", "isAnonymous"]);
+const UserAdminUpdate = t.Pick(UserPlainInputUpdate, ["name", "email", "role", "image", "isAnonymous"]);
 
 export const UserModel = new Elysia().model({
   "user.ResponseList": t.Array(UserPlain),
@@ -56,5 +58,7 @@ export const UserModel = new Elysia().model({
   "user.ParamById": t.Object({ id: t.String({ minLength: 1 }) }),
   "user.ParamByEmail": t.Object({ email: t.String({ format: "email" }) }),
   "user.InputUpdate": UserAccountUpdate,
+  "user.AdminCreateInput": UserAdminCreate,
+  "user.AdminUpdateInput": UserAdminUpdate,
   "user.Error": t.String(),
 } as const);

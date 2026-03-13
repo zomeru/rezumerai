@@ -26,7 +26,7 @@ export function useAccountSettings(
   return useQuery({
     queryKey: queryKeys.account.settings(),
     queryFn: async () => {
-      const { data, error } = await api.users.me.get();
+      const { data, error } = await api.profile.get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load account settings."));
@@ -47,7 +47,7 @@ export function useUpdateAccountSettings() {
 
   return useMutation({
     mutationFn: async (updates: UpdateUserAccountInput) => {
-      const { data, error } = await api.users.me.patch(updates);
+      const { data, error } = await api.profile.patch(updates);
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to update account settings."));

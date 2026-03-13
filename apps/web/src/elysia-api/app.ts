@@ -9,7 +9,7 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
-import { adminModule, aiModule, resumeModule, userModule } from "./modules";
+import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
 import { recordAnalyticsEvent } from "./observability/analytics";
 import { recordSystemActivityLog } from "./observability/audit";
@@ -215,6 +215,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   // ── Feature modules ─────────────────────────────────────────────────────
   .use(adminModule)
   .use(userModule)
+  .use(profileModule)
   .use(resumeModule)
   .use(aiModule);
 

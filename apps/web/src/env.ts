@@ -64,5 +64,10 @@ const serverSchema = clientSchema.extend({
  * Throws an error at build time if validation fails.
  * Client-side only has access to NEXT_PUBLIC_ variables.
  */
-export const clientEnv = clientSchema.parse(process.env);
+const clientRuntimeEnv = {
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NODE_ENV: process.env.NODE_ENV,
+};
+
+export const clientEnv = clientSchema.parse(clientRuntimeEnv);
 export const serverEnv = isServer ? serverSchema.parse(process.env) : undefined;

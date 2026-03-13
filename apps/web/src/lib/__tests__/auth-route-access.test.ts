@@ -1,7 +1,38 @@
-import { describe, expect, it } from "bun:test";
-import { canAccessAuthPage, canAccessSessionRoute } from "../auth-route-access";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+const hasRegisteredSessionMock = mock(
+  (session: { user?: { isAnonymous?: boolean | null; id?: string | null } } | null) => {
+    return typeof session?.user?.id === "string" && session.user.id.length > 0 && session.user.isAnonymous !== true;
+  },
+);
+
+const hasSessionIdentityMock = mock((session: { user?: { id?: string | null } } | null) => {
+  return typeof session?.user?.id === "string" && session.user.id.length > 0;
+});
+
+mock.module("../auth-session", () => ({
+  hasRegisteredSession: hasRegisteredSessionMock,
+  hasSessionIdentity: hasSessionIdentityMock,
+}));
+
+mock.module("../auth-session.ts", () => ({
+  hasRegisteredSession: hasRegisteredSessionMock,
+  hasSessionIdentity: hasSessionIdentityMock,
+}));
+
+mock.module("./auth-session", () => ({
+  hasRegisteredSession: hasRegisteredSessionMock,
+  hasSessionIdentity: hasSessionIdentityMock,
+}));
+
+const { canAccessAuthPage, canAccessSessionRoute } = await import("../auth-route-access");
 
 describe("auth route access helpers", () => {
+  beforeEach(() => {
+    hasRegisteredSessionMock.mockClear();
+    hasSessionIdentityMock.mockClear();
+  });
+
   it("allows guests and anonymous sessions to access sign-in and sign-up pages", () => {
     expect(canAccessAuthPage(null)).toBe(true);
     expect(
