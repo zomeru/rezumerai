@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { PasswordConfirmationSchema, PasswordSchema, UserRoleSchema } from "../user/schema";
 
+export const FEATURE_FLAG_NAME_PATTERN = "^[a-z][a-z0-9_]*$";
+export const FEATURE_FLAG_NAME_MESSAGE =
+  "Feature flag names must start with a lowercase letter and contain only lowercase letters, numbers, and underscores.";
+export const FEATURE_FLAG_NAMES = {
+  NEW_ADMIN_ANALYTICS_UI: "new_admin_analytics_ui",
+} as const;
+
+const FeatureFlagNameSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(new RegExp(FEATURE_FLAG_NAME_PATTERN), FEATURE_FLAG_NAME_MESSAGE);
+
 export const AdminPaginationSchema = z.object({
   page: z.number().int().positive(),
   pageSize: z.number().int().positive(),
@@ -90,6 +103,26 @@ export const SystemConfigurationListResponseSchema = z.object({
 
 export const UpdateSystemConfigurationInputSchema = z.object({
   value: z.unknown(),
+});
+
+export const FeatureFlagEntrySchema = z.object({
+  id: z.string(),
+  name: FeatureFlagNameSchema,
+  enabled: z.boolean(),
+  description: z.string().nullable(),
+  rolloutPercentage: z.number().int().min(0).max(100),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const FeatureFlagListResponseSchema = z.object({
+  items: z.array(FeatureFlagEntrySchema),
+});
+
+export const SaveFeatureFlagInputSchema = z.object({
+  enabled: z.boolean(),
+  description: z.string().trim().max(500).nullable().optional(),
+  rolloutPercentage: z.number().int().min(0).max(100),
 });
 
 export const AuditLogCategorySchema = z.enum(["USER_ACTION", "SYSTEM_ACTIVITY", "DATABASE_CHANGE"]);
@@ -222,6 +255,9 @@ export type AdminUserPasswordUpdateInput = z.infer<typeof AdminUserPasswordUpdat
 export type SystemConfigurationEntry = z.infer<typeof SystemConfigurationEntrySchema>;
 export type SystemConfigurationListResponse = z.infer<typeof SystemConfigurationListResponseSchema>;
 export type UpdateSystemConfigurationInput = z.infer<typeof UpdateSystemConfigurationInputSchema>;
+export type FeatureFlagEntry = z.infer<typeof FeatureFlagEntrySchema>;
+export type FeatureFlagListResponse = z.infer<typeof FeatureFlagListResponseSchema>;
+export type SaveFeatureFlagInput = z.infer<typeof SaveFeatureFlagInputSchema>;
 export type AuditLogCategory = z.infer<typeof AuditLogCategorySchema>;
 export type AuditLogActor = z.infer<typeof AuditLogActorSchema>;
 export type AuditLogListItem = z.infer<typeof AuditLogListItemSchema>;

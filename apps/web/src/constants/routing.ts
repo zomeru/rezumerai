@@ -21,6 +21,7 @@ const ADMIN_AI_MODELS = `${ADMIN}/ai-models`;
 const ADMIN_SYSTEM_CONFIG = `${ADMIN}/system-config`;
 const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
 const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
+const ADMIN_FEATURES = `${ADMIN}/features`;
 
 // AI tools
 const TEXT_OPTIMIZER = "/text-optimizer";
@@ -65,6 +66,7 @@ export const ROUTES = {
   ADMIN_SYSTEM_CONFIG,
   ADMIN_AUDIT_LOGS,
   ADMIN_ANALYTICS,
+  ADMIN_FEATURES,
   TEXT_OPTIMIZER,
 } as const;
 

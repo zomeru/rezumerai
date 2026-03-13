@@ -129,8 +129,6 @@ Optional variables used by the current codebase or reserved in the env template:
 | `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | Optional placeholder in the env schema and template; the current auth config exposes GitHub only |
 | `CRON_SECRET` | Reserved in `.env.example` and Turbo env inputs for scheduled/background-job protection |
 | `DB_SEED_USER_EMAIL` | Extra email to include when running `bun run db:seed` |
-| `BOTID_ENABLED` | Enables BotID checks in the `/api/*` route bridge and Next.js config |
-| `NEXT_PUBLIC_BOTID_ENABLED` | Enables matching client-side BotID instrumentation for mutating `/api/*` requests |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint for OpenTelemetry trace export |
 | `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated auth headers for the OTLP exporter |
 | `SENTRY_DSN` | Optional env validated in `apps/web/src/env.ts`; no Sentry bootstrap is wired in the current app |

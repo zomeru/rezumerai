@@ -1,4 +1,4 @@
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@rezumerai/types";
+import { FEATURE_FLAG_NAME_PATTERN, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@rezumerai/types";
 import type { Static } from "elysia";
 import Elysia, { t } from "elysia";
 
@@ -48,6 +48,11 @@ const ParamById = t.Object({
 
 const ParamByName = t.Object({
   name: t.String({ minLength: 1 }),
+});
+
+const FeatureFlagName = t.String({ minLength: 1, maxLength: 64, pattern: FEATURE_FLAG_NAME_PATTERN });
+const FeatureFlagParamByName = t.Object({
+  name: FeatureFlagName,
 });
 
 const ErrorLogListItem = t.Object({
@@ -138,6 +143,16 @@ const SystemConfigurationEntry = t.Object({
   updatedAt: IsoDateTimeString,
   isEditable: t.Boolean(),
   validationMode: t.Union([t.Literal("KNOWN_SCHEMA"), t.Literal("RAW_JSON")]),
+});
+
+const FeatureFlagEntry = t.Object({
+  id: t.String(),
+  name: FeatureFlagName,
+  enabled: t.Boolean(),
+  description: t.Nullable(t.String()),
+  rolloutPercentage: t.Integer({ minimum: 0, maximum: 100 }),
+  createdAt: IsoDateTimeString,
+  updatedAt: IsoDateTimeString,
 });
 
 const AuditLogActor = t.Object({
@@ -279,6 +294,16 @@ export const AdminModel = new Elysia().model({
   "adminConfig.Entry": SystemConfigurationEntry,
   "adminConfig.ListResponse": t.Object({
     items: t.Array(SystemConfigurationEntry),
+  }),
+  "adminFeature.ParamByName": FeatureFlagParamByName,
+  "adminFeature.SaveInput": t.Object({
+    enabled: t.Boolean(),
+    description: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+    rolloutPercentage: t.Integer({ minimum: 0, maximum: 100 }),
+  }),
+  "adminFeature.Entry": FeatureFlagEntry,
+  "adminFeature.ListResponse": t.Object({
+    items: t.Array(FeatureFlagEntry),
   }),
   "adminAudit.QueryList": AuditLogListQuery,
   "adminAudit.ParamById": ParamById,

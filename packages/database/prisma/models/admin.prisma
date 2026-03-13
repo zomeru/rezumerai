@@ -48,6 +48,19 @@ model AnalyticsEvent {
   @@map("analytics_event")
 }
 
+model FeatureFlag {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  enabled           Boolean  @default(false)
+  description       String?
+  rolloutPercentage Int      @default(100)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([enabled, updatedAt])
+  @@map("feature_flag")
+}
+
 enum AuditLogCategory {
   USER_ACTION
   SYSTEM_ACTIVITY

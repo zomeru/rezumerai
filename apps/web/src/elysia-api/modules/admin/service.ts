@@ -7,6 +7,8 @@ import type {
   AuditLogListResponse,
   ErrorLogDetail,
   ErrorLogListResponse,
+  FeatureFlagEntry,
+  FeatureFlagListResponse,
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
 } from "@rezumerai/types";
@@ -20,6 +22,7 @@ import {
 } from "@rezumerai/types";
 import { z } from "zod";
 import { setManagedUserPassword } from "@/lib/auth";
+import { clearFeatureFlagCache } from "@/lib/feature-flags";
 import { clearPublicContentCache } from "@/lib/system-content";
 import { createAuditLog, toAuditSearchWhere } from "../../observability/audit";
 import { mergeRequestContextMetadata } from "../../observability/request-context";
@@ -82,6 +85,16 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
     schema: LandingPageInformationSchema,
   },
 } as const;
+
+function isMissingFeatureFlagTableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code === "P2021"
+  );
+}
 
 function isManagedConfigurationName(name: string): name is keyof typeof SYSTEM_CONFIGURATION_DEFINITIONS {
   return name in SYSTEM_CONFIGURATION_DEFINITIONS;
@@ -426,6 +439,26 @@ function toSystemConfigurationEntry(record: {
     updatedAt: record.updatedAt.toISOString(),
     isEditable: true,
     validationMode: resolveConfigurationValidationMode(record.name),
+  };
+}
+
+function toFeatureFlagEntry(record: {
+  id: string;
+  name: string;
+  enabled: boolean;
+  description: string | null;
+  rolloutPercentage: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): FeatureFlagEntry {
+  return {
+    id: record.id,
+    name: record.name,
+    enabled: record.enabled,
+    description: record.description,
+    rolloutPercentage: record.rolloutPercentage,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
   };
 }
 
@@ -1026,6 +1059,104 @@ export abstract class AdminService {
       configuration: toSystemConfigurationEntry(updated),
       error: null,
     };
+  }
+
+  static async listFeatureFlags(db: DatabaseClient): Promise<FeatureFlagListResponse> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.listFeatureFlags" });
+    let rows: Array<{
+      id: string;
+      name: string;
+      enabled: boolean;
+      description: string | null;
+      rolloutPercentage: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }> = [];
+
+    try {
+      rows = await db.featureFlag.findMany({
+        orderBy: [{ name: "asc" }],
+      });
+    } catch (error: unknown) {
+      if (!isMissingFeatureFlagTableError(error)) {
+        throw error;
+      }
+    }
+
+    return {
+      items: rows.map((row) => toFeatureFlagEntry(row)),
+    };
+  }
+
+  static async saveFeatureFlag(
+    db: DatabaseClient,
+    actorUserId: string,
+    name: string,
+    input: {
+      enabled: boolean;
+      description?: string | null;
+      rolloutPercentage: number;
+    },
+  ): Promise<FeatureFlagEntry> {
+    mergeRequestContextMetadata({ serviceName: "AdminService.saveFeatureFlag" });
+    const description = input.description?.trim() ? input.description.trim() : null;
+    const existing = await db.featureFlag.findUnique({
+      where: { name },
+      select: {
+        id: true,
+        name: true,
+        enabled: true,
+        description: true,
+        rolloutPercentage: true,
+      },
+    });
+
+    const saved = await db.featureFlag.upsert({
+      where: { name },
+      update: {
+        enabled: input.enabled,
+        description,
+        rolloutPercentage: input.rolloutPercentage,
+      },
+      create: {
+        name,
+        enabled: input.enabled,
+        description,
+        rolloutPercentage: input.rolloutPercentage,
+      },
+    });
+
+    clearFeatureFlagCache(name);
+
+    const afterValues = {
+      name: saved.name,
+      enabled: saved.enabled,
+      description: saved.description,
+      rolloutPercentage: saved.rolloutPercentage,
+    };
+
+    await createAuditLog({
+      category: "USER_ACTION",
+      eventType: existing ? "FEATURE_FLAG_UPDATED" : "FEATURE_FLAG_CREATED",
+      action: existing ? "UPDATE" : "CREATE",
+      resourceType: "FeatureFlag",
+      resourceId: saved.id,
+      userId: actorUserId,
+      endpoint: `/api/admin/features/${name}`,
+      method: "PUT",
+      serviceName: "AdminService.saveFeatureFlag",
+      beforeValues: existing
+        ? {
+            name: existing.name,
+            enabled: existing.enabled,
+            description: existing.description,
+            rolloutPercentage: existing.rolloutPercentage,
+          }
+        : null,
+      afterValues,
+    });
+
+    return toFeatureFlagEntry(saved);
   }
 
   static async listAuditLogs(

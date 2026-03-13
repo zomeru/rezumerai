@@ -7,6 +7,9 @@ import type {
   AuditLogCategory,
   AuditLogDetail,
   AuditLogListResponse,
+  FeatureFlagEntry,
+  FeatureFlagListResponse,
+  SaveFeatureFlagInput,
   SystemConfigurationEntry,
   SystemConfigurationListResponse,
   UpdateSystemConfigurationInput,
@@ -17,6 +20,8 @@ import {
   AnalyticsDashboardSchema,
   AuditLogDetailSchema,
   AuditLogListResponseSchema,
+  FeatureFlagEntrySchema,
+  FeatureFlagListResponseSchema,
   SystemConfigurationEntrySchema,
   SystemConfigurationListResponseSchema,
 } from "@rezumerai/types";
@@ -231,6 +236,62 @@ export function useUpdateSystemConfiguration() {
           return {
             ...current,
             items: nextItems,
+          };
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+    },
+  });
+}
+
+export function useFeatureFlags(options?: Omit<QueryOptions<FeatureFlagListResponse>, "queryKey" | "queryFn">) {
+  return useQuery({
+    queryKey: queryKeys.admin.features(),
+    queryFn: async (): Promise<FeatureFlagListResponse> => {
+      const { data, error } = await apiWithoutDateParsing.admin.features.get();
+
+      if (error) {
+        throw new Error(getApiErrorMessage(error.value, "Failed to load feature flags."));
+      }
+
+      if (!data) {
+        throw new Error("Invalid feature flags response.");
+      }
+
+      return FeatureFlagListResponseSchema.parse(data);
+    },
+    ...options,
+  });
+}
+
+export function useSaveFeatureFlag() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ name, input }: { name: string; input: SaveFeatureFlagInput }): Promise<FeatureFlagEntry> => {
+      const { data, error } = await apiWithoutDateParsing.admin.features({ name }).put(input);
+
+      if (error) {
+        throw new Error(getApiErrorMessage(error.value, "Failed to save feature flag."));
+      }
+
+      if (!data) {
+        throw new Error("Invalid feature flag response.");
+      }
+
+      return FeatureFlagEntrySchema.parse(data);
+    },
+    onSuccess: async (savedFeatureFlag) => {
+      queryClient.setQueryData(
+        queryKeys.admin.features(),
+        (current: FeatureFlagListResponse | undefined): FeatureFlagListResponse => {
+          const currentItems = current?.items ?? [];
+          const nextItems = currentItems.some((item) => item.name === savedFeatureFlag.name)
+            ? currentItems.map((item) => (item.name === savedFeatureFlag.name ? savedFeatureFlag : item))
+            : [...currentItems, savedFeatureFlag];
+
+          return {
+            items: nextItems.sort((left, right) => left.name.localeCompare(right.name)),
           };
         },
       );

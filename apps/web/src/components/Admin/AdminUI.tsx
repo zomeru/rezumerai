@@ -180,12 +180,18 @@ export function AdminInput({
   onChange,
   placeholder,
   type = "text",
+  min,
+  max,
+  step,
   className,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute;
+  min?: number;
+  max?: number;
+  step?: number;
   className?: string;
 }): React.JSX.Element {
   return (
@@ -194,6 +200,9 @@ export function AdminInput({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
+      min={min}
+      max={max}
+      step={step}
       className={cn("rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 text-sm", className)}
     />
   );

@@ -328,6 +328,42 @@ export const adminModule = new Elysia({ name: "module/admin", prefix: "/admin" }
     },
   )
   .get(
+    "/features",
+    async ({ db, status }) => {
+      const result = await AdminService.listFeatureFlags(db);
+      return status(200, result);
+    },
+    {
+      response: {
+        200: "adminFeature.ListResponse",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "List runtime feature flags",
+        tags: ["Admin", "Features"],
+      },
+    },
+  )
+  .put(
+    "/features/:name",
+    async ({ db, params, user, body, status }) => {
+      const result = await AdminService.saveFeatureFlag(db, user.id, params.name, body);
+      return status(200, result);
+    },
+    {
+      params: "adminFeature.ParamByName",
+      body: "adminFeature.SaveInput",
+      response: {
+        200: "adminFeature.Entry",
+        403: "adminUser.Error",
+      },
+      detail: {
+        summary: "Create or update a runtime feature flag",
+        tags: ["Admin", "Features"],
+      },
+    },
+  )
+  .get(
     "/audit-logs",
     async ({ db, query, status }) => {
       const result = await AdminService.listAuditLogs(db, parseAuditListQuery(query));
