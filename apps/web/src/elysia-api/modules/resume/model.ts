@@ -20,6 +20,7 @@ export type ResumeCreateInput = Omit<
 };
 
 export const ResumeWithoutUser = t.Omit(Resume, ["user"]);
+export const ResumeListItem = t.Pick(ResumePlain, ["id", "title", "updatedAt"]);
 
 export const CustomResumeRelationsInputCreate = t.Object({
   personalInfo: PersonalInformationPlainInputCreate,
@@ -46,7 +47,7 @@ export const CustomResumeWithRelationsInputUpdate = t.Composite([
 ]);
 
 export const ResumeModel = new Elysia().model({
-  "resume.ResponseList": t.Array(ResumeWithoutUser),
+  "resume.ResponseList": t.Array(ResumeListItem),
   "resume.ResponseById": ResumeWithoutUser,
   "resume.QueryList": t.Object({
     search: t.Optional(t.String()),

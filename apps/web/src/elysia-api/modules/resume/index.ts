@@ -19,7 +19,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   .use(ResumeModel)
   .get(
     "/",
-    async ({ db, user, query }) => {
+    async ({ db, user, query, status }) => {
       const data = await ResumeService.search(db, user.id, {
         search: query.search,
       });
@@ -99,7 +99,7 @@ export const resumeModule = new Elysia({ prefix: "/resumes" })
   )
   .delete(
     "/:id",
-    async ({ db, user, params }) => {
+    async ({ db, user, params, status }) => {
       if (!params.id) {
         return resumeNotFound();
       }

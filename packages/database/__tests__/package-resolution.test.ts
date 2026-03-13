@@ -29,10 +29,14 @@ test("database package exports compiled artifacts", () => {
   });
 });
 
-test("tsconfig path aliases do not bypass database package exports", () => {
+test("workspace typechecks resolve the database package to source", () => {
   const webTsconfig = readJson("apps/web/tsconfig.json");
   const webPaths = (webTsconfig.compilerOptions as { paths?: Record<string, string[]> } | undefined)?.paths ?? {};
+  const typesTsconfig = readJson("packages/types/tsconfig.json");
+  const typesPaths = (typesTsconfig.compilerOptions as { paths?: Record<string, string[]> } | undefined)?.paths ?? {};
 
-  expect(webPaths).not.toHaveProperty("@rezumerai/database");
-  expect(webPaths).not.toHaveProperty("@rezumerai/database/*");
+  expect(webPaths["@rezumerai/database"]).toEqual(["../../packages/database/index.ts"]);
+  expect(webPaths["@rezumerai/database/*"]).toEqual(["../../packages/database/*"]);
+  expect(typesPaths["@rezumerai/database"]).toEqual(["../database/index.ts"]);
+  expect(typesPaths["@rezumerai/database/*"]).toEqual(["../database/*"]);
 });

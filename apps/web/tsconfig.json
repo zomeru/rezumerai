@@ -3,6 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@rezumerai/database": ["../../packages/database/index.ts"],
+      "@rezumerai/database/*": ["../../packages/database/*"],
       "@/*": ["./src/*"],
       "@rezumerai/ui": ["../../packages/ui/src"],
       "@rezumerai/ui/*": ["../../packages/ui/src/*"],
