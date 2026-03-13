@@ -1,4 +1,5 @@
 import { type PrismaClient, prisma } from "@rezumerai/database";
+import { evaluateFeatureFlag } from "./feature-flags.shared";
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type CachedFeatureFlagValue = {
@@ -27,18 +28,6 @@ function isMissingFeatureFlagTableError(error: unknown): boolean {
 
 function shouldUseFeatureFlagCache(db: DatabaseClient): boolean {
   return db === prisma;
-}
-
-function computeRolloutBucket(name: string, subjectKey: string): number {
-  const input = `${name}:${subjectKey}`;
-  let hash = 0;
-
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash << 5) - hash + input.charCodeAt(index);
-    hash |= 0;
-  }
-
-  return Math.abs(hash % 100);
 }
 
 export function clearFeatureFlagCache(name?: string): void {
@@ -106,21 +95,7 @@ export async function isFeatureEnabled(
   const db = options?.db ?? prisma;
   const featureFlag = await readFeatureFlag(db, name);
 
-  if (!featureFlag?.enabled) {
-    return false;
-  }
-
-  if (featureFlag.rolloutPercentage >= 100) {
-    return true;
-  }
-
-  if (featureFlag.rolloutPercentage <= 0) {
-    return false;
-  }
-
-  if (!options?.subjectKey) {
-    return false;
-  }
-
-  return computeRolloutBucket(name, options.subjectKey) < featureFlag.rolloutPercentage;
+  return evaluateFeatureFlag(name, featureFlag, {
+    subjectKey: options?.subjectKey,
+  });
 }

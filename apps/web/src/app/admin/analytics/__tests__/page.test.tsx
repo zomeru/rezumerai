@@ -61,12 +61,10 @@ mock.module("@tanstack/react-query", () => ({
   dehydrate: dehydrateMock,
 }));
 
-mock.module("@/components/Admin/AnalyticsDashboardPageClient", () => ({
-  default: () => <div>Legacy analytics UI</div>,
-}));
-
-mock.module("@/components/Admin/AnalyticsDashboardInteractivePageClient", () => ({
-  default: () => <div>Interactive analytics UI</div>,
+mock.module("@/components/Admin/AnalyticsDashboardVariantClient", () => ({
+  default: ({ initialUseInteractiveAnalyticsUi }: { initialUseInteractiveAnalyticsUi: boolean }) => (
+    <div>{initialUseInteractiveAnalyticsUi ? "Interactive analytics UI" : "Legacy analytics UI"}</div>
+  ),
 }));
 
 const { default: AdminAnalyticsPage } = await import("../page");

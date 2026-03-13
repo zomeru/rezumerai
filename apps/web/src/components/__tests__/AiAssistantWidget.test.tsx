@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
+import {
+  createAssistantMessagesResponse,
+  refetchAiSettingsMock,
+  resetAiHooksModuleMock,
+  useAiSettingsMock,
+  useAssistantMessageHistoryMock,
+} from "@/test-utils/ai-hooks-module-mock";
 
 const sendMessageMock = mock(async () => undefined);
 const setMessagesMock = mock(() => undefined);
 const toastErrorMock = mock(() => undefined);
 const useChatMock = mock();
 const useSessionMock = mock();
-const useAssistantMessageHistoryMock = mock();
 const ensureAnonymousSessionMock = mock(async () => undefined);
 const hasSessionIdentityMock = mock(() => true);
 const isAnonymousSessionMock = mock(() => false);
@@ -38,11 +44,6 @@ mock.module("sonner", () => ({
   },
 }));
 
-mock.module("@/hooks/useAi", () => ({
-  useAssistantMessageHistory: useAssistantMessageHistoryMock,
-  useAiSettings: mock(() => ({ data: undefined, isLoading: false, error: null })),
-}));
-
 mock.module("@/lib/auth-client", () => ({
   ensureAnonymousSession: ensureAnonymousSessionMock,
   getSessionUserRole: (session: { user?: { role?: string | null } } | null | undefined) =>
@@ -72,6 +73,13 @@ describe("AiAssistantWidget", () => {
     hasSessionIdentityMock.mockReturnValue(true);
     isAnonymousSessionMock.mockReset();
     isAnonymousSessionMock.mockReturnValue(false);
+    resetAiHooksModuleMock();
+    useAiSettingsMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: refetchAiSettingsMock,
+    });
 
     useSessionMock.mockReset();
     useSessionMock.mockReturnValue({
@@ -86,9 +94,7 @@ describe("AiAssistantWidget", () => {
 
     useAssistantMessageHistoryMock.mockReset();
     useAssistantMessageHistoryMock.mockReturnValue({
-      data: {
-        pages: [],
-      },
+      data: createAssistantMessagesResponse([]),
       isLoading: false,
       isFetchingNextPage: false,
       hasNextPage: false,

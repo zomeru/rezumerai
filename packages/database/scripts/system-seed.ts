@@ -1,4 +1,3 @@
-import { FEATURE_FLAG_NAMES } from "../../types/src/admin/schema";
 import { DEFAULT_AI_CONFIGURATION, normalizeAiConfiguration } from "../../types/src/ai/schema";
 import {
   DEFAULT_ABOUT_CONTENT,
@@ -100,27 +99,6 @@ async function seedSystemConfigurations(): Promise<void> {
   console.log("✅ System configuration seeded");
 }
 
-async function seedFeatureFlags(): Promise<void> {
-  console.log("🚩 Seeding feature flags...");
-
-  await prisma.featureFlag.upsert({
-    where: { name: FEATURE_FLAG_NAMES.NEW_ADMIN_ANALYTICS_UI },
-    update: {
-      description: "Controls the new admin analytics experience with interactive charts.",
-      enabled: false,
-      rolloutPercentage: 100,
-    },
-    create: {
-      name: FEATURE_FLAG_NAMES.NEW_ADMIN_ANALYTICS_UI,
-      description: "Controls the new admin analytics experience with interactive charts.",
-      enabled: false,
-      rolloutPercentage: 100,
-    },
-  });
-
-  console.log("✅ Feature flags seeded");
-}
-
 async function main(): Promise<void> {
   console.log("🌱 Seeding system configuration...");
 
@@ -130,7 +108,6 @@ async function main(): Promise<void> {
 
   await prisma.$connect();
   await seedSystemConfigurations();
-  await seedFeatureFlags();
 }
 
 main()

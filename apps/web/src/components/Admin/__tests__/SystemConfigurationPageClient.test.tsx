@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
-
-const refetchMock = mock(async () => undefined);
-const mutateAsyncMock = mock(async () => undefined);
+import {
+  adminRefetchMock,
+  resetAdminHooksModuleMock,
+  updateSystemConfigurationMutateAsyncMock,
+  useSystemConfigurationsMock,
+} from "@/test-utils/admin-hooks-module-mock";
 
 mock.module("sonner", () => ({
   toast: {
@@ -11,40 +14,34 @@ mock.module("sonner", () => ({
   },
 }));
 
-mock.module("@/hooks/useAdmin", () => ({
-  useSystemConfigurations: mock(() => ({
-    data: {
-      items: [
-        {
-          id: "cfg_1",
-          name: "AI_CONFIG",
-          description: "AI settings",
-          validationMode: "KNOWN_SCHEMA",
-          createdAt: "2026-03-11T08:21:00.000Z",
-          updatedAt: "2026-03-11T08:21:00.000Z",
-          value: {
-            providers: {
-              primary: "openrouter",
-            },
-          },
-        },
-      ],
-    },
-    error: null,
-    isLoading: false,
-    isFetching: false,
-    refetch: refetchMock,
-  })),
-  useUpdateSystemConfiguration: mock(() => ({
-    mutateAsync: mutateAsyncMock,
-    isPending: false,
-  })),
-}));
-
 describe("SystemConfigurationPageClient", () => {
   beforeEach(() => {
-    refetchMock.mockClear();
-    mutateAsyncMock.mockClear();
+    resetAdminHooksModuleMock();
+    useSystemConfigurationsMock.mockReturnValue({
+      data: {
+        items: [
+          {
+            id: "cfg_1",
+            name: "AI_CONFIG",
+            description: "AI settings",
+            isEditable: true,
+            validationMode: "KNOWN_SCHEMA",
+            createdAt: "2026-03-11T08:21:00.000Z",
+            updatedAt: "2026-03-11T08:21:00.000Z",
+            value: {
+              providers: {
+                primary: "openrouter",
+              },
+            },
+          },
+        ],
+      },
+      error: null,
+      isLoading: false,
+      isFetching: false,
+      refetch: adminRefetchMock,
+    });
+    updateSystemConfigurationMutateAsyncMock.mockImplementation(async () => undefined as never);
   });
 
   it("shows the raw JSON editor by default and lets users switch to structured preview", async () => {

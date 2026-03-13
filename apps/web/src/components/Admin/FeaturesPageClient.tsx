@@ -1,7 +1,8 @@
 "use client";
 
 import { AlertCircle, FlaskConical, RefreshCw, Save } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routing";
 import { useFeatureFlags, useSaveFeatureFlag } from "@/hooks/useAdmin";
@@ -47,6 +48,7 @@ function normalizeRolloutPercentageInput(nextValue: string, currentValue: string
 }
 
 export default function FeaturesPageClient(): React.JSX.Element {
+  const router = useRouter();
   const { data, error, isLoading, isFetching, refetch } = useFeatureFlags();
   const saveFeatureFlag = useSaveFeatureFlag();
   const [selectedName, setSelectedName] = useState<string>("");
@@ -116,6 +118,9 @@ export default function FeaturesPageClient(): React.JSX.Element {
           rolloutPercentage: parseRolloutPercentage(draftRolloutPercentage),
         },
       });
+      startTransition(() => {
+        router.refresh();
+      });
       toast.success(`${saved.name} updated.`);
     } catch (saveError: unknown) {
       const message = saveError instanceof Error ? saveError.message : "Failed to save feature flag.";
@@ -139,6 +144,9 @@ export default function FeaturesPageClient(): React.JSX.Element {
           description: normalizeDescription(createDescription),
           rolloutPercentage: parseRolloutPercentage(createRolloutPercentage),
         },
+      });
+      startTransition(() => {
+        router.refresh();
       });
       setSelectedName(saved.name);
       setCreateName("");

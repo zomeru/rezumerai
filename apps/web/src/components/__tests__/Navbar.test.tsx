@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
+import {
+  refetchAccountSettingsMock,
+  resetAccountHooksModuleMock,
+  useAccountSettingsMock,
+} from "@/test-utils/account-hooks-module-mock";
 
 const useSessionMock = mock();
-const useAccountSettingsMock = mock();
 const signOutMock = mock(async () => undefined);
-
-mock.module("@/hooks/useAccount", () => ({
-  useAccountSettings: useAccountSettingsMock,
-}));
 
 mock.module("@/lib/auth-client", () => ({
   getSessionUserRole: (session: { user?: { role?: string | null } } | null | undefined) =>
@@ -22,6 +22,7 @@ const { default: Navbar } = await import("../Navbar");
 
 describe("Navbar", () => {
   beforeEach(() => {
+    resetAccountHooksModuleMock();
     signOutMock.mockReset();
 
     useSessionMock.mockReset();
@@ -40,17 +41,48 @@ describe("Navbar", () => {
     useAccountSettingsMock.mockReturnValue({
       data: {
         user: {
+          id: "user_123",
           name: "Test User",
           email: "test@example.com",
+          emailVerified: true,
+          isAnonymous: false,
           image: null,
+          lastPasswordChangeAt: null,
           role: "USER",
+          banned: false,
+          banReason: null,
+          banExpires: null,
+          selectedAiModel: "openrouter/free",
+          createdAt: new Date("2026-03-10T00:00:00.000Z"),
+          updatedAt: new Date("2026-03-10T00:00:00.000Z"),
         },
         credits: {
           remaining: 7,
           dailyLimit: 100,
         },
+        providers: [],
+        permissions: {
+          canEditName: true,
+          canEditEmail: true,
+          canEditImage: true,
+          canChangePassword: true,
+        },
+        readOnlyReasons: {
+          email: null,
+          password: null,
+        },
+        passwordManagement: {
+          hasCredentialProvider: true,
+          isOAuthOnly: false,
+          isCooldownActive: false,
+          lastChangedAt: null,
+          nextAllowedAt: null,
+          cooldownMessage: null,
+        },
       },
       isLoading: false,
+      error: null,
+      refetch: refetchAccountSettingsMock,
     });
   });
 

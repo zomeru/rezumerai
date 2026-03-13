@@ -3,16 +3,22 @@ import type { UserAccountSettings } from "@rezumerai/types";
 import { cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ERROR_MESSAGES } from "@/constants/errors";
+import {
+  refetchAccountSettingsMock,
+  resetAccountHooksModuleMock,
+  updateAccountSettingsMutateAsyncMock,
+  useAccountSettingsMock,
+  useUpdateAccountSettingsMock,
+} from "@/test-utils/account-hooks-module-mock";
+import {
+  refetchAiSettingsMock,
+  resetAiHooksModuleMock,
+  updateSelectedAiModelMutateAsyncMock,
+  useAiSettingsMock,
+  useUpdateSelectedAiModelMock,
+} from "@/test-utils/ai-hooks-module-mock";
 
 const changePasswordMock = mock(async () => ({ error: null }));
-const mutateAccountSettingsMock = mock(async () => undefined);
-const mutateSelectedModelMock = mock(async () => undefined);
-const refetchAccountSettingsMock = mock(async () => undefined);
-const refetchAiSettingsMock = mock(async () => undefined);
-const useAccountSettingsMock = mock();
-const useUpdateAccountSettingsMock = mock();
-const useAiSettingsMock = mock();
-const useUpdateSelectedAiModelMock = mock();
 const toastErrorMock = mock(() => undefined);
 const toastInfoMock = mock(() => undefined);
 const toastSuccessMock = mock(() => undefined);
@@ -71,16 +77,6 @@ mock.module("@/components/ui/Select", () => ({
   ),
 }));
 
-mock.module("@/hooks/useAccount", () => ({
-  useAccountSettings: useAccountSettingsMock,
-  useUpdateAccountSettings: useUpdateAccountSettingsMock,
-}));
-
-mock.module("@/hooks/useAi", () => ({
-  useAiSettings: useAiSettingsMock,
-  useUpdateSelectedAiModel: useUpdateSelectedAiModelMock,
-}));
-
 mock.module("@/lib/auth-client", () => ({
   changePassword: changePasswordMock,
 }));
@@ -136,11 +132,9 @@ describe("WorkspaceSettingsPageClient", () => {
   beforeEach(() => {
     cleanup();
 
+    resetAccountHooksModuleMock();
+    resetAiHooksModuleMock();
     changePasswordMock.mockReset();
-    mutateAccountSettingsMock.mockReset();
-    mutateSelectedModelMock.mockReset();
-    refetchAccountSettingsMock.mockReset();
-    refetchAiSettingsMock.mockReset();
     toastErrorMock.mockReset();
     toastInfoMock.mockReset();
     toastSuccessMock.mockReset();
@@ -156,7 +150,7 @@ describe("WorkspaceSettingsPageClient", () => {
     useUpdateAccountSettingsMock.mockReset();
     useUpdateAccountSettingsMock.mockReturnValue({
       isPending: false,
-      mutateAsync: mutateAccountSettingsMock,
+      mutateAsync: updateAccountSettingsMutateAsyncMock,
     });
 
     useAiSettingsMock.mockReset();
@@ -168,10 +162,11 @@ describe("WorkspaceSettingsPageClient", () => {
               models: [
                 {
                   id: "openrouter/free",
-                  modelId: "openrouter/free",
                   name: "OpenRouter Free",
-                  providerName: "OPENROUTER",
-                  providerDisplayName: "OpenRouter",
+                  contextLength: 128_000,
+                  inputModalities: ["text"],
+                  outputModalities: ["text"],
+                  supportedParameters: ["temperature"],
                 },
               ],
               selectedModelId: "openrouter/free",
@@ -184,7 +179,7 @@ describe("WorkspaceSettingsPageClient", () => {
     useUpdateSelectedAiModelMock.mockReset();
     useUpdateSelectedAiModelMock.mockReturnValue({
       isPending: false,
-      mutateAsync: mutateSelectedModelMock,
+      mutateAsync: updateSelectedAiModelMutateAsyncMock,
     });
   });
 

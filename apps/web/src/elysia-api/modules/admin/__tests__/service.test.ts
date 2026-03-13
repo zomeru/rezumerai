@@ -132,7 +132,7 @@ describe("AdminService.listFeatureFlags", () => {
 
     db.featureFlag.findMany.mockResolvedValue([
       {
-        id: "flag_123",
+        id: "cfeatflagadminanalytics01",
         name: "new_admin_analytics_ui",
         enabled: false,
         description: "Interactive analytics dashboard rollout",
@@ -147,7 +147,7 @@ describe("AdminService.listFeatureFlags", () => {
     expect(result).toEqual({
       items: [
         {
-          id: "flag_123",
+          id: "cfeatflagadminanalytics01",
           name: "new_admin_analytics_ui",
           enabled: false,
           description: "Interactive analytics dashboard rollout",
@@ -178,7 +178,7 @@ describe("AdminService.saveFeatureFlag", () => {
 
     db.featureFlag.findUnique.mockResolvedValue(null);
     db.featureFlag.upsert.mockResolvedValue({
-      id: "flag_123",
+      id: "cfeatflagadminanalytics01",
       name: "new_admin_analytics_ui",
       enabled: true,
       description: "Interactive analytics dashboard rollout",
@@ -219,7 +219,7 @@ describe("AdminService.saveFeatureFlag", () => {
       }),
     );
     expect(result).toEqual({
-      id: "flag_123",
+      id: "cfeatflagadminanalytics01",
       name: "new_admin_analytics_ui",
       enabled: true,
       description: "Interactive analytics dashboard rollout",
@@ -233,14 +233,14 @@ describe("AdminService.saveFeatureFlag", () => {
     const db = makeMockDb();
 
     db.featureFlag.findUnique.mockResolvedValue({
-      id: "flag_123",
+      id: "cfeatflagadminanalytics01",
       name: "new_admin_analytics_ui",
       enabled: false,
       description: "Legacy analytics rollout",
       rolloutPercentage: 0,
     });
     db.featureFlag.upsert.mockResolvedValue({
-      id: "flag_123",
+      id: "cfeatflagadminanalytics01",
       name: "new_admin_analytics_ui",
       enabled: true,
       description: "Interactive analytics dashboard rollout",

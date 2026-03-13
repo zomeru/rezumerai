@@ -1,8 +1,7 @@
 import { prisma } from "@rezumerai/database";
 import { FEATURE_FLAG_NAMES } from "@rezumerai/types";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import AnalyticsDashboardInteractivePageClient from "@/components/Admin/AnalyticsDashboardInteractivePageClient";
-import AnalyticsDashboardPageClient from "@/components/Admin/AnalyticsDashboardPageClient";
+import AnalyticsDashboardVariantClient from "@/components/Admin/AnalyticsDashboardVariantClient";
 import { AdminService } from "@/elysia-api/modules/admin/service";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { getQueryClient } from "@/lib/get-query-client";
@@ -22,7 +21,10 @@ export default async function AdminAnalyticsPage(): Promise<React.JSX.Element> {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      {useInteractiveAnalyticsUi ? <AnalyticsDashboardInteractivePageClient /> : <AnalyticsDashboardPageClient />}
+      <AnalyticsDashboardVariantClient
+        initialUseInteractiveAnalyticsUi={useInteractiveAnalyticsUi}
+        subjectKey={userId ?? null}
+      />
     </HydrationBoundary>
   );
 }

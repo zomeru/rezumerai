@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ERROR_MESSAGES } from "@/constants/errors";
+import { refetchAiSettingsMock, resetAiHooksModuleMock, useAiSettingsMock } from "@/test-utils/ai-hooks-module-mock";
 
 const completeMock = mock(async () => "Optimized text");
 const stopMock = mock(() => undefined);
 const toastErrorMock = mock(() => undefined);
 const useSessionMock = mock();
-const useAiSettingsMock = mock();
 
 let lastUseCompletionOptions: Record<string, unknown> | null = null;
 let completionState = createCompletionState();
@@ -36,10 +36,6 @@ mock.module("sonner", () => ({
   toast: {
     error: toastErrorMock,
   },
-}));
-
-mock.module("@/hooks/useAi", () => ({
-  useAiSettings: useAiSettingsMock,
 }));
 
 mock.module("@/lib/auth-client", () => ({
@@ -109,13 +105,14 @@ function createAiSettings() {
     models: [
       {
         id: "model_1",
-        modelId: "openrouter/openai/gpt-4.1-mini",
         name: "GPT-4.1 Mini",
-        providerName: "OPENROUTER",
-        providerDisplayName: "OpenRouter",
+        contextLength: 128_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        supportedParameters: ["temperature"],
       },
     ],
-    selectedModelId: "openrouter/openai/gpt-4.1-mini",
+    selectedModelId: "model_1",
   };
 }
 
@@ -137,6 +134,7 @@ describe("/text-optimizer", () => {
 
     stopMock.mockReset();
     toastErrorMock.mockReset();
+    resetAiHooksModuleMock();
 
     lastUseCompletionOptions = null;
     completionState = createCompletionState();
@@ -152,6 +150,7 @@ describe("/text-optimizer", () => {
       data: enabled === false ? undefined : createAiSettings(),
       isLoading: false,
       error: null,
+      refetch: refetchAiSettingsMock,
     }));
   });
 
