@@ -234,7 +234,7 @@ Notes:
 | `bun run db:migrate` | Deploy Prisma migrations and bootstrap missing required system configuration rows |
 | `bun run db:migrate:dev` | Create and apply a development migration |
 | `bun run db:migrate:status` | Show Prisma migration status |
-| `bun run db:bootstrap:system` | Create any missing required system configuration and public content rows without overwriting existing values |
+| `bun run db:bootstrap:system` | Generate Prisma client artifacts, then create any missing required system configuration and public content rows without overwriting existing values |
 | `bun run db:pull` | Pull schema changes from the database |
 | `bun run db:seed:system` | Reset AI/system configuration and public content rows back to the current defaults |
 | `bun run db:seed` | Seed dummy resume data for existing users |

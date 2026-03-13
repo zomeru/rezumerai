@@ -76,6 +76,9 @@ describe("database deploy scripts", () => {
     const databasePackageJson = readJson("packages/database/package.json");
     const scripts = databasePackageJson.scripts as Record<string, string>;
 
+    expect(scripts["db:bootstrap:system"]).toContain("db:generate");
+    expect(scripts["db:bootstrap:system:preview"]).toContain("db:generate");
+    expect(scripts["db:bootstrap:system:prod"]).toContain("db:generate");
     expect(scripts["db:bootstrap:system"]).toContain("system-bootstrap.ts");
     expect(scripts["db:bootstrap:system:preview"]).toContain("system-bootstrap.ts");
     expect(scripts["db:bootstrap:system:prod"]).toContain("system-bootstrap.ts");

@@ -31,6 +31,7 @@ cat .agents/skills/<skill-name>/SKILL.md
 ## Deployment Bootstrap
 
 - `bun run db:migrate` in `packages/database` is the deploy-safe path: it runs `prisma migrate deploy` and then bootstraps any missing required system configuration and public content rows.
+- `bun run db:bootstrap:system` generates the Prisma client first so it can run correctly in clean CI/deploy environments where `packages/database/generated/` is absent.
 - `bun run db:seed:system` remains a development reset tool that overwrites those rows back to the current defaults.
 
 ## TypeScript Config Conventions
