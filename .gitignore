@@ -88,8 +88,6 @@ next-env.d.ts
 .claude/settings.local.json
 docs/
 code-reviews/
-.vexp
-vexp.toml
 .claude/CLAUDE.md
 .github/copilot-instructions.md
 

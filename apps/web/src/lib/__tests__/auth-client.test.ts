@@ -14,7 +14,7 @@ beforeAll(async () => {
   writableEnv.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/rezumerai_test";
   writableEnv.OPENROUTER_API_KEY ??= "test-openrouter-key";
 
-  authClientModule = await import("../auth-client");
+  authClientModule = await import(new URL("../auth-client.ts?test=auth-client", import.meta.url).href);
 });
 
 describe("authClient anonymous support", () => {

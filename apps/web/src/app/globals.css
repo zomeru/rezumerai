@@ -34,6 +34,19 @@
   --color-accent-500: oklch(0.56 0.21 300); /* #9333EA */
   --color-accent-600: oklch(0.45 0.18 300);
   --color-accent-700: oklch(0.35 0.18 300);
+
+  /* Animation */
+  --animate-marquee: marquee-scroll 25s linear infinite;
+  --animate-marquee-reverse: marquee-scroll 25s linear infinite reverse;
+
+  @keyframes marquee-scroll {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 html {

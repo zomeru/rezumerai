@@ -40,12 +40,12 @@ function setSecurityHeaders(res: NextResponse, nonProd: boolean) {
 /**
  * Build dynamic Content Security Policy
  */
-function buildCSP(nonProd: boolean) {
-  const scriptSrc = ["'self'", "blob:"];
+function buildCSP(nonProd: boolean, nonce: string) {
+  const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", "blob:"];
   const connectSrc = ["'self'", "blob:"];
 
   if (nonProd) {
-    scriptSrc.push("'unsafe-eval'", "'unsafe-inline'", "https://vercel.live");
+    scriptSrc.push("'unsafe-eval'", "https://vercel.live");
   }
 
   return [
@@ -70,6 +70,8 @@ function buildCSP(nonProd: boolean) {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   const nonProd = process.env.NODE_ENV !== "production";
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildCSP(nonProd, nonce);
 
   // Skip API routes entirely for CSP/auth headers
   if (pathname.startsWith("/api")) {
@@ -102,9 +104,19 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Response with security headers
-  const response = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
   setSecurityHeaders(response, nonProd);
-  response.headers.set("Content-Security-Policy", buildCSP(nonProd));
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("x-nonce", nonce);
 
   return response;
 }

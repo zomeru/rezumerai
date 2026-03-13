@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./compress";
 export * from "./cors";
 export * from "./error";
+export * from "./helmet";
 export * from "./logger";
 export * from "./modernCsrf";
 export * from "./observability";

@@ -1,13 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ERROR_MESSAGES } from "@/constants/errors";
 import { refetchAiSettingsMock, resetAiHooksModuleMock, useAiSettingsMock } from "@/test-utils/ai-hooks-module-mock";
 
+const writableEnv = process.env as Record<string, string | undefined>;
 const completeMock = mock(async () => "Optimized text");
 const stopMock = mock(() => undefined);
 const toastErrorMock = mock(() => undefined);
 const useSessionMock = mock();
+writableEnv.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
+writableEnv.NODE_ENV ??= "test";
+const authClientModule = await import("@/lib/auth-client");
+
+let textOptimizerImportVersion = 0;
 
 let lastUseCompletionOptions: Record<string, unknown> | null = null;
 let completionState = createCompletionState();
@@ -36,12 +42,6 @@ mock.module("sonner", () => ({
   toast: {
     error: toastErrorMock,
   },
-}));
-
-mock.module("@/lib/auth-client", () => ({
-  isAnonymousSession: (session: { user?: { isAnonymous?: boolean | null } } | null | undefined) =>
-    session?.user?.isAnonymous === true,
-  useSession: useSessionMock,
 }));
 
 mock.module("@/components/ui/DisabledTooltip", () => ({
@@ -81,8 +81,6 @@ mock.module("@/components/ui/Select", () => ({
     </label>
   ),
 }));
-
-const { buildOptimizeCompletionRequest, default: TextOptimizerPage } = await import("../page");
 
 function createCompletionState(overrides?: Partial<MockCompletionState>): MockCompletionState {
   return {
@@ -125,9 +123,16 @@ function createSession(options?: { emailVerified?: boolean; isAnonymous?: boolea
   };
 }
 
+async function loadTextOptimizerPageModule() {
+  textOptimizerImportVersion += 1;
+
+  return import(new URL(`../page.tsx?test=text-optimizer-${textOptimizerImportVersion}`, import.meta.url).href);
+}
+
 describe("/text-optimizer", () => {
   beforeEach(() => {
     cleanup();
+    mock.restore();
 
     completeMock.mockReset();
     completeMock.mockImplementation(async () => "Optimized text");
@@ -144,6 +149,7 @@ describe("/text-optimizer", () => {
       data: createSession(),
       isPending: false,
     });
+    spyOn(authClientModule, "useSession").mockImplementation(() => useSessionMock());
 
     useAiSettingsMock.mockReset();
     useAiSettingsMock.mockImplementation(({ enabled }: { enabled?: boolean } = {}) => ({
@@ -156,9 +162,11 @@ describe("/text-optimizer", () => {
 
   afterEach(() => {
     cleanup();
+    mock.restore();
   });
 
-  it("configures useCompletion for the AI SDK optimize endpoint", () => {
+  it("configures useCompletion for the AI SDK optimize endpoint", async () => {
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     render(<TextOptimizerPage />);
 
     expect(lastUseCompletionOptions).toMatchObject({
@@ -168,7 +176,9 @@ describe("/text-optimizer", () => {
     });
   });
 
-  it("builds the AI SDK completion payload with a trimmed prompt and model override", () => {
+  it("builds the AI SDK completion payload with a trimmed prompt and model override", async () => {
+    const { buildOptimizeCompletionRequest } = await loadTextOptimizerPageModule();
+
     expect(buildOptimizeCompletionRequest("  Improve this resume bullet.  ", "openrouter/openai/gpt-4.1-mini")).toEqual(
       {
         prompt: "Improve this resume bullet.",
@@ -181,7 +191,8 @@ describe("/text-optimizer", () => {
     );
   });
 
-  it("toasts parsed optimize errors from the AI SDK hook", () => {
+  it("toasts parsed optimize errors from the AI SDK hook", async () => {
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     render(<TextOptimizerPage />);
 
     const onError = lastUseCompletionOptions?.onError;
@@ -195,12 +206,13 @@ describe("/text-optimizer", () => {
     expect(toastErrorMock).toHaveBeenCalledWith("Credits exhausted.");
   });
 
-  it("stops the active completion stream through the AI SDK hook", () => {
+  it("stops the active completion stream through the AI SDK hook", async () => {
     completionState = createCompletionState({
       completion: "Partial result",
       isLoading: true,
     });
 
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     const view = render(<TextOptimizerPage />);
 
     fireEvent.click(view.getByRole("button", { name: "Stop" }));
@@ -208,11 +220,12 @@ describe("/text-optimizer", () => {
     expect(stopMock).toHaveBeenCalledTimes(1);
   });
 
-  it("renders optimized markdown responses with the shared renderer", () => {
+  it("renders optimized markdown responses with the shared renderer", async () => {
     completionState = createCompletionState({
       completion: "# Refined copy\n\n- Stronger action verb\n\n```ts\nconst score = 92;\n```",
     });
 
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     const view = render(<TextOptimizerPage />);
 
     expect(view.getByRole("heading", { name: "Refined copy" })).toBeTruthy();
@@ -220,22 +233,24 @@ describe("/text-optimizer", () => {
     expect(view.getByRole("button", { name: /copy code/i })).toBeTruthy();
   });
 
-  it("parses JSON optimize errors into user-facing text", () => {
+  it("parses JSON optimize errors into user-facing text", async () => {
     completionState = createCompletionState({
       error: new Error(JSON.stringify({ message: "Model failed." })),
     });
 
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     const view = render(<TextOptimizerPage />);
 
     expect(view.getByRole("alert").textContent).toContain("Model failed.");
   });
 
-  it("blocks anonymous sessions from the optimizer page", () => {
+  it("blocks anonymous sessions from the optimizer page", async () => {
     useSessionMock.mockReturnValue({
       data: createSession({ isAnonymous: true }),
       isPending: false,
     });
 
+    const { default: TextOptimizerPage } = await loadTextOptimizerPageModule();
     const view = render(<TextOptimizerPage />);
 
     expect(view.getByText(ERROR_MESSAGES.AI_AUTH_REQUIRED)).toBeTruthy();

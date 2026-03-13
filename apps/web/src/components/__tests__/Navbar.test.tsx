@@ -1,29 +1,32 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import {
   refetchAccountSettingsMock,
   resetAccountHooksModuleMock,
   useAccountSettingsMock,
 } from "@/test-utils/account-hooks-module-mock";
 
+const writableEnv = process.env as Record<string, string | undefined>;
 const useSessionMock = mock();
-const signOutMock = mock(async () => undefined);
+writableEnv.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
+writableEnv.NODE_ENV ??= "test";
+const authClientModule = await import("@/lib/auth-client");
 
-mock.module("@/lib/auth-client", () => ({
-  getSessionUserRole: (session: { user?: { role?: string | null } } | null | undefined) =>
-    session?.user?.role === "ADMIN" || session?.user?.role === "USER" ? session.user.role : null,
-  isAnonymousSession: (session: { user?: { isAnonymous?: boolean | null } } | null | undefined) =>
-    session?.user?.isAnonymous === true,
-  signOut: signOutMock,
-  useSession: useSessionMock,
-}));
+let navbarImportVersion = 0;
 
-const { default: Navbar } = await import("../Navbar");
+async function renderNavbar() {
+  navbarImportVersion += 1;
+  const { default: Navbar } = await import(
+    new URL(`../Navbar.tsx?test=navbar-${navbarImportVersion}`, import.meta.url).href
+  );
+
+  return render(<Navbar />);
+}
 
 describe("Navbar", () => {
   beforeEach(() => {
+    mock.restore();
     resetAccountHooksModuleMock();
-    signOutMock.mockReset();
 
     useSessionMock.mockReset();
     useSessionMock.mockReturnValue({
@@ -36,6 +39,7 @@ describe("Navbar", () => {
         },
       },
     });
+    spyOn(authClientModule, "useSession").mockImplementation(() => useSessionMock());
 
     useAccountSettingsMock.mockReset();
     useAccountSettingsMock.mockReturnValue({
@@ -86,16 +90,21 @@ describe("Navbar", () => {
     });
   });
 
-  it("shows a text optimizer link in the authenticated profile dropdown", () => {
-    const view = render(<Navbar />);
+  afterEach(() => {
+    cleanup();
+    mock.restore();
+  });
+
+  it("shows a text optimizer link in the authenticated profile dropdown", async () => {
+    const view = await renderNavbar();
 
     fireEvent.click(view.getAllByRole("button")[0] as HTMLButtonElement);
 
     expect(view.getByRole("link", { name: "Text Optimizer" })).toHaveAttribute("href", "/text-optimizer");
   });
 
-  it("defers account settings loading until the dropdown is opened", () => {
-    const view = render(<Navbar />);
+  it("defers account settings loading until the dropdown is opened", async () => {
+    const view = await renderNavbar();
 
     expect(useAccountSettingsMock).toHaveBeenLastCalledWith({
       enabled: false,

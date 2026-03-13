@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import {
   createAssistantMessagesResponse,
   refetchAiSettingsMock,
@@ -8,14 +8,16 @@ import {
   useAssistantMessageHistoryMock,
 } from "@/test-utils/ai-hooks-module-mock";
 
+const writableEnv = process.env as Record<string, string | undefined>;
 const sendMessageMock = mock(async () => undefined);
 const setMessagesMock = mock(() => undefined);
 const toastErrorMock = mock(() => undefined);
 const useChatMock = mock();
 const useSessionMock = mock();
 const ensureAnonymousSessionMock = mock(async () => undefined);
-const hasSessionIdentityMock = mock(() => true);
-const isAnonymousSessionMock = mock(() => false);
+writableEnv.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
+writableEnv.NODE_ENV ??= "test";
+const authClientModule = await import("@/lib/auth-client");
 
 mock.module("@ai-sdk/react", () => ({
   useChat: useChatMock,
@@ -44,35 +46,15 @@ mock.module("sonner", () => ({
   },
 }));
 
-mock.module("@/lib/auth-client", () => ({
-  ensureAnonymousSession: ensureAnonymousSessionMock,
-  getSessionUserRole: (session: { user?: { role?: string | null } } | null | undefined) =>
-    session?.user?.role === "ADMIN" || session?.user?.role === "USER" ? session.user.role : null,
-  hasSessionIdentity: hasSessionIdentityMock,
-  isAnonymousSession: isAnonymousSessionMock,
-  useSession: useSessionMock,
-  signIn: { anonymous: mock(async () => ({ data: null })) },
-  signOut: mock(async () => undefined),
-  signUp: mock(async () => undefined),
-  changePassword: mock(async () => undefined),
-  startAnonymousSession: (
-    signInAnonymous: (payload: Record<string, never>) => Promise<unknown> = async () => ({ data: null }),
-  ) => signInAnonymous({}),
-  hasRegisteredSession: mock(() => false),
-}));
-
-const { default: AiAssistantWidget } = await import("../AiAssistantWidget");
-
 describe("AiAssistantWidget", () => {
   beforeEach(() => {
+    mock.restore();
     sendMessageMock.mockReset();
     setMessagesMock.mockReset();
     toastErrorMock.mockReset();
     ensureAnonymousSessionMock.mockReset();
-    hasSessionIdentityMock.mockReset();
-    hasSessionIdentityMock.mockReturnValue(true);
-    isAnonymousSessionMock.mockReset();
-    isAnonymousSessionMock.mockReturnValue(false);
+
+    spyOn(authClientModule, "ensureAnonymousSession").mockImplementation(ensureAnonymousSessionMock);
     resetAiHooksModuleMock();
     useAiSettingsMock.mockReturnValue({
       data: undefined,
@@ -91,6 +73,7 @@ describe("AiAssistantWidget", () => {
       },
       isPending: false,
     });
+    spyOn(authClientModule, "useSession").mockImplementation(() => useSessionMock());
 
     useAssistantMessageHistoryMock.mockReset();
     useAssistantMessageHistoryMock.mockReturnValue({
@@ -121,7 +104,15 @@ describe("AiAssistantWidget", () => {
     });
   });
 
-  it("renders assistant markdown responses with the shared renderer", () => {
+  afterEach(() => {
+    cleanup();
+    mock.restore();
+  });
+
+  it("renders assistant markdown responses with the shared renderer", async () => {
+    const { default: AiAssistantWidget } = await import(
+      new URL("../AiAssistantWidget.tsx?test=ai-assistant-widget", import.meta.url).href
+    );
     const view = render(<AiAssistantWidget />);
 
     fireEvent.click(view.getByRole("button", { name: "Assistant" }));

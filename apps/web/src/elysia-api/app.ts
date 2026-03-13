@@ -17,6 +17,7 @@ import { recordSystemActivityLog } from "./observability/audit";
 import { runWithSystemContext } from "./observability/request-context";
 import {
   authPlugin,
+  createApiHelmetConfig,
   createCorsConfig,
   errorPlugin,
   loggerPlugin,
@@ -46,17 +47,7 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(observabilityPlugin)
 
   // 1. Security first
-  .use(
-    elysiaHelmet({
-      csp: {
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        imgSrc: ["'self'", "data:", "blob:", "https://cdn.jsdelivr.net"],
-        fontSrc: ["'self'", "https://fonts.scalar.com"],
-        connectSrc: ["'self'", "https://proxy.scalar.com", "https://cdn.jsdelivr.net"],
-      },
-    }),
-  )
+  .use(elysiaHelmet(createApiHelmetConfig({ isDev })))
   .use(
     cors(
       createCorsConfig({
@@ -90,8 +81,24 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(errorPlugin)
 
   // 4. Documentation (dev only — never expose in production)
-  .use(isDev ? swagger() : (app) => app)
-  .use(isDev ? openapi() : (app) => app)
+  .use(
+    isDev
+      ? swagger({
+          scalarConfig: {
+            withDefaultFonts: false,
+          },
+        })
+      : (app) => app,
+  )
+  .use(
+    isDev
+      ? openapi({
+          scalar: {
+            withDefaultFonts: false,
+          },
+        })
+      : (app) => app,
+  )
   .get("/", "Hello from Rezumer!")
 
   .use(

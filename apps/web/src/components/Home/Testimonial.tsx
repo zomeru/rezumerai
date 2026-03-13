@@ -39,45 +39,29 @@ export default function Testimonial({ content }: TestimonialProps) {
   ]);
 
   return (
-    <>
-      <style>{`
-            @keyframes marqueeScroll {
-                0% { transform: translateX(0%); }
-                100% { transform: translateX(-50%); }
-            }
-
-            .marquee-inner {
-                animation: marqueeScroll 25s linear infinite;
-            }
-
-            .marquee-reverse {
-                animation-direction: reverse;
-            }
-        `}</style>
-      <div className="flex scroll-mt-12 flex-col items-center" id="how-it-works">
-        <Badge title="How it works" style="text-primary-600" svgStyle="fill-primary-600" />
-        <SectionTitle title={content.title} description={content.description} />
-        <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
-          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-linear-to-r from-white to-transparent"></div>
-          <div className="marquee-inner flex min-w-[200%] transform-gpu pt-10 pb-5">
-            {topCardsData.map((card) => (
-              <CreateCard key={`${card.id}-a`} card={card} />
-            ))}
-          </div>
-          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-linear-to-l from-white to-transparent md:w-40"></div>
+    <div className="flex scroll-mt-12 flex-col items-center" id="how-it-works">
+      <Badge title="How it works" style="text-primary-600" svgStyle="fill-primary-600" />
+      <SectionTitle title={content.title} description={content.description} />
+      <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
+        <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-linear-to-r from-white to-transparent"></div>
+        <div className="flex min-w-[200%] transform-gpu animate-marquee pt-10 pb-5">
+          {topCardsData.map((card) => (
+            <CreateCard key={`${card.id}-a`} card={card} />
+          ))}
         </div>
-
-        <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
-          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-linear-to-r from-white to-transparent"></div>
-          <div className="marquee-inner marquee-reverse flex min-w-[200%] transform-gpu pt-10 pb-5">
-            {bottomCardsData.map((card) => (
-              <CreateCard key={`${card.id}-b`} card={card} />
-            ))}
-          </div>
-          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-linear-to-l from-white to-transparent md:w-40"></div>
-        </div>
+        <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-linear-to-l from-white to-transparent md:w-40"></div>
       </div>
-    </>
+
+      <div className="marquee-row relative mx-auto w-full max-w-5xl overflow-hidden">
+        <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-20 bg-linear-to-r from-white to-transparent"></div>
+        <div className="flex min-w-[200%] transform-gpu animate-marquee-reverse pt-10 pb-5">
+          {bottomCardsData.map((card) => (
+            <CreateCard key={`${card.id}-b`} card={card} />
+          ))}
+        </div>
+        <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-20 bg-linear-to-l from-white to-transparent md:w-40"></div>
+      </div>
+    </div>
   );
 }
 

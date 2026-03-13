@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { UserAccountSettings } from "@rezumerai/types";
 import { cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -18,10 +18,14 @@ import {
   useUpdateSelectedAiModelMock,
 } from "@/test-utils/ai-hooks-module-mock";
 
-const changePasswordMock = mock(async () => ({ error: null }));
+const writableEnv = process.env as Record<string, string | undefined>;
 const toastErrorMock = mock(() => undefined);
 const toastInfoMock = mock(() => undefined);
 const toastSuccessMock = mock(() => undefined);
+writableEnv.NEXT_PUBLIC_SITE_URL ??= "http://localhost:3000";
+writableEnv.NODE_ENV ??= "test";
+
+let workspaceSettingsImportVersion = 0;
 
 mock.module("next/link", () => ({
   default: ({ children, href, ...props }: { children: ReactNode; href: string }) => (
@@ -77,11 +81,17 @@ mock.module("@/components/ui/Select", () => ({
   ),
 }));
 
-mock.module("@/lib/auth-client", () => ({
-  changePassword: changePasswordMock,
-}));
+async function renderWorkspaceSettingsPageClient() {
+  workspaceSettingsImportVersion += 1;
+  const { default: WorkspaceSettingsPageClient } = await import(
+    new URL(
+      `../WorkspaceSettingsPageClient.tsx?test=workspace-settings-${workspaceSettingsImportVersion}`,
+      import.meta.url,
+    ).href
+  );
 
-const { default: WorkspaceSettingsPageClient } = await import("../WorkspaceSettingsPageClient");
+  return render(<WorkspaceSettingsPageClient />);
+}
 
 function createAccountSettings(overrides?: Partial<UserAccountSettings>): UserAccountSettings {
   return {
@@ -131,10 +141,10 @@ function createAccountSettings(overrides?: Partial<UserAccountSettings>): UserAc
 describe("WorkspaceSettingsPageClient", () => {
   beforeEach(() => {
     cleanup();
+    mock.restore();
 
     resetAccountHooksModuleMock();
     resetAiHooksModuleMock();
-    changePasswordMock.mockReset();
     toastErrorMock.mockReset();
     toastInfoMock.mockReset();
     toastSuccessMock.mockReset();
@@ -183,7 +193,12 @@ describe("WorkspaceSettingsPageClient", () => {
     });
   });
 
-  it("shows anonymous-specific guidance for password and AI settings", () => {
+  afterEach(() => {
+    cleanup();
+    mock.restore();
+  });
+
+  it("shows anonymous-specific guidance for password and AI settings", async () => {
     useAccountSettingsMock.mockReturnValue({
       data: createAccountSettings({
         user: {
@@ -197,7 +212,7 @@ describe("WorkspaceSettingsPageClient", () => {
       refetch: refetchAccountSettingsMock,
     });
 
-    const view = render(<WorkspaceSettingsPageClient />);
+    const view = await renderWorkspaceSettingsPageClient();
 
     expect(view.getByText("Please sign up to set and manage a password for this account.")).toBeTruthy();
     expect(view.getByText("Anonymous accounts do not have a password yet.")).toBeTruthy();
