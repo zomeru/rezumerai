@@ -1,5 +1,16 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, ArrowRight, BarChart3, Bot, ClipboardList, Cog, Flag, ShieldCheck, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  BarChart3,
+  Bot,
+  ClipboardList,
+  Cog,
+  FileText,
+  Flag,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routing";
 
@@ -43,6 +54,14 @@ const adminSections: AdminSection[] = [
     description: "Configure global system settings and application behavior.",
     icon: Cog,
     href: ROUTES.ADMIN_SYSTEM_CONFIG,
+    isAvailable: true,
+  },
+  {
+    id: "content-management",
+    title: "Content Management",
+    description: "Edit public landing, FAQ, policy, and support content without using raw config JSON.",
+    icon: FileText,
+    href: ROUTES.ADMIN_CONTENT,
     isAvailable: true,
   },
   {

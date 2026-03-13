@@ -176,6 +176,7 @@ export function AdminSelect({
 }
 
 export function AdminInput({
+  ariaLabel,
   value,
   onChange,
   placeholder,
@@ -185,6 +186,7 @@ export function AdminInput({
   step,
   className,
 }: {
+  ariaLabel?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -196,6 +198,7 @@ export function AdminInput({
 }): React.JSX.Element {
   return (
     <input
+      aria-label={ariaLabel}
       type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}
@@ -209,11 +212,13 @@ export function AdminInput({
 }
 
 export function AdminTextarea({
+  ariaLabel,
   value,
   onChange,
   rows = 12,
   className,
 }: {
+  ariaLabel?: string;
   value: string;
   onChange: (value: string) => void;
   rows?: number;
@@ -221,6 +226,7 @@ export function AdminTextarea({
 }): React.JSX.Element {
   return (
     <textarea
+      aria-label={ariaLabel}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       rows={rows}

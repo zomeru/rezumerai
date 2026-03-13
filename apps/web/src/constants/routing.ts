@@ -19,6 +19,7 @@ const ADMIN_ERROR = `${ADMIN}/error`;
 const ADMIN_USERS = `${ADMIN}/users`;
 const ADMIN_AI_MODELS = `${ADMIN}/ai-models`;
 const ADMIN_SYSTEM_CONFIG = `${ADMIN}/system-config`;
+const ADMIN_CONTENT = `${ADMIN}/content`;
 const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
 const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
 const ADMIN_FEATURES = `${ADMIN}/features`;
@@ -64,6 +65,7 @@ export const ROUTES = {
   ADMIN_USERS,
   ADMIN_AI_MODELS,
   ADMIN_SYSTEM_CONFIG,
+  ADMIN_CONTENT,
   ADMIN_AUDIT_LOGS,
   ADMIN_ANALYTICS,
   ADMIN_FEATURES,
