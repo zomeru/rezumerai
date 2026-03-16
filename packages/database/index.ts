@@ -22,13 +22,26 @@ const globalForPrisma = globalThis;
 const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
 
 /**
+ * Ensures the connection string has an explicit sslmode to avoid
+ * pg-connection-string security warnings in newer versions.
+ * Uses 'verify-full' for full SSL verification (current behavior).
+ */
+function ensureSslMode(url: string): string {
+  if (url.includes("sslmode=")) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}sslmode=verify-full`;
+}
+
+const connectionStringWithSsl = ensureSslMode(connectionString);
+
+/**
  * Selects the appropriate Prisma adapter based on the database connection string.
  * Uses PrismaNeon for Neon serverless PostgreSQL (WebSocket-based), and PrismaPg
  * for standard PostgreSQL connections (e.g. local Docker).
  */
 const adapter = connectionString.includes(".neon.tech")
-  ? new PrismaNeon({ connectionString })
-  : new PrismaPg({ connectionString });
+  ? new PrismaNeon({ connectionString: ensureSslMode(connectionString) })
+  : new PrismaPg({ connectionString: connectionStringWithSsl });
 
 // ─── Inline ANSI helpers ──────────────────────────────────────────────────────
 // Kept local to this package to avoid a cross-package dependency on app-layer utils.
