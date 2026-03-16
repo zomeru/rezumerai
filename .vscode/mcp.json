@@ -46,6 +46,9 @@
         "DATABASE_URI": "${input:postgres_uri}"
       }
     },
+    "context-mode": {
+      "command": "context-mode"
+    }
   },
   "inputs": [
     {
