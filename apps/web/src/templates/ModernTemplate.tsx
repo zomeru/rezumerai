@@ -43,7 +43,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             </div>
           )}
           {data.personalInfo?.linkedin && (
-            <a target="_blank" href={data.personalInfo?.linkedin} className="flex items-center gap-2">
+            <a target="_blank" href={data.personalInfo?.linkedin} className="flex items-center gap-2" rel="noopener">
               <Linkedin className="size-4" />
               <span className="break-all text-[0.75em]">
                 {data.personalInfo?.linkedin.split("https://www.")[1]
@@ -53,7 +53,7 @@ const ModernTemplate = ({ data, accentColor }: TemplateProps) => {
             </a>
           )}
           {data.personalInfo?.website && (
-            <a target="_blank" href={data.personalInfo?.website} className="flex items-center gap-2">
+            <a target="_blank" href={data.personalInfo?.website} className="flex items-center gap-2" rel="noopener">
               <Globe className="size-4" />
               <span className="break-all text-[0.75em]">
                 {data.personalInfo?.website.split("https://")[1]

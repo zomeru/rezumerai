@@ -218,4 +218,4 @@ const ResumePreview: React.ForwardRefExoticComponent<ResumePreviewProps & React.
 ResumePreview.displayName = "ResumePreview";
 
 export default ResumePreview;
-export type { LETTER_WIDTH_PX, LETTER_HEIGHT_PX };
+export type { LETTER_HEIGHT_PX, LETTER_WIDTH_PX };
