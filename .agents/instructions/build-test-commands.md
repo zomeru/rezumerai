@@ -2,39 +2,41 @@
 
 ## Root Commands
 
+Use `rtk` for all commands to minimize terminal verbosity and preserve agent context tokens.
+
 ```sh
-bun install
-bun run dev
-bun run build
-bun run build:production
-bun run build:packages
-bun run start
-bun run check
-bun run biome
-bun run check:types
-bun run code:check
-bun run test
-bun run test:watch
-bun run test:coverage
-bun run code:verify
+rtk bun install
+rtk bun run dev
+rtk bun run build
+rtk bun run build:production
+rtk bun run build:packages
+rtk bun run start
+rtk bun run check
+rtk bun run biome
+rtk bun run check:types
+rtk bun run code:check
+rtk bun run test
+rtk bun run test:watch
+rtk bun run test:coverage
+rtk bun run code:verify
 ```
 
 ### Important Behavior
 
-- `bun run check` runs `update:biome-configs` first, then `turbo check`.
-- `bun run biome` and many workspace `check` scripts write formatting fixes in place.
-- `bun run code:verify` is the main full-repo verification command.
+- `rtk bun run check` runs `update:biome-configs` first, then `turbo check`.
+- `rtk bun run biome` and many workspace `check` scripts write formatting fixes in place.
+- `rtk bun run code:verify` is the main full-repo verification command.
 
 ## Useful Maintenance Commands
 
 ```sh
-bun run install:modules
-bun run update:modules:1
-bun run update:modules:2
-bun run assistant:reindex-memory
-bun run clean
-bun run clean:install
-bun run outdated
-bun run security:audit
-bun run security:check
+rtk bun run install:modules
+rtk bun run update:modules:1
+rtk bun run update:modules:2
+rtk bun run assistant:reindex-memory
+rtk bun run clean
+rtk bun run clean:install
+rtk bun run outdated
+rtk bun run security:audit
+rtk bun run security:check
 ```

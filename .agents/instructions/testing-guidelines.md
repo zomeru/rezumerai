@@ -2,7 +2,7 @@
 
 ## Frameworks And Locations
 
-- Test runner: Bun (`bun test`)
+- Test runner: Bun (`rtk bun test`)
 - React and component tests: React Testing Library with Happy DOM preload
 - Current Bun test preload config lives in:
   - `apps/web/bunfig.toml`
@@ -11,29 +11,31 @@
 - Keep tests colocated in `__tests__` directories where that pattern already exists
 - CI workflow reference: `.github/workflows/main.yml`
 
+Use `rtk` for all commands to minimize terminal verbosity and preserve agent context tokens.
+
 ## Default Verification For Code Changes
 
 For implementation changes, run:
 
 ```sh
-bun run check
-bun run check:types
-bun run test
-bun run build
+rtk bun run check
+rtk bun run check:types
+rtk bun run test
+rtk bun run build
 ```
 
 Or run:
 
 ```sh
-bun run code:verify
+rtk bun run code:verify
 ```
 
 If schema or model changes were made, also run:
 
 ```sh
-bun run db:generate
+rtk bun run db:generate
 # and/or
-bun run db:migrate:dev
+rtk bun run db:migrate:dev
 ```
 
 ## Browser Testing

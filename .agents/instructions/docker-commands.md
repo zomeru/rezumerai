@@ -1,10 +1,12 @@
 # Docker Commands
 
+Use `rtk` for all commands to minimize terminal verbosity and preserve agent context tokens.
+
 ```sh
-bun run docker:build
-bun run docker:build:standalone
-bun run docker:up
-bun run docker:down
+rtk bun run docker:build
+rtk bun run docker:build:standalone
+rtk bun run docker:up
+rtk bun run docker:down
 ```
 
 ## Notes

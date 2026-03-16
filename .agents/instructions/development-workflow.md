@@ -35,16 +35,18 @@ Source of truth for env validation: `apps/web/src/env.ts`.
 
 ## Setup
 
+Use `rtk` for all commands to minimize terminal verbosity and preserve agent context tokens.
+
 ```sh
-bun install
-bun run db:setup
-bun run dev
+rtk bun install
+rtk bun run db:setup
+rtk bun run dev
 ```
 
 ### Notes
 
-- `bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
+- `rtk bun run dev` runs the root `predev` hook, which builds `@rezumerai/database` first.
 - `apps/web` runs `scripts/download-pdf-worker.ts` on `predev` and `prebuild`.
-- `bun run db:migrate` bootstraps missing required AI/system configuration and public content rows after Prisma migrations.
-- `bun run db:seed:system` is the local reset path that rewrites those rows back to the current defaults.
+- `rtk bun run db:migrate` bootstraps missing required AI/system configuration and public content rows after Prisma migrations.
+- `rtk bun run db:seed:system` is the local reset path that rewrites those rows back to the current defaults.
 - Workspace-local commands should still be run with Bun from the relevant package directory.

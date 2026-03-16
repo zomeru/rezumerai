@@ -23,8 +23,8 @@ Run this checklist at the start of every task:
 Required commands:
 
 ```sh
-ls .agents/skills/
-cat .agents/skills/<skill-name>/SKILL.md
+rtk ls .agents/skills/
+rtk cat .agents/skills/<skill-name>/SKILL.md
 ```
 
 ---
@@ -283,25 +283,37 @@ rtk git add . && rtk git commit -m "msg" && rtk git push
 
 ### RTK Commands by Workflow
 
-#### Build & Compile (80-90% savings)
+#### Build, Run, And Verify (Bun + Turbo, 80-90% savings)
 
 ```bash
-rtk cargo build         # Cargo build output
-rtk cargo check         # Cargo check output
-rtk cargo clippy        # Clippy warnings grouped by file (80%)
-rtk tsc                 # TypeScript errors grouped by file/code (83%)
-rtk lint                # ESLint/Biome violations grouped (84%)
-rtk prettier --check    # Files needing format only (70%)
-rtk next build          # Next.js build with route metrics (87%)
+rtk bun install
+rtk bun run dev
+rtk bun run build
+rtk bun run build:production
+rtk bun run check
+rtk bun run check:types
+rtk bun run test
+rtk bun run code:verify
 ```
 
-#### Test (90-99% savings)
+#### Database And Worker (80-90% savings)
 
 ```bash
-rtk cargo test          # Cargo test failures only (90%)
-rtk vitest run          # Vitest failures only (99.5%)
-rtk playwright test     # Playwright failures only (94%)
-rtk test <cmd>          # Generic test wrapper - failures only
+rtk bun run db:setup
+rtk bun run db:migrate
+rtk bun run db:seed:system
+rtk bun run assistant:reindex-memory
+rtk bun run worker
+rtk bun run worker:all
+```
+
+#### Docker (85% savings)
+
+```bash
+rtk bun run docker:build
+rtk bun run docker:build:standalone
+rtk bun run docker:up
+rtk bun run docker:down
 ```
 
 #### Git (59-80% savings)
@@ -333,15 +345,13 @@ rtk gh issue list       # Compact issue list (80%)
 rtk gh api              # Compact API responses (26%)
 ```
 
-#### JavaScript/TypeScript Tooling (70-90% savings)
+#### JavaScript/TypeScript Tooling (Bun-first, 70-90% savings)
 
 ```bash
-rtk pnpm list           # Compact dependency tree (70%)
-rtk pnpm outdated       # Compact outdated packages (80%)
-rtk pnpm install        # Compact install output (90%)
-rtk npm run <script>    # Compact npm script output
-rtk npx <cmd>           # Compact npx command output
-rtk prisma              # Prisma without ASCII art (88%)
+rtk bun run outdated
+rtk bun run security:audit
+rtk bun run security:check
+rtk bun run biome
 ```
 
 #### Files & Search (60-75% savings)
@@ -371,8 +381,6 @@ rtk diff                # Ultra-compact diffs
 rtk docker ps           # Compact container list
 rtk docker images       # Compact image list
 rtk docker logs <c>     # Deduplicated logs
-rtk kubectl get         # Compact resource list
-rtk kubectl logs        # Deduplicated pod logs
 ```
 
 #### Network (65-70% savings)
@@ -382,7 +390,7 @@ rtk curl <url>          # Compact HTTP responses (70%)
 rtk wget <url>          # Compact download output (65%)
 ```
 
-#### Meta Commands
+#### Meta Commands (60-90% savings)
 
 ```bash
 rtk gain                # View token savings statistics
@@ -397,13 +405,13 @@ rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
 
 | Category | Commands | Typical Savings |
 |----------|----------|-----------------|
-| Tests | vitest, playwright, cargo test | 90-99% |
-| Build | next, tsc, lint, prettier | 70-87% |
+| Tests | bun run test, bun run test:coverage | 90-99% |
+| Build | bun run build, bun run check | 70-87% |
 | Git | status, log, diff, add, commit | 59-80% |
 | GitHub | gh pr, gh run, gh issue | 26-87% |
-| Package Managers | pnpm, npm, npx | 70-90% |
+| Package Managers | bun install, bun run outdated | 70-90% |
 | Files | ls, read, grep, find | 60-75% |
-| Infrastructure | docker, kubectl | 85% |
+| Infrastructure | docker | 85% |
 | Network | curl, wget | 65-70% |
 
 Overall average: **60-90% token reduction** on common development operations.
