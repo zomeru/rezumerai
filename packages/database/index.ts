@@ -18,10 +18,12 @@ declare global {
  * the perf extension is never applied more than once per process.
  */
 const globalForPrisma = globalThis;
-
 const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
 
 function ensureSslModeForPg(url: string): string {
+  if (url.includes(".neon.tech")) return url;
+  if (url.includes("localhost") || url.includes("127.0.0.1")) return url;
+
   const sslmodeRegex = /sslmode=[^&]*/;
   if (sslmodeRegex.test(url)) {
     return url.replace(sslmodeRegex, "sslmode=verify-full");
@@ -31,7 +33,6 @@ function ensureSslModeForPg(url: string): string {
 }
 
 const isNeon = connectionString.includes(".neon.tech");
-const connectionStringWithSsl = isNeon ? connectionString : ensureSslModeForPg(connectionString);
 
 /**
  * Selects the appropriate Prisma adapter based on the database connection string.
@@ -40,7 +41,7 @@ const connectionStringWithSsl = isNeon ? connectionString : ensureSslModeForPg(c
  */
 const adapter = isNeon
   ? new PrismaNeon({ connectionString })
-  : new PrismaPg({ connectionString: connectionStringWithSsl });
+  : new PrismaPg({ connectionString: ensureSslModeForPg(connectionString) });
 
 // ─── Inline ANSI helpers ──────────────────────────────────────────────────────
 // Kept local to this package to avoid a cross-package dependency on app-layer utils.
