@@ -1,5 +1,5 @@
 {
   "extends": "@rezumerai/tsconfig/database.json",
-  "include": ["index.ts", "prisma/**/*.ts"],
+  "include": ["index.ts", "prisma/**/*.ts", "prisma.config.ts"],
   "exclude": ["node_modules", "dist", "generated/prisma"]
 }

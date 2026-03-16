@@ -20,18 +20,6 @@ declare global {
 const globalForPrisma = globalThis;
 const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
 
-function ensureSslModeForPg(url: string): string {
-  if (url.includes(".neon.tech")) return url;
-  if (url.includes("localhost") || url.includes("127.0.0.1")) return url;
-
-  const sslmodeRegex = /sslmode=[^&]*/;
-  if (sslmodeRegex.test(url)) {
-    return url.replace(sslmodeRegex, "sslmode=verify-full");
-  }
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}sslmode=verify-full`;
-}
-
 const isNeon = connectionString.includes(".neon.tech");
 
 /**
@@ -39,9 +27,7 @@ const isNeon = connectionString.includes(".neon.tech");
  * Uses PrismaNeon for Neon serverless PostgreSQL (WebSocket-based), and PrismaPg
  * for standard PostgreSQL connections (e.g. local Docker).
  */
-const adapter = isNeon
-  ? new PrismaNeon({ connectionString })
-  : new PrismaPg({ connectionString: ensureSslModeForPg(connectionString) });
+const adapter = isNeon ? new PrismaNeon({ connectionString }) : new PrismaPg({ connectionString });
 
 // ─── Inline ANSI helpers ──────────────────────────────────────────────────────
 // Kept local to this package to avoid a cross-package dependency on app-layer utils.
