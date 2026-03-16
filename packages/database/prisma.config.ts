@@ -1,7 +1,10 @@
 import { defineConfig, env } from "prisma/config";
 
 function ensureSslMode(url: string): string {
-  if (url.includes("sslmode=")) return url;
+  const sslmodeRegex = /sslmode=[^&]*/;
+  if (sslmodeRegex.test(url)) {
+    return url.replace(sslmodeRegex, "sslmode=verify-full");
+  }
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}sslmode=verify-full`;
 }

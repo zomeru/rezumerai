@@ -27,7 +27,12 @@ const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
  * Uses 'verify-full' for full SSL verification (current behavior).
  */
 function ensureSslMode(url: string): string {
-  if (url.includes("sslmode=")) return url;
+  // Replace any existing sslmode with verify-full to avoid the security warning
+  // about deprecated aliases (prefer, require, verify-ca)
+  const sslmodeRegex = /sslmode=[^&]*/;
+  if (sslmodeRegex.test(url)) {
+    return url.replace(sslmodeRegex, "sslmode=verify-full");
+  }
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}sslmode=verify-full`;
 }
