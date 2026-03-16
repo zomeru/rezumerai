@@ -512,7 +512,9 @@ export abstract class ErrorLogService {
     db: TransactionCapableDatabaseClient,
     input: ListErrorLogsInput = {},
   ): Promise<ErrorLogListResponse> {
-    mergeRequestContextMetadata({ serviceName: "ErrorLogService.listErrorLogs" });
+    mergeRequestContextMetadata({
+      serviceName: "ErrorLogService.listErrorLogs",
+    });
     const page = toPage(input.page);
     const pageSize = toPageSize(input.pageSize);
 
@@ -561,7 +563,9 @@ export abstract class ErrorLogService {
   }
 
   static async getErrorLogById(db: DatabaseClient, id: string): Promise<ErrorLogDetail | null> {
-    mergeRequestContextMetadata({ serviceName: "ErrorLogService.getErrorLogById" });
+    mergeRequestContextMetadata({
+      serviceName: "ErrorLogService.getErrorLogById",
+    });
     const record = await db.errorLog.findUnique({
       where: { id },
       include: {
@@ -942,7 +946,9 @@ export abstract class AdminService {
     newPassword: string,
     headers: Headers,
   ): Promise<UpdateUserPasswordResult> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.updateUserPassword" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.updateUserPassword",
+    });
 
     const targetUser = await db.user.findUnique({
       where: { id: targetUserId },
@@ -985,7 +991,9 @@ export abstract class AdminService {
   }
 
   static async listSystemConfigurations(db: DatabaseClient): Promise<SystemConfigurationListResponse> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.listSystemConfigurations" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.listSystemConfigurations",
+    });
     const rows = await db.systemConfiguration.findMany({
       orderBy: [{ name: "asc" }],
     });
@@ -1000,8 +1008,13 @@ export abstract class AdminService {
     actorUserId: string,
     name: string,
     value: unknown,
-  ): Promise<{ configuration: SystemConfigurationEntry | null; error: string | null }> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.updateSystemConfiguration" });
+  ): Promise<{
+    configuration: SystemConfigurationEntry | null;
+    error: string | null;
+  }> {
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.updateSystemConfiguration",
+    });
     const existing = await db.systemConfiguration.findUnique({
       where: { name },
       select: {
@@ -1062,7 +1075,9 @@ export abstract class AdminService {
   }
 
   static async listFeatureFlags(db: DatabaseClient): Promise<FeatureFlagListResponse> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.listFeatureFlags" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.listFeatureFlags",
+    });
     let rows: Array<{
       id: string;
       name: string;
@@ -1098,7 +1113,9 @@ export abstract class AdminService {
       rolloutPercentage: number;
     },
   ): Promise<FeatureFlagEntry> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.saveFeatureFlag" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.saveFeatureFlag",
+    });
     const description = input.description?.trim() ? input.description.trim() : null;
     const existing = await db.featureFlag.findUnique({
       where: { name },
@@ -1244,7 +1261,9 @@ export abstract class AdminService {
   }
 
   static async getAuditLogById(db: DatabaseClient, auditId: string): Promise<AuditLogDetail | null> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.getAuditLogById" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.getAuditLogById",
+    });
     const record = await db.auditLog.findUnique({
       where: { id: auditId },
       select: {
@@ -1280,7 +1299,9 @@ export abstract class AdminService {
   }
 
   static async getAnalyticsDashboard(db: DatabaseClient, timeframeDaysInput?: number): Promise<AnalyticsDashboard> {
-    mergeRequestContextMetadata({ serviceName: "AdminService.getAnalyticsDashboard" });
+    mergeRequestContextMetadata({
+      serviceName: "AdminService.getAnalyticsDashboard",
+    });
     const timeframeDays = toTimeframeDays(timeframeDaysInput);
     const granularity: "hour" | "day" = timeframeDays <= 2 ? "hour" : "day";
     const now = new Date();
@@ -1489,4 +1510,68 @@ export abstract class AdminService {
     CONFIG_NOT_FOUND_MESSAGE,
     LAST_ADMIN_ROLE_CHANGE_MESSAGE,
   } as const;
+}
+
+export interface QueueMetricsData {
+  initialized: boolean;
+  queues: Record<
+    string,
+    {
+      pending: number;
+      active: number;
+      completed: number;
+      failed: number;
+      retry: number;
+      jobsPublished: number;
+      jobsCompleted: number;
+      jobsFailed: number;
+      totalProcessingTimeMs: number;
+      averageProcessingTimeMs: number;
+      lastJobPublishedAt: string | null;
+      lastJobCompletedAt: string | null;
+      hitRate: number | null;
+    }
+  >;
+  cache: {
+    size: number;
+    maxEntries: number;
+    hitCount: number;
+    missCount: number;
+    hitRate: number;
+  };
+  alerts: {
+    totalAlerts: number;
+    alertsByQueue: Record<string, number>;
+    lastAlerts: Record<string, string>;
+  };
+}
+
+export abstract class QueueService {
+  static async getQueueMetrics(): Promise<QueueMetricsData> {
+    mergeRequestContextMetadata({
+      serviceName: "QueueService.getQueueMetrics",
+    });
+
+    const { getQueueStats, getCacheStats, isJobQueueInitialized } = await import("../jobs/queue");
+    const { checkQueueDepth, getAlertStats } = await import("../jobs/alerts");
+
+    const isInitialized = isJobQueueInitialized();
+    const queueStats = await getQueueStats();
+    const cacheStats = getCacheStats();
+    const alertStats = getAlertStats();
+
+    // Check queue depth and trigger alerts if needed
+    for (const [key, stats] of Object.entries(queueStats)) {
+      await checkQueueDepth(key, stats.pending);
+      // Update hitRate in queue stats
+      stats.hitRate = cacheStats.hitRate;
+    }
+
+    return {
+      initialized: isInitialized,
+      queues: queueStats,
+      cache: cacheStats,
+      alerts: alertStats,
+    };
+  }
 }

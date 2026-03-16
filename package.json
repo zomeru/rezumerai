@@ -37,6 +37,7 @@
     "build:packages": "turbo build --filter=./packages/*",
     "dev": "turbo dev",
     "start": "turbo start",
+    "worker": "cd apps/web && bun run worker",
     "check": "bun run update:biome-configs && turbo check",
     "biome": "bun run update:biome-configs && biome check --write  .",
     "update:biome-configs": "bun scripts/update-biome-config-version.ts",

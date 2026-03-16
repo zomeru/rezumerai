@@ -22,6 +22,7 @@ services:
   #   networks:
   #     - app_network
 
+  # Web Application (Next.js + Elysia API)
   web:
     build:
       context: .
@@ -48,8 +49,61 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+      # Web process handles API requests only (no background jobs)
+      JOB_QUEUE_ENABLED: "true"
     networks:
       - app_network
+    depends_on:
+      condition: service_healthy
+      worker:
+        # Web depends on worker being ready to accept jobs
+        required: false
+
+  # Background Job Worker (pg-boss workers)
+  worker:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      secrets:
+        - better_auth_secret
+        - better_auth_url
+        - better_auth_github_client_id
+        - better_auth_github_client_secret
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    secrets:
+      - database_url
+      - direct_url
+      - better_auth_secret
+      - better_auth_url
+      - better_auth_github_client_id
+      - better_auth_github_client_secret
+      - openrouter_api_key
+    environment:
+      NODE_ENV: production
+      # Worker process handles background jobs only
+      JOB_QUEUE_ENABLED: "true"
+      JOB_QUEUE_WORKER_COUNT: "1"
+    command: ["bun", "run", "worker"]
+    networks:
+      - app_network
+    healthcheck:
+      # Simple health check - worker logs indicate it's running
+      test: ["CMD-SHELL", "pgrep -f 'bun.*worker' || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits for worker
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
 volumes:
   postgres_data:
@@ -73,3 +127,5 @@ secrets:
     environment: BETTER_AUTH_GITHUB_CLIENT_ID
   better_auth_github_client_secret:
     environment: BETTER_AUTH_GITHUB_CLIENT_SECRET
+  openrouter_api_key:
+    environment: OPENROUTER_API_KEY

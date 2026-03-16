@@ -1,4 +1,6 @@
 import Elysia from "elysia";
+import { queueRecordAnalytics, queueRecordAuditLog } from "../modules/jobs";
+import { isJobQueueInitialized } from "../modules/jobs/queue";
 import { recordAnalyticsEvent } from "../observability/analytics";
 import { recordRequestAuditLog } from "../observability/audit";
 import { runPostResponseTask } from "../observability/post-response";
@@ -81,24 +83,55 @@ export const observabilityPlugin = new Elysia({ name: "plugin/observability" })
     const params = getRequestParams(context);
     const metadata = requestContext?.metadata ?? {};
 
-    runPostResponseTask(async () => {
-      await recordAnalyticsEvent({
+    // Use job queue if available, otherwise fall back to post-response tasks
+    const useJobQueue = isJobQueueInitialized();
+
+    if (useJobQueue) {
+      // Queue analytics event (durable, with retries)
+      await queueRecordAnalytics({
         source: "API_REQUEST",
         eventType: "REQUEST_COMPLETED",
         statusCode,
         durationMs,
         errorCode: typeof metadata.errorCode === "string" ? metadata.errorCode : null,
         errorName: typeof metadata.errorName === "string" ? metadata.errorName : null,
+        metadata: {
+          endpoint: requestContext?.endpoint,
+          method: requestContext?.method,
+        },
       });
-    }, "analytics");
 
-    runPostResponseTask(async () => {
-      await recordRequestAuditLog({
-        request: context.request,
-        statusCode,
-        body,
-        query,
-        params,
+      // Queue audit log (durable, with retries)
+      await queueRecordAuditLog({
+        category: requestContext?.userId ? "USER_ACTION" : "SYSTEM_ACTIVITY",
+        eventType: `${requestContext?.method ?? "UNKNOWN"}_REQUEST`,
+        action: requestContext?.method ?? "UNKNOWN",
+        resourceType: requestContext?.endpoint?.split("/").filter(Boolean).pop()?.toUpperCase() ?? "SYSTEM",
+        endpoint: requestContext?.endpoint ?? null,
+        method: requestContext?.method ?? null,
+        userId: requestContext?.userId ?? null,
       });
-    }, "audit");
+    } else {
+      // Fallback to post-response tasks (less reliable but works without queue)
+      runPostResponseTask(async () => {
+        await recordAnalyticsEvent({
+          source: "API_REQUEST",
+          eventType: "REQUEST_COMPLETED",
+          statusCode,
+          durationMs,
+          errorCode: typeof metadata.errorCode === "string" ? metadata.errorCode : null,
+          errorName: typeof metadata.errorName === "string" ? metadata.errorName : null,
+        });
+      }, "analytics");
+
+      runPostResponseTask(async () => {
+        await recordRequestAuditLog({
+          request: context.request,
+          statusCode,
+          body,
+          query,
+          params,
+        });
+      }, "audit");
+    }
   });

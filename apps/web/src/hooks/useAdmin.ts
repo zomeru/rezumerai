@@ -75,7 +75,9 @@ export function useAdminUsers(
         requestQuery.role = query.role;
       }
 
-      const { data, error } = await apiWithoutDateParsing.admin.users.get({ query: requestQuery });
+      const { data, error } = await apiWithoutDateParsing.admin.users.get({
+        query: requestQuery,
+      });
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load users."));
@@ -141,7 +143,9 @@ export function useUpdateAdminUserRole() {
     onSuccess: async (data, variables) => {
       queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
       await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "audit-logs"],
+      });
     },
   });
 }
@@ -171,7 +175,9 @@ export function useUpdateAdminUserPassword() {
     },
     onSuccess: async (data, variables) => {
       queryClient.setQueryData(queryKeys.admin.userDetail(variables.userId), data);
-      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "audit-logs"],
+      });
     },
   });
 }
@@ -239,7 +245,9 @@ export function useUpdateSystemConfiguration() {
           };
         },
       );
-      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "audit-logs"],
+      });
     },
   });
 }
@@ -295,7 +303,9 @@ export function useSaveFeatureFlag() {
           };
         },
       );
-      await queryClient.invalidateQueries({ queryKey: ["admin", "audit-logs"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "audit-logs"],
+      });
     },
   });
 }
@@ -354,7 +364,9 @@ export function useAuditLogDetail(
     queryKey: queryKeys.admin.auditLogDetail(auditId),
     enabled: auditId.length > 0,
     queryFn: async (): Promise<AuditLogDetail> => {
-      const { data, error } = await apiWithoutDateParsing.admin["audit-logs"]({ id: auditId }).get();
+      const { data, error } = await apiWithoutDateParsing.admin["audit-logs"]({
+        id: auditId,
+      }).get();
 
       if (error) {
         throw new Error(getApiErrorMessage(error.value, "Failed to load audit log detail."));
@@ -392,6 +404,58 @@ export function useAdminAnalytics(
       }
 
       return AnalyticsDashboardSchema.parse(data);
+    },
+    ...options,
+  });
+}
+
+export interface QueueMetricsData {
+  initialized: boolean;
+  queues: Record<
+    string,
+    {
+      pending: number;
+      active: number;
+      completed: number;
+      failed: number;
+      retry: number;
+      jobsPublished: number;
+      jobsCompleted: number;
+      jobsFailed: number;
+      totalProcessingTimeMs: number;
+      averageProcessingTimeMs: number;
+      lastJobPublishedAt: string | null;
+      lastJobCompletedAt: string | null;
+      hitRate: number | null;
+    }
+  >;
+  cache: {
+    size: number;
+    maxEntries: number;
+    hitCount: number;
+    missCount: number;
+    hitRate: number;
+  };
+  alerts: {
+    totalAlerts: number;
+    alertsByQueue: Record<string, number>;
+    lastAlerts: Record<string, string>;
+  };
+}
+
+export function useAdminQueueMetrics(
+  options?: Omit<QueryOptions<QueueMetricsData>, "queryKey" | "queryFn"> & {
+    refetchInterval?: number | false;
+  },
+) {
+  return useQuery({
+    queryKey: queryKeys.admin.queueMetrics(),
+    queryFn: async (): Promise<QueueMetricsData> => {
+      const response = await fetch("/api/admin/queue/metrics");
+      if (!response.ok) {
+        throw new Error("Failed to load queue metrics");
+      }
+      return response.json();
     },
     ...options,
   });

@@ -24,6 +24,7 @@ export const queryKeys = {
     errorLogs: (query: { page: number; pageSize: number; isRead?: boolean }) =>
       ["admin", "error-logs", query.page, query.pageSize, query.isRead ?? "all"] as const,
     features: () => ["admin", "features"] as const,
+    queueMetrics: () => ["admin", "queue", "metrics"] as const,
     systemConfig: () => ["admin", "system-config"] as const,
     userDetail: (userId: string) => ["admin", "users", "detail", userId] as const,
     users: (query: { page: number; pageSize: number; search?: SearchInput; role?: string | null }) =>

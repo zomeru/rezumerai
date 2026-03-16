@@ -319,4 +319,226 @@ export const AdminModel = new Elysia().model({
   "adminAudit.DetailResponse": AuditLogDetail,
   "adminAnalytics.Query": AnalyticsQuery,
   "adminAnalytics.Response": AnalyticsDashboard,
+  // Queue metrics and dead-letter models
+  "adminQueue.MetricsResponse": t.Object({
+    initialized: t.Boolean(),
+    queues: t.Record(
+      t.String(),
+      t.Object({
+        pending: t.Integer(),
+        active: t.Integer(),
+        completed: t.Integer(),
+        failed: t.Integer(),
+        retry: t.Integer(),
+        jobsPublished: t.Integer(),
+        jobsCompleted: t.Integer(),
+        jobsFailed: t.Integer(),
+        totalProcessingTimeMs: t.Integer(),
+        averageProcessingTimeMs: t.Integer(),
+        lastJobPublishedAt: t.Nullable(t.String()),
+        lastJobCompletedAt: t.Nullable(t.String()),
+        hitRate: t.Nullable(t.Number()),
+      }),
+    ),
+    cache: t.Object({
+      size: t.Integer(),
+      maxEntries: t.Integer(),
+      hitCount: t.Integer(),
+      missCount: t.Integer(),
+      hitRate: t.Number(),
+    }),
+    alerts: t.Object({
+      totalAlerts: t.Integer(),
+      alertsByQueue: t.Record(t.String(), t.Integer()),
+      lastAlerts: t.Record(t.String(), t.String()),
+    }),
+  }),
+  "adminQueue.HealthResponse": t.Object({
+    health: t.Object({
+      status: t.Union([t.Literal("healthy"), t.Literal("degraded")]),
+      failureRate: t.Number(),
+      queueInitialized: t.Boolean(),
+      totalJobsPublished: t.Integer(),
+      totalJobsFailed: t.Integer(),
+      cacheHitRate: t.Number(),
+      timestamp: t.String(),
+    }),
+    queues: t.Record(
+      t.String(),
+      t.Object({
+        pending: t.Integer(),
+        active: t.Integer(),
+        completed: t.Integer(),
+        failed: t.Integer(),
+        retry: t.Integer(),
+        jobsPublished: t.Integer(),
+        jobsCompleted: t.Integer(),
+        jobsFailed: t.Integer(),
+        totalProcessingTimeMs: t.Integer(),
+        averageProcessingTimeMs: t.Integer(),
+        lastJobPublishedAt: t.Nullable(t.String()),
+        lastJobCompletedAt: t.Nullable(t.String()),
+        hitRate: t.Nullable(t.Number()),
+      }),
+    ),
+    cache: t.Object({
+      size: t.Integer(),
+      maxEntries: t.Integer(),
+      hitCount: t.Integer(),
+      missCount: t.Integer(),
+      hitRate: t.Number(),
+    }),
+  }),
+  "adminQueue.DeadLetterListResponse": t.Object({
+    jobs: t.Array(
+      t.Object({
+        id: t.String(),
+        name: t.String(),
+        data: t.Any(),
+        failedAt: t.String(),
+        retryCount: t.Integer(),
+        errorMessage: t.Nullable(t.String()),
+        errorStack: t.Nullable(t.String()),
+      }),
+    ),
+    total: t.Integer(),
+    stats: t.Object({
+      total: t.Integer(),
+      byQueue: t.Record(t.String(), t.Integer()),
+      oldestFailedAt: t.Nullable(t.String()),
+      newestFailedAt: t.Nullable(t.String()),
+    }),
+  }),
+  "adminQueue.DeadLetterDetailResponse": t.Object({
+    id: t.String(),
+    name: t.String(),
+    data: t.Any(),
+    failedAt: t.String(),
+    retryCount: t.Integer(),
+    errorMessage: t.Nullable(t.String()),
+    errorStack: t.Nullable(t.String()),
+  }),
+  "adminQueue.RetryResponse": t.Object({
+    success: t.Boolean(),
+    newJobId: t.String(),
+  }),
+  "adminQueue.DeleteResponse": t.Object({
+    success: t.Boolean(),
+  }),
+  "adminQueue.RetryAllResponse": t.Object({
+    retried: t.Integer(),
+    failed: t.Integer(),
+  }),
+  "adminQueue.CleanupResponse": t.Object({
+    deleted: t.Integer(),
+  }),
+  "adminQueue.AlertConfigResponse": t.Object({
+    config: t.Object({
+      warningThreshold: t.Integer(),
+      criticalThreshold: t.Integer(),
+      cooldownSeconds: t.Integer(),
+      enabled: t.Boolean(),
+      webhookUrl: t.Optional(t.Nullable(t.String())),
+      slackWebhookUrl: t.Optional(t.Nullable(t.String())),
+    }),
+    stats: t.Object({
+      totalAlerts: t.Integer(),
+      alertsByQueue: t.Record(t.String(), t.Integer()),
+      lastAlerts: t.Record(t.String(), t.String()),
+    }),
+  }),
+  "adminQueue.UpdateConfigResponse": t.Object({
+    success: t.Boolean(),
+  }),
+  "adminQueue.TimeoutConfigResponse": t.Object({
+    config: t.Object({
+      defaultTimeoutSeconds: t.Integer(),
+      longTimeoutSeconds: t.Integer(),
+      veryLongTimeoutSeconds: t.Integer(),
+      jobTimeouts: t.Record(t.String(), t.Integer()),
+    }),
+    activeJobs: t.Object({
+      totalActive: t.Integer(),
+      byJobType: t.Record(t.String(), t.Integer()),
+      longestRunning: t.Array(
+        t.Object({
+          jobId: t.String(),
+          jobName: t.String(),
+          durationSeconds: t.Integer(),
+          timeoutSeconds: t.Integer(),
+          percentUsed: t.Number(),
+        }),
+      ),
+      approachingTimeout: t.Array(
+        t.Object({
+          jobId: t.String(),
+          jobName: t.String(),
+          durationSeconds: t.Integer(),
+          timeoutSeconds: t.Integer(),
+          percentUsed: t.Number(),
+        }),
+      ),
+    }),
+  }),
+  "adminQueue.RateLimitConfigResponse": t.Object({
+    configs: t.Record(
+      t.String(),
+      t.Object({
+        maxJobs: t.Integer(),
+        windowSeconds: t.Integer(),
+        backpressureThreshold: t.Integer(),
+      }),
+    ),
+    stats: t.Object({
+      byJobType: t.Record(
+        t.String(),
+        t.Object({
+          currentRate: t.Integer(),
+          maxRate: t.Integer(),
+          windowSeconds: t.Integer(),
+          rejectedCount: t.Integer(),
+          utilizationPercent: t.Number(),
+        }),
+      ),
+      totalRejected: t.Integer(),
+    }),
+  }),
+  "adminQueue.BatchStatsResponse": t.Object({
+    byJobType: t.Record(
+      t.String(),
+      t.Object({
+        pendingItems: t.Integer(),
+        maxBatchSize: t.Integer(),
+        flushIntervalMs: t.Integer(),
+        hasPendingTimer: t.Boolean(),
+        oldestItemAgeMs: t.Nullable(t.Integer()),
+      }),
+    ),
+    totalPending: t.Integer(),
+  }),
+  "adminQueue.PriorityConfigResponse": t.Object({
+    configs: t.Record(
+      t.String(),
+      t.Object({
+        basePriority: t.Integer(),
+        depthThreshold: t.Integer(),
+        depthBoost: t.Integer(),
+        maxBoost: t.Integer(),
+      }),
+    ),
+    stats: t.Object({
+      byJobType: t.Record(
+        t.String(),
+        t.Object({
+          basePriority: t.Integer(),
+          currentPriority: t.Integer(),
+          queueDepth: t.Integer(),
+          threshold: t.Integer(),
+          isBoosted: t.Boolean(),
+          boostAmount: t.Integer(),
+        }),
+      ),
+      totalBoostedQueues: t.Integer(),
+    }),
+  }),
 } as const);

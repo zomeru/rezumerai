@@ -57,6 +57,10 @@ const serverSchema = clientSchema.extend({
     .optional()
     .describe("OTLP collector endpoint (e.g. https://api.axiom.co/v1/traces)"),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
+
+  // Job Queue Configuration (optional - falls back to inline processing if not set)
+  JOB_QUEUE_ENABLED: z.string().optional().default("true").describe("Enable background job queue (true/false)"),
+  JOB_QUEUE_WORKER_COUNT: z.string().optional().default("1").describe("Number of worker processes to run"),
 });
 
 /**

@@ -23,6 +23,7 @@ const ADMIN_CONTENT = `${ADMIN}/content`;
 const ADMIN_AUDIT_LOGS = `${ADMIN}/audit-logs`;
 const ADMIN_ANALYTICS = `${ADMIN}/analytics`;
 const ADMIN_FEATURES = `${ADMIN}/features`;
+const ADMIN_QUEUE = `${ADMIN}/queue`;
 
 // AI tools
 const TEXT_OPTIMIZER = "/text-optimizer";
@@ -69,6 +70,7 @@ export const ROUTES = {
   ADMIN_AUDIT_LOGS,
   ADMIN_ANALYTICS,
   ADMIN_FEATURES,
+  ADMIN_QUEUE,
   TEXT_OPTIMIZER,
 } as const;
 
