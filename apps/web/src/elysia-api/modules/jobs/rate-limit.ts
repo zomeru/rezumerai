@@ -5,7 +5,10 @@
  * the rate at which jobs can be published.
  */
 
+import { createLogger } from "@/lib/logger";
 import type { JobName } from "./queue";
+
+const logger = createLogger({ module: "rate-limit" });
 
 export interface RateLimitConfig {
   /** Maximum jobs per window */
@@ -76,7 +79,7 @@ export function configureRateLimit(jobName: JobName, newConfig: Partial<RateLimi
   const current = config.get(jobName);
   if (current) {
     config.set(jobName, { ...current, ...newConfig });
-    console.log(`[RATE_LIMIT] ${jobName} configuration updated:`, config.get(jobName));
+    logger.info({ jobName, config: config.get(jobName) }, "Rate limit configuration updated");
   }
 }
 

@@ -1,5 +1,5 @@
 import Elysia from "elysia";
-import { bold, colorizeElapsed, dim, paint } from "../utils/ansi";
+import { logger } from "@/lib/logger";
 
 function shouldTraceRequests(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.ENABLE_ELYSIA_TRACE !== "false";
@@ -41,19 +41,11 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
       });
 
       onBeforeStop(({ elapsed }) => {
-        const detail = childTimings.map((t) => `${dim(t.name)} ${colorizeElapsed(t.elapsed)}`).join(dim(" → "));
+        const detail = childTimings.map((t) => `${t.name} ${t.elapsed.toFixed(2)}ms`).join(" -> ");
 
-        console.log(
-          [
-            dim(new Date().toISOString()),
-            paint("magenta", " TRACE "),
-            bold(path),
-            paint("cyan", "beforeHandle"),
-            colorizeElapsed(elapsed),
-            detail ? dim(`[${detail}]`) : "",
-          ]
-            .filter(Boolean)
-            .join("  "),
+        logger.debug(
+          { path, phase: "beforeHandle", durationMs: elapsed, childTimings: detail || undefined },
+          `TRACE ${path} beforeHandle ${elapsed.toFixed(2)}ms${detail ? ` [${detail}]` : ""}`,
         );
       });
     });
@@ -61,15 +53,7 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
     // ── handle ──────────────────────────────────────────────────────────────
     onHandle(({ onStop }) => {
       onStop(({ elapsed }) => {
-        console.log(
-          [
-            dim(new Date().toISOString()),
-            paint("magenta", " TRACE "),
-            bold(path),
-            paint("cyan", "handle"),
-            colorizeElapsed(elapsed),
-          ].join("  "),
-        );
+        logger.debug({ path, phase: "handle", durationMs: elapsed }, `TRACE ${path} handle ${elapsed.toFixed(2)}ms`);
       });
     });
 
@@ -86,19 +70,11 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
       });
 
       onAfterStop(({ elapsed }) => {
-        const detail = childTimings.map((t) => `${dim(t.name)} ${colorizeElapsed(t.elapsed)}`).join(dim(" → "));
+        const detail = childTimings.map((t) => `${t.name} ${t.elapsed.toFixed(2)}ms`).join(" -> ");
 
-        console.log(
-          [
-            dim(new Date().toISOString()),
-            paint("magenta", " TRACE "),
-            bold(path),
-            paint("cyan", "afterHandle"),
-            colorizeElapsed(elapsed),
-            detail ? dim(`[${detail}]`) : "",
-          ]
-            .filter(Boolean)
-            .join("  "),
+        logger.debug(
+          { path, phase: "afterHandle", durationMs: elapsed, childTimings: detail || undefined },
+          `TRACE ${path} afterHandle ${elapsed.toFixed(2)}ms${detail ? ` [${detail}]` : ""}`,
         );
       });
     });
@@ -107,15 +83,9 @@ export const tracePlugin = new Elysia({ name: "plugin/trace" }).trace(
     onError(({ onStop }) => {
       onStop(({ elapsed, error }) => {
         if (!error) return;
-        console.log(
-          [
-            dim(new Date().toISOString()),
-            paint("magenta", " TRACE "),
-            bold(path),
-            paint("red", "error"),
-            colorizeElapsed(elapsed),
-            paint("red", error instanceof Error ? error.message : "unknown"),
-          ].join("  "),
+        logger.error(
+          { path, phase: "error", durationMs: elapsed, error: error instanceof Error ? error.message : String(error) },
+          `TRACE ${path} error ${elapsed.toFixed(2)}ms - ${error instanceof Error ? error.message : "unknown"}`,
         );
       });
     });

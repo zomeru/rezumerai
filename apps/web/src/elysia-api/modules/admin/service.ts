@@ -1546,6 +1546,7 @@ export interface QueueMetricsData {
   };
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: Elysia best practice — abstract class avoids allocation when no state is stored.
 export abstract class QueueService {
   static async getQueueMetrics(): Promise<QueueMetricsData> {
     mergeRequestContextMetadata({

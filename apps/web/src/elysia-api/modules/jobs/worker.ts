@@ -4,6 +4,7 @@
  * This module is imported by the worker process to register all job handlers.
  */
 
+import { logger } from "@/lib/logger";
 import {
   handleErrorLogRetentionCleanup,
   handleGenerateEmbeddings,
@@ -25,7 +26,7 @@ import type {
  * Call this once when starting a worker process.
  */
 export async function registerAllWorkers(): Promise<void> {
-  console.log("[WORKER] Registering all job workers...");
+  logger.info("Registering all job workers");
 
   // Embedding generation jobs (long-running, need more timeout)
   await registerWorker(
@@ -75,7 +76,7 @@ export async function registerAllWorkers(): Promise<void> {
     },
   );
 
-  console.log("[WORKER] All job workers registered");
+  logger.info("All job workers registered");
 }
 
 /**
@@ -83,7 +84,7 @@ export async function registerAllWorkers(): Promise<void> {
  * Use this for specialized worker processes.
  */
 export async function registerWorkers(jobNames: Array<JobName>): Promise<void> {
-  console.log(`[WORKER] Registering workers for: ${jobNames.join(", ")}`);
+  logger.info({ jobs: jobNames }, "Registering workers for specific jobs");
 
   for (const jobName of jobNames) {
     switch (jobName) {
@@ -128,9 +129,9 @@ export async function registerWorkers(jobNames: Array<JobName>): Promise<void> {
         break;
 
       default:
-        console.warn(`[WORKER] Unknown job name: ${jobName}`);
+        logger.warn({ jobName }, "Unknown job name");
     }
   }
 
-  console.log(`[WORKER] Registered ${jobNames.length} worker(s)`);
+  logger.info({ count: jobNames.length }, "Registered workers");
 }

@@ -16,6 +16,7 @@
 import { prisma } from "@rezumerai/database";
 import { PgBoss } from "pg-boss";
 import { serverEnv } from "@/env";
+import { logger } from "@/lib/logger";
 
 // Extract database connection from Prisma for pg-boss
 function getDatabaseConnection(): string {
@@ -164,11 +165,11 @@ export async function initializeJobQueue(): Promise<PgBoss> {
 
   // Handle lifecycle events
   bossInstance.on("error", (error: Error) => {
-    console.error("[JOB_QUEUE] Queue error:", error.message);
+    logger.error({ err: error }, "Job queue error");
   });
 
   bossInstance.on("stopped", () => {
-    console.log("[JOB_QUEUE] Queue stopped");
+    logger.info({}, "Job queue stopped");
   });
 
   // Start the queue
@@ -180,7 +181,7 @@ export async function initializeJobQueue(): Promise<PgBoss> {
   // Create all known queues
   await createQueues();
 
-  console.log("[JOB_QUEUE] Queue initialized and started");
+  logger.info({}, "Job queue initialized and started");
 
   return bossInstance;
 }
@@ -210,12 +211,12 @@ async function createQueues(): Promise<void> {
         }),
       ),
     );
-    console.log(`[JOB_QUEUE] Created ${queueNames.length} queue(s)`);
+    logger.info({ queueCount: queueNames.length }, "Created job queues");
   } catch (error) {
     // Queues may already exist, which is fine
     const message = error instanceof Error ? error.message : "Unknown error";
     if (!message.includes("already exists")) {
-      console.warn("[JOB_QUEUE] Queue creation warning:", message);
+      logger.warn({ error: message }, "Job queue creation warning");
     }
   }
 }
@@ -227,7 +228,7 @@ export async function shutdownJobQueue(): Promise<void> {
   if (bossInstance) {
     await bossInstance.stop();
     bossInstance = null;
-    console.log("[JOB_QUEUE] Queue shut down");
+    logger.info({}, "Job queue shut down");
   }
 }
 
@@ -258,8 +259,9 @@ export async function publishJob<T extends Record<string, unknown>>(
   const rateLimitResult = checkRateLimit(name);
 
   if (!rateLimitResult.allowed) {
-    console.warn(
-      `[RATE_LIMIT] Job ${name} rate limited: ${rateLimitResult.reason} (retry after ${rateLimitResult.retryAfterSeconds}s)`,
+    logger.warn(
+      { jobName: name, reason: rateLimitResult.reason, retryAfterSeconds: rateLimitResult.retryAfterSeconds },
+      "Job rate limited",
     );
     return null;
   }
@@ -380,7 +382,14 @@ export async function registerWorker(
           return handler(job)
             .then((result) => {
               const duration = Date.now() - startTime;
-              console.log(`[JOB_QUEUE] Job ${name} (${job.id}) completed in ${duration}ms`);
+              logger.info(
+                {
+                  jobId: job.id,
+                  jobName: name,
+                  durationMs: duration,
+                },
+                "Job completed",
+              );
 
               // Complete timeout tracking (lazy require)
               const { completeActiveJob } = require("./timeouts");
@@ -405,7 +414,15 @@ export async function registerWorker(
               incrementMetric(name, "totalProcessingTimeMs", duration);
               setMetric(name, "lastJobCompletedAt", Date.now());
 
-              console.error(`[JOB_QUEUE] Job ${name} (${job.id}) failed after ${duration}ms:`, error?.message ?? error);
+              logger.error(
+                {
+                  jobId: job.id,
+                  jobName: name,
+                  durationMs: duration,
+                  err: error,
+                },
+                "Job failed",
+              );
               throw error; // Re-throw for pg-boss retry handling
             });
         }),
@@ -415,14 +432,20 @@ export async function registerWorker(
       const failures = results.filter((r) => r.status === "rejected");
       if (failures.length > 0) {
         // Log but don't throw - pg-boss handles retry based on throw
-        console.error(`[JOB_QUEUE] Job ${name} batch had ${failures.length} failure(s)`);
+        logger.error(
+          {
+            jobName: name,
+            failureCount: failures.length,
+          },
+          "Job batch had failures",
+        );
       }
 
       return;
     },
   );
 
-  console.log(`[JOB_QUEUE] Worker registered for job: ${name}`);
+  logger.info({ jobName: name }, "Worker registered");
 }
 
 /**

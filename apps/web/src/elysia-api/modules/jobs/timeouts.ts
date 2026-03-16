@@ -5,7 +5,10 @@
  * Jobs that exceed their timeout are cancelled and logged.
  */
 
+import { createLogger } from "@/lib/logger";
 import { type JobName, JobTimeoutConfig } from "./queue";
+
+const logger = createLogger({ module: "timeouts" });
 
 interface TimeoutConfig {
   /** Default timeout in seconds */
@@ -47,7 +50,7 @@ let config: TimeoutConfig = { ...DEFAULT_TIMEOUT_CONFIG };
  */
 export function configureTimeouts(newConfig: Partial<TimeoutConfig>): void {
   config = { ...config, ...newConfig };
-  console.log(`[TIMEOUTS] Configuration updated:`, config);
+  logger.info({ config }, "Timeout configuration updated");
 }
 
 /**
@@ -85,7 +88,7 @@ export function registerActiveJob(jobId: string, jobName: string, timeoutSeconds
 
   activeJobs.set(jobId, activeJob);
 
-  console.log(`[TIMEOUTS] Job ${jobName} (${jobId}) registered with ${timeout}s timeout`);
+  logger.debug({ jobId, jobName, timeoutSeconds: timeout }, "Job registered with timeout tracking");
 }
 
 /**
@@ -102,8 +105,9 @@ export function completeActiveJob(jobId: string, durationMs?: number): void {
     const actualDuration = durationMs ?? Date.now() - activeJob.startTime;
     const timeoutUsed = actualDuration / 1000 / activeJob.timeoutSeconds;
 
-    console.log(
-      `[TIMEOUTS] Job ${activeJob.jobName} (${jobId}) completed in ${actualDuration}ms (${(timeoutUsed * 100).toFixed(1)}% of timeout)`,
+    logger.debug(
+      { jobId, jobName: activeJob.jobName, durationMs: actualDuration, timeoutPercent: (timeoutUsed * 100).toFixed(1) },
+      "Job completed",
     );
 
     activeJobs.delete(jobId);
@@ -122,9 +126,7 @@ export function failActiveJob(jobId: string, error?: string): void {
     }
 
     const duration = Date.now() - activeJob.startTime;
-    console.log(
-      `[TIMEOUTS] Job ${activeJob.jobName} (${jobId}) failed after ${duration}ms: ${error ?? "Unknown error"}`,
-    );
+    logger.warn({ jobId, jobName: activeJob.jobName, durationMs: duration, error }, "Job failed");
 
     activeJobs.delete(jobId);
   }
@@ -140,7 +142,7 @@ function handleJobTimeout(jobId: string): void {
     return;
   }
 
-  console.error(`[TIMEOUTS] 🚨 Job ${activeJob.jobName} (${jobId}) timed out after ${activeJob.timeoutSeconds}s`);
+  logger.error({ jobId, jobName: activeJob.jobName, timeoutSeconds: activeJob.timeoutSeconds }, "Job timed out");
 
   // Remove from active jobs
   activeJobs.delete(jobId);

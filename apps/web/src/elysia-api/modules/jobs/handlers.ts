@@ -13,6 +13,7 @@ import { buildMessageChunks } from "@/elysia-api/modules/ai/memory/chunking";
 import { embedAssistantTexts } from "@/elysia-api/modules/ai/memory/embedder";
 import { ConversationMemoryRepository } from "@/elysia-api/modules/ai/memory/repository";
 import { toPrismaJsonValue } from "@/elysia-api/observability/redaction";
+import { logger } from "@/lib/logger";
 import type {
   ErrorLogRetentionCleanupJobData,
   GenerateEmbeddingsJobData,
@@ -81,9 +82,13 @@ export async function handleGenerateEmbeddings(jobData: GenerateEmbeddingsJobDat
       };
     }
 
-    // Debug: Log the userId we're about to use
-    console.log(
-      `[JOB] Using userId "${conversationUserId}" from conversation ${conversationId} for embedding generation`,
+    logger.debug(
+      {
+        conversationId,
+        conversationUserId,
+        messageCount: messages.length,
+      },
+      "Processing embedding generation",
     );
 
     // Prepare content for embedding
@@ -122,8 +127,14 @@ export async function handleGenerateEmbeddings(jobData: GenerateEmbeddingsJobDat
 
     const durationMs = Date.now() - startTime;
 
-    console.log(
-      `[JOB] Generated ${embeddings.length} embeddings for conversation ${conversationId} in ${durationMs}ms`,
+    logger.info(
+      {
+        conversationId,
+        embeddingCount: embeddings.length,
+        messageCount: messages.length,
+        durationMs,
+      },
+      "Generated embeddings for conversation",
     );
 
     return {
@@ -139,7 +150,14 @@ export async function handleGenerateEmbeddings(jobData: GenerateEmbeddingsJobDat
     const durationMs = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
-    console.error(`[JOB] Failed to generate embeddings for conversation ${conversationId}:`, errorMessage);
+    logger.error(
+      {
+        conversationId,
+        err: error,
+        errorMessage,
+      },
+      "Failed to generate embeddings",
+    );
 
     return {
       success: false,
@@ -228,8 +246,14 @@ export async function handleReindexConversation(jobData: ReindexConversationJobD
 
     const durationMs = Date.now() - startTime;
 
-    console.log(
-      `[JOB] Reindexed ${embeddings.length} embeddings for conversation ${conversationId} in ${durationMs}ms`,
+    logger.info(
+      {
+        conversationId,
+        embeddingCount: embeddings.length,
+        messageCount: messages.length,
+        durationMs,
+      },
+      "Reindexed conversation embeddings",
     );
 
     return {
@@ -245,7 +269,14 @@ export async function handleReindexConversation(jobData: ReindexConversationJobD
     const durationMs = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
-    console.error(`[JOB] Failed to reindex conversation ${conversationId}:`, errorMessage);
+    logger.error(
+      {
+        conversationId,
+        err: error,
+        errorMessage,
+      },
+      "Failed to reindex conversation",
+    );
 
     return {
       success: false,
@@ -322,9 +353,7 @@ export async function handleRecordAnalytics(jobData: RecordAnalyticsJobData): Pr
       },
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    console.error(`[JOB] Failed to record analytics event ${eventType}:`, errorMessage);
+    logger.error({ err: error, eventType }, "Failed to record analytics event");
 
     // Re-throw to trigger retry - analytics are important
     throw error;
@@ -389,9 +418,7 @@ export async function handleRecordAuditLog(jobData: RecordAuditLogJobData): Prom
       },
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    console.error(`[JOB] Failed to record audit log ${eventType}:`, errorMessage);
+    logger.error({ err: error, eventType }, "Failed to record audit log");
 
     // Re-throw to trigger retry - audit logs are critical for compliance
     throw error;
@@ -428,9 +455,7 @@ export async function handleErrorLogRetentionCleanup(jobData: ErrorLogRetentionC
     const deletedCount = result.count;
     const durationMs = Date.now() - startTime;
 
-    console.log(
-      `[JOB] Error log retention cleanup: deleted ${deletedCount} logs older than ${retentionDays} days in ${durationMs}ms`,
-    );
+    logger.info({ deletedCount, retentionDays, durationMs, triggerSource }, "Error log retention cleanup completed");
 
     return {
       success: true,
@@ -444,9 +469,7 @@ export async function handleErrorLogRetentionCleanup(jobData: ErrorLogRetentionC
       },
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    console.error(`[JOB] Error log retention cleanup failed:`, errorMessage);
+    logger.error({ err: error, retentionDays, triggerSource }, "Error log retention cleanup failed");
 
     // Re-throw to trigger retry
     throw error;

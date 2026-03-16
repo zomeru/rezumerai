@@ -2,8 +2,12 @@
  * Queue alerting system.
  *
  * Monitors queue depth and sends alerts when thresholds are exceeded.
- * Supports multiple alert channels (console, webhook, Slack).
+ * Supports multiple alert channels (webhook, Slack).
  */
+
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger({ module: "alerts" });
 
 export interface AlertConfig {
   /** Warning threshold - alert when queue depth exceeds this */
@@ -44,7 +48,7 @@ let config: AlertConfig = { ...DEFAULT_ALERT_CONFIG };
  */
 export function configureAlerts(newConfig: Partial<AlertConfig>): void {
   config = { ...config, ...newConfig };
-  console.log(`[ALERTS] Configuration updated:`, config);
+  logger.info({ config }, "Alert configuration updated");
 }
 
 /**
@@ -117,11 +121,11 @@ async function sendAlert(queueName: string, depth: number, level: "warning" | "c
     },
   };
 
-  // Always log to console
-  const emoji = level === "critical" ? "🚨" : "⚠️";
-  console.log(
-    `${emoji} [QUEUE ALERT] ${level.toUpperCase()}: ${queueName} has ${depth} pending jobs (alert #${alertCount})`,
-  );
+  if (level === "critical") {
+    logger.warn({ queueName, depth, alertCount, thresholds: message.thresholds }, "Queue critical alert");
+  } else {
+    logger.warn({ queueName, depth, alertCount, thresholds: message.thresholds }, "Queue warning alert");
+  }
 
   // Send to webhook if configured
   if (config.webhookUrl) {
@@ -132,7 +136,7 @@ async function sendAlert(queueName: string, depth: number, level: "warning" | "c
         body: JSON.stringify(message),
       });
     } catch (error) {
-      console.error("[ALERTS] Failed to send webhook alert:", error);
+      logger.error({ err: error, queueName }, "Failed to send webhook alert");
     }
   }
 
@@ -140,7 +144,7 @@ async function sendAlert(queueName: string, depth: number, level: "warning" | "c
   if (config.slackWebhookUrl) {
     try {
       const slackMessage = {
-        text: `${emoji} Queue Alert: ${level.toUpperCase()}`,
+        text: `Queue Alert: ${level.toUpperCase()}`,
         attachments: [
           {
             color: level === "critical" ? "danger" : "warning",
@@ -164,7 +168,7 @@ async function sendAlert(queueName: string, depth: number, level: "warning" | "c
         body: JSON.stringify(slackMessage),
       });
     } catch (error) {
-      console.error("[ALERTS] Failed to send Slack alert:", error);
+      logger.error({ err: error, queueName }, "Failed to send Slack alert");
     }
   }
 }

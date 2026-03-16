@@ -2,6 +2,7 @@ import type { PrismaClient } from "@rezumerai/database";
 import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
 import { queueGenerateEmbeddings } from "@/elysia-api/modules/jobs";
 import { isJobQueueInitialized } from "@/elysia-api/modules/jobs/queue";
+import { createLogger } from "@/lib/logger";
 import { AiRepository } from "../repository";
 import type { SavedAssistantConversationMessage } from "../types";
 import { type AssistantUiMessage, sanitizeUiMessageParts, toUiMessageParts } from "../ui-message";
@@ -10,6 +11,8 @@ import { embedAssistantTexts } from "./embedder";
 import { getQueryEmbeddingCache } from "./query-embedding-cache";
 import { ConversationMemoryRepository } from "./repository";
 import { assembleConversationContext, type ConversationContextMessage } from "./retrieval";
+
+const logger = createLogger({ module: "ai-memory" });
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
@@ -109,12 +112,11 @@ async function reindexConversationMessages(
       queueGenerateEmbeddings(conversationId, messageIds, config)
         .then((jobId) => {
           if (jobId) {
-            console.log(`[MEMORY] Queued embedding generation for ${messageIds.length} messages (job: ${jobId})`);
+            logger.debug({ conversationId, messageCount: messageIds.length, jobId }, "Queued embedding generation");
           }
         })
         .catch((error) => {
-          console.warn(`[MEMORY] Failed to queue embeddings, will process inline:`, error.message);
-          // Silently fail - embeddings will be generated later or on next message
+          logger.warn({ err: error, conversationId }, "Failed to queue embeddings, will process inline");
         });
       return; // Exit early - work will be done in background
     }
@@ -399,16 +401,17 @@ export abstract class ConversationMemoryService {
             const jobId = await queueGenerateEmbeddings(conversationId, messageIds, config);
             if (jobId) {
               queuedCount += messages.length;
-              console.log(
-                `[MEMORY] Queued ${messages.length} embeddings for conversation ${conversationId} (job: ${jobId})`,
+              logger.debug(
+                { conversationId, messageCount: messages.length, jobId },
+                "Queued embeddings for conversation",
               );
             }
           } catch (error) {
-            console.warn(`[MEMORY] Failed to queue embeddings for conversation ${conversationId}:`, error);
+            logger.warn({ err: error, conversationId }, "Failed to queue embeddings for conversation");
           }
         }),
       ).catch((error) => {
-        console.warn(`[MEMORY] Background reindexing failed:`, error);
+        logger.error({ err: error }, "Background reindexing failed");
       });
 
       // Return immediately - work happens in background

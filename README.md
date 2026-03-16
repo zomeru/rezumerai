@@ -129,6 +129,8 @@ Optional variables used by the current codebase or reserved in the env template:
 | `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | Optional placeholder in the env schema and template; the current auth config exposes GitHub only |
 | `CRON_SECRET` | Reserved in `.env.example` and Turbo env inputs for scheduled/background-job protection |
 | `DB_SEED_USER_EMAIL` | Extra email to include when running `bun run db:seed` |
+| `LOG_LEVEL` | Structured logging level (debug, info, warn, error, fatal). Defaults to "debug" in development, "info" in production |
+| `LOG_PRETTY` | Enable pretty-printed logs in non-production environments. Set to "true" to force pretty printing |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint for OpenTelemetry trace export |
 | `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated auth headers for the OTLP exporter |
 | `SENTRY_DSN` | Optional env validated in `apps/web/src/env.ts`; no Sentry bootstrap is wired in the current app |

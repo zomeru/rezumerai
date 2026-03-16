@@ -1,14 +1,5 @@
 import Elysia from "elysia";
-import {
-  bold,
-  colorizeDuration,
-  colorizeMethod,
-  colorizeStatus,
-  dim,
-  formatBytes,
-  paint,
-  timestamp,
-} from "../utils/ansi";
+import { logger } from "@/lib/logger";
 
 // ─── Request Metadata ─────────────────────────────────────────────────────────
 
@@ -23,10 +14,6 @@ function getErrorStatus(error: unknown): number {
   return typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
     ? error.status
     : 500;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown error";
 }
 
 // ─── Plugin ───────────────────────────────────────────────────────────────────
@@ -57,15 +44,19 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
 
       if (logIncoming) {
         const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-        console.log(
-          [timestamp(), colorizeMethod(request.method), bold(url.pathname + (url.search || "")), dim(`← ${ip}`)].join(
-            "  ",
-          ),
+        // Use structured logger in addition to pretty console output for dev
+        logger.debug(
+          {
+            method: request.method,
+            path: url.pathname + (url.search || ""),
+            ip,
+          },
+          "Incoming request",
         );
       }
     })
 
-    .onAfterResponse({ as: "global" }, ({ request, set, response }) => {
+    .onAfterResponse({ as: "global" }, ({ request, set }) => {
       if (!shouldLogRequests()) return;
 
       const url = new URL(request.url);
@@ -76,23 +67,16 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
 
       const status = typeof set.status === "number" ? set.status : 200;
 
-      const responseSize =
-        typeof response === "string" ? response.length : response instanceof Uint8Array ? response.byteLength : 0;
-
-      const parts = [
-        timestamp(),
-        colorizeMethod(request.method),
-        bold(url.pathname + (url.search || "")),
-        colorizeStatus(status),
-        colorizeDuration(duration),
-      ];
-
-      if (responseSize > 0) parts.push(dim(formatBytes(responseSize)));
-
-      const userAgent = request.headers.get("user-agent");
-      if (userAgent) parts.push(dim(`"${userAgent.slice(0, 40)}"`));
-
-      console.log(parts.join("  "));
+      // Structured logging for production
+      logger.info(
+        {
+          method: request.method,
+          path: url.pathname + (url.search || ""),
+          status,
+          durationMs: Math.round(duration),
+        },
+        "Request completed",
+      );
     })
 
     .onError({ as: "global" }, ({ request, error, code }) => {
@@ -101,14 +85,14 @@ export const loggerPlugin = ({ logIncoming = false, ignore = [] }: LoggerOptions
       const url = new URL(request.url);
       if (ignore.includes(url.pathname)) return;
 
-      console.error(
-        [
-          timestamp(),
-          colorizeMethod(request.method),
-          bold(url.pathname),
-          colorizeStatus(getErrorStatus(error)),
-          paint("red", `[${code}]`),
-          paint("red", getErrorMessage(error)),
-        ].join("  "),
+      logger.error(
+        {
+          method: request.method,
+          path: url.pathname,
+          status: getErrorStatus(error),
+          code,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "Request error",
       );
     });

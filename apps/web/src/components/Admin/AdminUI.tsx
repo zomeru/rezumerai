@@ -458,12 +458,7 @@ export function AdminTrendChart({
         </div>
       </div>
 
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="mt-2 min-h-[18rem] w-full flex-1"
-        role="img"
-        aria-label={title}
-      >
+      <svg viewBox={`0 0 ${width} ${height}`} className="mt-2 min-h-72 w-full flex-1" role="img" aria-label={title}>
         <title>{title}</title>
         {[0.25, 0.5, 0.75, 1].map((ratio) => {
           const y = height - paddingY - (height - paddingY * 2) * ratio;

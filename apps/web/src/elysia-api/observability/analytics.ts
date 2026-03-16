@@ -1,6 +1,9 @@
 import { prisma } from "@rezumerai/database";
+import { createLogger } from "@/lib/logger";
 import { toPrismaJsonValue } from "./redaction";
 import { getRequestContext } from "./request-context";
+
+const logger = createLogger({ module: "analytics" });
 
 export interface RecordAnalyticsEventInput {
   source: "API_REQUEST" | "BACKGROUND_JOB";
@@ -42,7 +45,6 @@ export async function recordAnalyticsEvent(input: RecordAnalyticsEventInput): Pr
       },
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown analytics logging error";
-    console.error(`[ANALYTICS] Failed to persist analytics event: ${message}`);
+    logger.error({ err: error, eventType: input.eventType, source: input.source }, "Failed to persist analytics event");
   }
 }

@@ -5,7 +5,10 @@
  * Supports configurable batch size and flush interval.
  */
 
+import { createLogger } from "@/lib/logger";
 import { type JobName, publishJob } from "./queue";
+
+const logger = createLogger({ module: "batch" });
 
 export interface BatchConfig {
   /** Maximum batch size before flushing */
@@ -73,7 +76,7 @@ export function configureBatch(jobName: JobName, newConfig: Partial<BatchConfig>
   const current = config.get(jobName);
   if (current) {
     config.set(jobName, { ...current, ...newConfig });
-    console.log(`[BATCH] ${jobName} configuration updated:`, config.get(jobName));
+    logger.info({ jobName, config: config.get(jobName) }, "Batch configuration updated");
   }
 }
 
@@ -114,7 +117,7 @@ export async function queueBatchJob<T extends Record<string, unknown>>(
     if (!state.flushTimer) {
       state.flushTimer = setTimeout(() => {
         flushBatch(jobName).catch((error) => {
-          console.error(`[BATCH] Failed to flush ${jobName}:`, error);
+          logger.error({ err: error, jobName }, "Failed to flush batch");
         });
       }, jobConfig.flushIntervalMs);
     }
@@ -126,7 +129,7 @@ export async function queueBatchJob<T extends Record<string, unknown>>(
         state.flushTimer = null;
       }
       flushBatch(jobName).catch((error) => {
-        console.error(`[BATCH] Failed to flush ${jobName}:`, error);
+        logger.error({ err: error, jobName }, "Failed to flush batch");
       });
     }
   });
@@ -146,7 +149,7 @@ async function flushBatch(jobName: JobName): Promise<void> {
   state.items = [];
   state.flushTimer = null;
 
-  console.log(`[BATCH] Flushing ${items.length} ${jobName} jobs`);
+  logger.debug({ jobName, itemCount: items.length }, "Flushing batch");
 
   // Publish all jobs in parallel
   const results = await Promise.allSettled(items.map((item) => publishJob(jobName, item.data)));

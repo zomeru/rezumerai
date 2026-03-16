@@ -10,6 +10,7 @@ import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
 import { serverEnv } from "@/env";
+import { logger } from "@/lib/logger";
 import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
 import { queueErrorLogRetentionCleanup } from "./modules/jobs";
@@ -28,7 +29,6 @@ import {
   prismaPlugin,
   tracePlugin,
 } from "./plugins";
-import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
 // const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
@@ -116,25 +116,21 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
           const jobId = await queueErrorLogRetentionCleanup(errorLogRetentionDays, "SCHEDULED");
 
           if (jobId) {
-            console.log(
-              [
-                ansiTimestamp(),
-                paint("bgCyan", ` ${bold("CRON")} `),
-                bold("error-log-retention"),
-                paint("green", "✓ job queued"),
-                dim(`jobId=${jobId}`),
-                dim(`retentionDays=${errorLogRetentionDays}`),
-              ].join("  "),
+            logger.info(
+              {
+                jobId,
+                retentionDays: errorLogRetentionDays,
+                cronJob: "error-log-retention-cleanup",
+              },
+              "Cron job queued",
             );
           } else {
             // Fallback: run inline if queue not available
-            console.log(
-              [
-                ansiTimestamp(),
-                paint("bgYellow", ` ${bold("CRON")} `),
-                bold("error-log-retention"),
-                paint("yellow", "⚠ queue unavailable, running inline"),
-              ].join("  "),
+            logger.warn(
+              {
+                cronJob: "error-log-retention-cleanup",
+              },
+              "Queue unavailable, running cron inline",
             );
 
             await runWithSystemContext(
@@ -181,15 +177,14 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
                 ]);
 
                 if (isDev || deletedCount > 0) {
-                  console.log(
-                    [
-                      ansiTimestamp(),
-                      paint("bgCyan", ` ${bold("CRON")} `),
-                      bold("error-log-retention"),
-                      paint("green", `✓ deleted=${deletedCount}`),
-                      dim(`retentionDays=${retentionDays}`),
-                      dim(`cutoff<${cutoffDate.toISOString()}`),
-                    ].join("  "),
+                  logger.info(
+                    {
+                      deletedCount,
+                      retentionDays,
+                      cutoffDate: cutoffDate.toISOString(),
+                      cronJob: "error-log-retention-cleanup",
+                    },
+                    "Cron job completed",
                   );
                 }
               },
@@ -226,14 +221,14 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
             }),
           ]);
 
-          console.error(
-            [
-              ansiTimestamp(),
-              paint("bgRed", ` ${bold("CRON")} `),
-              bold("error-log-retention"),
-              paint("red", "✗ cleanup failed"),
-              dim(message),
-            ].join("  "),
+          logger.error(
+            {
+              err: error,
+              message,
+              durationMs,
+              cronJob: "error-log-retention-cleanup",
+            },
+            "Cron job failed",
           );
         }
       },
@@ -280,15 +275,17 @@ export async function initializeAppJobQueue(): Promise<void> {
   if (jobQueueEnabled) {
     try {
       await initializeJobQueue();
-      console.log("[APP] Job queue initialized for job publishing");
+      logger.info("Job queue initialized for job publishing");
     } catch (error) {
-      console.warn(
-        "[APP] Failed to initialize job queue, will fall back to inline processing:",
-        error instanceof Error ? error.message : error,
+      logger.warn(
+        {
+          err: error,
+        },
+        "Failed to initialize job queue, will fall back to inline processing",
       );
     }
   } else {
-    console.log("[APP] Job queue disabled via JOB_QUEUE_ENABLED=false");
+    logger.info("Job queue disabled via JOB_QUEUE_ENABLED=false");
   }
 }
 

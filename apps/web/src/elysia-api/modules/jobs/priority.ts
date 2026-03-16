@@ -5,7 +5,10 @@
  * to prevent backlog buildup.
  */
 
+import { createLogger } from "@/lib/logger";
 import { type JobName, JobPriority } from "./queue";
+
+const logger = createLogger({ module: "priority" });
 
 export interface PriorityConfig {
   /** Base priority (lower = higher priority) */
@@ -68,7 +71,7 @@ export function configurePriority(jobName: JobName, newConfig: Partial<PriorityC
   const current = config.get(jobName);
   if (current) {
     config.set(jobName, { ...current, ...newConfig });
-    console.log(`[PRIORITY] ${jobName} configuration updated:`, config.get(jobName));
+    logger.info({ jobName, config: config.get(jobName) }, "Priority configuration updated");
   }
 }
 
