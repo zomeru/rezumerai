@@ -61,6 +61,7 @@
     "elysia-http-exception": "^0.1.5",
     "elysia-rate-limit": "^4.5.1",
     "elysiajs-helmet": "^1.0.4",
+    "file-type": "^21.3.2",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.0",
     "langchain": "^1.2.32",
