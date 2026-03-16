@@ -1,6 +1,6 @@
 import { defineConfig, env } from "prisma/config";
 
-function ensureSslMode(url: string): string {
+function ensureSslModeForPg(url: string): string {
   const sslmodeRegex = /sslmode=[^&]*/;
   if (sslmodeRegex.test(url)) {
     return url.replace(sslmodeRegex, "sslmode=verify-full");
@@ -10,6 +10,7 @@ function ensureSslMode(url: string): string {
 }
 
 const directUrl = process.env.DIRECT_URL ?? env("DIRECT_URL");
+const isNeon = directUrl.includes(".neon.tech");
 
 export default defineConfig({
   schema: "prisma/",
@@ -17,6 +18,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: ensureSslMode(directUrl),
+    url: isNeon ? directUrl : ensureSslModeForPg(directUrl),
   },
 });
