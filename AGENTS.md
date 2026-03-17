@@ -46,79 +46,24 @@ rtk cat .agents/skills/<skill-name>/SKILL.md
 
 ---
 
-## Serena (Semantic Code Navigation)
+### Serena (Optional)
 
-Serena provides **IDE-level semantic navigation** for coding agents. Instead of scanning files with text search, it operates on **code symbols and relationships**, improving both **token efficiency and refactor safety**.
+Serena provides semantic code navigation — symbol lookup, reference tracing, and structured edits. Use it when it helps; it is not required for every task.
 
-Think of Serena as giving the agent **structured awareness of the codebase**, similar to an IDE.
+**Use Serena when:**
 
----
+- Working in large or unfamiliar areas of the codebase
+- Performing symbol-level refactors
+- Tracing references or usages across multiple files
+- Navigating complex module relationships
 
-### Core Capabilities
+**Serena is not required for:**
 
-Serena works with **code entities**, not raw text.
+- Simple documentation edits
+- Small config changes
+- Straightforward single-file fixes
 
-Common primitives:
-
-- `find_symbol` — locate functions, classes, hooks, or components
-- `find_referencing_symbols` — find where a symbol is used
-- `get_symbol_definition` — inspect a symbol
-- `insert_after_symbol` — insert code relative to an existing symbol
-- `replace_symbol_body` — update a function or class implementation
-
-These allow targeted edits **without reading entire files**.
-
----
-
-### When to Use Serena
-
-Prefer Serena when:
-
-- locating functions, classes, hooks, or components
-- tracing references across files
-- performing refactors
-- navigating unfamiliar or large parts of the codebase
-- modifying an existing symbol implementation
-
-Serena is especially useful when **symbol relationships matter**.
-
----
-
-### When Serena Is Not Needed
-
-Serena is optional for:
-
-- documentation edits
-- simple config updates
-- small single-file fixes
-- formatting or lint changes
-
----
-
-### Code Search Priority
-
-Use this order when locating code:
-
-1. **Serena symbol search**
-2. **Serena reference search**
-3. `rg` (ripgrep) text search
-4. direct file reading
-
-Prefer Serena first to avoid unnecessary file scanning.
-
----
-
-### Token Efficiency Rule
-
-Do **not read entire files by default**.
-
-Preferred workflow:
-
-1. locate symbol with Serena
-2. inspect only the symbol body
-3. modify using symbol-aware edits
-
-Fallback to `rg` only if Serena cannot locate the symbol.
+**Code search preference:** Prefer Serena for searching functions, classes, components, hooks, symbols, and references. Fall back to `rg` only when Serena is unavailable, when searching for non-code text, or when broad text matching is more appropriate than semantic lookup.
 
 ---
 
@@ -144,6 +89,7 @@ Prefer **minimal context first**, then expand if required.
 |---|---|
 | UI / frontend work | `project-overview.md`, `repository-layout.md`, `nextjs-app-router-guidelines.md`, `code-style.md`, `testing-guidelines.md` |
 | Backend / API work | `architecture.md`, `elysia-api-guidelines.md`, `repository-layout.md`, `code-style.md`, `testing-guidelines.md` |
+| Background jobs / workers | `architecture.md`, `elysia-api-guidelines.md`, `repository-layout.md`, `build-test-commands.md` |
 | Database / schema work | `database-commands.md`, `architecture.md`, `repository-layout.md`, `security-guidelines.md` |
 | Authentication / security work | `security-guidelines.md`, `elysia-api-guidelines.md`, `nextjs-app-router-guidelines.md`, `repository-layout.md` |
 | AI / LLM integration | `ai-integration-guidelines.md`, `elysia-api-guidelines.md`, `architecture.md`, `testing-guidelines.md` |
@@ -173,6 +119,8 @@ The canonical AI stack is:
 - **RAG / vectors:** pgvector
 - **Embeddings:** AI SDK embeddings
 - **Chunking:** LangChain text splitters only
+- **Memory:** Custom implementation in `apps/web/src/elysia-api/modules/ai/memory/`
+- **Job queue:** pg-boss (PostgreSQL-backed) in `apps/web/src/elysia-api/modules/jobs/` (no Redis)
 
 Architecture rules:
 
@@ -180,7 +128,8 @@ Architecture rules:
 - All AI business logic stays in `apps/web/src/elysia-api/modules/ai/**`.
 - Use the centralized provider registry, tool registry, and prompt composer in the AI module instead of ad hoc model/tool/prompt wiring.
 - System prompts are resolved by workflow `feature + action` from `AI_CONFIG`. Keep the assistant chat prompt separate from Resume Copilot optimize/tailor/review prompts and the Text Optimizer prompt.
-- Do not reintroduce Mastra, `@openrouter/sdk`, or custom assistant streaming abstractions.
+- Do not reintroduce `@openrouter/sdk` or custom assistant streaming abstractions.
+- Do not add Redis as a dependency; background jobs use pg-boss over the existing PostgreSQL connection.
 - Assistant persistence must remain thread-isolated by `userId + scope + threadId`.
 
 ## Instruction Files

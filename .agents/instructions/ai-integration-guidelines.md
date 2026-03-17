@@ -36,8 +36,9 @@ Use `rtk` for all commands to minimize terminal verbosity and preserve agent con
 
 ## Assistant Architecture
 
-- The assistant uses Mastra for the agent and memory layer.
+- The assistant uses a custom memory layer.
 - Memory runtime lives under `apps/web/src/elysia-api/modules/ai/memory/`.
+- Files: `chunking.ts`, `embedder.ts`, `query-embedding-cache.ts`, `repository.ts`, `retrieval.ts`, `service.ts`.
 - PostgreSQL + `pgvector` back assistant recall and embeddings.
 - Reindex support exists through `apps/web/scripts/reindex-assistant-memory.ts` and `rtk bun run assistant:reindex-memory`.
 

@@ -11,6 +11,8 @@
 
 - `admin`
 - `ai`
+- `jobs`
+- `profile`
 - `resume`
 - `user`
 

@@ -5,7 +5,7 @@
 - The Next.js app lives in `apps/web/src/app`.
 - Public routes: `/`, `/about`, `/contact`, `/faq`, `/privacy`, `/terms`
 - Auth routes: `/signin`, `/signup`
-- Session-gated routes: `/workspace`, `/workspace/builder/[resumeId]`, `/workspace/settings`, `/preview/[resumeId]`
+- Session-gated routes: `/workspace`, `/workspace/builder/[resumeId]`, `/workspace/settings`, `/preview/[resumeId]`, `/text-optimizer`
 - Admin routes: `/admin/**`
 - Session-gated utility route: `/text-optimizer`
 
