@@ -2,157 +2,104 @@ terraform {
   required_version = ">= 1.6.0"
 
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    oci = {
+      source  = "oracle/oci"
+      version = "~> 6.0"
     }
   }
 
-  backend "s3" {
-    bucket = "rezumerai-terraform-state"
-    key    = "prod/terraform.tfstate"
-    region = "us-east-1"
+  # Default: Local backend (simplest for single-user setups)
+  # For OCI Object Storage backend, see backend-oci.tf.example
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
-provider "aws" {
-  region = var.aws_region
+provider "oci" {
+  tenancy_ocid     = var.tenancy_ocid
+  user_ocid        = var.user_ocid
+  fingerprint      = var.fingerprint
+  private_key_path = var.private_key_path
+  region           = var.region
 }
 
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
+# Local values
+locals {
+  common_tags = {
+    Name        = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
 }
 
-variable "environment" {
-  type    = string
-  default = "production"
+# Networking Module
+module "networking" {
+  source = "./modules/networking"
+
+  project_name     = var.project_name
+  environment      = var.environment
+  compartment_ocid = var.compartment_ocid
+  vcn_cidr         = var.vcn_cidr
+  common_tags      = local.common_tags
 }
 
-variable "project_name" {
-  type    = string
-  default = "rezumerai"
+# Get the latest Ubuntu 24.04 ARM64 image compatible with Ampere A1
+data "oci_core_images" "worker_image" {
+  compartment_id           = var.compartment_ocid
+  operating_system         = "Canonical Ubuntu"
+  operating_system_version = "24.04"
+  sort_by                  = "TIMECREATED"
+  sort_order               = "DESC"
+
+  filter {
+    name   = "display_name"
+    values = [".*aarch64.*"]
+    regex  = true
+  }
 }
 
-module "vpc" {
-  source = "./modules/vpc"
-
-  project_name = var.project_name
-  environment  = var.environment
-  vpc_cidr     = "10.0.0.0/16"
+# Select the first image (most recent Ubuntu 24.04 for ARM64)
+locals {
+  worker_image_id = data.oci_core_images.worker_image.images[0].id
 }
 
-module "rds" {
-  source = "./modules/rds"
+# Worker Compute Instance (ARM64 - Ampere A1, Always Free)
+resource "oci_core_instance" "worker" {
+  availability_domain = var.availability_domain
+  compartment_id      = var.compartment_ocid
+  display_name        = "${var.project_name}-${var.environment}-worker"
+  shape               = "VM.Standard.A1.Flex"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
-  db_instance_class  = "db.t3.micro"
-  db_name            = "rezumerai"
-  db_username        = "rezumerai_admin"
-  security_group_id  = module.vpc.database_security_group_id
-}
+  shape_config {
+    ocpus         = 1
+    memory_in_gbs = 6
+  }
 
-module "secrets" {
-  source = "./modules/secrets"
+  source_details {
+    source_type = "image"
+    source_id   = local.worker_image_id
+  }
 
-  project_name         = var.project_name
-  environment          = var.environment
-  db_username          = module.rds.db_username
-  db_password          = module.rds.db_password
-  db_endpoint          = module.rds.endpoint
-  db_name              = var.db_name
-  better_auth_secret   = var.better_auth_secret
-  better_auth_url      = var.better_auth_url
-  github_client_id     = var.github_client_id
-  github_client_secret = var.github_client_secret
-  openrouter_api_key   = var.openrouter_api_key
-}
+  metadata = {
+    ssh_authorized_keys = var.ssh_public_key
+    user_data = base64encode(templatefile("${path.module}/cloud-init-worker.yaml", {
+      project_name       = var.project_name
+      environment        = var.environment
+      database_url       = var.database_url
+      openrouter_api_key = var.openrouter_api_key
+    }))
+  }
 
-module "alb" {
-  source = "./modules/alb"
+  create_vnic_details {
+    subnet_id                 = module.networking.subnet_id
+    display_name              = "${var.project_name}-${var.environment}-worker-vnic"
+    assign_public_ip          = true
+    assign_private_dns_record = true
+    hostname_label            = "${var.project_name}-worker"
+  }
 
-  project_name      = var.project_name
-  environment       = var.environment
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_ids = module.vpc.public_subnet_ids
-  security_group_id = module.vpc.alb_security_group_id
-  certificate_arn   = var.certificate_arn
-}
+  freeform_tags = local.common_tags
 
-module "ecs" {
-  source = "./modules/ecs"
-
-  project_name                    = var.project_name
-  environment                     = var.environment
-  vpc_id                          = module.vpc.vpc_id
-  public_subnet_ids               = module.vpc.public_subnet_ids
-  private_subnet_ids              = module.vpc.private_subnet_ids
-  web_security_group_id           = module.vpc.web_security_group_id
-  worker_security_group_id        = module.vpc.worker_security_group_id
-  alb_target_group_arn            = module.alb.target_group_arn
-  alb_listener_arn                = module.alb.listener_arn
-  domain_name                     = var.domain_name
-  certificate_arn                 = var.certificate_arn
-  aws_region                      = var.aws_region
-  database_secret_arn             = module.secrets.database_secret_arn
-  better_auth_secret_arn          = module.secrets.better_auth_secret_arn
-  better_auth_url_secret_arn      = module.secrets.better_auth_url_secret_arn
-  github_client_id_secret_arn     = module.secrets.github_client_id_secret_arn
-  github_client_secret_secret_arn = module.secrets.github_client_secret_secret_arn
-  openrouter_api_key_secret_arn   = module.secrets.openrouter_api_key_secret_arn
-}
-
-
-
-
-variable "domain_name" {
-  type = string
-}
-
-variable "certificate_arn" {
-  type = string
-}
-
-variable "db_name" {
-  type    = string
-  default = "rezumerai"
-}
-
-variable "better_auth_secret" {
-  type      = string
-  sensitive = true
-}
-
-variable "better_auth_url" {
-  type = string
-}
-
-variable "github_client_id" {
-  type      = string
-  sensitive = true
-}
-
-variable "github_client_secret" {
-  type      = string
-  sensitive = true
-}
-
-variable "openrouter_api_key" {
-  type      = string
-  sensitive = true
-}
-
-output "alb_dns_name" {
-  value = module.alb.dns_name
-}
-
-output "database_endpoint" {
-  value = module.rds.endpoint
-}
-
-output "web_service_url" {
-  value = "https://${var.domain_name}"
+  # Preserve boot volume on termination for debugging
+  preserve_boot_volume = false
 }

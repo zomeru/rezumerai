@@ -1,0 +1,133 @@
+#cloud-config
+# Cloud-init script for Rezumerai Worker Instance
+# Provisions Docker, Docker Compose, Bun, and Git on Ubuntu 24.04 ARM64
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+  - wget
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# Create docker group for non-root access
+groups:
+  - docker
+
+# Add ubuntu user to docker group
+system_info:
+  default_user:
+    groups: [docker]
+
+write_files:
+  # Create environment file for worker container
+  - path: /opt/rezumerai/.env.worker
+    content: |
+      NODE_ENV=production
+      DATABASE_URL=${database_url}
+      OPENROUTER_API_KEY=${openrouter_api_key}
+    permissions: '0600'
+    owner: root:root
+
+  # Create docker-compose.yml for worker
+  - path: /opt/rezumerai/docker-compose.yml
+    content: |
+      version: '3.8'
+
+      services:
+        worker:
+          image: ghcr.io/zomeru/${project_name}-worker:latest
+          container_name: ${project_name}-worker
+          restart: unless-stopped
+          env_file:
+            - .env.worker
+          command: bun run worker:all
+          networks:
+            - worker-network
+
+          healthcheck:
+            test: ["CMD", "pgrep", "-x", "bun"]
+            interval: 60s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+
+      networks:
+        worker-network:
+          driver: bridge
+    permissions: '0644'
+    owner: root:root
+
+# Create directory structure
+runcmd:
+  # Create application directory
+  - mkdir -p /opt/rezumerai
+
+  # Install Docker
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Start and enable Docker
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Install Docker Compose standalone (for compatibility)
+  - curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
+
+  # Configure Docker to start on boot
+  - systemctl enable docker.service
+  - systemctl enable containerd.service
+
+  # Pull initial worker image (will fail gracefully if image doesn't exist yet)
+  - cd /opt/rezumerai && docker pull ghcr.io/zomeru/${project_name}-worker:latest || true
+
+  # Create a startup script for manual deployment testing
+  - |
+    cat > /opt/rezumerai/deploy.sh << 'DEPLOY_SCRIPT'
+    #!/bin/bash
+    set -e
+
+    echo "Deploying Rezumerai Worker..."
+    cd /opt/rezumerai
+
+    # Pull latest image
+    docker pull ghcr.io/zomeru/${project_name}-worker:latest
+
+    # Stop existing container
+    docker stop ${project_name}-worker 2>/dev/null || true
+    docker rm ${project_name}-worker 2>/dev/null || true
+
+    # Start new container
+    docker compose up -d
+
+    echo "Deployment complete!"
+    docker ps -a --filter name=${project_name}-worker
+    DEPLOY_SCRIPT
+  - chmod +x /opt/rezumerai/deploy.sh
+
+  # Create a health check script
+  - |
+    cat > /opt/rezumerai/health-check.sh << 'HEALTH_SCRIPT'
+    #!/bin/bash
+    if docker ps --format '{{.Names}}' | grep -q "^${project_name}-worker$"; then
+      echo "Worker container is running"
+      exit 0
+    else
+      echo "Worker container is NOT running"
+      exit 1
+    fi
+    HEALTH_SCRIPT
+  - chmod +x /opt/rezumerai/health-check.sh
+
+  # Initial deployment (will fail gracefully if image doesn't exist)
+  - cd /opt/rezumerai && ./deploy.sh || echo "Initial deployment skipped (image may not exist yet)"
+
+# Final message
+final_message: "Cloud-init provisioning complete for Rezumerai Worker"

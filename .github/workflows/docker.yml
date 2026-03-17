@@ -48,12 +48,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/web/Dockerfile
-          target: worker
+          file: ./apps/web/Dockerfile.worker
           load: true
           tags: rezumerai-worker:test
-          build-args: |
-            NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
           cache-from: type=gha
 
       - name: Verify images exist

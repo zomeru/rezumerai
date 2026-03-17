@@ -98,3 +98,14 @@ apps/web/public/pdf-worker
 apps/api/server
 packages/database/generated
 .worktrees/
+
+####################################
+# Terraform / Infrastructure
+####################################
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+infra/*.md
+infra/tfplan
