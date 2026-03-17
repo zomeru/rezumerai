@@ -1,0 +1,60 @@
+name: Docker Build
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ['*']
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build:
+    name: Validate Docker Build
+    runs-on: ubuntu-latest
+
+    env:
+      # Only the true build-time public variable is needed here.
+      # Runtime secrets are supplied as placeholder values inside the Dockerfile's
+      # RUN shell scope — they are never baked into the image.
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          target: web
+          load: true
+          tags: rezumerai-web:test
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build worker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          target: worker
+          load: true
+          tags: rezumerai-worker:test
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
+          cache-from: type=gha
+
+      - name: Verify images exist
+        run: docker images rezumerai-web:test && docker images rezumerai-worker:test

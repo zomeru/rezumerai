@@ -2,14 +2,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { type Prisma, prisma } from "@rezumerai/database";
 import Elysia from "elysia";
-import { serverEnv } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { runPostResponseTask } from "../observability/post-response";
 
 const logger = createLogger({ module: "error-tracking" });
 
-const isProd = serverEnv?.NODE_ENV === "production";
-const isDev = serverEnv?.NODE_ENV === "development";
+const isProd = process.env.NODE_ENV === "production";
+const isDev = process.env.NODE_ENV === "development";
 
 const REDACTED_VALUE = "[REDACTED]";
 const MAX_STRING_LENGTH = 10_000;

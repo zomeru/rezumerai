@@ -15,17 +15,12 @@
 
 import { prisma } from "@rezumerai/database";
 import { PgBoss } from "pg-boss";
-import { serverEnv } from "@/env";
+import { getServerEnv } from "@/env";
 import { logger } from "@/lib/logger";
 
 // Extract database connection from Prisma for pg-boss
 function getDatabaseConnection(): string {
-  // Prisma's underlying connection - we use the same DATABASE_URL
-  if (!serverEnv) {
-    throw new Error("Server environment not initialized");
-  }
-
-  return serverEnv.DATABASE_URL;
+  return getServerEnv().DATABASE_URL;
 }
 
 // Job queue names - single source of truth

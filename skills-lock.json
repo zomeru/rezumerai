@@ -61,6 +61,11 @@
       "sourceType": "github",
       "computedHash": "d7f9da2c9be93e113ca0c4554d8e7292018443c558c799200adf2acf8b17b69c"
     },
+    "new-terraform-provider": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "e294bd62d9710030080ccfcdef99a7a5b766166b2a4d6c760c5d63b2936fb7e9"
+    },
     "nextjs-senior-dev": {
       "source": "georgekhananaev/claude-skills-vault",
       "sourceType": "github",
@@ -101,6 +106,16 @@
       "sourceType": "github",
       "computedHash": "69ba606f9cd359c5f83ee538da620a452f2b70b3f76d2fe86c44305030b0ab5e"
     },
+    "provider-actions": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "e3852e6583ab4c2199a26793583a3463ce80d31b4b972f7855585c8885d0c0e4"
+    },
+    "provider-resources": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "97edcbb115a59d93da5ec28cb445d883307c66143b6fbc1f6f61bd4b2cfd7def"
+    },
     "react": {
       "source": "lobehub/lobehub",
       "sourceType": "github",
@@ -126,6 +141,16 @@
       "sourceType": "github",
       "computedHash": "e53cc1a286987b7f28ba5cdd29e8ebacdde0d5822d40e938652fec8c47f33efa"
     },
+    "refactor-module": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "f506f95f84ff344a3e522f2e58069b632a5b3539d978f00c935ee8bab25b03f0"
+    },
+    "run-acceptance-tests": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "08e3615c03a799d81a910b04f04e6c54887411603f8e8c309a60f65681425a0c"
+    },
     "store-data-structures": {
       "source": "lobehub/lobehub",
       "sourceType": "github",
@@ -140,6 +165,26 @@
       "source": "mindrally/skills",
       "sourceType": "github",
       "computedHash": "5ba70383d15f76e70911b142b1eb64fe4cb5c951cc504e53e47f55ca6d48724e"
+    },
+    "terraform-search-import": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "50eef65b0f1808f2471a400dcd1324fb07060253c2ad755bd791bd1cac19628b"
+    },
+    "terraform-stacks": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "c90c845f0d9b08341d6c85d6957f105e8973582870f4a6601f5366dc57d8171a"
+    },
+    "terraform-style-guide": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "1fb650e4627c740f024b80947964769f5f5d58efff54870cef2791324d5aa451"
+    },
+    "terraform-test": {
+      "source": "hashicorp/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5a62d5e759b4720304127bd1e94d405e0f91a907965d87b1117d2b91d7eb2e18"
     },
     "turborepo": {
       "source": "secondsky/claude-skills",

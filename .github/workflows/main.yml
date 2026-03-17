@@ -52,7 +52,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.9
 
       - name: Cache Bun dependencies
         uses: actions/cache@v5
@@ -81,27 +81,24 @@ jobs:
 
       - name: Create .env file
         run: |
-          cat > .env.local << EOF
-          DATABASE_URL=${{ env.DATABASE_URL }}
-          DIRECT_URL=${{ env.DIRECT_URL }}
-          BETTER_AUTH_SECRET=${{ env.BETTER_AUTH_SECRET }}
-          BETTER_AUTH_URL=${{ env.BETTER_AUTH_URL }}
-          NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
-          BETTER_AUTH_GOOGLE_CLIENT_ID=${{ env.BETTER_AUTH_GOOGLE_CLIENT_ID }}
-          BETTER_AUTH_GOOGLE_CLIENT_SECRET=${{ env.BETTER_AUTH_GOOGLE_CLIENT_SECRET }}
-          BETTER_AUTH_GITHUB_CLIENT_ID=${{ env.BETTER_AUTH_GITHUB_CLIENT_ID }}
-          BETTER_AUTH_GITHUB_CLIENT_SECRET=${{ env.BETTER_AUTH_GITHUB_CLIENT_SECRET }}
-          OPENROUTER_API_KEY=${{ env.OPENROUTER_API_KEY }}
-          EOF
+          printf '%s\n' \
+            "DATABASE_URL=$DATABASE_URL" \
+            "DIRECT_URL=$DIRECT_URL" \
+            "BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET" \
+            "BETTER_AUTH_URL=$BETTER_AUTH_URL" \
+            "NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL" \
+            "BETTER_AUTH_GOOGLE_CLIENT_ID=$BETTER_AUTH_GOOGLE_CLIENT_ID" \
+            "BETTER_AUTH_GOOGLE_CLIENT_SECRET=$BETTER_AUTH_GOOGLE_CLIENT_SECRET" \
+            "BETTER_AUTH_GITHUB_CLIENT_ID=$BETTER_AUTH_GITHUB_CLIENT_ID" \
+            "BETTER_AUTH_GITHUB_CLIENT_SECRET=$BETTER_AUTH_GITHUB_CLIENT_SECRET" \
+            "OPENROUTER_API_KEY=$OPENROUTER_API_KEY" \
+            > .env.local
 
       - name: Install dependencies
         run: bun install
 
       - name: Apply Prisma migrations
         run: cd packages/database && bun run db:migrate
-
-      - name: Generate Prisma client
-        run: cd packages/database && bun run db:generate
 
       - name: Build packages
         run: bun run build --filter=./packages/*

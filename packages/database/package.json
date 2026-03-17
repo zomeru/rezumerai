@@ -62,7 +62,7 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@prisma/client-runtime-utils": "7.5.0",
-    "elysia": "^1.4.27",
+    "elysia": "^1.4.28",
     "pg": "^8.20.0",
     "prismabox": "^1.1.26"
   },
@@ -75,7 +75,7 @@
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "prisma": "^7.5.0",
-    "tsdown": "^0.21.3",
+    "tsdown": "^0.21.4",
     "typescript": "^5.9.3"
   },
   "prisma": {

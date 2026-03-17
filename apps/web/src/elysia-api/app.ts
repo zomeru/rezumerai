@@ -9,7 +9,7 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
-import { serverEnv } from "@/env";
+import { getServerEnv } from "@/env";
 import { logger } from "@/lib/logger";
 import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
@@ -52,9 +52,9 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(
     cors(
       createCorsConfig({
-        NEXT_PUBLIC_SITE_URL: serverEnv?.NEXT_PUBLIC_SITE_URL ?? "",
-        BETTER_AUTH_URL: serverEnv?.BETTER_AUTH_URL ?? "",
-        CORS_ALLOWED_ORIGINS: serverEnv?.CORS_ALLOWED_ORIGINS,
+        NEXT_PUBLIC_SITE_URL: getServerEnv().NEXT_PUBLIC_SITE_URL,
+        BETTER_AUTH_URL: getServerEnv().BETTER_AUTH_URL,
+        CORS_ALLOWED_ORIGINS: getServerEnv().CORS_ALLOWED_ORIGINS,
       }),
     ),
   )

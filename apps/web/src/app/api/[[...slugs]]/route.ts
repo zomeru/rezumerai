@@ -2,7 +2,10 @@ import { checkBotId } from "botid/server";
 import { NextResponse } from "next/dist/server/web/spec-extension/response";
 import { elysiaApp, initializeAppJobQueue } from "@/elysia-api/app";
 
-const isBotIdEnabled = process.env.NODE_ENV !== "development";
+// BotId requires the x-vercel-oidc-token header injected by Vercel's edge
+// infrastructure. Gate on VERCEL=1 so Docker/self-hosted deployments are not
+// blocked by a Vercel-specific check that can never pass outside Vercel.
+const isBotIdEnabled = process.env.NODE_ENV !== "development" && process.env.VERCEL === "1";
 
 // Initialize job queue once when module is first loaded
 // This ensures jobs can be published from request handlers
