@@ -104,4 +104,4 @@ export function LazyTemplateSelector(props: React.ComponentProps<typeof Template
  * Export individual dynamic components for direct use without Suspense wrapper.
  * Use these when you want to provide custom Suspense boundaries.
  */
-export { PDFPreviewDynamic, RichTextEditorDynamic, ColorPickerModalDynamic, TemplateSelectorDynamic };
+export { ColorPickerModalDynamic, PDFPreviewDynamic, RichTextEditorDynamic, TemplateSelectorDynamic };

@@ -136,7 +136,6 @@ type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends"
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
 type StreamTextHandle = ReturnType<typeof streamText>;
 
-export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError };
 export type {
   ActiveAiModel,
   AiUsageMetrics,
@@ -148,6 +147,7 @@ export type {
   StreamOptimizeTextOptions,
   UserAiSettings,
 } from "./types";
+export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError };
 
 function toUsageMetrics(usage: {
   inputTokens?: number | undefined;

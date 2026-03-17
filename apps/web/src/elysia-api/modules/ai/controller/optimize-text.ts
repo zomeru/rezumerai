@@ -1,10 +1,13 @@
 import { ERROR_MESSAGES } from "@/constants/errors";
+import { createLogger } from "@/lib/logger";
 import { AI_CREDITS_EXHAUSTED_CODE, AI_MODEL_POLICY_RESTRICTED_CODE, AI_MODEL_UNAVAILABLE_CODE } from "../constants";
 import { resolveAiSystemPrompt } from "../prompts/resolver";
 import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "../service";
 import type { OptimizationContext } from "../types";
 import { ensureVerifiedAiUser, routeResult, trackAiHandledError } from "./helpers";
 import type { OptimizeTextBody, RouteResult, TransactionCapableDatabaseClient, VerifiedAiUser } from "./types";
+
+const logger = createLogger({ module: "ai-optimize-text" });
 
 async function persistOptimizationSafely(
   db: TransactionCapableDatabaseClient,
@@ -13,8 +16,7 @@ async function persistOptimizationSafely(
   try {
     await AiService.saveOptimization(db, payload);
   } catch (saveError: unknown) {
-    const message = saveError instanceof Error ? saveError.message : ERROR_MESSAGES.AI_UNKNOWN_PERSISTENCE_ERROR;
-    console.error(`[AI] Failed to persist optimization: ${message}`);
+    logger.error({ err: saveError, userId: payload.userId }, "Failed to persist AI optimization");
   }
 }
 

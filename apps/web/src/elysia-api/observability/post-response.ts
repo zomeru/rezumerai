@@ -1,4 +1,7 @@
+import { createLogger } from "@/lib/logger";
 import { getRequestContext, type RequestContextStore, runWithSystemContext } from "./request-context";
+
+const logger = createLogger({ module: "post-response" });
 
 type PostResponseTask = () => Promise<void> | void;
 
@@ -31,8 +34,7 @@ export function runPostResponseTask(task: PostResponseTask, label: string): void
     };
 
     void runTask().catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : "Unknown post-response error";
-      console.error(`[POST_RESPONSE:${label}] ${message}`);
+      logger.error({ err: error, label }, "Post-response task failed");
     });
   }, 0);
 }

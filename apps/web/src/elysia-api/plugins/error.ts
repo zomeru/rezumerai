@@ -2,11 +2,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { type Prisma, prisma } from "@rezumerai/database";
 import Elysia from "elysia";
-import { serverEnv } from "@/env";
+import { createLogger } from "@/lib/logger";
 import { runPostResponseTask } from "../observability/post-response";
 
-const isProd = serverEnv?.NODE_ENV === "production";
-const isDev = serverEnv?.NODE_ENV === "development";
+const logger = createLogger({ module: "error-tracking" });
+
+const isProd = process.env.NODE_ENV === "production";
+const isDev = process.env.NODE_ENV === "development";
 
 const REDACTED_VALUE = "[REDACTED]";
 const MAX_STRING_LENGTH = 10_000;
@@ -410,8 +412,7 @@ async function persistUnhandledErrorToDatabase(data: CapturedUnhandledError): Pr
       },
     });
   } catch (databaseError: unknown) {
-    const databaseMessage = databaseError instanceof Error ? databaseError.message : "Unknown database logging error";
-    console.error(`[ERROR_TRACKING] Failed to write DB error log: ${databaseMessage}`);
+    logger.error({ err: databaseError }, "Failed to write error to database");
   }
 }
 
@@ -430,8 +431,7 @@ async function writeUnhandledErrorToFile(data: CapturedUnhandledError): Promise<
     await mkdir(logsDirectory, { recursive: true });
     await writeFile(filePath, buildFileLogContent(data), "utf-8");
   } catch (fileError: unknown) {
-    const fileMessage = fileError instanceof Error ? fileError.message : "Unknown file logging error";
-    console.error(`[ERROR_TRACKING] Failed to write file error log: ${fileMessage}`);
+    logger.error({ err: fileError }, "Failed to write error to file");
   }
 }
 
@@ -465,8 +465,7 @@ export async function trackHandledError(options: TrackHandledErrorOptions): Prom
       extraMetadata: options.metadata,
     });
   } catch (trackingError: unknown) {
-    const message = trackingError instanceof Error ? trackingError.message : "Unknown handled-error tracking failure";
-    console.error(`[ERROR_TRACKING] Failed to track handled error: ${message}`);
+    logger.error({ err: trackingError, code: options.code }, "Failed to track handled error");
   }
 }
 
@@ -544,7 +543,7 @@ export const errorPlugin = new Elysia({ name: "plugin/error" }).onError({ as: "g
   }, "error-tracking");
 
   if (!isProd) {
-    console.error(`[ERROR] ${code}`, error);
+    logger.error({ code, err: error }, "Request error");
   }
 
   return status(500, !isProd && error instanceof Error ? error.message : "Internal server error");

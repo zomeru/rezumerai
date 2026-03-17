@@ -8,6 +8,7 @@ import {
   Cog,
   FileText,
   Flag,
+  Layers,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -86,6 +87,14 @@ const adminSections: AdminSection[] = [
     description: "Control database-backed feature flags and rollout behavior.",
     icon: Flag,
     href: ROUTES.ADMIN_FEATURES,
+    isAvailable: true,
+  },
+  {
+    id: "queue",
+    title: "Job Queue",
+    description: "Monitor and manage background job processing, alerts, and dead-letter queue.",
+    icon: Layers,
+    href: ROUTES.ADMIN_QUEUE,
     isAvailable: true,
   },
 ];

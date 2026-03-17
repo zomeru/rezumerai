@@ -1,12 +1,18 @@
 import type { PrismaClient } from "@rezumerai/database";
 import type { AiConfiguration, AssistantRoleScope } from "@rezumerai/types";
+import { queueGenerateEmbeddings } from "@/elysia-api/modules/jobs";
+import { isJobQueueInitialized } from "@/elysia-api/modules/jobs/queue";
+import { createLogger } from "@/lib/logger";
 import { AiRepository } from "../repository";
 import type { SavedAssistantConversationMessage } from "../types";
 import { type AssistantUiMessage, sanitizeUiMessageParts, toUiMessageParts } from "../ui-message";
 import { buildMessageChunks } from "./chunking";
 import { embedAssistantTexts } from "./embedder";
+import { getQueryEmbeddingCache } from "./query-embedding-cache";
 import { ConversationMemoryRepository } from "./repository";
 import { assembleConversationContext, type ConversationContextMessage } from "./retrieval";
+
+const logger = createLogger({ module: "ai-memory" });
 
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
 type TransactionCapableDatabaseClient = DatabaseClient & Pick<PrismaClient, "$transaction">;
@@ -81,11 +87,42 @@ function toUiMessage(message: {
   };
 }
 
+/**
+ * Reindex conversation messages - queues as background job if available.
+ * Falls back to inline processing if queue is unavailable.
+ */
 async function reindexConversationMessages(
   db: DatabaseClient,
   config: AiConfiguration,
   messages: SavedAssistantConversationMessage[],
+  useBackgroundJobs = true,
 ): Promise<void> {
+  if (messages.length === 0) {
+    return;
+  }
+
+  // If background jobs are enabled and queue is available, queue the work
+  if (useBackgroundJobs && isJobQueueInitialized()) {
+    const conversationId = messages[0]?.conversationId;
+    const messageIds = messages.map((m) => m.id);
+
+    if (conversationId) {
+      // Fire-and-forget: don't await the queue operation
+      // This ensures the response isn't blocked
+      queueGenerateEmbeddings(conversationId, messageIds, config)
+        .then((jobId) => {
+          if (jobId) {
+            logger.debug({ conversationId, messageCount: messageIds.length, jobId }, "Queued embedding generation");
+          }
+        })
+        .catch((error) => {
+          logger.warn({ err: error, conversationId }, "Failed to queue embeddings, will process inline");
+        });
+      return; // Exit early - work will be done in background
+    }
+  }
+
+  // Fallback: inline processing (for when queue is unavailable)
   const chunks = buildMessageChunks(
     messages.map((message) => ({
       id: message.id,
@@ -178,7 +215,20 @@ export abstract class ConversationMemoryService {
       };
     }
 
-    const queryEmbedding = (await embedAssistantTexts(options.config, [options.latestUserMessage])).embeddings[0];
+    // Try to get embedding from cache first
+    const cache = getQueryEmbeddingCache();
+    let queryEmbedding = cache.get(options.latestUserMessage, options.config);
+
+    // Generate embedding if not in cache
+    if (!queryEmbedding) {
+      const result = await embedAssistantTexts(options.config, [options.latestUserMessage]);
+      queryEmbedding = result.embeddings[0] ?? null;
+
+      // Cache the new embedding
+      if (queryEmbedding) {
+        cache.set(options.latestUserMessage, options.config, queryEmbedding);
+      }
+    }
 
     if (!queryEmbedding) {
       return {
@@ -332,6 +382,43 @@ export abstract class ConversationMemoryService {
       return { indexedCount: 0 };
     }
 
+    // Group by conversation for efficient background processing
+    const conversationMap = new Map<string, SavedAssistantConversationMessage[]>();
+    for (const message of missingMessages) {
+      const existing = conversationMap.get(message.conversationId) ?? [];
+      existing.push(message);
+      conversationMap.set(message.conversationId, existing);
+    }
+
+    // Queue each conversation for reindexing
+    if (isJobQueueInitialized()) {
+      let queuedCount = 0;
+      // Fire-and-forget: don't await individual queue operations
+      Promise.all(
+        Array.from(conversationMap.entries()).map(async ([conversationId, messages]) => {
+          const messageIds = messages.map((m) => m.id);
+          try {
+            const jobId = await queueGenerateEmbeddings(conversationId, messageIds, config);
+            if (jobId) {
+              queuedCount += messages.length;
+              logger.debug(
+                { conversationId, messageCount: messages.length, jobId },
+                "Queued embeddings for conversation",
+              );
+            }
+          } catch (error) {
+            logger.warn({ err: error, conversationId }, "Failed to queue embeddings for conversation");
+          }
+        }),
+      ).catch((error) => {
+        logger.error({ err: error }, "Background reindexing failed");
+      });
+
+      // Return immediately - work happens in background
+      return { indexedCount: queuedCount };
+    }
+
+    // Fallback: inline processing
     await reindexConversationMessages(
       db,
       config,
@@ -344,6 +431,7 @@ export abstract class ConversationMemoryService {
         content: message.content,
         createdAt: message.createdAt,
       })),
+      false, // Force inline processing
     );
 
     return {

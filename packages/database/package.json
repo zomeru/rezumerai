@@ -6,26 +6,26 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./generated/prismabox/*": {
-      "types": "./dist/generated/prismabox/*.d.ts",
-      "import": "./dist/generated/prismabox/*.js"
+      "types": "./dist/generated/prismabox/*.d.mts",
+      "import": "./dist/generated/prismabox/*.mjs"
     },
     "./generated/prisma/*": {
-      "types": "./dist/generated/prisma/*.d.ts",
-      "import": "./dist/generated/prisma/*.js"
+      "types": "./dist/generated/prisma/*.d.mts",
+      "import": "./dist/generated/prisma/*.mjs"
     }
   },
   "type": "module",
   "scripts": {
-    "dev": "bun run with-env tsup --watch",
-    "build": "bun run clean:generated && bun run db:generate && bun run with-env tsup",
+    "dev": "bun run with-env tsdown --watch",
+    "build": "bun run clean:generated && bun run db:generate && bun run with-env tsdown",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
-    "watch": "bun run db:generate && bun run with-env tsup --watch",
+    "watch": "bun run db:generate && bun run with-env tsdown --watch",
     "db:generate": "bun run with-env prisma generate",
     "db:generate:preview": "bun run with-env:preview prisma generate",
     "db:generate:prod": "bun run with-env:prod prisma generate",
@@ -51,7 +51,7 @@
     "check": "biome check --write .",
     "format": "bun run with-env prisma format",
     "clean:generated": "rimraf generated/",
-    "clean": "rimraf node_modules .turbo dist generated/ tsconfig.tsbuildinfo tsup.config.bundled*",
+    "clean": "rimraf node_modules .turbo dist generated/ tsconfig.tsbuildinfo tsdown.config.bundled*",
     "with-env": "dotenv -e ../../.env.local --",
     "with-env:preview": "dotenv -e ../../.env.preview.local --",
     "with-env:prod": "dotenv -e ../../.env.production.local --"
@@ -62,12 +62,12 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@prisma/client-runtime-utils": "7.5.0",
-    "elysia": "^1.4.27",
+    "elysia": "^1.4.28",
     "pg": "^8.20.0",
     "prismabox": "^1.1.26"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.6",
+    "@biomejs/biome": "2.4.7",
     "@rezumerai/tsconfig": "workspace:*",
     "@types/bun": "^1.3.10",
     "@types/node": "^25.5.0",
@@ -75,7 +75,7 @@
     "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "prisma": "^7.5.0",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.21.4",
     "typescript": "^5.9.3"
   },
   "prisma": {

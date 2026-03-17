@@ -2,7 +2,9 @@
   "servers": {
     "serena": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server", "--context", "ide"]
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena",
+        "start-mcp-server", "--context", "ide", "--project",
+        "${workspaceFolder}"]
     },
     "sequential-thinking": {
       "command": "npx",
@@ -46,6 +48,9 @@
         "DATABASE_URI": "${input:postgres_uri}"
       }
     },
+    "context-mode": {
+      "command": "context-mode"
+    }
   },
   "inputs": [
     {

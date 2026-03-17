@@ -8,12 +8,8 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
 import { anonymous } from "better-auth/plugins/anonymous";
-import { serverEnv } from "@/env";
+import { getServerEnv } from "@/env";
 import { formatPasswordCooldownMessage, getPasswordManagementState } from "./password-policy";
-
-if (!serverEnv) {
-  throw new Error("Server environment variables are not defined");
-}
 
 const argon2Options: Options = {
   memoryCost: 65536, // 64 MiB
@@ -23,127 +19,146 @@ const argon2Options: Options = {
   algorithm: 2, // Argon2id variant
 };
 
-export const auth = betterAuth({
-  basePath: "/api/auth",
-  baseURL: serverEnv.BETTER_AUTH_URL,
-  secret: serverEnv.BETTER_AUTH_SECRET,
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
+// Inferred type — do NOT add an explicit ReturnType<typeof betterAuth> annotation.
+// betterAuth({...specific config...}) returns Auth<SpecificConfig>, not Auth<BetterAuthOptions>,
+// and the explicit annotation causes a TS2322 incompatibility.
+let _auth: ReturnType<typeof createAuth> | null = null;
 
-  account: {
-    encryptOAuthTokens: true, // Uses AES-256-GCM
-  },
-  emailAndPassword: {
-    enabled: true,
-    minPasswordLength: PASSWORD_MIN_LENGTH,
-    maxPasswordLength: PASSWORD_MAX_LENGTH,
-    password: {
-      hash: (password) => hash(password, argon2Options),
-      verify: ({ password, hash: storedHash }) => verify(storedHash, password, argon2Options),
-    },
-  },
-  socialProviders: {
-    github: {
-      clientId: serverEnv.BETTER_AUTH_GITHUB_CLIENT_ID,
-      clientSecret: serverEnv.BETTER_AUTH_GITHUB_CLIENT_SECRET,
-      scope: ["read:user", "user:email"],
-    },
-  },
-  plugins: [
-    anonymous(),
-    admin({
-      defaultRole: "USER",
-      adminRoles: ["ADMIN"],
-      roles: {
-        ADMIN: adminAc,
-        USER: userAc,
-      },
+function createAuth() {
+  const env = getServerEnv();
+  return betterAuth({
+    basePath: "/api/auth",
+    baseURL: env.BETTER_AUTH_URL,
+    secret: env.BETTER_AUTH_SECRET,
+    database: prismaAdapter(prisma, {
+      provider: "postgresql",
     }),
-    {
-      id: "rezumerai-password-change-policy",
-      schema: {
-        user: {
-          fields: {
-            lastPasswordChangeAt: {
-              type: "date",
-              required: false,
-              input: false,
+
+    account: {
+      encryptOAuthTokens: true, // Uses AES-256-GCM
+    },
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: PASSWORD_MIN_LENGTH,
+      maxPasswordLength: PASSWORD_MAX_LENGTH,
+      password: {
+        hash: (password) => hash(password, argon2Options),
+        verify: ({ password, hash: storedHash }) => verify(storedHash, password, argon2Options),
+      },
+    },
+    socialProviders: {
+      github: {
+        clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
+        clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
+        scope: ["read:user", "user:email"],
+      },
+    },
+    plugins: [
+      anonymous(),
+      admin({
+        defaultRole: "USER",
+        adminRoles: ["ADMIN"],
+        roles: {
+          ADMIN: adminAc,
+          USER: userAc,
+        },
+      }),
+      {
+        id: "rezumerai-password-change-policy",
+        schema: {
+          user: {
+            fields: {
+              lastPasswordChangeAt: {
+                type: "date",
+                required: false,
+                input: false,
+              },
             },
           },
         },
-      },
-      hooks: {
-        before: [
-          {
-            matcher(context) {
-              return context.path === "/change-password";
+        hooks: {
+          before: [
+            {
+              matcher(context) {
+                return context.path === "/change-password";
+              },
+              handler: createAuthMiddleware(async (ctx) => {
+                const session = ctx.context.session ?? (await getSessionFromCtx(ctx));
+                const userId = session?.user?.id;
+
+                if (!userId) {
+                  return;
+                }
+
+                const user = await prisma.user.findUnique({
+                  where: { id: userId },
+                  select: {
+                    lastPasswordChangeAt: true,
+                  },
+                });
+
+                if (!user?.lastPasswordChangeAt) {
+                  return;
+                }
+
+                const policy = getPasswordManagementState({
+                  hasCredentialProvider: true,
+                  isOAuthOnly: false,
+                  lastPasswordChangeAt: user.lastPasswordChangeAt,
+                });
+
+                if (!policy.isCooldownActive || !policy.nextAllowedAt) {
+                  return;
+                }
+
+                throw APIError.from("BAD_REQUEST", {
+                  code: "PASSWORD_CHANGE_COOLDOWN_ACTIVE",
+                  message: formatPasswordCooldownMessage(new Date(policy.nextAllowedAt)),
+                });
+              }),
             },
-            handler: createAuthMiddleware(async (ctx) => {
-              const session = ctx.context.session ?? (await getSessionFromCtx(ctx));
-              const userId = session?.user?.id;
+          ],
+          after: [
+            {
+              matcher(context) {
+                return context.path === "/change-password";
+              },
+              handler: createAuthMiddleware(async (ctx) => {
+                if (!ctx.context.returned) {
+                  return;
+                }
 
-              if (!userId) {
-                return;
-              }
+                const userId = ctx.context.newSession?.user.id ?? ctx.context.session?.user.id;
 
-              const user = await prisma.user.findUnique({
-                where: { id: userId },
-                select: {
-                  lastPasswordChangeAt: true,
-                },
-              });
+                if (!userId) {
+                  return;
+                }
 
-              if (!user?.lastPasswordChangeAt) {
-                return;
-              }
-
-              const policy = getPasswordManagementState({
-                hasCredentialProvider: true,
-                isOAuthOnly: false,
-                lastPasswordChangeAt: user.lastPasswordChangeAt,
-              });
-
-              if (!policy.isCooldownActive || !policy.nextAllowedAt) {
-                return;
-              }
-
-              throw APIError.from("BAD_REQUEST", {
-                code: "PASSWORD_CHANGE_COOLDOWN_ACTIVE",
-                message: formatPasswordCooldownMessage(new Date(policy.nextAllowedAt)),
-              });
-            }),
-          },
-        ],
-        after: [
-          {
-            matcher(context) {
-              return context.path === "/change-password";
+                await prisma.user.update({
+                  where: { id: userId },
+                  data: {
+                    lastPasswordChangeAt: new Date(),
+                  },
+                });
+              }),
             },
-            handler: createAuthMiddleware(async (ctx) => {
-              if (!ctx.context.returned) {
-                return;
-              }
-
-              const userId = ctx.context.newSession?.user.id ?? ctx.context.session?.user.id;
-
-              if (!userId) {
-                return;
-              }
-
-              await prisma.user.update({
-                where: { id: userId },
-                data: {
-                  lastPasswordChangeAt: new Date(),
-                },
-              });
-            }),
-          },
-        ],
+          ],
+        },
       },
-    },
-    nextCookies(),
-  ],
+      nextCookies(),
+    ],
+  });
+}
+
+export function getAuth() {
+  if (!_auth) _auth = createAuth();
+  return _auth;
+}
+
+export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+  get(_, prop) {
+    return (getAuth() as Record<string | symbol, unknown>)[prop];
+  },
 });
 
 export async function setManagedUserPassword(

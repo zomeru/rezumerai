@@ -2,21 +2,22 @@ import { z } from "zod";
 
 /**
  * Environment variable schema validation.
- * Ensures all required environment variables are present and valid at build time.
+ *
+ * Build-time: Only public/client variables are validated eagerly.
+ * Runtime: Server-only secrets are validated lazily on first access,
+ * so that `next build` does not require runtime secrets.
  *
  * Security: Never expose sensitive backend URLs or keys via NEXT_PUBLIC_ prefix.
  */
-const isServer = typeof window === "undefined";
 
-// Client-side schema (only public variables)
+// ── Build-time / client schema ──────────────────────────────────────────────
 const clientSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url().describe("Public site URL for metadata"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 });
 
-// Server-side schema (includes sensitive variables)
+// ── Server-only schema (validated lazily at runtime) ────────────────────────
 const serverSchema = clientSchema.extend({
-  // Authentication variables (server-side only)
   BETTER_AUTH_URL: z.url().describe("Better Auth URL for authentication"),
   BETTER_AUTH_SECRET: z
     .string()
@@ -40,34 +41,35 @@ const serverSchema = clientSchema.extend({
       "DATABASE_URL must be a valid PostgreSQL connection string",
     )
     .describe("Database connection URL (server-only)"),
-
-  // AI (server-side only)
   OPENROUTER_API_KEY: z
     .string()
     .min(1, "OPENROUTER_API_KEY is required")
     .describe("OpenRouter API key for AI text optimization"),
-
   SENTRY_DSN: z.string().optional().describe("Sentry DSN for error tracking"),
   ANALYTICS_ID: z.string().optional().describe("Analytics tracking ID"),
-
   CORS_ALLOWED_ORIGINS: z.string().optional().describe("Comma-separated list of extra allowed CORS origins"),
-
   OTEL_EXPORTER_OTLP_ENDPOINT: z
     .string()
     .optional()
     .describe("OTLP collector endpoint (e.g. https://api.axiom.co/v1/traces)"),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
+  JOB_QUEUE_ENABLED: z.string().optional().default("true").describe("Enable background job queue (true/false)"),
+  JOB_QUEUE_WORKER_COUNT: z.string().optional().default("1").describe("Number of worker processes to run"),
 });
 
-/**
- * Parsed and validated environment variables.
- * Throws an error at build time if validation fails.
- * Client-side only has access to NEXT_PUBLIC_ variables.
- */
-const clientRuntimeEnv = {
+export type ServerEnv = z.infer<typeof serverSchema>;
+
+// ── Eagerly validated (safe during build — only public vars) ────────────────
+export const clientEnv = clientSchema.parse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NODE_ENV: process.env.NODE_ENV,
-};
+});
 
-export const clientEnv = clientSchema.parse(clientRuntimeEnv);
-export const serverEnv = isServer ? serverSchema.parse(process.env) : undefined;
+// ── Lazily validated (only runs when server code actually executes) ──────────
+let _serverEnv: ServerEnv | null = null;
+
+export function getServerEnv(): ServerEnv {
+  if (_serverEnv) return _serverEnv;
+  _serverEnv = serverSchema.parse(process.env);
+  return _serverEnv;
+}

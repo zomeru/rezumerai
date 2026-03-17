@@ -1,72 +1,110 @@
-# ---- Base ----
-FROM oven/bun:1 AS base
+# ── deps: install dependencies (cached unless lockfile/manifests change) ──────
+FROM oven/bun:1 AS deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  libc6-dev libssl-dev openssl curl git \
+  libc6-dev libssl-dev openssl \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# ---- Prune ----
-FROM base AS builder
+# Copy only manifests first — maximises layer cache reuse
+COPY package.json bun.lock turbo.json ./
+COPY apps/web/package.json apps/web/
+COPY packages/database/package.json packages/database/
+COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/types/package.json packages/types/
+COPY packages/ui/package.json packages/ui/
+COPY packages/utils/package.json packages/utils/
+
+RUN bun install --frozen-lockfile
+
+# ── builder: compile the web app ──────────────────────────────────────────────
+FROM deps AS builder
+WORKDIR /app
+
+# Only build-time public variables are needed here.
+# Runtime secrets (DATABASE_URL, auth keys, etc.) are injected at container
+# startup via env_file / environment — NOT baked into the image.
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NODE_ENV=production
+
+# Copy full source after deps are cached
 COPY . .
-# Prune only the 'web' app for a minimal Docker context
-RUN bunx turbo@2.8.10 prune web --docker
 
-# ---- Install & Build ----
-FROM base AS installer
+# Generate Prisma client.
+# prisma generate only reads the schema — it never opens a DB connection.
+# prisma.config.ts calls env("DIRECT_URL") which requires the var to be present,
+# so we supply throw-away placeholder values scoped to this RUN layer only.
+# These values are NOT baked into the image (no ENV instruction).
+RUN rm -rf packages/database/generated && \
+    cd packages/database && \
+    DATABASE_URL="postgresql://build:build@build/build?schema=public" \
+    DIRECT_URL="postgresql://build:build@build/build?schema=public" \
+    bunx prisma generate && \
+    bunx tsdown
 
-# Copy pruned package manifests
-COPY --from=builder /app/out/json/ .
-
-# Install all dependencies (including devDeps needed for build: tailwindcss, postcss, prisma, tsup)
-RUN bun pm pkg delete scripts.prepare && bun install --frozen-lockfile
-
-# Copy full source needed for build
-COPY --from=builder /app/out/full/ .
-
-# ----------------------------------------------------------
-# Turborepo Remote Caching (Optional)
-# Uncomment and configure these for remote caching support.
+# Build Next.js standalone output.
+# During `next build`, Next.js evaluates server module imports to collect page
+# configuration (including the /api/[[...slugs]] route which creates the Elysia
+# app and calls getServerEnv()). Placeholder values below satisfy Zod schema
+# validation for that module-initialisation pass.
 #
-# ARG TURBO_TEAM
-# ARG TURBO_TOKEN
-# ENV TURBO_TEAM=$TURBO_TEAM
-# ENV TURBO_TOKEN=$TURBO_TOKEN
-# ----------------------------------------------------------
+# These values are scoped to this RUN layer's shell ONLY — no ENV instruction,
+# never baked into the image, no real network calls are made.
+#
+# Note: BETTER_AUTH_SECRET requires >= 32 chars; BETTER_AUTH_URL requires a URL.
+RUN cd apps/web && \
+    DATABASE_URL="postgresql://build:build@build/build?schema=public" \
+    DIRECT_URL="postgresql://build:build@build/build?schema=public" \
+    BETTER_AUTH_URL="http://localhost:3000" \
+    BETTER_AUTH_SECRET="build-time-placeholder-secret-key-32" \
+    BETTER_AUTH_GITHUB_CLIENT_ID="build_placeholder" \
+    BETTER_AUTH_GITHUB_CLIENT_SECRET="build_placeholder" \
+    OPENROUTER_API_KEY="sk-build-placeholder" \
+    bun run next build
 
-# Build the web app
-# Mount secrets for Next.js build configuration (DATABASE_URL uses placeholder for Prisma generation)
-RUN --mount=type=secret,id=better_auth_url \
-    --mount=type=secret,id=better_auth_secret \
-    --mount=type=secret,id=next_public_site_url \
-    --mount=type=secret,id=better_auth_github_client_id \
-    --mount=type=secret,id=better_auth_github_client_secret \
-    --mount=type=secret,id=database_url \
-    --mount=type=secret,id=direct_url \
-    --mount=type=secret,id=openrouter_api_key \
-    export DATABASE_URL="$(cat /run/secrets/database_url)" && \
-    export DIRECT_URL="$(cat /run/secrets/direct_url)" && \
-    export OPENROUTER_API_KEY="$(cat /run/secrets/openrouter_api_key)" && \
-    export BETTER_AUTH_URL="$(cat /run/secrets/better_auth_url)" && \
-    export BETTER_AUTH_SECRET="$(cat /run/secrets/better_auth_secret)" && \
-    export NEXT_PUBLIC_SITE_URL="$(cat /run/secrets/next_public_site_url)" && \
-    export BETTER_AUTH_GITHUB_CLIENT_ID="$(cat /run/secrets/better_auth_github_client_id)" && \
-    export BETTER_AUTH_GITHUB_CLIENT_SECRET="$(cat /run/secrets/better_auth_github_client_secret)" && \
-    (cd packages/database && bun run build:docker) && \
-    bunx turbo@2.8.10 build --filter=web
+# ── web: production web server ────────────────────────────────────────────────
+FROM oven/bun:1-slim AS web
+WORKDIR /app
+ENV NODE_ENV=production
+# Next.js standalone server reads HOSTNAME to decide what interface to bind.
+# Default is "localhost" which is unreachable from the Docker healthcheck or
+# from other containers. Bind to all interfaces so the server is accessible.
+ENV HOSTNAME=0.0.0.0
 
-# ---- Runner ----
-FROM oven/bun:1-slim AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
+USER bun
+
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=bun:bun /app/apps/web/public ./apps/web/public
+
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/api || exit 1
+
+CMD ["bun", "run", "apps/web/server.js"]
+
+# ── worker: background job processor ─────────────────────────────────────────
+FROM oven/bun:1-slim AS worker
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Use the built-in bun user (uid 1000)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
 USER bun
 
-# Copy built app from installer
-# Note: Next.js standalone output already includes only production node_modules
-COPY --from=installer --chown=bun:bun /app/apps/web/.next/standalone ./
-COPY --from=installer --chown=bun:bun /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=installer --chown=bun:bun /app/apps/web/public ./apps/web/public
+# Worker needs the full monorepo (source + packages) since it is not bundled
+# into the Next standalone output.  Copy only the necessary artifacts.
+COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=builder --chown=bun:bun /app/apps/web ./apps/web
+COPY --from=builder --chown=bun:bun /app/packages ./packages
+COPY --from=builder --chown=bun:bun /app/package.json ./
+COPY --from=builder --chown=bun:bun /app/turbo.json ./
 
-EXPOSE 3000
-CMD ["bun", "run", "apps/web/server.js"]
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+  CMD pgrep -x bun || exit 1
+
+CMD ["bun", "run", "apps/web/src/worker.ts"]

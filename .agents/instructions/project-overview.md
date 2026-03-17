@@ -11,7 +11,8 @@ Rezumerai is an AI-powered resume builder organized as a Bun workspace monorepo 
 - Better Auth for authentication
 - Prisma `7` with PostgreSQL
 - OpenRouter for model and embedding access
-- Mastra for the assistant agent and memory layer
+- Custom assistant memory layer with pgvector
+- pg-boss for background job queue (PostgreSQL-backed, no Redis)
 - Zod for shared schemas
 - Zustand and TanStack Query on the frontend
 - Tailwind CSS `4`

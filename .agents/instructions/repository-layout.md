@@ -27,8 +27,10 @@
 
 - `apps/web/src/elysia-api/modules/admin`
 - `apps/web/src/elysia-api/modules/user`
+- `apps/web/src/elysia-api/modules/profile`
 - `apps/web/src/elysia-api/modules/resume`
 - `apps/web/src/elysia-api/modules/ai`
+- `apps/web/src/elysia-api/modules/jobs`
 
 ## Current Elysia Plugins
 
@@ -57,7 +59,7 @@ apps/web/src/
       settings/
   elysia-api/
     app.ts
-    modules/{admin,ai,resume,user}
+    modules/{admin,ai,jobs,profile,resume,user}
     observability/
     plugins/
   components/

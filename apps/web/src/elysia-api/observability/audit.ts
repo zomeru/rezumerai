@@ -1,6 +1,9 @@
 import { type Prisma, type PrismaClient, prisma } from "@rezumerai/database";
+import { createLogger } from "@/lib/logger";
 import { toPrismaJsonValue } from "./redaction";
 import { getRequestContext } from "./request-context";
+
+const logger = createLogger({ module: "audit" });
 
 export type AuditLogCategoryValue = "USER_ACTION" | "SYSTEM_ACTIVITY" | "DATABASE_CHANGE";
 type DatabaseClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$extends" | "$on" | "$transaction">;
@@ -116,8 +119,7 @@ export async function createAuditLog(input: CreateAuditLogInput): Promise<void> 
   try {
     await persistAuditLog(input);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown audit logging error";
-    console.error(`[AUDIT] Failed to persist audit log: ${message}`);
+    logger.error({ err: error, category: input.category, eventType: input.eventType }, "Failed to persist audit log");
   }
 }
 

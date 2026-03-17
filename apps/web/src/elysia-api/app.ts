@@ -9,9 +9,11 @@ import Elysia from "elysia";
 import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
-import { serverEnv } from "@/env";
+import { getServerEnv } from "@/env";
+import { logger } from "@/lib/logger";
 import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
+import { queueErrorLogRetentionCleanup } from "./modules/jobs";
 import { recordAnalyticsEvent } from "./observability/analytics";
 import { recordSystemActivityLog } from "./observability/audit";
 import { runWithSystemContext } from "./observability/request-context";
@@ -27,7 +29,6 @@ import {
   prismaPlugin,
   tracePlugin,
 } from "./plugins";
-import { timestamp as ansiTimestamp, bold, dim, paint } from "./utils/ansi";
 
 const isDev = process.env.NODE_ENV === "development";
 // const cronPattern = isDev ? Patterns.EVERY_5_MINUTES : Patterns.weekly();
@@ -51,9 +52,9 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(
     cors(
       createCorsConfig({
-        NEXT_PUBLIC_SITE_URL: serverEnv?.NEXT_PUBLIC_SITE_URL ?? "",
-        BETTER_AUTH_URL: serverEnv?.BETTER_AUTH_URL ?? "",
-        CORS_ALLOWED_ORIGINS: serverEnv?.CORS_ALLOWED_ORIGINS,
+        NEXT_PUBLIC_SITE_URL: getServerEnv().NEXT_PUBLIC_SITE_URL,
+        BETTER_AUTH_URL: getServerEnv().BETTER_AUTH_URL,
+        CORS_ALLOWED_ORIGINS: getServerEnv().CORS_ALLOWED_ORIGINS,
       }),
     ),
   )
@@ -106,106 +107,130 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
       name: "error-log-retention-cleanup",
       pattern: errorLogRetentionCronPattern,
       async run() {
-        await runWithSystemContext(
-          {
-            requestId: `cron-error-log-retention-${Date.now()}`,
-            source: "BACKGROUND_JOB",
-            endpoint: null,
-            method: null,
-            userId: null,
-            userRole: null,
-            metadata: { serviceName: "error-log-retention-cleanup" },
-          },
-          async () => {
-            const startedAt = performance.now();
+        const startedAt = performance.now();
+        const errorLogRetentionDays = 30; // Default retention period
 
-            try {
-              const { deletedCount, retentionDays, cutoffDate } = await ErrorLogService.cleanupExpiredErrorLogs(prisma);
-              const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+        try {
+          // Queue the job instead of running inline - this is multi-instance safe
+          // Only one worker will pick up and execute the job
+          const jobId = await queueErrorLogRetentionCleanup(errorLogRetentionDays, "SCHEDULED");
 
-              await Promise.allSettled([
-                recordSystemActivityLog({
-                  eventType: "ERROR_LOG_RETENTION_CLEANUP",
-                  action: "RUN",
-                  resourceType: "ERROR_LOG",
-                  serviceName: "error-log-retention-cleanup",
-                  metadata: {
-                    status: "success",
-                  },
-                  afterValues: {
-                    deletedCount,
-                    retentionDays,
-                    cutoffDate: cutoffDate.toISOString(),
+          if (jobId) {
+            logger.info(
+              {
+                jobId,
+                retentionDays: errorLogRetentionDays,
+                cronJob: "error-log-retention-cleanup",
+              },
+              "Cron job queued",
+            );
+          } else {
+            // Fallback: run inline if queue not available
+            logger.warn(
+              {
+                cronJob: "error-log-retention-cleanup",
+              },
+              "Queue unavailable, running cron inline",
+            );
+
+            await runWithSystemContext(
+              {
+                requestId: `cron-error-log-retention-${Date.now()}`,
+                source: "BACKGROUND_JOB",
+                endpoint: null,
+                method: null,
+                userId: null,
+                userRole: null,
+                metadata: { serviceName: "error-log-retention-cleanup" },
+              },
+              async () => {
+                const { deletedCount, retentionDays, cutoffDate } =
+                  await ErrorLogService.cleanupExpiredErrorLogs(prisma);
+                const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+
+                await Promise.allSettled([
+                  recordSystemActivityLog({
+                    eventType: "ERROR_LOG_RETENTION_CLEANUP",
+                    action: "RUN",
+                    resourceType: "ERROR_LOG",
+                    serviceName: "error-log-retention-cleanup",
+                    metadata: {
+                      status: "success",
+                    },
+                    afterValues: {
+                      deletedCount,
+                      retentionDays,
+                      cutoffDate: cutoffDate.toISOString(),
+                      durationMs,
+                    },
+                  }),
+                  recordAnalyticsEvent({
+                    source: "BACKGROUND_JOB",
+                    eventType: "ERROR_LOG_RETENTION_CLEANUP",
                     durationMs,
-                  },
-                }),
-                recordAnalyticsEvent({
-                  source: "BACKGROUND_JOB",
-                  eventType: "ERROR_LOG_RETENTION_CLEANUP",
-                  durationMs,
-                  metadata: {
-                    name: "error-log-retention-cleanup",
-                    status: "success",
-                    deletedCount,
-                  },
-                }),
-              ]);
+                    metadata: {
+                      name: "error-log-retention-cleanup",
+                      status: "success",
+                      deletedCount,
+                    },
+                  }),
+                ]);
 
-              if (isDev || deletedCount > 0) {
-                console.log(
-                  [
-                    ansiTimestamp(),
-                    paint("bgCyan", ` ${bold("CRON")} `),
-                    bold("error-log-retention"),
-                    paint("green", `✓ deleted=${deletedCount}`),
-                    dim(`retentionDays=${retentionDays}`),
-                    dim(`cutoff<${cutoffDate.toISOString()}`),
-                  ].join("  "),
-                );
-              }
-            } catch (error: unknown) {
-              const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
-              const message = error instanceof Error ? error.message : "Unknown retention cleanup error";
+                if (isDev || deletedCount > 0) {
+                  logger.info(
+                    {
+                      deletedCount,
+                      retentionDays,
+                      cutoffDate: cutoffDate.toISOString(),
+                      cronJob: "error-log-retention-cleanup",
+                    },
+                    "Cron job completed",
+                  );
+                }
+              },
+            );
+          }
+        } catch (error: unknown) {
+          const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+          const message = error instanceof Error ? error.message : "Unknown retention cleanup error";
 
-              await Promise.allSettled([
-                recordSystemActivityLog({
-                  eventType: "ERROR_LOG_RETENTION_CLEANUP",
-                  action: "RUN_FAILED",
-                  resourceType: "ERROR_LOG",
-                  serviceName: "error-log-retention-cleanup",
-                  metadata: {
-                    status: "failed",
-                    message,
-                  },
-                  afterValues: {
-                    durationMs,
-                  },
-                }),
-                recordAnalyticsEvent({
-                  source: "BACKGROUND_JOB",
-                  eventType: "ERROR_LOG_RETENTION_CLEANUP",
-                  durationMs,
-                  errorCode: "CRON_FAILURE",
-                  errorName: error instanceof Error ? error.name : "UnknownError",
-                  metadata: {
-                    name: "error-log-retention-cleanup",
-                    status: "failed",
-                  },
-                }),
-              ]);
+          await Promise.allSettled([
+            recordSystemActivityLog({
+              eventType: "ERROR_LOG_RETENTION_CLEANUP",
+              action: "RUN_FAILED",
+              resourceType: "ERROR_LOG",
+              serviceName: "error-log-retention-cleanup",
+              metadata: {
+                status: "failed",
+                message,
+              },
+              afterValues: {
+                durationMs,
+              },
+            }),
+            recordAnalyticsEvent({
+              source: "BACKGROUND_JOB",
+              eventType: "ERROR_LOG_RETENTION_CLEANUP",
+              durationMs,
+              errorCode: "CRON_FAILURE",
+              errorName: error instanceof Error ? error.name : "UnknownError",
+              metadata: {
+                name: "error-log-retention-cleanup",
+                status: "failed",
+              },
+            }),
+          ]);
 
-              console.error(
-                [
-                  ansiTimestamp(),
-                  paint("bgRed", ` ${bold("CRON")} `),
-                  bold("error-log-retention"),
-                  paint("red", "✗ cleanup failed"),
-                  dim(message),
-                ].join("  "),
-              );
-            }
-          },
-        );
+          logger.error(
+            {
+              err: error,
+              message,
+              durationMs,
+              cronJob: "error-log-retention-cleanup",
+            },
+            "Cron job failed",
+          );
+        }
       },
     }),
   )
@@ -235,5 +260,33 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(profileModule)
   .use(resumeModule)
   .use(aiModule);
+
+/**
+ * Initialize the job queue.
+ * Call this once at application startup if you want to enable job publishing.
+ * The worker process has its own initialization.
+ */
+export async function initializeAppJobQueue(): Promise<void> {
+  const { initializeJobQueue } = await import("./modules/jobs/queue");
+
+  // Check if job queue is enabled via env var
+  const jobQueueEnabled = process.env.JOB_QUEUE_ENABLED !== "false";
+
+  if (jobQueueEnabled) {
+    try {
+      await initializeJobQueue();
+      logger.info("Job queue initialized for job publishing");
+    } catch (error) {
+      logger.warn(
+        {
+          err: error,
+        },
+        "Failed to initialize job queue, will fall back to inline processing",
+      );
+    }
+  } else {
+    logger.info("Job queue disabled via JOB_QUEUE_ENABLED=false");
+  }
+}
 
 /** Export the app type for Eden treaty on the frontend. */

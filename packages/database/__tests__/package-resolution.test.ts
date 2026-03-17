@@ -16,16 +16,16 @@ test("database package exports compiled artifacts", () => {
   const exportsMap = databasePackageJson.exports as Record<string, Record<string, string>>;
 
   expect(exportsMap["."]).toEqual({
-    types: "./dist/index.d.ts",
-    import: "./dist/index.js",
+    types: "./dist/index.d.mts",
+    import: "./dist/index.mjs",
   });
   expect(exportsMap["./generated/prismabox/*"]).toEqual({
-    types: "./dist/generated/prismabox/*.d.ts",
-    import: "./dist/generated/prismabox/*.js",
+    types: "./dist/generated/prismabox/*.d.mts",
+    import: "./dist/generated/prismabox/*.mjs",
   });
   expect(exportsMap["./generated/prisma/*"]).toEqual({
-    types: "./dist/generated/prisma/*.d.ts",
-    import: "./dist/generated/prisma/*.js",
+    types: "./dist/generated/prisma/*.d.mts",
+    import: "./dist/generated/prisma/*.mjs",
   });
 });
 

@@ -1,56 +1,57 @@
 #!/bin/bash
 
-# Docker build script with secrets from .env file
+# Build individual Docker images for web and worker targets.
+# Runtime secrets are NOT passed as build args — they are injected at
+# container startup via env_file / environment in docker-compose or the
+# container runtime.
 set -e
 
-# Navigate to project root (parent of scripts directory)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
-# Load environment variables from .env.local using safe POSIX method
-if [ -f .env.local ]; then
-  set -a  # Enable auto-export
-  source .env.local
-  set +a  # Disable auto-export
+# Load environment from file (default: .env.local, override with ENV_FILE)
+ENV_FILE="${ENV_FILE:-.env.local}"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
 else
-  echo "Error: .env.local file not found in $PROJECT_ROOT"
+  echo "Error: $ENV_FILE not found in $PROJECT_ROOT"
   exit 1
 fi
 
-# Validate required environment variables
-REQUIRED_ENV_VARS=(
-  "DATABASE_URL"
-  "DIRECT_URL"
-  "NEXT_PUBLIC_SITE_URL"
-  "BETTER_AUTH_URL"
-  "BETTER_AUTH_SECRET"
-  "BETTER_AUTH_GITHUB_CLIENT_ID"
-  "BETTER_AUTH_GITHUB_CLIENT_SECRET"
-  "OPENROUTER_API_KEY"
-)
-
-for var in "${REQUIRED_ENV_VARS[@]}"; do
+# Validate only the true build-time variables
+REQUIRED_BUILD_VARS=("NEXT_PUBLIC_SITE_URL")
+for var in "${REQUIRED_BUILD_VARS[@]}"; do
   if [ -z "${!var}" ]; then
-    echo "Error: Required environment variable $var is not set or empty"
+    echo "Error: Required build-time variable $var is not set or empty"
     exit 1
   fi
 done
 
-echo "All required environment variables validated successfully"
+echo "All required build-time variables validated"
 
-# Build Web
-echo "Building Web service..."
+# Derive image tag from git SHA for traceability (falls back to 'latest')
+GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo "")"
+TAG="${GIT_SHA:-latest}"
+
+echo "Building web image (tag: $TAG)..."
 docker build \
-  --secret id=next_public_site_url,env=NEXT_PUBLIC_SITE_URL \
-  --secret id=better_auth_secret,env=BETTER_AUTH_SECRET \
-  --secret id=better_auth_github_client_id,env=BETTER_AUTH_GITHUB_CLIENT_ID \
-  --secret id=better_auth_github_client_secret,env=BETTER_AUTH_GITHUB_CLIENT_SECRET \
-  --secret id=database_url,env=DATABASE_URL \
-  --secret id=direct_url,env=DIRECT_URL \
-  --secret id=openrouter_api_key,env=OPENROUTER_API_KEY \
+  --build-arg NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL" \
+  --target web \
   -f apps/web/Dockerfile \
+  -t rezumerai-web:"$TAG" \
   -t rezumerai-web:latest \
   .
 
-echo "Build complete!"
+echo "Building worker image (tag: $TAG)..."
+docker build \
+  --build-arg NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL" \
+  --target worker \
+  -f apps/web/Dockerfile \
+  -t rezumerai-worker:"$TAG" \
+  -t rezumerai-worker:latest \
+  .
+
+echo "Build complete! Tags: $TAG, latest"

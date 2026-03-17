@@ -18,17 +18,16 @@ declare global {
  * the perf extension is never applied more than once per process.
  */
 const globalForPrisma = globalThis;
-
 const connectionString = process.env.DATABASE_URL ?? env("DATABASE_URL");
+
+const isNeon = connectionString.includes(".neon.tech");
 
 /**
  * Selects the appropriate Prisma adapter based on the database connection string.
  * Uses PrismaNeon for Neon serverless PostgreSQL (WebSocket-based), and PrismaPg
  * for standard PostgreSQL connections (e.g. local Docker).
  */
-const adapter = connectionString.includes(".neon.tech")
-  ? new PrismaNeon({ connectionString })
-  : new PrismaPg({ connectionString });
+const adapter = isNeon ? new PrismaNeon({ connectionString }) : new PrismaPg({ connectionString });
 
 // ─── Inline ANSI helpers ──────────────────────────────────────────────────────
 // Kept local to this package to avoid a cross-package dependency on app-layer utils.

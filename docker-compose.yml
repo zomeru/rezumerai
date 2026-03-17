@@ -1,75 +1,65 @@
 services:
-  # PostgreSQL Database
-  # database:
-  #   image: postgres:18-alpine
-  #   secrets:
-  #     - postgres_db
-  #     - postgres_user
-  #     - postgres_password
-  #   environment:
-  #     POSTGRES_DB_FILE: /run/secrets/postgres_db
-  #     POSTGRES_USER_FILE: /run/secrets/postgres_user
-  #     POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - app_network
-
   web:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
-      secrets:
-        # Build-time secrets (for Next.js build)
-        - next_public_site_url
-        - better_auth_secret
-        - better_auth_url
-        - better_auth_github_client_id
-        - better_auth_github_client_secret
+      target: web
+      args:
+        # Only true build-time public variables go here.
+        # Runtime secrets are supplied at container start via env_file below.
+        # Default to empty string so `docker compose ps/logs` don't warn when
+        # NEXT_PUBLIC_SITE_URL is not exported in the shell.
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
     restart: unless-stopped
     env_file:
-      - .env.local  # For non-sensitive runtime vars (NODE_ENV, etc.)
-    secrets:
-      # Runtime secrets (available when container runs)
-      - database_url
-      - direct_url
-      - better_auth_secret
-      - better_auth_url
-      - better_auth_github_client_id
-      - better_auth_github_client_secret
-    ports:
-      - "3000:3000"
+      - .env.local
     environment:
       NODE_ENV: production
+    ports:
+      - "3000:3000"
     networks:
       - app_network
+    healthcheck:
+      # /api is the Elysia root and returns 200 without requiring DB access.
+      # /api/health queries the database (readiness probe) — use a separate
+      # readiness check at the load-balancer level, not here.
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-volumes:
-  postgres_data:
+  worker:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      target: worker
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      JOB_QUEUE_ENABLED: "true"
+      JOB_QUEUE_WORKER_COUNT: "1"
+    networks:
+      - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "bun"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
   app_network:
     driver: bridge
-
-secrets:
-  database_url:
-    environment: DATABASE_URL
-  direct_url:
-    environment: DIRECT_URL
-  better_auth_secret:
-    environment: BETTER_AUTH_SECRET
-  next_public_site_url:
-    environment: NEXT_PUBLIC_SITE_URL
-  better_auth_url:
-    environment: BETTER_AUTH_URL
-  better_auth_github_client_id:
-    environment: BETTER_AUTH_GITHUB_CLIENT_ID
-  better_auth_github_client_secret:
-    environment: BETTER_AUTH_GITHUB_CLIENT_SECRET

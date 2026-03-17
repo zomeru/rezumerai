@@ -1,0 +1,13 @@
+# Exclude everything except Terraform files
+
+*
+
+# Include Terraform files
+
+!*.tf
+!*.tfvars
+!*.tfvars.json
+
+# Include module directories
+
+!modules/**

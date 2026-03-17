@@ -1,7 +1,6 @@
 import { opentelemetry } from "@elysiajs/opentelemetry";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
-import { serverEnv } from "@/env";
 
 /**
  * OpenTelemetry plugin for Elysia.
@@ -17,10 +16,10 @@ import { serverEnv } from "@/env";
  * @see https://elysiajs.com/patterns/opentelemetry.html
  */
 function buildSpanProcessors(): BatchSpanProcessor[] {
-  const endpoint = serverEnv?.OTEL_EXPORTER_OTLP_ENDPOINT;
+  const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   if (!endpoint) return [];
 
-  const rawHeaders = serverEnv?.OTEL_EXPORTER_OTLP_HEADERS ?? "";
+  const rawHeaders = process.env.OTEL_EXPORTER_OTLP_HEADERS ?? "";
   const headers: Record<string, string> = Object.fromEntries(
     rawHeaders
       .split(",")
