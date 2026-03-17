@@ -23,6 +23,7 @@ Rezumerai is an AI-assisted resume builder for job seekers who want one workspac
 - Better Auth accounts with email/password, GitHub OAuth, anonymous sessions, and admin roles
 - Account settings for profile updates, password changes, AI model selection, and AI credit visibility
 - Admin console for users, live AI model availability, system configuration, audit logs, analytics, and error logs
+- Admin job queue dashboard for monitoring pg-boss queue metrics, dead-letter jobs, and worker configuration
 - Database-backed public content for the landing page, FAQ, about, contact, privacy, and terms pages
 
 ## Tech Stack
@@ -71,20 +72,22 @@ Rezumerai is an AI-assisted resume builder for job seekers who want one workspac
 - `AI_CONFIG` stores runtime AI prompts, models, and limits in the `SystemConfiguration` table.
 - `ASSISTANT_SYSTEM_PROMPT` is reserved for chat assistant behavior and remains separate from optimization workflows.
 - Resume Copilot uses dedicated prompt keys for `optimize`, `tailor`, and `review`.
-- `/testsite` Text Optimizer uses `TEXT_OPTIMIZER_SYSTEM_PROMPT`, which is general-purpose text optimization only.
+- `/text-optimizer` Text Optimizer uses `TEXT_OPTIMIZER_SYSTEM_PROMPT`, which is general-purpose text optimization only.
 - Legacy `COPILOT_SYSTEM_PROMPT` and `OPTIMIZE_SYSTEM_PROMPT` values are normalized into the new keys at runtime and when saved through the admin System Configuration editor.
 
 ### Observability And Operations
 
 - OpenTelemetry plugin for Elysia request traces
+- Pino structured JSON logging with configurable level (`LOG_LEVEL`) and pretty-print mode (`LOG_PRETTY`)
 - Database-backed analytics events, audit logs, and error logs
-- Optional BotID protection for mutating `/api/*` requests
+- Optional BotID protection for mutating `/api/*` requests (auto-gated on `VERCEL=1`)
 
 ### Monorepo Tooling
 
 - Bun workspaces
 - Turborepo task orchestration
 - Biome for formatting and linting
+- tsdown for package bundling
 - Changesets for package versioning and publishing workflows
 
 ## Prerequisites
@@ -136,6 +139,9 @@ Optional variables used by the current codebase or reserved in the env template:
 | `SENTRY_DSN` | Optional env validated in `apps/web/src/env.ts`; no Sentry bootstrap is wired in the current app |
 | `ANALYTICS_ID` | Optional env validated in `apps/web/src/env.ts`; no external analytics provider is wired in the current app |
 | `AI_MEMORY_REINDEX_LIMIT` | Optional limit consumed by `bun run assistant:reindex-memory` |
+| `JOB_QUEUE_ENABLED` | Enable the pg-boss background job queue. Defaults to `"true"` |
+| `JOB_QUEUE_WORKER_COUNT` | Number of worker processes. Defaults to `"1"` |
+| `CORS_ALLOWED_ORIGINS` | Extra comma-separated origins allowed to call the embedded API |
 
 3. Initialize database
 
@@ -254,6 +260,13 @@ Notes:
 | `bun run version:packages` | Build packages, then apply Changesets version bumps |
 | `bun run publish:packages` | Publish packages with Changesets |
 
+### Workers
+
+| Script | Description |
+| --- | --- |
+| `bun run worker` | Start the background job worker with default jobs |
+| `bun run worker:all` | Start worker with all job types: embeddings, analytics, audit log, error-log retention |
+
 ### Docker and Maintenance
 
 | Script | Description |
@@ -293,10 +306,12 @@ Notes:
 
 ### API Modules
 
-- `user`: authenticated user/account endpoints
+- `user`: authenticated user endpoints
+- `profile`: user profile read and update (name, email, image)
 - `resume`: resume CRUD and search
 - `ai`: assistant chat/messages, model settings, Copilot actions, and streamed text optimization
 - `admin`: users, AI models, system configuration, audit logs, analytics, and error log management
+- `jobs`: pg-boss job queue management and background worker handlers
 
 ### Module Structure
 
@@ -314,76 +329,6 @@ Notes:
 - `@rezumerai/ui`: shared UI primitives, auth form components, and skeletons
 - `@rezumerai/tsconfig`: shared TypeScript configuration presets
 
-## Repository Layout
-
-```txt
-apps/
-  web/
-    src/
-      app/
-        about/
-        admin/
-        api/
-          [[...slugs]]/
-          auth/[...all]/
-        contact/
-        faq/
-        preview/[resumeId]/
-        privacy/
-        signin/
-        signup/
-        terms/
-        workspace/
-          builder/[resumeId]/
-          settings/
-      components/
-      constants/
-      elysia-api/
-        modules/
-          admin/
-          ai/
-          resume/
-          user/
-        observability/
-        plugins/
-      hooks/
-      lib/
-      providers/
-      store/
-      templates/
-      test/
-      env.ts
-      proxy.ts
-    scripts/
-packages/
-  database/
-    prisma/
-      migrations/
-      models/
-    scripts/
-  types/
-    src/
-      admin/
-      ai/
-      content/
-      error/
-      resume/
-      user/
-  ui/
-    src/
-      components/
-  utils/
-    src/
-  tsconfig/
-.agents/
-  instructions/
-  skills/
-docs/
-  plans/
-scripts/
-.github/
-```
-
 ## Conventions
 
 - Use Bun for package management, scripts, and tests.
@@ -397,10 +342,9 @@ scripts/
 
 ## Docker Notes
 
-- The repository includes Docker assets for the `web` app only.
-- `docker-compose.yml` currently enables only the `web` service by default.
+- `apps/web/Dockerfile` defines two build targets: `web` (Next.js app) and `worker` (background job processor).
+- `docker-compose.yml` defines both the `web` and `worker` services; both run by default with `bun run docker:up`.
 - The PostgreSQL service is present only as commented reference configuration.
 - The Docker helper scripts load secrets from `.env.local`.
-- `apps/web/Dockerfile` builds Next.js standalone output for the web app.
 - The root `Dockerfile` is a placeholder; use `apps/web/Dockerfile` for the actual application image.
-- `start:redis` exists as a helper script, but the default compose file does not define a `redis` service.
+- `start:redis` exists as a helper script, but the default compose file does not define a `redis` service; the job queue uses pg-boss over PostgreSQL.
