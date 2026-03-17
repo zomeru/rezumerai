@@ -1,1 +1,1 @@
-/Users/zomeru/Desktop/rezumerai/.agents/skills/bun-next.js
+../../.agents/skills/bun-next.js
