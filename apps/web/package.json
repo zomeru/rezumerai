@@ -47,7 +47,7 @@
     "@rezumerai/ui": "workspace:*",
     "@rezumerai/utils": "workspace:*",
     "@tanstack/react-query": "^5.90.21",
-    "@tiptap/extension-color": "3.20.2",
+    "@tiptap/extension-color": "3.20.4",
     "@tiptap/extension-highlight": "3.20.2",
     "@tiptap/extension-link": "3.20.2",
     "@tiptap/extension-placeholder": "3.20.2",
