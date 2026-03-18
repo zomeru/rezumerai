@@ -16,9 +16,9 @@
  *   EMBEDDING_DIMENSIONS - Embedding dimensions
  */
 
-import { prisma } from "@rezumerai/database";
+import { ShutdownManager } from "@/lib/graceful-shutdown";
 import { logger } from "@/lib/logger";
-import { initializeJobQueue, type JobName, shutdownJobQueue } from "./elysia-api/modules/jobs/queue";
+import { initializeJobQueue, type JobName } from "./elysia-api/modules/jobs/queue";
 import { registerAllWorkers, registerWorkers } from "./elysia-api/modules/jobs/worker";
 
 // Parse command line arguments
@@ -37,38 +37,11 @@ function parseArgs(): { jobs?: JobName[] } {
   return { jobs: jobNames };
 }
 
-// Graceful shutdown handling
-let isShuttingDown = false;
-
-async function gracefulShutdown(signal: string): Promise<void> {
-  if (isShuttingDown) {
-    logger.warn({ signal }, "Worker already shutting down, forcing exit");
-    process.exit(1);
-  }
-
-  isShuttingDown = true;
-  logger.info({ signal }, "Initiating graceful shutdown");
-
-  try {
-    // Close database connections
-    await prisma.$disconnect();
-    logger.info("Database connections closed");
-
-    // Shutdown job queue
-    await shutdownJobQueue();
-    logger.info("Job queue stopped");
-
-    logger.info("Graceful shutdown complete");
-    process.exit(0);
-  } catch (error) {
-    logger.error({ err: error }, "Error during shutdown");
-    process.exit(1);
-  }
-}
-
-// Register signal handlers
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+// Create a ShutdownManager for the worker (does not drain requests, only jobs)
+const workerShutdownManager = new ShutdownManager({
+  drainRequests: false, // Worker doesn't handle requests
+  drainJobs: true,
+});
 
 // Main entry point
 async function main(): Promise<void> {
@@ -97,6 +70,9 @@ async function main(): Promise<void> {
       await registerAllWorkers();
     }
 
+    // Register graceful shutdown handlers
+    workerShutdownManager.registerHandlers();
+
     logger.info("Worker process started successfully");
     logger.info("Waiting for jobs");
 
@@ -104,7 +80,8 @@ async function main(): Promise<void> {
     // pg-boss handles the job polling internally
   } catch (error) {
     logger.error({ err: error }, "Failed to start worker");
-    await gracefulShutdown("ERROR");
+    // Force exit on startup failure
+    process.exit(1);
   }
 }
 

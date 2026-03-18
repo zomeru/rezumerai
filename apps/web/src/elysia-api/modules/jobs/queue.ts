@@ -217,14 +217,103 @@ async function createQueues(): Promise<void> {
 }
 
 /**
+ * Track active jobs being processed (for graceful shutdown).
+ */
+const activeJobs = new Map<string, { name: string; startedAt: number }>();
+
+/**
+ * Register an active job for tracking during shutdown.
+ * @internal - Called by worker handler
+ */
+export function registerActiveJob(jobId: string, jobName: string): void {
+  activeJobs.set(jobId, { name: jobName, startedAt: Date.now() });
+}
+
+/**
+ * Complete active job tracking.
+ * @internal - Called by worker handler on success
+ */
+export function completeActiveJob(jobId: string, _durationMs: number): void {
+  activeJobs.delete(jobId);
+}
+
+/**
+ * Fail active job tracking.
+ * @internal - Called by worker handler on error
+ */
+export function failActiveJob(jobId: string, _errorMessage: string): void {
+  activeJobs.delete(jobId);
+}
+
+/**
+ * Get count of currently active jobs being processed.
+ */
+export function getActiveJobsCount(): number {
+  return activeJobs.size;
+}
+
+/**
+ * Get details of currently active jobs.
+ */
+export function getActiveJobs(): Array<{ id: string; name: string; startedAt: number; elapsedMs: number }> {
+  const now = Date.now();
+  return Array.from(activeJobs.entries()).map(([id, job]) => ({
+    id,
+    name: job.name,
+    startedAt: job.startedAt,
+    elapsedMs: now - job.startedAt,
+  }));
+}
+
+/**
  * Gracefully shut down the job queue.
+ * Stops accepting new jobs and waits for active jobs to complete.
  */
 export async function shutdownJobQueue(): Promise<void> {
   if (bossInstance) {
+    await drainJobQueue();
     await bossInstance.stop();
     bossInstance = null;
     logger.info({}, "Job queue shut down");
   }
+}
+
+/**
+ * Drain the job queue - wait for all active jobs to complete.
+ * Does not stop the queue, just waits for in-flight jobs.
+ *
+ * @param timeoutMs - Maximum time to wait for jobs to complete (default: 30s)
+ * @returns True if all jobs completed, false if timeout reached
+ */
+export async function drainJobQueue(timeoutMs: number = 30000): Promise<boolean> {
+  if (activeJobs.size === 0) {
+    logger.debug("No active jobs to drain");
+    return true;
+  }
+
+  const startedAt = Date.now();
+  const pollIntervalMs = 50;
+
+  logger.info({ activeJobs: activeJobs.size }, "Draining active jobs");
+
+  while (activeJobs.size > 0) {
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= timeoutMs) {
+      logger.warn(
+        {
+          activeJobs: activeJobs.size,
+          elapsedMs: elapsed,
+          jobs: getActiveJobs(),
+        },
+        "Job drain timeout - some jobs may not have completed",
+      );
+      return false;
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  logger.info({ elapsedMs: Date.now() - startedAt }, "All active jobs completed");
+  return true;
 }
 
 /**
