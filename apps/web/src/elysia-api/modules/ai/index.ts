@@ -160,6 +160,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: (body) => status(422, body),
         429: (body) => status(429, body),
         500: (body) => status(500, body),
+        503: (body) => status(503, body),
       });
     },
     {
@@ -170,6 +171,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: "ai.Error",
         429: "ai.Error",
         500: "ai.Error",
+        503: "ai.Error",
       },
       detail: {
         summary: "Optimize a resume section with Resume Copilot",
@@ -193,6 +195,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: (body) => status(422, body),
         429: (body) => status(429, body),
         500: (body) => status(500, body),
+        503: (body) => status(503, body),
       });
     },
     {
@@ -203,6 +206,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: "ai.Error",
         429: "ai.Error",
         500: "ai.Error",
+        503: "ai.Error",
       },
       detail: {
         summary: "Tailor a resume to a job description",
@@ -226,6 +230,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: (body) => status(422, body),
         429: (body) => status(429, body),
         500: (body) => status(500, body),
+        503: (body) => status(503, body),
       });
     },
     {
@@ -236,6 +241,7 @@ export const aiModule = new Elysia({ name: "module/ai", prefix: "/ai" })
         422: "ai.Error",
         429: "ai.Error",
         500: "ai.Error",
+        503: "ai.Error",
       },
       detail: {
         summary: "Review overall resume quality",

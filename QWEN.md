@@ -1,1 +1,0 @@
-/Users/zomeru/Desktop/rezumerai/AGENTS.md

@@ -42,12 +42,17 @@ import {
 } from "./assistant-chat";
 import { DEFAULT_AI_SETTINGS, openRouterProviderName } from "./constants";
 import { auditAdminAssistantUsage } from "./controller/helpers/audit";
-import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError } from "./errors";
+import {
+  AiCreditsExhaustedError,
+  AiModelPolicyRestrictedError,
+  AiModelUnavailableError,
+  AiProviderCircuitBreakerError,
+} from "./errors";
 import { emptyAiUsageMetrics, mapOpenRouterModelToActiveAiModel } from "./mapper";
 import { ConversationMemoryService } from "./memory/service";
 import { getAvailableModels as fetchOpenRouterModels } from "./openrouter-model-service";
 import { resolveAiSystemPrompt } from "./prompts/resolver";
-import { createAiProviderRegistry } from "./providers/registry";
+import { createAiProviderRegistry, executeWithCircuitBreaker } from "./providers/registry";
 import { AiRepository } from "./repository";
 import { createAiToolRegistry } from "./tools/registry";
 import type {
@@ -147,7 +152,12 @@ export type {
   StreamOptimizeTextOptions,
   UserAiSettings,
 } from "./types";
-export { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError };
+export {
+  AiCreditsExhaustedError,
+  AiModelPolicyRestrictedError,
+  AiModelUnavailableError,
+  AiProviderCircuitBreakerError,
+};
 
 function toUsageMetrics(usage: {
   inputTokens?: number | undefined;
@@ -487,16 +497,20 @@ export abstract class AiService {
     });
     const providerRegistry = createAiProviderRegistry();
     const modelMessages = await convertToModelMessages(originalMessages);
-    const result = streamText({
-      model: providerRegistry.getChatModel(runtime.config.ASSISTANT_MODEL_ID),
-      system: systemPrompt,
-      messages: modelMessages,
-      tools: toolRegistry.getAssistantTools(),
-      stopWhen: stepCountIs(runtime.config.ASSISTANT_MAX_STEPS),
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: "ai.assistant.chat",
-      },
+
+    // Wrap streamText with circuit breaker
+    const result = await executeWithCircuitBreaker(`assistant.chat:${runtime.model.id}`, async () => {
+      return streamText({
+        model: providerRegistry.getChatModel(runtime.config.ASSISTANT_MODEL_ID),
+        system: systemPrompt,
+        messages: modelMessages,
+        tools: toolRegistry.getAssistantTools(),
+        stopWhen: stepCountIs(runtime.config.ASSISTANT_MAX_STEPS),
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: "ai.assistant.chat",
+        },
+      });
     });
 
     return result.toUIMessageStreamResponse({
@@ -759,15 +773,20 @@ export abstract class AiService {
   static async createOptimizeStream(input: string, modelId: string, systemPrompt: string): Promise<StreamTextHandle> {
     const providerRegistry = createAiProviderRegistry();
 
-    return streamText({
-      model: providerRegistry.getChatModel(modelId),
-      system: systemPrompt,
-      messages: [{ role: "user", content: input }],
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: "ai.optimize.stream",
-      },
+    // Wrap streamText with circuit breaker
+    const result = await executeWithCircuitBreaker(`optimize.stream:${modelId}`, async () => {
+      return streamText({
+        model: providerRegistry.getChatModel(modelId),
+        system: systemPrompt,
+        messages: [{ role: "user", content: input }],
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: "ai.optimize.stream",
+        },
+      });
     });
+
+    return result;
   }
 
   static async *streamOptimizeText(
@@ -783,6 +802,11 @@ export abstract class AiService {
   }
 
   static normalizeOptimizationError(error: unknown): Error {
+    // Handle circuit breaker errors with graceful degradation
+    if (error instanceof AiProviderCircuitBreakerError) {
+      return error;
+    }
+
     const message = AiService.getErrorMessage(error);
     const statusCode = AiService.getErrorStatusCode(error);
     const normalizedMessage = message.length > 0 ? message : ERROR_MESSAGES.AI_UNKNOWN_OPTIMIZATION_ERROR;
@@ -898,21 +922,25 @@ export abstract class AiService {
     tools: ToolSet;
   }): Promise<StructuredModelResult<T>> {
     const providerRegistry = createAiProviderRegistry();
-    const result = await generateText({
-      model: providerRegistry.getChatModel(options.modelId),
-      system: options.instructions,
-      messages: options.input,
-      tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps),
-      output: Output.object({
-        schema: options.outputSchema,
-        name: "copilot_result",
-        description: options.outputDescription,
-      }),
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: "ai.copilot.structured",
-      },
+
+    // Wrap generateText with circuit breaker
+    const result = await executeWithCircuitBreaker(`copilot.structured:${options.modelId}`, async () => {
+      return generateText({
+        model: providerRegistry.getChatModel(options.modelId),
+        system: options.instructions,
+        messages: options.input,
+        tools: options.tools,
+        stopWhen: stepCountIs(options.maxSteps),
+        output: Output.object({
+          schema: options.outputSchema,
+          name: "copilot_result",
+          description: options.outputDescription,
+        }),
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: "ai.copilot.structured",
+        },
+      });
     });
 
     return {

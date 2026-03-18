@@ -10,7 +10,14 @@ import type { UserAiSettings } from "./types";
 type AssistantChatRouteResult = RouteResult<{ 200: AssistantChatResponse; 422: AssistantChatResponse }>;
 type AssistantHistoryRouteResult = RouteResult<{ 200: AssistantHistoryResponse; 422: AssistantHistoryResponse }>;
 type OkOrForbiddenRouteResult<TBody> = RouteResult<{ 200: TBody; 403: string }>;
-type CopilotRouteResult<TBody> = RouteResult<{ 200: TBody; 403: string; 422: string; 429: string; 500: string }>;
+type CopilotRouteResult<TBody> = RouteResult<{
+  200: TBody;
+  403: string;
+  422: string;
+  429: string;
+  500: string;
+  503: string;
+}>;
 type UpdateSelectedModelRouteResult = RouteResult<{
   200: UserAiSettings;
   403: string;
@@ -122,7 +129,7 @@ export function respondSelectedModelUpdate<TOk, TForbidden, TUnprocessable>(
   }
 }
 
-export function respondCopilot<TBody, TOk, TForbidden, TUnprocessable, TRateLimited, TServerError>(
+export function respondCopilot<TBody, TOk, TForbidden, TUnprocessable, TRateLimited, TServerError, TServiceUnavailable>(
   response: CopilotRouteResult<TBody>,
   handlers: {
     200: (body: TBody) => TOk;
@@ -130,8 +137,9 @@ export function respondCopilot<TBody, TOk, TForbidden, TUnprocessable, TRateLimi
     422: (body: string) => TUnprocessable;
     429: (body: string) => TRateLimited;
     500: (body: string) => TServerError;
+    503: (body: string) => TServiceUnavailable;
   },
-): TOk | TForbidden | TUnprocessable | TRateLimited | TServerError {
+): TOk | TForbidden | TUnprocessable | TRateLimited | TServerError | TServiceUnavailable {
   switch (response.status) {
     case 200:
       return handlers[200](response.body);
@@ -143,6 +151,8 @@ export function respondCopilot<TBody, TOk, TForbidden, TUnprocessable, TRateLimi
       return handlers[429](response.body);
     case 500:
       return handlers[500](response.body);
+    case 503:
+      return handlers[503](response.body);
     default:
       return assertNever(response);
   }

@@ -4,7 +4,13 @@ import type {
   ResumeCopilotTailorResponse,
 } from "@rezumerai/types";
 import { ERROR_MESSAGES } from "@/constants/errors";
-import { AiCreditsExhaustedError, AiModelPolicyRestrictedError, AiModelUnavailableError, AiService } from "../service";
+import {
+  AiCreditsExhaustedError,
+  AiModelPolicyRestrictedError,
+  AiModelUnavailableError,
+  AiProviderCircuitBreakerError,
+  AiService,
+} from "../service";
 import type { CopilotRunResult, OptimizationContext } from "../types";
 import { ensureVerifiedAiUser, routeResult, trackAiHandledError } from "./helpers";
 import type { RouteResult, TransactionCapableDatabaseClient, VerifiedAiUser } from "./types";
@@ -17,7 +23,7 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
   body: TInput;
   operation: "optimize" | "tailor" | "review";
   run: (db: TransactionCapableDatabaseClient, userId: string, body: TInput) => Promise<CopilotRunResult<TResponse>>;
-}): Promise<RouteResult<{ 200: TResponse; 422: string; 429: string; 500: string }>> {
+}): Promise<RouteResult<{ 200: TResponse; 422: string; 429: string; 500: string; 503: string }>> {
   const startedAt = Date.now();
   let runtime: OptimizationContext | null = null;
 
@@ -50,7 +56,13 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
       error: normalizedError,
       metadata: {
         responseStatus:
-          error instanceof AiCreditsExhaustedError ? 429 : error instanceof AiModelUnavailableError ? 422 : 500,
+          error instanceof AiCreditsExhaustedError
+            ? 429
+            : error instanceof AiModelUnavailableError || error instanceof AiModelPolicyRestrictedError
+              ? 422
+              : error instanceof AiProviderCircuitBreakerError
+                ? 503
+                : 500,
       },
     });
 
@@ -76,6 +88,10 @@ async function runCopilotRequest<TInput extends { resumeId: string }, TResponse 
       return routeResult(422, normalizedError.message);
     }
 
+    if (error instanceof AiProviderCircuitBreakerError) {
+      return routeResult(503, ERROR_MESSAGES.AI_PROVIDER_UNAVAILABLE);
+    }
+
     return routeResult(500, ERROR_MESSAGES.AI_COPILOT_RUN_FAILED);
   }
 }
@@ -89,7 +105,9 @@ export async function handleCopilotOptimizeRequest(options: {
   db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}): Promise<RouteResult<{ 200: ResumeCopilotOptimizeResponse; 403: string; 422: string; 429: string; 500: string }>> {
+}): Promise<
+  RouteResult<{ 200: ResumeCopilotOptimizeResponse; 403: string; 422: string; 429: string; 500: string; 503: string }>
+> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/optimize-section",
@@ -119,7 +137,9 @@ export async function handleCopilotTailorRequest(options: {
   db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}): Promise<RouteResult<{ 200: ResumeCopilotTailorResponse; 403: string; 422: string; 429: string; 500: string }>> {
+}): Promise<
+  RouteResult<{ 200: ResumeCopilotTailorResponse; 403: string; 422: string; 429: string; 500: string; 503: string }>
+> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/tailor",
@@ -146,7 +166,9 @@ export async function handleCopilotReviewRequest(options: {
   db: TransactionCapableDatabaseClient;
   request: Request;
   user: VerifiedAiUser;
-}): Promise<RouteResult<{ 200: ResumeCopilotReviewResponse; 403: string; 422: string; 429: string; 500: string }>> {
+}): Promise<
+  RouteResult<{ 200: ResumeCopilotReviewResponse; 403: string; 422: string; 429: string; 500: string; 503: string }>
+> {
   const verificationResult = await ensureVerifiedAiUser({
     request: options.request,
     route: "/ai/copilot/review",

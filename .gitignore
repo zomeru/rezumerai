@@ -90,6 +90,7 @@ docs/
 code-reviews/
 .claude/CLAUDE.md
 .github/copilot-instructions.md
+Test.md
 
 ####################################
 # App / Package generated output

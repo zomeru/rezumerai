@@ -1,6 +1,7 @@
 import { DEFAULT_AI_CONFIGURATION, normalizeAiConfiguration } from "../../types/src/ai/schema";
 import {
   DEFAULT_ABOUT_CONTENT,
+  DEFAULT_AI_CIRCUIT_BREAKER_CONFIG,
   DEFAULT_CONTACT_CONTENT,
   DEFAULT_FAQ_CONTENT,
   DEFAULT_LANDING_PAGE_CONTENT,
@@ -13,6 +14,9 @@ import type { Prisma } from "../";
 const GLOBAL_CONFIG_SEED = {
   ERROR_LOG_RETENTION_DAYS: 90,
 } as const;
+
+const AI_CIRCUIT_BREAKER_CONFIG_DESCRIPTION =
+  "Circuit breaker settings for AI provider calls to prevent cascading failures during outages.";
 
 const AI_CONFIG_DESCRIPTION =
   "Global AI models, workflow-specific prompts, and optimization configuration used across the application.";
@@ -41,6 +45,7 @@ export type SystemConfigurationWriter = {
 export function getRequiredSystemConfigurationSeeds(): RequiredSystemConfigurationSeed[] {
   const defaultAiConfigurationJson: Prisma.InputJsonValue = normalizeAiConfiguration(DEFAULT_AI_CONFIGURATION);
   const globalConfigSeedJson: Prisma.InputJsonValue = GLOBAL_CONFIG_SEED;
+  const aiCircuitBreakerConfigJson: Prisma.InputJsonValue = DEFAULT_AI_CIRCUIT_BREAKER_CONFIG;
 
   return [
     {
@@ -52,6 +57,11 @@ export function getRequiredSystemConfigurationSeeds(): RequiredSystemConfigurati
       name: SYSTEM_CONFIGURATION_KEYS.GLOBAL_CONFIG,
       description: GLOBAL_CONFIG_DESCRIPTION,
       value: globalConfigSeedJson,
+    },
+    {
+      name: SYSTEM_CONFIGURATION_KEYS.AI_CIRCUIT_BREAKER_CONFIG,
+      description: AI_CIRCUIT_BREAKER_CONFIG_DESCRIPTION,
+      value: aiCircuitBreakerConfigJson,
     },
     {
       name: SYSTEM_CONFIGURATION_KEYS.TOS_INFORMATION,

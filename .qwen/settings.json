@@ -1,0 +1,47 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "qwen-oauth"
+    }
+  },
+  "model": {
+    "name": "coder-model"
+  },
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "ide"],
+      "timeout": 30000,
+      "trust": false
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "context-mode": {
+      "command": "context-mode"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "type": "stdio"
+    }
+  },
+  "$version": 3,
+  "ide": {
+    "enabled": true
+  },
+  "tools": {
+    "approvalMode": "auto-edit"
+  },
+  "general": {
+    "enableAutoUpdate": true
+  },
+  "context": {
+    "fileName": ["AGENTS.md"]
+  }
+}
