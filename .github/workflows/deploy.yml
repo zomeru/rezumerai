@@ -60,7 +60,7 @@ jobs:
         FULL_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         DB_URL: ${{ secrets.DATABASE_URL }}
         OR_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.5
       with:
         host: ${{ env.OCI_HOST }}
         username: ${{ env.SSH_USER }}
@@ -101,7 +101,7 @@ jobs:
           docker ps -a --filter name=rezumerai-worker --format "table {{.Names}}\t{{.Status}}"
 
     - name: Verify deployment
-      uses: appleboy/ssh-action@v1.0.3
+      uses: appleboy/ssh-action@v1.2.5
       with:
         host: ${{ env.OCI_HOST }}
         username: ${{ env.SSH_USER }}
