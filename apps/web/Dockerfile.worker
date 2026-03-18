@@ -1,0 +1,64 @@
+# Worker Dockerfile for Rezumerai Background Job Processor
+# Multi-stage build optimized for ARM64 (OCI Ampere A1)
+
+# ── deps: install dependencies (cached unless lockfile/manifests change) ──────
+FROM oven/bun:1 AS deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  libc6-dev libssl-dev openssl \
+  && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+
+# Copy only manifests first — maximises layer cache reuse
+COPY package.json bun.lock turbo.json ./
+COPY apps/web/package.json apps/web/
+COPY packages/database/package.json packages/database/
+COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/types/package.json packages/types/
+COPY packages/ui/package.json packages/ui/
+COPY packages/utils/package.json packages/utils/
+
+RUN bun install --frozen-lockfile
+
+# ── builder: compile and prepare ──────────────────────────────────────────────
+FROM deps AS builder
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy full source after deps are cached
+COPY . .
+
+# Generate Prisma client.
+# prisma generate only reads the schema — it never opens a DB connection.
+# Placeholder values satisfy the env() calls scoped to this RUN layer only —
+# never baked into the image.
+RUN rm -rf packages/database/generated && \
+    cd packages/database && \
+    DATABASE_URL="postgresql://build:build@build/build?schema=public" \
+    DIRECT_URL="postgresql://build:build@build/build?schema=public" \
+    bunx prisma generate && \
+    bunx tsdown
+
+# ── worker: background job processor ─────────────────────────────────────────
+FROM oven/bun:1-slim AS worker
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    procps \
+  && rm -rf /var/lib/apt/lists/*
+
+USER bun
+
+# Copy necessary files from builder
+COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=builder --chown=bun:bun /app/apps/web ./apps/web
+COPY --from=builder --chown=bun:bun /app/packages ./packages
+COPY --from=builder --chown=bun:bun /app/package.json ./
+COPY --from=builder --chown=bun:bun /app/turbo.json ./
+
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+  CMD pgrep -x bun || exit 1
+
+CMD ["bun", "run", "apps/web/src/worker.ts"]

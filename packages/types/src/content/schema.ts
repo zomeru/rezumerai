@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const SYSTEM_CONFIGURATION_KEYS = {
   AI_CONFIG: "AI_CONFIG",
+  AI_CIRCUIT_BREAKER_CONFIG: "AI_CIRCUIT_BREAKER_CONFIG",
   GLOBAL_CONFIG: "GLOBAL_CONFIG",
   TOS_INFORMATION: "TOS_INFORMATION",
   PRIVACY_POLICY_INFORMATION: "PRIVACY_POLICY_INFORMATION",
@@ -10,6 +11,37 @@ export const SYSTEM_CONFIGURATION_KEYS = {
   CONTACT_INFORMATION: "CONTACT_INFORMATION",
   LANDING_PAGE_INFORMATION: "LANDING_PAGE_INFORMATION",
 } as const;
+
+/**
+ * AI Circuit Breaker configuration schema.
+ * Controls the circuit breaker behavior for AI provider calls.
+ * Uses SCREAMING_SNAKE_CASE for database consistency.
+ */
+export const AiCircuitBreakerConfigSchema = z.object({
+  /** Enable/disable the circuit breaker */
+  ENABLED: z.boolean().default(true),
+  /** Number of consecutive failures before opening the circuit */
+  FAILURE_THRESHOLD: z.number().int().positive().default(5),
+  /** Time in milliseconds before attempting reset (open → half-open) */
+  RESET_TIMEOUT_MS: z.number().int().positive().default(60000),
+  /** Timeout for individual AI provider requests in milliseconds */
+  EXECUTION_TIMEOUT_MS: z.number().int().positive().default(30000),
+  /** Successful calls needed in half-open state to close circuit */
+  HALF_OPEN_SUCCESS_THRESHOLD: z.number().int().positive().default(2),
+});
+
+export type AiCircuitBreakerConfig = z.infer<typeof AiCircuitBreakerConfigSchema>;
+
+/**
+ * Default AI circuit breaker configuration.
+ */
+export const DEFAULT_AI_CIRCUIT_BREAKER_CONFIG: AiCircuitBreakerConfig = {
+  ENABLED: true,
+  FAILURE_THRESHOLD: 5,
+  RESET_TIMEOUT_MS: 60000,
+  EXECUTION_TIMEOUT_MS: 30000,
+  HALF_OPEN_SUCCESS_THRESHOLD: 2,
+};
 
 export const PublicContentTopicSchema = z.enum(["landing", "terms", "privacy", "faq", "about", "contact"]);
 

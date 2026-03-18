@@ -13,6 +13,7 @@ import type {
   SystemConfigurationListResponse,
 } from "@rezumerai/types";
 import {
+  AiCircuitBreakerConfigSchema,
   AiConfigurationSchema,
   ContentPageSchema,
   FaqInformationSchema,
@@ -55,6 +56,10 @@ const SYSTEM_CONFIGURATION_DEFINITIONS = {
     description:
       "Global AI models, workflow-specific prompts, and optimization configuration used across the application.",
     schema: AiConfigurationSchema,
+  },
+  AI_CIRCUIT_BREAKER_CONFIG: {
+    description: "Circuit breaker settings for AI provider calls to prevent cascading failures during outages.",
+    schema: AiCircuitBreakerConfigSchema,
   },
   GLOBAL_CONFIG: {
     description: "Application-wide operational settings, including backend retention windows and scheduled jobs.",

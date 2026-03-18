@@ -289,4 +289,27 @@ export async function initializeAppJobQueue(): Promise<void> {
   }
 }
 
+/**
+ * Initialize the AI circuit breaker from database configuration.
+ * Call this once at application startup after database connection is established.
+ */
+export async function initializeAiCircuitBreaker(): Promise<void> {
+  const { initializeCircuitBreaker } = await import("./modules/ai/providers/registry");
+  const { AiRepository } = await import("./modules/ai/repository");
+
+  try {
+    const config = await AiRepository.getSystemConfigurationValue(prisma, "AI_CIRCUIT_BREAKER_CONFIG");
+    initializeCircuitBreaker(config ?? {});
+    logger.info("AI circuit breaker initialized from database configuration");
+  } catch (error) {
+    logger.warn(
+      {
+        err: error,
+      },
+      "Failed to load AI circuit breaker config from database, using defaults",
+    );
+    // Will use defaults when first circuit breaker is accessed
+  }
+}
+
 /** Export the app type for Eden treaty on the frontend. */

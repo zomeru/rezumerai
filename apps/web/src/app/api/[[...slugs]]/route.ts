@@ -1,6 +1,6 @@
 import { checkBotId } from "botid/server";
 import { NextResponse } from "next/dist/server/web/spec-extension/response";
-import { elysiaApp, initializeAppJobQueue } from "@/elysia-api/app";
+import { elysiaApp, initializeAiCircuitBreaker, initializeAppJobQueue } from "@/elysia-api/app";
 
 // BotId requires the x-vercel-oidc-token header injected by Vercel's edge
 // infrastructure. Gate on VERCEL=1 so Docker/self-hosted deployments are not
@@ -28,8 +28,29 @@ const initializeJobQueueOnce = async () => {
     });
 };
 
-// Trigger initialization (non-blocking, fire-and-forget)
+// Initialize AI circuit breaker once when module is first loaded
+let circuitBreakerInitialized = false;
+let circuitBreakerInitializing = false;
+const initializeCircuitBreakerOnce = async () => {
+  if (circuitBreakerInitialized || circuitBreakerInitializing) {
+    return;
+  }
+  circuitBreakerInitializing = true;
+
+  // Initialize in background - don't block requests
+  initializeAiCircuitBreaker()
+    .then(() => {
+      circuitBreakerInitialized = true;
+    })
+    .catch((error) => {
+      console.warn("[API] AI circuit breaker initialization failed, will use defaults:", error);
+      circuitBreakerInitialized = true; // Mark as done to prevent retry
+    });
+};
+
+// Trigger initializations (non-blocking, fire-and-forget)
 void initializeJobQueueOnce();
+void initializeCircuitBreakerOnce();
 
 async function withBotId(request: Request) {
   // Don't wait for job queue - it initializes in background

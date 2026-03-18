@@ -55,6 +55,8 @@ export const ERROR_MESSAGES = {
   AI_ASSISTANT_UNKNOWN_ERROR: "The assistant could not complete that request.",
   AI_ASSISTANT_FORBIDDEN: "Sorry, I can't access that information.",
   AI_COPILOT_RUN_FAILED: "Resume Copilot could not finish that request.",
+  AI_PROVIDER_UNAVAILABLE:
+    "AI provider is temporarily unavailable due to high load. Please try again in a few moments.",
 
   // Unknown error
   UNKNOWN_ERROR: "An unknown error occurred. Please try again.",

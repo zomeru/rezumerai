@@ -92,6 +92,15 @@ export abstract class AiRepository {
     return configuration?.value ?? null;
   }
 
+  static async getSystemConfigurationValue(db: DatabaseClient, name: string): Promise<Prisma.JsonValue | null> {
+    const configuration = await db.systemConfiguration.findUnique({
+      where: { name },
+      select: { value: true },
+    });
+
+    return configuration?.value ?? null;
+  }
+
   static async getUserSelectedModelRecord(
     db: DatabaseClient,
     userId: string,

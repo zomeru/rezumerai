@@ -1,27 +1,36 @@
-# AWS region
-aws_region = "us-east-1"
+# OCI Infrastructure Variables
+# Copy this file to terraform.tfvars and fill in your values
 
-# Environment
-environment = "production"
+# OCI Infrastructure Variables
 
-# Project name
-project_name = "rezumerai"
+# OCI Authentication
+# These can also be set via environment variables:
+# export TF_VAR_tenancy_ocid="ocid1.tenancy.oc1.."
+# export TF_VAR_user_ocid="ocid1.user.oc1.."
+# export TF_VAR_fingerprint="xx:xx:xx:..."
+# export TF_VAR_private_key_path="~/.oci/oci_api_key.pem"
 
-# Domain name for the application
-domain_name = "app.rezumerai.com"
+tenancy_ocid     = "ocid1.tenancy.oc1..."
+user_ocid        = "ocid1.user.oc1..."
+fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:x"
+private_key_path = "/Users/<your_username>/.oci/oci_api_key.pem"
 
-# ACM certificate ARN for HTTPS
-certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id"
+# Resource Configuration
+# Root/Tenancy Owners: Use your tenancy OCID as the compartment_ocid
+# Non-root users: Use your compartment OCID
+compartment_ocid    = "ocid1.tenancy.oc1..."
+region              = "ap-singapore-1"
+availability_domain = "tSgu:AP-SINGAPORE-1-AD-1" # Run 'terraform oci iam availability-domains list' to get yours
+environment         = "production"
+project_name        = "rezumerai"
 
-# Database name
-db_name = "rezumerai"
+# SSH Keys (generate with: ssh-keygen -t ed25519 -f ~/.ssh/rezumerai-worker -C "rezumerai-worker")
+ssh_public_key       = "ssh-ed25519 AAAA... rezumerai-worker"
+ssh_private_key_path = "/Users/zomeru/.ssh/rezumerai-worker"
 
-# Better Auth secret key
-better_auth_secret = "your-better-auth-secret"
+# Application Configuration
+database_url       = "postgresql://<your_username>:password@localhost:5432/rezumerdb"
+openrouter_api_key = "sk-or-v1-aaa..."
 
-# GitHub OAuth credentials
-github_client_id = "your-github-client-id"
-github_client_secret = "your-github-client-secret"
-
-# OpenRouter API key
-openrouter_api_key = "your-openrouter-api-key"
+# Network Configuration
+vcn_cidr = "10.0.0.0/16"
