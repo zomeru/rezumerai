@@ -55,6 +55,11 @@ const serverSchema = clientSchema.extend({
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional().describe("Comma-separated key=value auth headers for OTLP export"),
   JOB_QUEUE_ENABLED: z.string().optional().default("true").describe("Enable background job queue (true/false)"),
   JOB_QUEUE_WORKER_COUNT: z.string().optional().default("1").describe("Number of worker processes to run"),
+  SHUTDOWN_TIMEOUT_MS: z
+    .string()
+    .optional()
+    .default("30000")
+    .describe("Graceful shutdown timeout in milliseconds (default: 30s)"),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

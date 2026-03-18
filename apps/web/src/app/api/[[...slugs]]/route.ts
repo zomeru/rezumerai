@@ -1,11 +1,28 @@
 import { checkBotId } from "botid/server";
 import { NextResponse } from "next/dist/server/web/spec-extension/response";
-import { elysiaApp, initializeAiCircuitBreaker, initializeAppJobQueue } from "@/elysia-api/app";
+import {
+  elysiaApp,
+  initializeAiCircuitBreaker,
+  initializeAppJobQueue,
+  initializeGracefulShutdown,
+} from "@/elysia-api/app";
 
 // BotId requires the x-vercel-oidc-token header injected by Vercel's edge
 // infrastructure. Gate on VERCEL=1 so Docker/self-hosted deployments are not
 // blocked by a Vercel-specific check that can never pass outside Vercel.
 const isBotIdEnabled = process.env.NODE_ENV !== "development" && process.env.VERCEL === "1";
+
+// Initialize graceful shutdown handlers once when module is first loaded
+let shutdownInitialized = false;
+let shutdownInitializing = false;
+const initializeShutdownOnce = () => {
+  if (shutdownInitialized || shutdownInitializing) {
+    return;
+  }
+  shutdownInitializing = true;
+  initializeGracefulShutdown();
+  shutdownInitialized = true;
+};
 
 // Initialize job queue once when module is first loaded
 // This ensures jobs can be published from request handlers
@@ -49,6 +66,7 @@ const initializeCircuitBreakerOnce = async () => {
 };
 
 // Trigger initializations (non-blocking, fire-and-forget)
+initializeShutdownOnce();
 void initializeJobQueueOnce();
 void initializeCircuitBreakerOnce();
 

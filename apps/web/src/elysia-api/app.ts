@@ -10,6 +10,7 @@ import { httpExceptionPlugin } from "elysia-http-exception";
 import { rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
 import { getServerEnv } from "@/env";
+import { gracefulShutdown } from "@/lib/graceful-shutdown";
 import { logger } from "@/lib/logger";
 import { adminModule, aiModule, profileModule, resumeModule, userModule } from "./modules";
 import { ErrorLogService } from "./modules/admin/service";
@@ -46,6 +47,28 @@ export const elysiaApp = new Elysia({ prefix: "/api" })
   .use(opentelemetryPlugin)
   .use(tracePlugin)
   .use(observabilityPlugin)
+
+  // 0.5 Graceful shutdown middleware (tracks active requests, rejects new ones during shutdown)
+  .onBeforeHandle(() => {
+    const manager = gracefulShutdown;
+    if (manager.getIsShuttingDown()) {
+      return new Response(
+        JSON.stringify({
+          error: "Service Unavailable",
+          message: "Server is shutting down. Please try again later.",
+          retryAfter: 30,
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+    manager.startRequest();
+  })
+  .onAfterHandle(() => {
+    gracefulShutdown.endRequest();
+  })
 
   // 1. Security first
   .use(elysiaHelmet(createApiHelmetConfig({ isDev })))
@@ -310,6 +333,14 @@ export async function initializeAiCircuitBreaker(): Promise<void> {
     );
     // Will use defaults when first circuit breaker is accessed
   }
+}
+
+/**
+ * Initialize graceful shutdown handlers.
+ * Call this once at application startup to register SIGTERM/SIGINT handlers.
+ */
+export function initializeGracefulShutdown(): void {
+  gracefulShutdown.registerHandlers();
 }
 
 /** Export the app type for Eden treaty on the frontend. */
