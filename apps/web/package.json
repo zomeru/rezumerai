@@ -70,7 +70,7 @@
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "langchain": "^1.2.33",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.0.1",
     "next": "16.1.7",
     "pg-boss": "^12.14.0",
     "pino": "^10.3.1",
