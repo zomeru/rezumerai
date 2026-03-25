@@ -39,7 +39,7 @@
     "@langchain/textsplitters": "^1.0.1",
     "@node-rs/argon2": "^2.0.2",
     "@openrouter/ai-sdk-provider": "^2.3.3",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.213.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.214.0",
     "@opentelemetry/sdk-trace-node": "^2.6.0",
     "@react-pdf/renderer": "^4.3.2",
     "@rezumerai/database": "workspace:*",
